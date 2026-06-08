@@ -26,7 +26,7 @@ const USERS = {
 
 let db, CURRENT_USER=null
 let ZALIVS=[], DOMAINS=[], TASKS=[], METRICS=[], SALES_DATA=[]
-let expZ=null, dragId=null, moGeo='', moScore=0, domGeoSel=[]
+let expZ=null, dragId=null, dragCol=null, moGeo='', moScore=0, domGeoSel=[]
 let curDoc=null, chartData=null, jFolders=[], jLoose=[]
 
 // ── CSS ──
@@ -372,6 +372,10 @@ document.getElementById('root').innerHTML = `
         </div>
       </div>
       <div class="card" style="margin-bottom:12px">
+        <div class="chdr"><span class="ctit">Sales</span><span class="clnk" id="lnk-sales">Все →</span></div>
+        <div id="d-sales-kpi" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"></div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
         <div class="chdr"><span class="ctit">Активные задачи</span><span class="clnk" id="lnk-tasks">Все →</span></div>
         <div id="d-tasks"></div>
       </div>
@@ -539,6 +543,7 @@ document.getElementById('nb-journal').addEventListener('click', function(){ gp('
 document.getElementById('sync-btn').addEventListener('click', manualSync)
 document.getElementById('uchip').addEventListener('click', doLogout)
 document.getElementById('lnk-zalivs').addEventListener('click', function(){ gp('zalivs', document.getElementById('nb-zalivs')) })
+document.getElementById('lnk-sales').addEventListener('click', function(){ gp('sales', document.getElementById('nb-sales')) })
 document.getElementById('lnk-tasks').addEventListener('click', function(){ gp('tasks', document.getElementById('nb-tasks')) })
 
 // Period buttons
@@ -827,6 +832,32 @@ function rdash() {
 
   document.getElementById('d-tasks').innerHTML = TASKS.filter(t=>t.col!=='done').slice(0,4).map(t=>`<div class="tmini"><div class="tpb" style="background:${t.priority==='high'?'var(--red)':t.priority==='mid'?'var(--yellow)':'var(--green)'}"></div><div class="tmt">${t.title}</div><span class="tms ${t.col==='process'?'ts-proc':'ts-todo'}">${t.col==='process'?'In Progress':'TO DO'}</span>${t.assignee?`<span class="tma">${t.assignee}</span>`:''}</div>`).join('') || '<div class="empty">Нет задач</div>'
 
+  // Sales KPI on dashboard
+  const spFrom = document.getElementById('pd-from').value
+  const spTo = document.getElementById('pd-to').value
+  const sf = SALES_DATA.filter(s=>{const d=parseDt(s.createdAt);if(!d)return false;const day=d.toISOString().split('T')[0];return day>=spFrom&&day<=spTo})
+  const stotal = sf.reduce((s,r)=>s+(r.saleAmount||0),0)
+  const savg = sf.length ? Math.round(stotal/sf.length) : 0
+  document.getElementById('d-sales-kpi').innerHTML = `
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#2ea043,#40c060)"></div>
+      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">TOTAL REVENUE</div>
+      <div style="font-size:28px;font-weight:800;color:var(--yellow);font-family:var(--mono)">${stotal.toLocaleString('ru')} zł</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">${sf.length} продаж</div>
+    </div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#4080ff,#60a0ff)"></div>
+      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">AVG DEAL</div>
+      <div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--mono)">${savg.toLocaleString('ru')} zł</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">средний чек</div>
+    </div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--bord),var(--bord2))"></div>
+      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">КОЛ-ВО ПРОДАЖ</div>
+      <div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--mono)">${sf.length}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">за период</div>
+    </div>`
+
   drawChart(rows)
 }
 
@@ -1091,10 +1122,7 @@ function rtasks(){
     b.addEventListener('click',()=>{const inp=document.querySelector(`#kq-${b.dataset.col} .kqinp`);if(inp?.value){saveTk(inp.value,b.dataset.col,b.dataset.who);hideQA(b.dataset.col)}})
   })
   document.querySelectorAll('.kqcn').forEach(b=>b.addEventListener('click',()=>hideQA(b.dataset.col)))
-  document.querySelectorAll('.kcol').forEach(col=>{
-    col.addEventListener('dragover',e=>e.preventDefault())
-    col.addEventListener('drop',e=>{e.preventDefault();if(dragId)moveTk(dragId,col.id.replace('kc-',''))})
-  })
+  // drag handled globally
 }
 function tcard(t){
   const ov=t.deadline&&t.deadline<new Date().toISOString().split('T')[0]
@@ -1114,8 +1142,51 @@ document.addEventListener('click', e=>{
   const del=e.target.closest('.tdel[data-id]')
   if(del){e.stopPropagation();delTk(parseInt(del.dataset.id));return}
 })
-document.addEventListener('dragstart', e=>{const tc=e.target.closest('.tcard[data-id]');if(tc){dragId=parseInt(tc.dataset.id);setTimeout(()=>tc.classList.add('dragging'),0)}})
-document.addEventListener('dragend', e=>{const tc=e.target.closest('.tcard');if(tc)tc.classList.remove('dragging');dragId=null})
+document.addEventListener('dragstart', e=>{
+  const tc=e.target.closest('.tcard[data-id]')
+  if(tc){
+    dragId=parseInt(tc.dataset.id)
+    dragCol=tc.closest('.kcol')?.id?.replace('kc-','')
+    setTimeout(()=>tc.classList.add('dragging'),0)
+  }
+})
+document.addEventListener('dragend', e=>{
+  document.querySelectorAll('.tcard').forEach(t=>t.classList.remove('dragging','dov'))
+  dragId=null; dragCol=null
+})
+document.addEventListener('dragover', e=>{
+  const tc=e.target.closest('.tcard[data-id]')
+  if(tc&&dragId&&parseInt(tc.dataset.id)!==dragId){
+    document.querySelectorAll('.tcard').forEach(t=>t.classList.remove('dov'))
+    tc.classList.add('dov')
+  }
+})
+document.addEventListener('drop', e=>{
+  const tc=e.target.closest('.tcard[data-id]')
+  const col=e.target.closest('.kcol')
+  if(!dragId) return
+  if(tc&&parseInt(tc.dataset.id)!==dragId){
+    // reorder within/across column
+    const targetId=parseInt(tc.dataset.id)
+    const targetTask=TASKS.find(t=>t.id===targetId)
+    const dragTask=TASKS.find(t=>t.id===dragId)
+    if(targetTask&&dragTask){
+      const targetCol=targetTask.col
+      // Move drag task to target col
+      dragTask.col=targetCol
+      // Reorder: insert before target
+      const idx=TASKS.indexOf(targetTask)
+      TASKS.splice(TASKS.indexOf(dragTask),1)
+      TASKS.splice(TASKS.indexOf(targetTask),0,dragTask)
+      db.from('tasks').update({col:targetCol,updated_at:new Date().toISOString()}).eq('id',dragId)
+      rtasks()
+    }
+  } else if(col&&!tc){
+    const colId=col.id.replace('kc-','')
+    moveTk(dragId,colId)
+  }
+  dragId=null; dragCol=null
+})
 
 // ── JOURNAL ──
 function rtree(){
