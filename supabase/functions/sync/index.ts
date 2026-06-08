@@ -67,16 +67,17 @@ function getLeads(actions: any[]): number {
 //           D{02.06}UA/PH1./uagarno -> PLUA
 //           D{02.06}PLUA/PH1. -> PLUA
 function campaignGeo(name: string): "pl"|"plua" {
-  // Extract GEO part after D{date} pattern
-  const match = name.match(/D\{[^}]+\}([A-Z]+)\//i)
+  // Match D{date} or I{date} prefix then GEO
+  // e.g. D{02.06}PL/... -> PL, I{07.06}UA/... -> PLUA
+  const match = name.match(/[DIdi]\{[^}]+\}([A-Za-z]+)[/\\]/)
   if (match) {
     const geo = match[1].toUpperCase()
     if (geo === "PL") return "pl"
-    if (geo === "UA" || geo === "PLUA" || geo === "CZUA") return "plua"
+    return "plua" // UA, PLUA, CZUA etc
   }
-  // Fallback: if name contains PLUA or UA -> plua, else pl
+  // Fallback by keywords
   const n = (name||"").toUpperCase()
-  if (n.includes("PLUA") || n.startsWith("UA") || n.includes("/UA/")) return "plua"
+  if (n.includes("PLUA") || n.includes("/UA/") || n.match(/^[DIdi]\{[^}]+\}UA/)) return "plua"
   return "pl"
 }
 
