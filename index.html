@@ -31,7 +31,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:13
 .login-logo{font-size:28px;font-weight:800;letter-spacing:4px;color:#fff;margin-bottom:8px}.login-logo em{color:var(--bord2);font-style:normal}
 .login-sub{font-size:12px;color:var(--text3);margin-bottom:40px;letter-spacing:2px;text-transform:uppercase}
 .login-cards{display:flex;gap:16px}
-.login-card{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:28px 32px;cursor:pointer;transition:all .25s;text-align:center;min-width:180px;position:relative}
+.login-card{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:28px 32px;cursor:pointer;transition:all .25s;text-align:center;min-width:180px;position:relative;font-family:var(--sans);outline:none;appearance:none;-webkit-appearance:none}
 .login-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--bord),var(--bord2));opacity:0;transition:opacity .25s;pointer-events:none}
 .login-card:hover{border-color:var(--bord2);transform:translateY(-3px);box-shadow:0 12px 40px rgba(181,34,64,.15)}
 .login-card:hover::before{opacity:1}
@@ -333,16 +333,16 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:13
   <div class="login-logo">JDL <em>·</em> CRM</div>
   <div class="login-sub">Traffic Team Dashboard</div>
   <div class="login-cards">
-    <div class="login-card" onclick="login('illia')" style="cursor:pointer">
-      <div class="login-avatar" style="background:rgba(181,34,64,.15);color:var(--bord2);border-color:var(--bord);pointer-events:none">IB</div>
-      <div class="login-name" style="pointer-events:none">Illia</div>
-      <div class="login-role" style="pointer-events:none">Junior Buyer</div>
-    </div>
-    <div class="login-card" onclick="login('danya')" style="cursor:pointer">
-      <div class="login-avatar" style="background:rgba(64,128,255,.1);color:#6090ff;border-color:#1a3060;pointer-events:none">DM</div>
-      <div class="login-name" style="pointer-events:none">Danya</div>
-      <div class="login-role" style="pointer-events:none">Head of Marketing</div>
-    </div>
+    <button type="button" class="login-card" onclick="login('illia')">
+      <div class="login-avatar" style="background:rgba(181,34,64,.15);color:var(--bord2);border-color:var(--bord)">IB</div>
+      <div class="login-name">Illia</div>
+      <div class="login-role">Junior Buyer</div>
+    </button>
+    <button type="button" class="login-card" onclick="login('danya')">
+      <div class="login-avatar" style="background:rgba(64,128,255,.1);color:#6090ff;border-color:#1a3060">DM</div>
+      <div class="login-name">Danya</div>
+      <div class="login-role">Head of Marketing</div>
+    </button>
   </div>
 </div>
 
