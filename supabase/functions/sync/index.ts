@@ -67,17 +67,17 @@ function getLeads(actions: any[]): number {
 //           D{02.06}UA/PH1./uagarno -> PLUA
 //           D{02.06}PLUA/PH1. -> PLUA
 function campaignGeo(name: string): "pl"|"plua" {
-  // Match D{date} or I{date} prefix then GEO
-  // e.g. D{02.06}PL/... -> PL, I{07.06}UA/... -> PLUA
-  const match = name.match(/[DIdi]\{[^}]+\}([A-Za-z]+)[/\\]/)
+  // FB API returns escaped slashes: D{02.06}PL\/PH1. or D{02.06}PL/PH1.
+  // Remove backslashes first, then match
+  const clean = name.replace(/\\/g, "")
+  const match = clean.match(/[DIdi]\{[^}]+\}([A-Za-z]+)\//)
   if (match) {
     const geo = match[1].toUpperCase()
     if (geo === "PL") return "pl"
     return "plua" // UA, PLUA, CZUA etc
   }
-  // Fallback by keywords
   const n = (name||"").toUpperCase()
-  if (n.includes("PLUA") || n.includes("/UA/") || n.match(/^[DIdi]\{[^}]+\}UA/)) return "plua"
+  if (n.includes("PLUA") || n.includes("UA/") || n.includes("UA\\/")) return "plua"
   return "pl"
 }
 
