@@ -39,13 +39,11 @@ function getLeads(actions: any[]): number {
 }
 
 function campaignIsPlua(name: string): boolean {
-  // Remove backslashes and normalize
   let n = ""
   for (let i = 0; i < name.length; i++) {
     if (name[i] !== "\\") n += name[i]
   }
   n = n.toUpperCase()
-  // Look for }PL/ pattern -> PL campaign
   const brIdx = n.indexOf("}")
   if (brIdx >= 0) {
     const after = n.substring(brIdx + 1, brIdx + 6)
@@ -53,30 +51,42 @@ function campaignIsPlua(name: string): boolean {
     if (after.indexOf("UA") === 0) return true
     if (after.indexOf("PLUA") === 0) return true
   }
-  // Fallback
   if (n.indexOf("}UA") >= 0) return true
   if (n.indexOf("}PLUA") >= 0) return true
   if (n.indexOf("}PL") >= 0) return false
   return true
 }
 
-async function fbFetch(accId: string, since: string, until: string): Promise<any[]> {
+// Fetch ALL pages from FB API with pagination
+async function fbFetchAll(accId: string, since: string, until: string): Promise<any[]> {
   const fields = "campaign_name,spend,impressions,clicks,actions,date_start"
   const tr = encodeURIComponent('{"since":"' + since + '","until":"' + until + '"}')
-  const url = "https://graph.facebook.com/v19.0/act_" + accId + "/insights?fields=" + fields + "&time_range=" + tr + "&level=campaign&time_increment=1&access_token=" + FB_TOKEN
-  try {
-    const r = await fetch(url)
-    const j = await r.json()
-    if (j.error) {
-      console.log("FB error " + accId + ": " + JSON.stringify(j.error))
-      return []
+  let url = "https://graph.facebook.com/v19.0/act_" + accId + "/insights?fields=" + fields + "&time_range=" + tr + "&level=campaign&time_increment=1&limit=500&access_token=" + FB_TOKEN
+  
+  const allData: any[] = []
+  let pageCount = 0
+  
+  while (url && pageCount < 10) {
+    pageCount++
+    try {
+      const r = await fetch(url)
+      const j = await r.json()
+      if (j.error) {
+        console.log("FB error " + accId + ": " + JSON.stringify(j.error))
+        break
+      }
+      const rows = j.data || []
+      for (let i = 0; i < rows.length; i++) allData.push(rows[i])
+      // Check for next page
+      url = (j.paging && j.paging.next) ? j.paging.next : ""
+    } catch (e) {
+      console.log("FB fetch error: " + e)
+      break
     }
-    console.log("FB " + accId + ": " + (j.data || []).length + " rows")
-    return j.data || []
-  } catch (e) {
-    console.log("FB fetch error: " + e)
-    return []
   }
+  
+  console.log("FB " + accId + ": " + allData.length + " total rows (" + pageCount + " pages)")
+  return allData
 }
 
 serve(async function() {
@@ -117,8 +127,8 @@ serve(async function() {
       sdMap[day].count++
     }
 
-    const fb1 = await fbFetch(FB_ACCOUNT_1, since, today)
-    const fb2 = await fbFetch(FB_ACCOUNT_2, since, today)
+    const fb1 = await fbFetchAll(FB_ACCOUNT_1, since, today)
+    const fb2 = await fbFetchAll(FB_ACCOUNT_2, since, today)
 
     const fbMap: Record<string, { spl: number, splua: number, imp: number, clk: number }> = {}
 
@@ -128,7 +138,6 @@ serve(async function() {
       if (!fbMap[day]) fbMap[day] = { spl: 0, splua: 0, imp: 0, clk: 0 }
       const sp = parseFloat(r.spend) || 0
       const isPlua = campaignIsPlua(r.campaign_name || "")
-      console.log("CAM: " + (r.campaign_name || "").substring(0, 35) + " -> " + (isPlua ? "PLUA" : "PL") + " $" + sp)
       if (isPlua) fbMap[day].splua += sp
       else fbMap[day].spl += sp
       fbMap[day].imp += parseInt(r.impressions) || 0
@@ -146,12 +155,10 @@ serve(async function() {
 
     const allDays: string[] = []
     const seen: Record<string, boolean> = {}
-    const keys1 = Object.keys(ldMap)
-    const keys2 = Object.keys(sdMap)
-    const keys3 = Object.keys(fbMap)
-    for (let i = 0; i < keys1.length; i++) { if (!seen[keys1[i]]) { seen[keys1[i]] = true; allDays.push(keys1[i]) } }
-    for (let i = 0; i < keys2.length; i++) { if (!seen[keys2[i]]) { seen[keys2[i]] = true; allDays.push(keys2[i]) } }
-    for (let i = 0; i < keys3.length; i++) { if (!seen[keys3[i]]) { seen[keys3[i]] = true; allDays.push(keys3[i]) } }
+    const allKeys = Object.keys(ldMap).concat(Object.keys(sdMap)).concat(Object.keys(fbMap))
+    for (let i = 0; i < allKeys.length; i++) {
+      if (!seen[allKeys[i]]) { seen[allKeys[i]] = true; allDays.push(allKeys[i]) }
+    }
 
     const rows = []
     for (let i = 0; i < allDays.length; i++) {
