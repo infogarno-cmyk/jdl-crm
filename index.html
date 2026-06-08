@@ -325,6 +325,28 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:13
 .btn-save:hover{background:var(--bord);color:#fff}
 .empty-state{text-align:center;padding:30px;color:var(--text3);font-size:13px}
 </style>
+<script>
+var USERS = {
+  illia: { name:'Illia', role:'Junior Buyer', initials:'IB', color:'var(--bord2)', bg:'rgba(181,34,64,.15)', border:'var(--bord)' },
+  danya: { name:'Danya', role:'Head of Marketing', initials:'DM', color:'#6090ff', bg:'rgba(64,128,255,.1)', border:'#1a3060' }
+};
+function login(userId) {
+  window._pendingLogin = userId;
+  var ls = document.getElementById('login-screen');
+  var app = document.getElementById('app');
+  if (ls) ls.style.display = 'none';
+  if (app) app.style.display = 'flex';
+  localStorage.setItem('jdl_user', userId);
+  if (window._loginReady) window._loginReady(userId);
+}
+function logout() {
+  localStorage.removeItem('jdl_user');
+  var ls = document.getElementById('login-screen');
+  var app = document.getElementById('app');
+  if (ls) { ls.style.display = 'flex'; ls.classList.remove('hidden'); }
+  if (app) app.style.display = 'none';
+}
+</script>
 </head>
 <body>
 
@@ -578,30 +600,26 @@ const USERS = {
 }
 
 // ── LOGIN ──
-function login(userId) {
+function completeLogin(userId) {
   CURRENT_USER = USERS[userId]
-  localStorage.setItem('jdl_user', userId)
-  document.getElementById('login-screen').classList.add('hidden')
-  document.getElementById('app').style.display = 'flex'
   const ava = document.getElementById('user-ava')
-  ava.textContent = CURRENT_USER.initials
-  ava.style.background = CURRENT_USER.bg
-  ava.style.color = CURRENT_USER.color
-  ava.style.borderColor = CURRENT_USER.border
-  document.getElementById('user-name').textContent = CURRENT_USER.name
+  if (ava) {
+    ava.textContent = CURRENT_USER.initials
+    ava.style.background = CURRENT_USER.bg
+    ava.style.color = CURRENT_USER.color
+    ava.style.borderColor = CURRENT_USER.border
+  }
+  const un = document.getElementById('user-name')
+  if (un) un.textContent = CURRENT_USER.name
   init()
 }
-function logout() {
-  localStorage.removeItem('jdl_user')
-  CURRENT_USER = null
-  document.getElementById('login-screen').classList.remove('hidden')
-  document.getElementById('app').style.display = 'none'
-}
+// Override the head login to complete initialization
+window._loginReady = completeLogin
 // Auto-login
 try {
   const savedUser = localStorage.getItem('jdl_user')
   if (savedUser && USERS[savedUser]) {
-    login(savedUser)
+    completeLogin(savedUser)
   }
 } catch(e) { console.error('Auto-login error:', e) }
 
