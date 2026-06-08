@@ -4,707 +4,737 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JDL · CRM</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230a0a0f'/><path d='M6 10h4v12H6zm6 0h4l4 6-4 6h-4l4-6zm6 0h4v12h-4z' fill='%23b52240' opacity='.9'/></svg>">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="window._sbLoaded=true"></script>
-<style>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230a0a0f'/><path d='M6 10h4v12H6zm6 0h4l4 6-4 6h-4l4-6zm6 0h4v12h-4z' fill='%23b52240'/></svg>">
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ══════════════════════════════════════════
+//  JDL CRM — полный скрипт
+// ══════════════════════════════════════════
+
+const SB_URL  = 'https://dkhkowkgiricjxkcngbf.supabase.co'
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRraGtvd2tnaXJpY2p4a2NuZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MTY3NDEsImV4cCI6MjA5NjQ5Mjc0MX0.48HS8eJ6wLPfimRtiz6behWHG1G8xz5_zfrT0cxnGrE'
+const GARNO_URL = 'https://bnyjwjuejrfalbubdbcv.supabase.co'
+const GARNO_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJueWp3anVlanJmYWxidWJkYmN2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTcyNDQ2NSwiZXhwIjoyMDk1MzAwNDY1fQ.l9ka9b_PzKdu-gock8ZACqODicJDZYCc1laMw_HMBvA'
+
+const USERS = {
+  illia: {name:'Illia', role:'Junior Buyer', initials:'IB', color:'#b52240', bg:'rgba(181,34,64,.15)', border:'#8b1a2e'},
+  danya: {name:'Danya', role:'Head of Marketing', initials:'DM', color:'#6090ff', bg:'rgba(64,128,255,.1)', border:'#1a3060'}
+}
+
+let db, CURRENT_USER=null
+let ZALIVS=[], DOMAINS=[], TASKS=[], METRICS=[], SALES_DATA=[]
+let expZ=null, dragId=null, moGeo='', moScore=0, domGeoSel=[]
+let curDoc=null, chartData=null, jFolders=[], jLoose=[]
+
+// ── CSS ──
+document.head.insertAdjacentHTML('beforeend', `<style>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-:root{
---bg:#0a0a0f;--bg2:#111118;--bg3:#18181f;--bg4:#1e1e28;--bg5:#252530;
---border:#2a2a3a;--border2:#3a3a50;--border3:#4a4a65;
---text:#f0f0f5;--text2:#9090a8;--text3:#5a5a70;
---bord:#8b1a2e;--bord2:#b52240;--bord3:#d42a50;--bord-dim:#3a0d18;
---green:#2ea043;--green-bg:#0d2818;
---yellow:#d4a017;--yellow-bg:#2a1f08;
---red:#e04050;--red-bg:#2a0d12;
---blue:#4080ff;--blue-bg:#0d1a3a;
---purple:#9060d0;
---mono:'JetBrains Mono',monospace;
---sans:'Manrope',system-ui,sans-serif;
-}
-html,body{height:100%;overflow:hidden}
-body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:13px}
-
-/* LOGIN SCREEN */
-.login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000;flex-direction:column;gap:0;cursor:default}
-.login-screen.hidden{display:none}
-.login-logo{font-size:28px;font-weight:800;letter-spacing:4px;color:#fff;margin-bottom:8px}.login-logo em{color:var(--bord2);font-style:normal}
-.login-sub{font-size:12px;color:var(--text3);margin-bottom:40px;letter-spacing:2px;text-transform:uppercase}
-.login-cards{display:flex;gap:16px}
-.login-card{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:28px 32px;cursor:pointer;transition:all .25s;text-align:center;min-width:180px;position:relative;font-family:var(--sans);outline:none;appearance:none;-webkit-appearance:none}
-.login-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--bord),var(--bord2));opacity:0;transition:opacity .25s;pointer-events:none}
-.login-card:hover{border-color:var(--bord2);transform:translateY(-3px);box-shadow:0 12px 40px rgba(181,34,64,.15)}
-.login-card:hover::before{opacity:1}
-.login-avatar{width:56px;height:56px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;font-family:var(--mono);border:2px solid var(--border2)}
-.login-name{font-size:15px;font-weight:700;color:#fff;margin-bottom:4px}
-.login-role{font-size:11px;color:var(--text3);font-weight:500}
-
+:root{--bg:#0a0a0f;--bg2:#111118;--bg3:#18181f;--bg4:#1e1e28;--bg5:#252530;--border:#2a2a3a;--border2:#3a3a50;--border3:#4a4a65;--text:#f0f0f5;--text2:#9090a8;--text3:#5a5a70;--bord:#8b1a2e;--bord2:#b52240;--bord3:#d42a50;--bord-dim:#3a0d18;--green:#2ea043;--green-bg:#0d2818;--yellow:#d4a017;--yellow-bg:#2a1f08;--red:#e04050;--red-bg:#2a0d12;--blue:#4080ff;--blue-bg:#0d1a3a;--purple:#9060d0;--mono:'JetBrains Mono',monospace;--sans:'Manrope',system-ui,sans-serif}
+html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--bg);color:var(--text);font-size:13px}
+/* LOGIN */
+#login{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;z-index:999}
+.l-logo{font-size:28px;font-weight:800;letter-spacing:4px;color:#fff;margin-bottom:6px}.l-logo em{color:var(--bord2);font-style:normal}
+.l-sub{font-size:11px;color:var(--text3);margin-bottom:40px;letter-spacing:2px;text-transform:uppercase}
+.l-cards{display:flex;gap:16px}
+.l-card{background:var(--bg2);border:2px solid var(--border2);border-radius:14px;padding:28px 32px;cursor:pointer;text-align:center;min-width:180px;transition:all .2s}
+.l-card:hover{border-color:var(--bord2);transform:translateY(-3px)}
+.l-ava{width:56px;height:56px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;font-family:var(--mono)}
+.l-name{font-size:15px;font-weight:700;color:#fff;margin-bottom:4px}
+.l-role{font-size:11px;color:var(--text3)}
 /* APP */
-.app{display:flex;flex-direction:column;height:100vh}
-.topbar{display:flex;align-items:center;height:46px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;padding:0 20px;gap:0}
+#app{display:none;flex-direction:column;height:100vh}
+.topbar{display:flex;align-items:center;height:46px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;padding:0 20px}
 .logo{font-size:14px;font-weight:800;letter-spacing:3px;color:#fff;margin-right:24px}.logo em{color:var(--bord2);font-style:normal}
 .nav{display:flex;height:100%}
-.nb{display:flex;align-items:center;gap:7px;padding:0 14px;font-size:11px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;cursor:pointer;transition:all .2s;white-space:nowrap;letter-spacing:.5px;text-transform:uppercase}
-.nb:hover{color:var(--text2);background:rgba(255,255,255,.02)}
-.nb.active{color:#fff;border-bottom-color:var(--bord2);background:rgba(181,34,64,.05)}
-.nb .dot{width:5px;height:5px;border-radius:50%;background:var(--text3);transition:all .2s;flex-shrink:0}
-.nb.active .dot{background:var(--bord2);box-shadow:0 0 8px var(--bord2)}
+.nb{display:flex;align-items:center;gap:7px;padding:0 14px;font-size:11px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;cursor:pointer;letter-spacing:.5px;text-transform:uppercase;transition:all .2s}
+.nb:hover{color:var(--text2)}.nb.active{color:#fff;border-bottom-color:var(--bord2);background:rgba(181,34,64,.05)}
+.nb .dot{width:5px;height:5px;border-radius:50%;background:var(--text3)}.nb.active .dot{background:var(--bord2);box-shadow:0 0 8px var(--bord2)}
 .sync-area{margin-left:auto;display:flex;align-items:center;gap:8px}
-.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--text3)}
-.sync-dot.ok{background:var(--green);box-shadow:0 0 6px var(--green)}
-.sync-dot.syncing{background:var(--yellow);animation:pulse 1s infinite}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--text3)}.sdot.ok{background:var(--green);box-shadow:0 0 6px var(--green)}.sdot.syncing{background:var(--yellow);animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.sync-text{font-size:10px;color:var(--text3)}
-.sync-btn{background:none;border:1px solid var(--border2);border-radius:4px;color:var(--text3);font-size:10px;padding:2px 8px;cursor:pointer;font-family:var(--sans)}
-.sync-btn:hover{border-color:var(--bord);color:var(--bord2)}
-.user-chip{display:flex;align-items:center;gap:7px;margin-left:12px;padding:3px 10px 3px 3px;border-radius:20px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;transition:all .15s}
-.user-chip:hover{border-color:var(--border2)}
-.user-ava{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-family:var(--mono)}
-.user-name{font-size:11px;font-weight:600;color:var(--text2)}
-.content{flex:1;overflow:auto;background:var(--bg)}
+.stxt{font-size:10px;color:var(--text3)}
+.sbtn{background:none;border:1px solid var(--border2);border-radius:4px;color:var(--text3);font-size:10px;padding:2px 8px;cursor:pointer}
+.sbtn:hover{border-color:var(--bord2);color:var(--bord2)}
+.uchip{display:flex;align-items:center;gap:7px;margin-left:12px;padding:3px 10px 3px 3px;border-radius:20px;border:1px solid var(--border);background:var(--bg3);cursor:pointer}
+.uava{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-family:var(--mono)}
+.uname{font-size:11px;font-weight:600;color:var(--text2)}
+.content{flex:1;overflow:auto}
 .page{display:none;padding:20px}.page.active{display:block}
-
 /* PERIOD */
-.period-bar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
-.period-dates{display:flex;align-items:center;gap:6px}
-.pdate-wrap{display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 11px;transition:border-color .15s}
-.pdate-wrap:hover{border-color:var(--bord)}
-.pdate-input{background:transparent;border:none;outline:none;color:var(--text2);font-size:11px;font-family:var(--mono);cursor:pointer;width:110px}
-.pdate-input::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:pointer}
+.pbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.pdates{display:flex;align-items:center;gap:6px}
+.pdw{display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 11px}
+.pdi{background:transparent;border:none;outline:none;color:var(--text2);font-size:11px;font-family:var(--mono);cursor:pointer;width:110px}
+.pdi::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:pointer}
 .pdash{color:var(--text3)}
-.period-btns{display:flex;gap:3px;flex-wrap:wrap}
-.pb{padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;transition:all .15s;font-family:var(--sans);font-weight:500}
-.pb:hover{border-color:var(--border2);color:var(--text2)}.pb.active{background:var(--bord-dim);border-color:var(--bord2);color:var(--bord2)}
-
+.pbtns{display:flex;gap:3px}
+.pb{padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;font-family:var(--sans);font-weight:500}
+.pb:hover{color:var(--text2)}.pb.active{background:var(--bord-dim);border-color:var(--bord2);color:var(--bord2)}
 /* KPI */
-.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:18px}
-.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:22px;position:relative;overflow:hidden;transition:border-color .2s}
-.kpi:hover{border-color:var(--border2)}
+.krow{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:18px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:22px;position:relative;overflow:hidden}
 .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--bord),var(--bord2))}
-.kpi-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:700}
-.kpi-val{font-size:42px;font-weight:800;color:#fff;line-height:1;font-family:var(--mono);transition:color .3s}
-
-/* DASH GRID */
-.dash-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:12px;margin-bottom:12px}
+.klab{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:700}
+.kval{font-size:42px;font-weight:800;color:#fff;line-height:1;font-family:var(--mono)}
+/* DASH */
+.dgrid{display:grid;grid-template-columns:1.5fr 1fr;gap:12px;margin-bottom:12px}
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
-.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.card-title{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px}
-.card-link{font-size:11px;color:var(--bord2);cursor:pointer;font-weight:500}.card-link:hover{color:var(--bord3)}
+.chdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.ctit{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px}
+.clnk{font-size:11px;color:var(--bord2);cursor:pointer}.clnk:hover{color:var(--bord3)}
 .zrow{display:grid;grid-template-columns:8px auto 1fr auto;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}
 .zrow:last-child{border:none}
 .zdot{width:7px;height:7px;border-radius:50%}
 .zgeo{font-size:10px;font-weight:700;padding:1px 7px;border-radius:3px;white-space:nowrap;font-family:var(--mono)}
-.geo-PL{background:#0d1a2e;color:#5090e0;border:1px solid #1a3060}
-.geo-PLUA{background:#1a0d2e;color:#9070e0;border:1px solid #2a1a50}
+.gpl{background:#0d1a2e;color:#5090e0;border:1px solid #1a3060}.gplua{background:#1a0d2e;color:#9070e0;border:1px solid #2a1a50}
 .zname{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.zbud{color:var(--yellow);font-size:11px;white-space:nowrap;font-family:var(--mono)}
-.bar-row{margin-bottom:10px}
-.bar-hdr{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;align-items:center}
-.bar-track{height:5px;background:var(--bg4);border-radius:3px}
-.bar-fill{height:100%;border-radius:3px;transition:width .5s}
+.zbud{color:var(--yellow);font-size:11px;font-family:var(--mono)}
+.brow{margin-bottom:10px}
+.bhdr{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px}
+.btrk{height:5px;background:var(--bg4);border-radius:3px}
+.bfill{height:100%;border-radius:3px;transition:width .5s}
 .tmini{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
 .tmini:last-child{border:none}
-.tpbar{width:3px;height:28px;border-radius:2px;flex-shrink:0}
+.tpb{width:3px;height:28px;border-radius:2px;flex-shrink:0}
 .tmt{flex:1;font-weight:500}
 .tms{font-size:10px;padding:2px 7px;border-radius:3px;font-weight:600}
 .ts-todo{background:var(--bg4);color:var(--text3)}.ts-proc{background:var(--yellow-bg);color:var(--yellow)}
 .tma{font-size:10px;color:var(--text3);background:var(--bg4);padding:2px 6px;border-radius:10px;border:1px solid var(--border)}
-
 /* CHART */
-.chart-wrap{position:relative}
-.chart-canvas{display:block;width:100%;cursor:crosshair}
-.chart-tooltip{position:absolute;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:8px 12px;font-size:11px;pointer-events:none;display:none;z-index:10;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
-.chart-tooltip strong{color:#fff;font-weight:700;display:block;margin-bottom:5px}
-.ct-row{display:flex;justify-content:space-between;gap:16px;margin-bottom:2px}
-.ct-label{color:var(--text3)}.ct-val{font-family:var(--mono);font-weight:600}
-
+.cwrap{position:relative}
+.ccanv{display:block;width:100%;cursor:crosshair}
+.ctt{position:absolute;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:8px 12px;font-size:11px;pointer-events:none;display:none;z-index:10;min-width:150px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.ctt strong{color:#fff;display:block;margin-bottom:4px}
+.ctrow{display:flex;justify-content:space-between;gap:16px;margin-bottom:2px}
+.ctl{color:var(--text3)}.ctv{font-family:var(--mono);font-weight:600}
 /* ZALIVS */
-.filter-header{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
-.filter-header-title{font-size:18px;font-weight:800;color:#fff}
-.filter-header-count{font-size:13px;color:var(--bord2);font-weight:700;font-family:var(--mono)}
-.filter-bar{display:flex;align-items:center;gap:7px;margin-bottom:16px;flex-wrap:wrap}
-.fsel{padding:5px 26px 5px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;cursor:pointer;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235a5a70' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;font-family:var(--sans);font-weight:500}
-.fsel:hover{border-color:var(--bord2);color:var(--text)}.fsel option{background:var(--bg3)}
-.fsearch{padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:11px;outline:none;width:170px;font-family:var(--sans)}
-.fsearch:focus{border-color:var(--bord)}.fsearch::placeholder{color:var(--text3)}
-.btn-add{padding:6px 14px;border-radius:6px;border:1px solid var(--bord);background:var(--bord-dim);color:var(--bord2);font-size:11px;cursor:pointer;font-weight:700;transition:all .15s;margin-left:auto;font-family:var(--sans)}
-.btn-add:hover{background:var(--bord);color:#fff}
-.zt-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.fhdr{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
+.fhtit{font-size:18px;font-weight:800;color:#fff}
+.fhcnt{font-size:13px;color:var(--bord2);font-weight:700;font-family:var(--mono)}
+.fbar{display:flex;align-items:center;gap:7px;margin-bottom:16px;flex-wrap:wrap}
+.fsel{padding:5px 26px 5px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;cursor:pointer;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235a5a70' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;font-family:var(--sans)}
+.fsel option{background:var(--bg3)}
+.fsrch{padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:11px;outline:none;width:170px;font-family:var(--sans)}
+.fsrch:focus{border-color:var(--bord)}.fsrch::placeholder{color:var(--text3)}
+.badd{padding:6px 14px;border-radius:6px;border:1px solid var(--bord);background:var(--bord-dim);color:var(--bord2);font-size:11px;cursor:pointer;font-weight:700;margin-left:auto;font-family:var(--sans)}
+.badd:hover{background:var(--bord);color:#fff}
+.ztwrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .zt{width:100%;border-collapse:collapse}
 .zt th{padding:9px 10px;text-align:left;font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--border2);background:var(--bg3);white-space:nowrap}
 .zt td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:12px}
 .zt tr:last-child td{border-bottom:none}
-.row-profit td{background:rgba(46,160,67,.07)!important}.row-profit:hover td{background:rgba(46,160,67,.13)!important}
-.row-drop td{background:rgba(212,160,23,.07)!important}.row-drop:hover td{background:rgba(212,160,23,.13)!important}
-.row-off td{background:rgba(224,64,80,.07)!important}.row-off:hover td{background:rgba(224,64,80,.13)!important}
-.row-exp.row-profit td{background:rgba(46,160,67,.11)!important}
-.row-exp.row-drop td{background:rgba(212,160,23,.11)!important}
-.row-exp.row-off td{background:rgba(224,64,80,.11)!important}
-.ind-tumbler{display:inline-flex;border-radius:6px;overflow:hidden;border:1px solid var(--border2)}
-.ind-tb{padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;border:none;background:var(--bg4);color:var(--text3);font-family:var(--sans)}
-.ind-tb.active-profit{background:var(--green);color:#000}.ind-tb.active-drop{background:var(--yellow);color:#000}.ind-tb.active-off{background:var(--red);color:#fff}
-.geo-chip{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;white-space:nowrap;font-family:var(--mono)}
-.gc-pl{background:#0d1a2e;color:#5090e0;border:1px solid #1a3060}.gc-plua{background:#1a0d2e;color:#9070e0;border:1px solid #2a1a50}
-.rk-name{font-weight:700;color:#fff;font-size:12px;line-height:1.4;max-width:220px}
+.rp td{background:rgba(46,160,67,.07)!important}.rp:hover td{background:rgba(46,160,67,.13)!important}
+.rd td{background:rgba(212,160,23,.07)!important}.rd:hover td{background:rgba(212,160,23,.13)!important}
+.ro td{background:rgba(224,64,80,.07)!important}.ro:hover td{background:rgba(224,64,80,.13)!important}
+.rex.rp td{background:rgba(46,160,67,.11)!important}.rex.rd td{background:rgba(212,160,23,.11)!important}.rex.ro td{background:rgba(224,64,80,.11)!important}
+.ind-t{display:inline-flex;border-radius:6px;overflow:hidden;border:1px solid var(--border2)}
+.itb{padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;border:none;background:var(--bg4);color:var(--text3);font-family:var(--sans)}
+.ap{background:var(--green);color:#000}.ad{background:var(--yellow);color:#000}.ao{background:var(--red);color:#fff}
+.gchip{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;font-family:var(--mono)}
+.rkn{font-weight:700;color:#fff;font-size:12px;line-height:1.4;max-width:220px}
 .spb{width:26px;height:26px;border-radius:5px;border:1px solid var(--border2);background:var(--bg5);color:var(--text3);font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono)}
-.spb.s0{border-color:var(--red);background:var(--red-bg);color:var(--red)}
-.spb.s1{border-color:#c03020;background:#2a0e08;color:#e06040}
-.spb.s2{border-color:#c06020;background:#2a1808;color:#e08040}
-.spb.s3{border-color:var(--yellow);background:var(--yellow-bg);color:var(--yellow)}
-.spb.s4{border-color:#80c040;background:#182808;color:#90d050}
-.spb.s5{border-color:var(--green);background:var(--green-bg);color:var(--green)}
-.spb.s6{border-color:#00ffaa;background:#003322;color:#00ffaa}
-.status-sel{padding:2px 22px 2px 8px;border-radius:4px;border:1px solid var(--border2);background:var(--bg4);color:var(--text2);font-size:11px;cursor:pointer;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' fill='none'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%235a5a70' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;font-family:var(--sans);font-weight:600}
-.s-check{border-color:#4a3a10!important;color:var(--yellow)!important;background:var(--yellow-bg)!important}
-.s-scale{border-color:#1a3060!important;color:var(--blue)!important;background:var(--blue-bg)!important}
-.s-off{border-color:#4a1010!important;color:var(--red)!important;background:var(--red-bg)!important}
-.s-test{border-color:#1a4a22!important;color:var(--green)!important;background:var(--green-bg)!important}
-.s-proliw{border-color:var(--bord)!important;color:var(--bord2)!important;background:var(--bord-dim)!important}
-.s-perezaliw{border-color:#3a2a5a!important;color:var(--purple)!important;background:#1a0d2e!important}
-.budg{color:var(--yellow);font-weight:700;white-space:nowrap;font-family:var(--mono)}
+.s0{border-color:var(--red);background:var(--red-bg);color:var(--red)}.s1{border-color:#c03020;background:#2a0e08;color:#e06040}.s2{border-color:#c06020;background:#2a1808;color:#e08040}.s3{border-color:var(--yellow);background:var(--yellow-bg);color:var(--yellow)}.s4{border-color:#80c040;background:#182808;color:#90d050}.s5{border-color:var(--green);background:var(--green-bg);color:var(--green)}.s6{border-color:#00ffaa;background:#003322;color:#00ffaa}
+.ssel{padding:2px 22px 2px 8px;border-radius:4px;border:1px solid var(--border2);background:var(--bg4);color:var(--text2);font-size:11px;cursor:pointer;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' fill='none'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%235a5a70' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;font-family:var(--sans);font-weight:600}
+.sc{border-color:#4a3a10!important;color:var(--yellow)!important;background:var(--yellow-bg)!important}
+.ss{border-color:#1a3060!important;color:var(--blue)!important;background:var(--blue-bg)!important}
+.so{border-color:#4a1010!important;color:var(--red)!important;background:var(--red-bg)!important}
+.st{border-color:#1a4a22!important;color:var(--green)!important;background:var(--green-bg)!important}
+.sp{border-color:var(--bord)!important;color:var(--bord2)!important;background:var(--bord-dim)!important}
+.sz{border-color:#3a2a5a!important;color:var(--purple)!important;background:#1a0d2e!important}
+.budg{color:var(--yellow);font-weight:700;font-family:var(--mono)}
 .budg small{color:var(--text3);font-size:10px;font-weight:400}
-.domain-link{color:var(--blue);font-size:11px;text-decoration:none;font-family:var(--mono)}
-.creo-wrap{display:flex;flex-direction:column;gap:2px;min-width:80px}
-.creo-tag{font-size:10px;font-family:var(--mono);color:var(--purple);cursor:pointer}
-.creo-add-btn{font-size:10px;color:var(--text3);cursor:pointer;border:none;background:none;font-family:var(--sans);text-align:left}
-.creo-add-btn:hover{color:var(--bord2)}
-.bf-cell{display:flex;flex-direction:column;gap:1px}
-.bf-buyer{font-size:12px;font-weight:600}.bf-sep{font-size:9px;color:var(--text3);margin:1px 0}.bf-funnel{font-size:11px;color:var(--text2)}
-.exp-row td{padding:0!important;background:transparent!important}
-.exp-inner{padding:14px 16px;display:grid;grid-template-columns:1.2fr 1fr;gap:12px;border-top:1px solid var(--bord-dim)}
-.exp-block{background:var(--bg4);border-radius:7px;padding:12px}
-.exp-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;font-weight:700}
-.goal-tag{display:inline-block;background:var(--bord-dim);border:1px solid var(--bord);color:var(--bord2);border-radius:3px;padding:2px 7px;font-size:11px;margin:2px 2px 2px 0}
-.ins-ta{width:100%;background:var(--bg5);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-size:12px;padding:7px 9px;resize:none;outline:none;font-family:var(--sans);min-height:60px}
-.ins-ta:focus{border-color:var(--bord)}
-.edit-fi{width:100%;padding:5px 8px;border-radius:4px;border:1px solid var(--border2);background:var(--bg5);color:var(--text);font-size:12px;outline:none;font-family:var(--sans)}
-.edit-fi:focus{border-color:var(--bord)}
-.edit-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
-.edit-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px;font-weight:700}
-.save-row{display:flex;justify-content:space-between;margin-top:8px}
-.save-btn{padding:5px 14px;border-radius:5px;border:1px solid var(--bord2);background:var(--bord-dim);color:var(--bord2);font-size:11px;cursor:pointer;font-weight:700;font-family:var(--sans)}
-.save-btn:hover{background:var(--bord);color:#fff}
-.del-btn{padding:5px 12px;border-radius:5px;border:1px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11px;cursor:pointer;font-family:var(--sans)}
-.del-btn:hover{background:var(--red);color:#fff}
-.rk-mono{font-family:var(--mono);font-size:11px;color:var(--text3);background:var(--bg5);padding:5px 8px;border-radius:4px;margin-top:8px}
-
-/* SALES PAGE */
-.sales-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
-.sales-kpi-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px 28px;position:relative;overflow:hidden}
-.sales-kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--bord),var(--bord2))}
-.sales-kpi-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700}
-.sales-kpi-val{font-size:52px;font-weight:800;color:#fff;line-height:1;font-family:var(--mono)}
-.sales-kpi-sub{font-size:12px;color:var(--text3);margin-top:6px}
-.sales-sources{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:20px}
-.src-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;transition:border-color .2s}
-.src-card:hover{border-color:var(--border2)}
-.src-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-.src-name{font-size:12px;font-weight:700;color:var(--text)}
-.src-count{font-size:10px;color:var(--text3);background:var(--bg4);padding:2px 8px;border-radius:10px;font-family:var(--mono)}
-.src-amount{font-size:24px;font-weight:800;color:var(--yellow);font-family:var(--mono)}
-.src-sub{font-size:11px;color:var(--text3);margin-top:3px}
-.sales-list{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.sale-row{display:grid;grid-template-columns:40px 1fr auto auto auto;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px}
-.sale-row:last-child{border:none}
-.sale-row:hover{background:var(--bg3)}
-.sale-ava{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:var(--mono);background:var(--bord-dim);color:var(--bord2);border:1px solid var(--bord);flex-shrink:0}
-.sale-name{font-weight:600;color:#fff}
-.sale-date{font-size:11px;color:var(--text3);font-family:var(--mono)}
-.sale-src{font-size:10px;padding:2px 8px;border-radius:4px;background:var(--bg4);color:var(--text3);border:1px solid var(--border);white-space:nowrap}
-.sale-amount{font-weight:700;color:var(--yellow);font-family:var(--mono);white-space:nowrap}
-
+.dlnk{color:var(--blue);font-size:11px;text-decoration:none;font-family:var(--mono)}
+.cwrp{display:flex;flex-direction:column;gap:2px;min-width:80px}
+.ctag{font-size:10px;font-family:var(--mono);color:var(--purple)}
+.cadd{font-size:10px;color:var(--text3);cursor:pointer;border:none;background:none;font-family:var(--sans);text-align:left}
+.cadd:hover{color:var(--bord2)}
+.exrow td{padding:0!important;background:transparent!important}
+.exin{padding:14px 16px;display:grid;grid-template-columns:1.2fr 1fr;gap:12px;border-top:1px solid var(--bord-dim)}
+.exbl{background:var(--bg4);border-radius:7px;padding:12px}
+.exlb{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;font-weight:700}
+.gtag{display:inline-block;background:var(--bord-dim);border:1px solid var(--bord);color:var(--bord2);border-radius:3px;padding:2px 7px;font-size:11px;margin:2px 2px 2px 0}
+.insta{width:100%;background:var(--bg5);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-size:12px;padding:7px 9px;resize:none;outline:none;font-family:var(--sans);min-height:60px}
+.insta:focus{border-color:var(--bord)}
+.efi{width:100%;padding:5px 8px;border-radius:4px;border:1px solid var(--border2);background:var(--bg5);color:var(--text);font-size:12px;outline:none;font-family:var(--sans)}
+.efi:focus{border-color:var(--bord)}
+.erow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.elb{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px;font-weight:700}
+.srow{display:flex;justify-content:space-between;margin-top:8px}
+.sbsv{padding:5px 14px;border-radius:5px;border:1px solid var(--bord2);background:var(--bord-dim);color:var(--bord2);font-size:11px;cursor:pointer;font-weight:700;font-family:var(--sans)}
+.sbsv:hover{background:var(--bord);color:#fff}
+.sbdl{padding:5px 12px;border-radius:5px;border:1px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11px;cursor:pointer;font-family:var(--sans)}
+.sbdl:hover{background:var(--red);color:#fff}
+.rkm{font-family:var(--mono);font-size:11px;color:var(--text3);background:var(--bg5);padding:5px 8px;border-radius:4px;margin-top:8px}
+/* SALES */
+.skrow{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.skc{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px 28px;position:relative;overflow:hidden}
+.skc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--bord),var(--bord2))}
+.sklb{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700}
+.skvl{font-size:52px;font-weight:800;color:#fff;line-height:1;font-family:var(--mono)}
+.sksb{font-size:12px;color:var(--text3);margin-top:6px}
+.ssrcs{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:20px}
+.ssrc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.ssrc:hover{border-color:var(--border2)}
+.sstop{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.ssn{font-size:12px;font-weight:700;color:var(--text)}
+.sscnt{font-size:10px;color:var(--text3);background:var(--bg4);padding:2px 8px;border-radius:10px;font-family:var(--mono)}
+.ssamt{font-size:24px;font-weight:800;color:var(--yellow);font-family:var(--mono)}
+.sssub{font-size:11px;color:var(--text3);margin-top:3px}
+.slst{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.slrow{display:grid;grid-template-columns:40px 1fr auto auto auto;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px}
+.slrow:last-child{border:none}.slrow:hover{background:var(--bg3)}
+.slava{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:var(--mono);background:var(--bord-dim);color:var(--bord2);border:1px solid var(--bord);flex-shrink:0}
+.slnm{font-weight:600;color:#fff}
+.sldt{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.slsr{font-size:10px;padding:2px 8px;border-radius:4px;background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
+.slam{font-weight:700;color:var(--yellow);font-family:var(--mono)}
 /* DOMAINS */
-.dom-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.dom-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;transition:border-color .2s;display:flex;flex-direction:column;gap:7px}
-.dom-card:hover{border-color:var(--border2)}
-.dom-top{display:flex;align-items:center;gap:8px}
-.dom-url{color:var(--blue);font-size:12px;font-weight:600;text-decoration:none;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono)}
-.dom-led{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.led-on{background:var(--green);box-shadow:0 0 5px var(--green)}.led-off{background:var(--text3)}
-.dom-desc{font-size:12px;color:var(--text2)}
-.dom-footer{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.funnel-chip{font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
-
+.dgr{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:7px}
+.dc:hover{border-color:var(--border2)}
+.dctop{display:flex;align-items:center;gap:8px}
+.dcurl{color:var(--blue);font-size:12px;font-weight:600;text-decoration:none;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono)}
+.dled{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.lon{background:var(--green);box-shadow:0 0 5px var(--green)}.loff{background:var(--text3)}
+.ddsc{font-size:12px;color:var(--text2)}
+.dftr{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.fchip{font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
 /* TASKS */
 .kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-items:start}
-.k-col{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;min-height:200px}
-.k-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
-.k-title{font-size:11px;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:7px;text-transform:uppercase;letter-spacing:.5px}
-.k-ind{width:8px;height:8px;border-radius:50%}
-.k-cnt{background:var(--bg4);border:1px solid var(--border);border-radius:8px;padding:0 7px;font-size:11px;color:var(--text3);font-family:var(--mono)}
-.t-card{background:var(--bg3);border:1px solid var(--border);border-left:3px solid transparent;border-radius:7px;padding:10px 12px;margin-bottom:7px;cursor:grab;transition:all .15s;user-select:none}
-.t-card:hover{border-color:var(--border2);box-shadow:0 2px 8px rgba(0,0,0,.3)}
-.t-card.dragging{opacity:.4;cursor:grabbing}
-.t-card.drag-over{border-left-color:var(--bord2);background:rgba(181,34,64,.06)}
-.tc-high{border-left-color:var(--red)!important}.tc-mid{border-left-color:var(--yellow)!important}.tc-low{border-left-color:var(--green)!important}
-.t-name{font-size:12px;font-weight:600;color:#fff;margin-bottom:8px;line-height:1.4}
-.t-foot{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
-.t-pr-badge{font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 7px;border-radius:12px;text-transform:uppercase;cursor:pointer}
-.pr-high{background:var(--red-bg);color:var(--red);border:1px solid var(--red)}
-.pr-mid{background:var(--yellow-bg);color:var(--yellow);border:1px solid var(--yellow)}
-.pr-low{background:var(--green-bg);color:var(--green);border:1px solid var(--green)}
-.t-who{font-size:10px;color:var(--text3);background:var(--bg5);padding:2px 7px;border-radius:10px;border:1px solid var(--border)}
-.t-dl{font-size:10px;color:var(--text3);font-family:var(--mono)}.t-dl.ov{color:var(--red)}
-.t-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:0;margin-left:auto;opacity:0;transition:opacity .15s}
-.t-card:hover .t-del{opacity:1}.t-del:hover{color:var(--red)}
-.k-add{width:100%;background:none;border:1px dashed var(--border2);border-radius:6px;color:var(--text3);padding:6px;font-size:11px;cursor:pointer;font-family:var(--sans);margin-top:4px}
-.k-add:hover{border-color:var(--bord);color:var(--bord2)}
-/* quick task input */
-.k-quick{display:none;margin-top:6px}
-.k-quick.open{display:block}
-.k-quick-inp{width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--bord);background:var(--bg3);color:var(--text);font-size:12px;outline:none;font-family:var(--sans);margin-bottom:6px}
-.k-quick-foot{display:flex;gap:6px}
-.k-quick-save{flex:1;padding:5px;border-radius:5px;border:none;background:var(--bord-dim);color:var(--bord2);font-size:11px;cursor:pointer;font-weight:700;font-family:var(--sans);border:1px solid var(--bord2)}
-.k-quick-save:hover{background:var(--bord);color:#fff}
-.k-quick-cancel{padding:5px 10px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;font-family:var(--sans)}
-
+.kcol{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;min-height:200px}
+.kchdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.kctit{font-size:11px;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:7px;text-transform:uppercase;letter-spacing:.5px}
+.kcind{width:8px;height:8px;border-radius:50%}
+.kccnt{background:var(--bg4);border:1px solid var(--border);border-radius:8px;padding:0 7px;font-size:11px;color:var(--text3);font-family:var(--mono)}
+.tcard{background:var(--bg3);border:1px solid var(--border);border-left:3px solid transparent;border-radius:7px;padding:10px 12px;margin-bottom:7px;cursor:grab;user-select:none}
+.tcard:hover{border-color:var(--border2)}.tcard.dragging{opacity:.4}
+.tcard.dov{border-left-color:var(--bord2)!important;background:rgba(181,34,64,.06)}
+.th{border-left-color:var(--red)!important}.tm{border-left-color:var(--yellow)!important}.tl{border-left-color:var(--green)!important}
+.tnm{font-size:12px;font-weight:600;color:#fff;margin-bottom:8px;line-height:1.4}
+.tft{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.tpr{font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 7px;border-radius:12px;text-transform:uppercase;cursor:pointer;border:1px solid}
+.ph{background:var(--red-bg);color:var(--red);border-color:var(--red)}.pm{background:var(--yellow-bg);color:var(--yellow);border-color:var(--yellow)}.pl{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+.two{font-size:10px;color:var(--text3);background:var(--bg5);padding:2px 7px;border-radius:10px;border:1px solid var(--border)}
+.tdl{font-size:10px;color:var(--text3);font-family:var(--mono)}.tdl.ov{color:var(--red)}
+.tdel{background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:0;margin-left:auto;opacity:0}
+.tcard:hover .tdel{opacity:1}.tdel:hover{color:var(--red)}
+.kadd{width:100%;background:none;border:1px dashed var(--border2);border-radius:6px;color:var(--text3);padding:6px;font-size:11px;cursor:pointer;font-family:var(--sans);margin-top:4px}
+.kadd:hover{border-color:var(--bord);color:var(--bord2)}
+.kqwrap{display:none;margin-top:6px}.kqwrap.open{display:block}
+.kqinp{width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--bord);background:var(--bg3);color:var(--text);font-size:12px;outline:none;font-family:var(--sans);margin-bottom:6px}
+.kqfoot{display:flex;gap:6px}
+.kqsv{flex:1;padding:5px;border-radius:5px;border:1px solid var(--bord2);background:var(--bord-dim);color:var(--bord2);font-size:11px;cursor:pointer;font-weight:700;font-family:var(--sans)}
+.kqsv:hover{background:var(--bord);color:#fff}
+.kqcn{padding:5px 10px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;font-family:var(--sans)}
 /* JOURNAL */
-.j-layout{display:grid;grid-template-columns:240px 1fr;height:calc(100vh - 46px);overflow:hidden;margin:-20px}
-.j-sb{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-.j-sb-top{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;gap:6px}
-.j-sb-btn{flex:1;padding:5px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;cursor:pointer;font-family:var(--sans);font-weight:600}
-.j-sb-btn:hover{border-color:var(--bord);color:var(--bord2)}
-.j-tree{flex:1;overflow-y:auto;padding:8px 0}
-.j-group{padding:7px 14px 3px;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:8px;display:flex;align-items:center;justify-content:space-between;font-weight:700}
-.j-group-btns{display:flex;gap:3px}
-.j-group-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:0 3px}
-.j-group-btn:hover{color:var(--bord2)}
-.j-item{display:flex;align-items:center;gap:6px;padding:5px 12px 5px 14px;font-size:12px;cursor:pointer;color:var(--text2);border-left:2px solid transparent;transition:all .15s;white-space:nowrap;overflow:hidden;font-weight:500}
-.j-item:hover{background:var(--bg3);color:var(--text)}.j-item.active{background:rgba(181,34,64,.08);color:#fff;border-left-color:var(--bord2)}
-.j-item-child{padding-left:26px}
-.j-item-actions{margin-left:auto;display:flex;gap:2px;opacity:0}
-.j-item:hover .j-item-actions{opacity:1}
-.j-ia-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:2px 4px;border-radius:3px}
-.j-ia-btn:hover{color:var(--red)}
-.j-main{display:flex;flex-direction:column;overflow:hidden}
-.j-tb{display:flex;gap:3px;padding:8px 14px;border-bottom:1px solid var(--border);background:var(--bg2);flex-wrap:wrap;align-items:center}
-.j-tbtn{padding:3px 9px;border-radius:4px;border:1px solid transparent;background:transparent;color:var(--text2);font-size:11px;cursor:pointer;font-family:var(--mono);font-weight:600}
-.j-tbtn:hover{background:var(--bg4);color:var(--text);border-color:var(--border)}
-.j-tabs{display:flex;padding:0 16px;border-bottom:1px solid var(--border);background:var(--bg2)}
-.j-tab{padding:7px 14px;font-size:11px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-1px;font-weight:600}
-.j-tab.active{color:var(--text);border-bottom-color:var(--bord2)}
-.j-edit-area{flex:1;padding:20px 26px;overflow-y:auto;display:flex;flex-direction:column}
-.j-doc-title{font-size:22px;font-weight:800;color:#fff;border:none;background:none;outline:none;width:100%;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);font-family:var(--sans)}
-.j-doc-title::placeholder{color:var(--text3)}
-.j-ta{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:13px;line-height:1.85;resize:none;font-family:var(--sans);min-height:300px}
-.j-prev-area{flex:1;overflow-y:auto;padding:20px 26px}
-.j-prev h2{font-size:17px;font-weight:700;color:#e8e8f0;margin:16px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--border)}
-.j-prev h3{font-size:14px;font-weight:700;color:var(--text2);margin:12px 0 6px}
-.j-prev table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px}
-.j-prev th{background:var(--bg4);border:1px solid var(--border2);padding:6px 10px;text-align:left;font-weight:700;color:var(--text2);font-size:11px;text-transform:uppercase}
-.j-prev td{border:1px solid var(--border);padding:6px 10px}
-.j-prev ul,.j-prev ol{padding-left:20px;margin:6px 0}.j-prev li{margin-bottom:4px}
-.j-prev strong{color:#fff;font-weight:700}.j-prev em{color:var(--text2)}
-.j-prev code{background:var(--bg4);border-radius:3px;padding:1px 6px;font-family:var(--mono);font-size:11px;color:var(--bord2)}
-.j-prev hr{border:none;border-top:1px solid var(--border);margin:14px 0}
-.j-prev blockquote{border-left:3px solid var(--bord);padding-left:14px;color:var(--text2);margin:8px 0;font-style:italic}
-
-/* MODALS */
+.jlay{display:grid;grid-template-columns:240px 1fr;height:calc(100vh - 46px);overflow:hidden;margin:-20px}
+.jsb{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.jsbtop{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;gap:6px}
+.jsbbtn{flex:1;padding:5px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;cursor:pointer;font-family:var(--sans);font-weight:600}
+.jsbbtn:hover{border-color:var(--bord);color:var(--bord2)}
+.jtree{flex:1;overflow-y:auto;padding:8px 0}
+.jgrp{padding:7px 14px 3px;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:8px;display:flex;align-items:center;justify-content:space-between;font-weight:700}
+.jgbtns{display:flex;gap:3px}
+.jgbtn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:0 3px}.jgbtn:hover{color:var(--bord2)}
+.jitem{display:flex;align-items:center;gap:6px;padding:5px 12px 5px 14px;font-size:12px;cursor:pointer;color:var(--text2);border-left:2px solid transparent;white-space:nowrap;overflow:hidden;font-weight:500}
+.jitem:hover{background:var(--bg3);color:var(--text)}.jitem.active{background:rgba(181,34,64,.08);color:#fff;border-left-color:var(--bord2)}
+.jich{padding-left:26px}
+.jiact{margin-left:auto;display:flex;gap:2px;opacity:0}.jitem:hover .jiact{opacity:1}
+.jiab{background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:2px 4px}.jiab:hover{color:var(--red)}
+.jmain{display:flex;flex-direction:column;overflow:hidden}
+.jtb{display:flex;gap:3px;padding:8px 14px;border-bottom:1px solid var(--border);background:var(--bg2);flex-wrap:wrap;align-items:center}
+.jtbtn{padding:3px 9px;border-radius:4px;border:1px solid transparent;background:transparent;color:var(--text2);font-size:11px;cursor:pointer;font-family:var(--mono);font-weight:600}
+.jtbtn:hover{background:var(--bg4);color:var(--text);border-color:var(--border)}
+.jtabs{display:flex;padding:0 16px;border-bottom:1px solid var(--border);background:var(--bg2)}
+.jtab{padding:7px 14px;font-size:11px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-1px;font-weight:600}
+.jtab.active{color:var(--text);border-bottom-color:var(--bord2)}
+.jea{flex:1;padding:20px 26px;overflow-y:auto;display:flex;flex-direction:column}
+.jdtit{font-size:22px;font-weight:800;color:#fff;border:none;background:none;outline:none;width:100%;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);font-family:var(--sans)}
+.jdtit::placeholder{color:var(--text3)}
+.jta{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:13px;line-height:1.85;resize:none;font-family:var(--sans);min-height:300px}
+.jpa{flex:1;overflow-y:auto;padding:20px 26px}
+.jprev h2{font-size:17px;font-weight:700;color:#e8e8f0;margin:16px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--border)}
+.jprev h3{font-size:14px;font-weight:700;color:var(--text2);margin:12px 0 6px}
+.jprev table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px}
+.jprev th{background:var(--bg4);border:1px solid var(--border2);padding:6px 10px;text-align:left;font-weight:700;color:var(--text2);font-size:11px}
+.jprev td{border:1px solid var(--border);padding:6px 10px}
+.jprev ul,.jprev ol{padding-left:20px;margin:6px 0}.jprev li{margin-bottom:4px}
+.jprev strong{color:#fff}.jprev em{color:var(--text2)}
+.jprev code{background:var(--bg4);border-radius:3px;padding:1px 6px;font-family:var(--mono);font-size:11px;color:var(--bord2)}
+.jprev hr{border:none;border-top:1px solid var(--border);margin:14px 0}
+.jprev blockquote{border-left:3px solid var(--bord);padding-left:14px;color:var(--text2);margin:8px 0;font-style:italic}
+/* MODAL */
 .mo{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:400;backdrop-filter:blur(2px)}
 .mo.open{display:flex}
-.mo-box{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:24px;width:520px;max-height:88vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.5)}
-.mo-title{font-size:15px;font-weight:800;color:var(--bord2);margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
-.mo-x{background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer}.mo-x:hover{color:#fff}
+.mob{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:24px;width:520px;max-height:88vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.5)}
+.motit{font-size:15px;font-weight:800;color:var(--bord2);margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+.mox{background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer}.mox:hover{color:#fff}
 .fl{margin-bottom:12px}
 .fl label{display:block;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;font-weight:700}
 .fi{width:100%;padding:7px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;outline:none;font-family:var(--sans)}
 .fi:focus{border-color:var(--bord)}
 .fl2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-.go-wrap{display:flex;gap:7px}
+.gowrap{display:flex;gap:7px}
 .go{padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;font-size:12px;display:flex;align-items:center;gap:6px;color:var(--text2);font-weight:500}
 .go:hover{border-color:var(--border2);color:var(--text)}.go.sel{border-color:var(--bord2);background:var(--bord-dim);color:var(--bord2)}
 .gr{display:flex;gap:5px;margin-bottom:5px}.gr .fi{flex:1}
-.rm-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:17px;padding:0 5px}.rm-btn:hover{color:var(--red)}
-.add-g{width:100%;background:none;border:1px dashed var(--border2);border-radius:5px;color:var(--text3);cursor:pointer;padding:6px;font-size:11px;font-family:var(--sans)}
-.add-g:hover{border-color:var(--bord);color:var(--bord2)}
-.rk-prv{font-family:var(--mono);font-size:11px;color:var(--text3);background:var(--bg4);padding:7px 10px;border-radius:4px;margin-top:6px;border-left:2px solid var(--bord)}
-.mo-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
-.btn-cancel{padding:7px 16px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--sans);font-weight:600}
-.btn-cancel:hover{border-color:var(--border3);color:var(--text)}
-.btn-save{padding:7px 16px;border-radius:6px;border:1px solid var(--bord2);background:var(--bord-dim);color:var(--bord2);font-size:12px;cursor:pointer;font-weight:700;font-family:var(--sans)}
-.btn-save:hover{background:var(--bord);color:#fff}
-.empty-state{text-align:center;padding:30px;color:var(--text3);font-size:13px}
-</style>
-<script>
-document.addEventListener("DOMContentLoaded", function() {
+.rmbtn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:17px;padding:0 5px}.rmbtn:hover{color:var(--red)}
+.addg{width:100%;background:none;border:1px dashed var(--border2);border-radius:5px;color:var(--text3);cursor:pointer;padding:6px;font-size:11px;font-family:var(--sans)}
+.addg:hover{border-color:var(--bord);color:var(--bord2)}
+.rkpv{font-family:var(--mono);font-size:11px;color:var(--text3);background:var(--bg4);padding:7px 10px;border-radius:4px;margin-top:6px;border-left:2px solid var(--bord)}
+.mofoot{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.bcn{padding:7px 16px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--sans);font-weight:600}
+.bcn:hover{color:var(--text)}
+.bsv{padding:7px 16px;border-radius:6px;border:1px solid var(--bord2);background:var(--bord-dim);color:var(--bord2);font-size:12px;cursor:pointer;font-weight:700;font-family:var(--sans)}
+.bsv:hover{background:var(--bord);color:#fff}
+.empty{text-align:center;padding:30px;color:var(--text3);font-size:13px}
+</style>`)
 
-var USERS = {
-  illia: { name:'Illia', role:'Junior Buyer', initials:'IB', color:'var(--bord2)', bg:'rgba(181,34,64,.15)', border:'var(--bord)' },
-  danya: { name:'Danya', role:'Head of Marketing', initials:'DM', color:'#6090ff', bg:'rgba(64,128,255,.1)', border:'#1a3060' }
-};
-function login(userId) {
-  window._pendingLogin = userId;
-  var ls = document.getElementById('login-screen');
-  var app = document.getElementById('app');
-  if (ls) ls.style.display = 'none';
-  if (app) app.style.display = 'flex';
-  localStorage.setItem('jdl_user', userId);
-  if (window._loginReady) window._loginReady(userId);
-}
-function logout() {
-  localStorage.removeItem('jdl_user');
-  var ls = document.getElementById('login-screen');
-  var app = document.getElementById('app');
-  if (ls) { ls.style.display = 'flex'; ls.classList.remove('hidden'); }
-  if (app) app.style.display = 'none';
-}
-</script>
-</head>
-<body>
-
-<!-- LOGIN -->
-<div class="login-screen" id="login-screen">
-  <div class="login-logo">JDL <em>·</em> CRM</div>
-  <div class="login-sub">Traffic Team Dashboard</div>
-  <div class="login-cards">
-    <button type="button" class="login-card" onclick="login('illia')">
-      <div class="login-avatar" style="background:rgba(181,34,64,.15);color:var(--bord2);border-color:var(--bord)">IB</div>
-      <div class="login-name">Illia</div>
-      <div class="login-role">Junior Buyer</div>
-    </button>
-    <button type="button" class="login-card" onclick="login('danya')">
-      <div class="login-avatar" style="background:rgba(64,128,255,.1);color:#6090ff;border-color:#1a3060">DM</div>
-      <div class="login-name">Danya</div>
-      <div class="login-role">Head of Marketing</div>
-    </button>
+// ── RENDER APP HTML ──
+document.getElementById('root').innerHTML = `
+<div id="login">
+  <div class="l-logo">JDL <em>·</em> CRM</div>
+  <div class="l-sub">Traffic Team Dashboard</div>
+  <div class="l-cards">
+    <div class="l-card" id="btn-illia">
+      <div class="l-ava" style="background:rgba(181,34,64,.15);color:#b52240;border:2px solid #8b1a2e">IB</div>
+      <div class="l-name">Illia</div>
+      <div class="l-role">Junior Buyer</div>
+    </div>
+    <div class="l-card" id="btn-danya">
+      <div class="l-ava" style="background:rgba(64,128,255,.1);color:#6090ff;border:2px solid #1a3060">DM</div>
+      <div class="l-name">Danya</div>
+      <div class="l-role">Head of Marketing</div>
+    </div>
   </div>
 </div>
 
-<!-- APP -->
-<div class="app" id="app" style="display:none">
-<div class="topbar">
-  <div class="logo">JDL <em>·</em> CRM</div>
-  <nav class="nav">
-    <div class="nb active" onclick="gp('dash',this)"><span class="dot"></span>Dashboard</div>
-    <div class="nb" onclick="gp('zalivs',this)"><span class="dot"></span>Заливы</div>
-    <div class="nb" onclick="gp('domains',this)"><span class="dot"></span>Домены</div>
-    <div class="nb" onclick="gp('sales',this)"><span class="dot"></span>Sales</div>
-    <div class="nb" onclick="gp('tasks',this)"><span class="dot"></span>Tasks</div>
-    <div class="nb" onclick="gp('journal',this)"><span class="dot"></span>Журнал</div>
-  </nav>
-  <div class="sync-area">
-    <div class="sync-dot" id="sync-dot"></div>
-    <span class="sync-text" id="sync-text">—</span>
-    <button class="sync-btn" onclick="manualSync()">↻ Sync</button>
-  </div>
-  <div class="user-chip" onclick="logout()" title="Выйти">
-    <div class="user-ava" id="user-ava"></div>
-    <span class="user-name" id="user-name"></span>
-  </div>
-</div>
-
-<div class="content">
-
-<!-- DASHBOARD -->
-<div class="page active" id="page-dash">
-  <div class="period-bar">
-    <div class="period-dates">
-      <div class="pdate-wrap"><span style="font-size:13px">📅</span><input type="date" id="pd-from" class="pdate-input" onchange="onDateChange()"></div>
-      <span class="pdash">—</span>
-      <div class="pdate-wrap"><span style="font-size:13px">📅</span><input type="date" id="pd-to" class="pdate-input" onchange="onDateChange()"></div>
+<div id="app">
+  <div class="topbar">
+    <div class="logo">JDL <em>·</em> CRM</div>
+    <nav class="nav">
+      <div class="nb active" id="nb-dash"><span class="dot"></span>Dashboard</div>
+      <div class="nb" id="nb-zalivs"><span class="dot"></span>Заливы</div>
+      <div class="nb" id="nb-domains"><span class="dot"></span>Домены</div>
+      <div class="nb" id="nb-sales"><span class="dot"></span>Sales</div>
+      <div class="nb" id="nb-tasks"><span class="dot"></span>Tasks</div>
+      <div class="nb" id="nb-journal"><span class="dot"></span>Журнал</div>
+    </nav>
+    <div class="sync-area">
+      <div class="sdot" id="sdot"></div>
+      <span class="stxt" id="stxt">—</span>
+      <button class="sbtn" id="sync-btn">↻ Sync</button>
     </div>
-    <div class="period-btns">
-      <button class="pb active" id="pb-1" onclick="setPeriod(1,this)">1 день</button>
-      <button class="pb" onclick="setPeriod(3,this)">3 дня</button>
-      <button class="pb" onclick="setPeriod(7,this)">Неделя</button>
-      <button class="pb" onclick="setPeriod(14,this)">2 нед.</button>
-      <button class="pb" onclick="setPeriod(30,this)">Месяц</button>
-      <button class="pb" onclick="setPeriod(90,this)">Квартал</button>
-      <button class="pb" onclick="setPeriod(365,this)">Год</button>
-      <button class="pb" onclick="setPeriod(0,this)">Всё</button>
+    <div class="uchip" id="uchip">
+      <div class="uava" id="uava"></div>
+      <span class="uname" id="uname"></span>
     </div>
   </div>
-  <div class="kpi-row">
-    <div class="kpi"><div class="kpi-label">SPEND</div><div class="kpi-val" id="d-spend">—</div></div>
-    <div class="kpi"><div class="kpi-label">SPEND DAILY</div><div class="kpi-val" id="d-daily">—</div></div>
-    <div class="kpi"><div class="kpi-label">CPL</div><div class="kpi-val" id="d-cpl">—</div></div>
-    <div class="kpi"><div class="kpi-label">CQL</div><div class="kpi-val" id="d-cql">—</div></div>
-    <div class="kpi"><div class="kpi-label">ROI</div><div class="kpi-val" id="d-roi">—</div></div>
-    <div class="kpi"><div class="kpi-label">CTR AVG</div><div class="kpi-val" id="d-ctr">—</div></div>
-  </div>
-  <div class="dash-grid">
-    <div class="card">
-      <div class="card-hdr"><span class="card-title">Последние заливы</span><span class="card-link" onclick="gp('zalivs',document.querySelectorAll('.nb')[1])">Все →</span></div>
-      <div id="d-zalivs"><div class="empty-state">Загрузка...</div></div>
-    </div>
-    <div class="card">
-      <div class="card-hdr"><span class="card-title">Spend in Audience</span></div>
-      <div id="d-geo"></div>
-    </div>
-  </div>
-  <div class="card" style="margin-bottom:12px">
-    <div class="card-hdr"><span class="card-title">Активные задачи</span><span class="card-link" onclick="gp('tasks',document.querySelectorAll('.nb')[4])">Все →</span></div>
-    <div id="d-tasks"></div>
-  </div>
-  <div class="card">
-    <div class="card-hdr">
-      <span class="card-title">Динамика CPL / CQL / CTR</span>
-      <div style="display:flex;gap:10px">
-        <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:14px;height:2px;background:#4080ff;display:inline-block;border-radius:2px"></span>CPL</span>
-        <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:14px;height:2px;background:#d4a017;display:inline-block;border-radius:2px"></span>CQL</span>
-        <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:14px;height:2px;background:#2ea043;display:inline-block;border-radius:2px"></span>CTR</span>
+  <div class="content">
+    <div class="page active" id="page-dash">
+      <div class="pbar">
+        <div class="pdates">
+          <div class="pdw">📅<input type="date" class="pdi" id="pd-from"></div>
+          <span class="pdash">—</span>
+          <div class="pdw">📅<input type="date" class="pdi" id="pd-to"></div>
+        </div>
+        <div class="pbtns">
+          <button class="pb active" data-days="1">1 день</button>
+          <button class="pb" data-days="3">3 дня</button>
+          <button class="pb" data-days="7">Неделя</button>
+          <button class="pb" data-days="14">2 нед.</button>
+          <button class="pb" data-days="30">Месяц</button>
+          <button class="pb" data-days="90">Квартал</button>
+          <button class="pb" data-days="365">Год</button>
+          <button class="pb" data-days="0">Всё</button>
+        </div>
+      </div>
+      <div class="krow">
+        <div class="kpi"><div class="klab">SPEND</div><div class="kval" id="d-spend">—</div></div>
+        <div class="kpi"><div class="klab">SPEND DAILY</div><div class="kval" id="d-daily">—</div></div>
+        <div class="kpi"><div class="klab">CPL</div><div class="kval" id="d-cpl">—</div></div>
+        <div class="kpi"><div class="klab">CQL</div><div class="kval" id="d-cql">—</div></div>
+        <div class="kpi"><div class="klab">ROI</div><div class="kval" id="d-roi">—</div></div>
+        <div class="kpi"><div class="klab">CTR AVG</div><div class="kval" id="d-ctr">—</div></div>
+      </div>
+      <div class="dgrid">
+        <div class="card">
+          <div class="chdr"><span class="ctit">Последние заливы</span><span class="clnk" id="lnk-zalivs">Все →</span></div>
+          <div id="d-zalivs"><div class="empty">Загрузка...</div></div>
+        </div>
+        <div class="card">
+          <div class="chdr"><span class="ctit">Spend in Audience</span></div>
+          <div id="d-geo"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="chdr"><span class="ctit">Активные задачи</span><span class="clnk" id="lnk-tasks">Все →</span></div>
+        <div id="d-tasks"></div>
+      </div>
+      <div class="card">
+        <div class="chdr">
+          <span class="ctit">Динамика CPL / CQL / CTR</span>
+          <div style="display:flex;gap:10px">
+            <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:14px;height:2px;background:#4080ff;display:inline-block;border-radius:2px"></span>CPL</span>
+            <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:14px;height:2px;background:#d4a017;display:inline-block;border-radius:2px"></span>CQL</span>
+            <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:14px;height:2px;background:#2ea043;display:inline-block;border-radius:2px"></span>CTR</span>
+          </div>
+        </div>
+        <div class="cwrap"><canvas id="dyn-chart" class="ccanv" height="130"></canvas><div class="ctt" id="chart-tt"></div></div>
       </div>
     </div>
-    <div class="chart-wrap"><canvas id="dyn-chart" class="chart-canvas" height="130"></canvas><div class="chart-tooltip" id="chart-tt"></div></div>
-  </div>
-</div>
-
-<!-- ZALIVS -->
-<div class="page" id="page-zalivs">
-  <div class="filter-header"><span class="filter-header-title">Все РК</span><span class="filter-header-count" id="z-count">(0)</span></div>
-  <div class="filter-bar">
-    <select class="fsel" id="zf-geo" onchange="rzalivs()"><option value="">🌐 GEO</option><option value="PL">🇵🇱 PL</option><option value="PLUA">🇵🇱🇺🇦 PLUA</option></select>
-    <select class="fsel" id="zf-status" onchange="rzalivs()"><option value="">🏷 Статус</option><option value="Check">Check</option><option value="Scale">Scale</option><option value="OFF">OFF</option><option value="Test">Test</option><option value="Proliw">Proliw</option><option value="Perezaliw">Perezaliw</option></select>
-    <input class="fsearch" id="zf-q" placeholder="🔍 Поиск РК..." oninput="rzalivs()">
-    <button class="btn-add" onclick="openMo()">+ Новый залив</button>
-  </div>
-  <div class="zt-wrap"><table class="zt"><thead><tr>
-    <th>IND</th><th>ДАТА</th><th>GEO</th><th>НАЗВАНИЕ РК</th><th>SCORE</th><th>СТАТУС</th><th>AD/RK $</th><th>ДОМЕН</th><th>КРЕО</th><th>БАЕР</th>
-  </tr></thead><tbody id="zt-body"></tbody></table></div>
-</div>
-
-<!-- DOMAINS -->
-<div class="page" id="page-domains">
-  <div class="filter-header"><span class="filter-header-title">Домены</span><span class="filter-header-count" id="d-count">(0)</span></div>
-  <div class="filter-bar">
-    <select class="fsel" id="df-geo" onchange="rdomains()"><option value="">🌐 GEO</option><option value="PL">PL</option><option value="PLUA">PLUA</option></select>
-    <input class="fsearch" id="df-q" placeholder="🔍 Поиск..." oninput="rdomains()">
-    <button class="btn-add" onclick="openDomMo()">+ Добавить домен</button>
-  </div>
-  <div class="dom-grid" id="dom-grid"><div class="empty-state">Загрузка...</div></div>
-</div>
-
-<!-- SALES -->
-<div class="page" id="page-sales">
-  <div class="period-bar">
-    <div class="period-dates">
-      <div class="pdate-wrap"><span style="font-size:13px">📅</span><input type="date" id="sp-from" class="pdate-input" onchange="rsales()"></div>
-      <span class="pdash">—</span>
-      <div class="pdate-wrap"><span style="font-size:13px">📅</span><input type="date" id="sp-to" class="pdate-input" onchange="rsales()"></div>
-    </div>
-    <div class="period-btns">
-      <button class="pb active" onclick="setSalesPeriod(1,this)">1 день</button>
-      <button class="pb" onclick="setSalesPeriod(3,this)">3 дня</button>
-      <button class="pb" onclick="setSalesPeriod(7,this)">Неделя</button>
-      <button class="pb" onclick="setSalesPeriod(14,this)">2 нед.</button>
-      <button class="pb" onclick="setSalesPeriod(30,this)">Месяц</button>
-      <button class="pb" onclick="setSalesPeriod(0,this)">Всё</button>
-    </div>
-  </div>
-  <div class="sales-kpi" id="sales-kpi"></div>
-  <div class="filter-header" style="margin-bottom:12px"><span class="filter-header-title">По источникам</span></div>
-  <div class="sales-sources" id="sales-sources"></div>
-  <div class="filter-header" style="margin-bottom:12px"><span class="filter-header-title">Список продаж</span><span class="filter-header-count" id="sales-count">(0)</span></div>
-  <div class="sales-list" id="sales-list"></div>
-</div>
-
-<!-- TASKS -->
-<div class="page" id="page-tasks">
-  <div class="filter-header" style="margin-bottom:12px"><span class="filter-header-title">Tasks</span></div>
-  <div class="filter-bar" style="margin-bottom:14px">
-    <select class="fsel" id="tf-u" onchange="rtasks()"><option value="">👤 Все</option><option value="Illia">Illia</option><option value="Danya">Danya</option></select>
-  </div>
-  <div class="kanban" id="kanban"></div>
-</div>
-
-<!-- JOURNAL -->
-<div class="page" id="page-journal" style="padding:0">
-  <div class="j-layout">
-    <div class="j-sb">
-      <div class="j-sb-top">
-        <button class="j-sb-btn" onclick="newFolder()">+ Папка</button>
-        <button class="j-sb-btn" onclick="newDoc()">+ Документ</button>
+    <div class="page" id="page-zalivs">
+      <div class="fhdr"><span class="fhtit">Все РК</span><span class="fhcnt" id="z-count">(0)</span></div>
+      <div class="fbar">
+        <select class="fsel" id="zf-geo"><option value="">🌐 GEO</option><option value="PL">🇵🇱 PL</option><option value="PLUA">🇵🇱🇺🇦 PLUA</option></select>
+        <select class="fsel" id="zf-status"><option value="">🏷 Статус</option><option value="Check">Check</option><option value="Scale">Scale</option><option value="OFF">OFF</option><option value="Test">Test</option><option value="Proliw">Proliw</option><option value="Perezaliw">Perezaliw</option></select>
+        <input class="fsrch" id="zf-q" placeholder="🔍 Поиск...">
+        <button class="badd" id="btn-new-zaliv">+ Новый залив</button>
       </div>
-      <div class="j-tree" id="j-tree"></div>
+      <div class="ztwrap"><table class="zt"><thead><tr>
+        <th>IND</th><th>ДАТА</th><th>GEO</th><th>НАЗВАНИЕ РК</th><th>SCORE</th><th>СТАТУС</th><th>AD/RK $</th><th>ДОМЕН</th><th>КРЕО</th><th>БАЕР</th>
+      </tr></thead><tbody id="zt-body"></tbody></table></div>
     </div>
-    <div class="j-main">
-      <div class="j-tb">
-        <button class="j-tbtn" onclick="ji('# ')">H1</button>
-        <button class="j-tbtn" onclick="ji('## ')">H2</button>
-        <button class="j-tbtn" onclick="ji('### ')">H3</button>
-        <button class="j-tbtn" onclick="jw('**','**')">B</button>
-        <button class="j-tbtn" onclick="jw('*','*')"><em>I</em></button>
-        <button class="j-tbtn" onclick="jw('`','`')">code</button>
-        <button class="j-tbtn" onclick="ji('- ')">list</button>
-        <button class="j-tbtn" onclick="jtable()">⊞ table</button>
-        <button class="j-tbtn" onclick="ji('> ')">quote</button>
-        <button class="j-tbtn" style="margin-left:auto;color:var(--bord2)" onclick="saveDoc()">💾 Save</button>
+    <div class="page" id="page-domains">
+      <div class="fhdr"><span class="fhtit">Домены</span><span class="fhcnt" id="d-count">(0)</span></div>
+      <div class="fbar">
+        <select class="fsel" id="df-geo"><option value="">🌐 GEO</option><option value="PL">PL</option><option value="PLUA">PLUA</option></select>
+        <input class="fsrch" id="df-q" placeholder="🔍 Поиск...">
+        <button class="badd" id="btn-new-domain">+ Добавить домен</button>
       </div>
-      <div class="j-tabs">
-        <div class="j-tab active" onclick="jtab('edit',this)">Редактор</div>
-        <div class="j-tab" onclick="jtab('prev',this)">Превью</div>
+      <div class="dgr" id="dom-grid"><div class="empty">Загрузка...</div></div>
+    </div>
+    <div class="page" id="page-sales">
+      <div class="pbar">
+        <div class="pdates">
+          <div class="pdw">📅<input type="date" class="pdi" id="sp-from"></div>
+          <span class="pdash">—</span>
+          <div class="pdw">📅<input type="date" class="pdi" id="sp-to"></div>
+        </div>
+        <div class="pbtns" id="sp-btns">
+          <button class="pb active" data-sdays="1">1 день</button>
+          <button class="pb" data-sdays="3">3 дня</button>
+          <button class="pb" data-sdays="7">Неделя</button>
+          <button class="pb" data-sdays="14">2 нед.</button>
+          <button class="pb" data-sdays="30">Месяц</button>
+          <button class="pb" data-sdays="0">Всё</button>
+        </div>
       </div>
-      <div class="j-edit-area" id="j-edit">
-        <input class="j-doc-title" id="j-title" placeholder="Заголовок...">
-        <textarea class="j-ta" id="j-ta" spellcheck="false" placeholder="Markdown..."></textarea>
+      <div class="skrow" id="sales-kpi"></div>
+      <div class="fhdr" style="margin-bottom:12px"><span class="fhtit">По источникам</span></div>
+      <div class="ssrcs" id="sales-sources"></div>
+      <div class="fhdr" style="margin-bottom:12px"><span class="fhtit">Список продаж</span><span class="fhcnt" id="sales-count">(0)</span></div>
+      <div class="slst" id="sales-list"></div>
+    </div>
+    <div class="page" id="page-tasks">
+      <div class="fhdr" style="margin-bottom:12px"><span class="fhtit">Tasks</span></div>
+      <div class="fbar" style="margin-bottom:14px">
+        <select class="fsel" id="tf-u"><option value="">👤 Все</option><option value="Illia">Illia</option><option value="Danya">Danya</option></select>
       </div>
-      <div class="j-prev-area" id="j-prev" style="display:none"><div class="j-prev" id="j-preview"></div></div>
+      <div class="kanban" id="kanban"></div>
+    </div>
+    <div class="page" id="page-journal" style="padding:0">
+      <div class="jlay">
+        <div class="jsb">
+          <div class="jsbtop">
+            <button class="jsbbtn" id="btn-new-folder">+ Папка</button>
+            <button class="jsbbtn" id="btn-new-doc">+ Документ</button>
+          </div>
+          <div class="jtree" id="j-tree"></div>
+        </div>
+        <div class="jmain">
+          <div class="jtb">
+            <button class="jtbtn" data-ji="# ">H1</button>
+            <button class="jtbtn" data-ji="## ">H2</button>
+            <button class="jtbtn" data-ji="### ">H3</button>
+            <button class="jtbtn" data-jw="**">B</button>
+            <button class="jtbtn" data-jw="*"><em>I</em></button>
+            <button class="jtbtn" data-jw="\`">code</button>
+            <button class="jtbtn" data-ji="- ">list</button>
+            <button class="jtbtn" id="btn-jtable">⊞ table</button>
+            <button class="jtbtn" data-ji="> ">quote</button>
+            <button class="jtbtn" data-ji="\n---\n">hr</button>
+            <button class="jtbtn" id="btn-jsave" style="margin-left:auto;color:var(--bord2)">💾 Save</button>
+          </div>
+          <div class="jtabs">
+            <div class="jtab active" data-jtab="edit">Редактор</div>
+            <div class="jtab" data-jtab="prev">Превью</div>
+          </div>
+          <div class="jea" id="j-edit">
+            <input class="jdtit" id="j-title" placeholder="Заголовок...">
+            <textarea class="jta" id="j-ta" spellcheck="false" placeholder="Markdown..."></textarea>
+          </div>
+          <div class="jpa" id="j-prev" style="display:none"><div class="jprev" id="j-preview"></div></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-</div></div>
-
-<!-- ZALIV MODAL -->
-<div class="mo" id="mo" onclick="if(event.target===this)cmox()">
-<div class="mo-box">
-  <div class="mo-title">+ Новый залив <button class="mo-x" onclick="cmox()">×</button></div>
-  <div class="fl"><label>GEO</label><div class="go-wrap">
-    <div class="go" onclick="pgeo(this,'PL')">🇵🇱 PL</div>
-    <div class="go" onclick="pgeo(this,'PLUA')">🇵🇱🇺🇦 PLUA</div>
-  </div></div>
-  <div class="fl"><label>Название РК</label><input class="fi" id="mn" placeholder="D{дата}PL/PH1./garno/kalk"></div>
-  <div class="fl2">
-    <div class="fl" style="margin-bottom:0"><label>AD Budget $</label><input class="fi" id="ma" type="number" placeholder="10" oninput="updprev()"></div>
-    <div class="fl" style="margin-bottom:0"><label>RK Budget $</label><input class="fi" id="mr" type="number" placeholder="10" oninput="updprev()"></div>
-  </div>
-  <div class="fl2">
-    <div class="fl" style="margin-bottom:0"><label>Баер</label><select class="fi" id="mb"><option value="Illia">Illia</option><option value="Danya">Danya</option></select></div>
-    <div class="fl" style="margin-bottom:0"><label>Воронка</label><select class="fi" id="mf"><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div>
-  </div>
-  <div class="fl"><label>Score (0–6)</label>
-    <div style="display:flex;gap:4px" id="mo-score-btns">
-      <button type="button" id="mo-spb-0" onclick="setMoScore(0)" class="spb s0">0</button>
-      <button type="button" id="mo-spb-1" onclick="setMoScore(1)" class="spb">1</button>
-      <button type="button" id="mo-spb-2" onclick="setMoScore(2)" class="spb">2</button>
-      <button type="button" id="mo-spb-3" onclick="setMoScore(3)" class="spb">3</button>
-      <button type="button" id="mo-spb-4" onclick="setMoScore(4)" class="spb">4</button>
-      <button type="button" id="mo-spb-5" onclick="setMoScore(5)" class="spb">5</button>
-      <button type="button" id="mo-spb-6" onclick="setMoScore(6)" class="spb">6</button>
+<!-- MODAL ZALIV -->
+<div class="mo" id="mo-zaliv">
+  <div class="mob">
+    <div class="motit">+ Новый залив <button class="mox" data-close="mo-zaliv">×</button></div>
+    <div class="fl"><label>GEO</label><div class="gowrap">
+      <div class="go" data-geo="PL">🇵🇱 PL</div>
+      <div class="go" data-geo="PLUA">🇵🇱🇺🇦 PLUA</div>
+    </div></div>
+    <div class="fl"><label>Название РК</label><input class="fi" id="mn" placeholder="D{дата}PL/PH1./garno/kalk"></div>
+    <div class="fl2">
+      <div class="fl" style="margin-bottom:0"><label>AD Budget $</label><input class="fi" id="ma" type="number" placeholder="10"></div>
+      <div class="fl" style="margin-bottom:0"><label>RK Budget $</label><input class="fi" id="mr" type="number" placeholder="10"></div>
     </div>
+    <div class="fl2">
+      <div class="fl" style="margin-bottom:0"><label>Баер</label><select class="fi" id="mb"><option value="Illia">Illia</option><option value="Danya">Danya</option></select></div>
+      <div class="fl" style="margin-bottom:0"><label>Воронка</label><select class="fi" id="mf"><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div>
+    </div>
+    <div class="fl"><label>Score (0–6)</label>
+      <div style="display:flex;gap:4px" id="mo-score">
+        <button class="spb s0" data-score="0">0</button><button class="spb" data-score="1">1</button><button class="spb" data-score="2">2</button><button class="spb" data-score="3">3</button><button class="spb" data-score="4">4</button><button class="spb" data-score="5">5</button><button class="spb" data-score="6">6</button>
+      </div>
+    </div>
+    <div class="fl"><label>Домен</label><select class="fi" id="md"><option value="">— выбрать —</option></select></div>
+    <div class="fl"><label>Крео (до 5)</label><div id="mcreo-list"></div><button class="addg" id="btn-add-creo">+ Крео</button></div>
+    <div class="fl"><label>Цели</label><div id="mg-list"></div><button class="addg" id="btn-add-goal">+ Цель</button></div>
+    <div class="rkpv" id="mo-prev">D{дата}GEO/PH1./garno/kalk\LEADS/budget$</div>
+    <div class="mofoot"><button class="bcn" data-close="mo-zaliv">Отмена</button><button class="bsv" id="btn-create-zaliv">Создать</button></div>
   </div>
-  <div class="fl"><label>Домен</label><select class="fi" id="md"><option value="">— выбрать —</option></select></div>
-  <div class="fl"><label>Крео (до 5)</label><div id="mcreo-list"></div><button type="button" class="add-g" onclick="addCreoField()">+ Крео</button></div>
-  <div class="fl"><label>Цели</label><div id="mg-list"></div><button type="button" class="add-g" onclick="addGoalField()">+ Цель</button></div>
-  <div class="rk-prv" id="mo-prev">D{дата}GEO/PH1./garno/kalk\LEADS/budget$</div>
-  <div class="mo-foot"><button class="btn-cancel" onclick="cmox()">Отмена</button><button class="btn-save" onclick="svz()">Создать</button></div>
-</div></div>
+</div>
 
-<!-- DOMAIN MODAL -->
-<div class="mo" id="dom-mo" onclick="if(event.target===this)closeDomMo()">
-<div class="mo-box">
-  <div class="mo-title">+ Добавить домен <button class="mo-x" onclick="closeDomMo()">×</button></div>
-  <div class="fl"><label>URL домена</label><input class="fi" id="dm-url" placeholder="garnofurniture.com/kalkulator"></div>
-  <div class="fl"><label>Описание</label><input class="fi" id="dm-desc" placeholder="PL калькулятор кухни"></div>
-  <div class="fl"><label>GEO</label><div class="go-wrap" id="dm-geos">
-    <div class="go" onclick="toggleDomGeo(this,'PL')">🇵🇱 PL</div>
-    <div class="go" onclick="toggleDomGeo(this,'PLUA')">🇵🇱🇺🇦 PLUA</div>
-  </div></div>
-  <div class="fl"><label>Воронка</label><select class="fi" id="dm-funnel"><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div>
-  <div class="mo-foot"><button class="btn-cancel" onclick="closeDomMo()">Отмена</button><button class="btn-save" onclick="saveDomain()">Добавить</button></div>
-</div></div>
+<!-- MODAL DOMAIN -->
+<div class="mo" id="mo-domain">
+  <div class="mob">
+    <div class="motit">+ Добавить домен <button class="mox" data-close="mo-domain">×</button></div>
+    <div class="fl"><label>URL домена</label><input class="fi" id="dm-url" placeholder="garnofurniture.com/kalkulator"></div>
+    <div class="fl"><label>Описание</label><input class="fi" id="dm-desc" placeholder="PL калькулятор кухни"></div>
+    <div class="fl"><label>GEO</label><div class="gowrap" id="dm-geos">
+      <div class="go" data-dgeo="PL">🇵🇱 PL</div>
+      <div class="go" data-dgeo="PLUA">🇵🇱🇺🇦 PLUA</div>
+    </div></div>
+    <div class="fl"><label>Воронка</label><select class="fi" id="dm-funnel"><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div>
+    <div class="mofoot"><button class="bcn" data-close="mo-domain">Отмена</button><button class="bsv" id="btn-create-domain">Добавить</button></div>
+  </div>
+</div>
+`
 
-<script>
+// ── EVENT LISTENERS (все через addEventListener, не onclick) ──
 
-const USERS = {
-  illia: { name:'Illia', role:'Junior Buyer', initials:'IB', color:'var(--bord2)', bg:'rgba(181,34,64,.15)', border:'var(--bord)' },
-  danya: { name:'Danya', role:'Head of Marketing', initials:'DM', color:'#6090ff', bg:'rgba(64,128,255,.1)', border:'#1a3060' }
-}
+// Login
+document.getElementById('btn-illia').addEventListener('click', () => doLogin('illia'))
+document.getElementById('btn-danya').addEventListener('click', () => doLogin('danya'))
 
-// ── LOGIN ──
-window.initCRM = function(userId) {
+// Nav
+document.getElementById('nb-dash').addEventListener('click', function(){ gp('dash', this) })
+document.getElementById('nb-zalivs').addEventListener('click', function(){ gp('zalivs', this) })
+document.getElementById('nb-domains').addEventListener('click', function(){ gp('domains', this) })
+document.getElementById('nb-sales').addEventListener('click', function(){ gp('sales', this) })
+document.getElementById('nb-tasks').addEventListener('click', function(){ gp('tasks', this) })
+document.getElementById('nb-journal').addEventListener('click', function(){ gp('journal', this) })
+
+// Sync
+document.getElementById('sync-btn').addEventListener('click', manualSync)
+document.getElementById('uchip').addEventListener('click', doLogout)
+document.getElementById('lnk-zalivs').addEventListener('click', function(){ gp('zalivs', document.getElementById('nb-zalivs')) })
+document.getElementById('lnk-tasks').addEventListener('click', function(){ gp('tasks', document.getElementById('nb-tasks')) })
+
+// Period buttons
+document.querySelectorAll('.pbtns .pb').forEach(btn => {
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.pbtns .pb').forEach(b=>b.classList.remove('active'))
+    this.classList.add('active')
+    const days = parseInt(this.dataset.days)
+    const today = new Date().toISOString().split('T')[0]
+    const from = days > 0 ? new Date(Date.now()-days*86400000).toISOString().split('T')[0] : '2026-01-01'
+    document.getElementById('pd-from').value = from
+    document.getElementById('pd-to').value = today
+    rdash()
+  })
+})
+document.getElementById('pd-from').addEventListener('change', () => { document.querySelectorAll('.pbtns .pb').forEach(b=>b.classList.remove('active')); rdash() })
+document.getElementById('pd-to').addEventListener('change', () => { document.querySelectorAll('.pbtns .pb').forEach(b=>b.classList.remove('active')); rdash() })
+
+// Sales period
+document.querySelectorAll('#sp-btns .pb').forEach(btn => {
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('#sp-btns .pb').forEach(b=>b.classList.remove('active'))
+    this.classList.add('active')
+    const days = parseInt(this.dataset.sdays)
+    const today = new Date().toISOString().split('T')[0]
+    const from = days > 0 ? new Date(Date.now()-days*86400000).toISOString().split('T')[0] : '2026-01-01'
+    document.getElementById('sp-from').value = from
+    document.getElementById('sp-to').value = today
+    rsales()
+  })
+})
+document.getElementById('sp-from').addEventListener('change', rsales)
+document.getElementById('sp-to').addEventListener('change', rsales)
+
+// Zalivs filters
+document.getElementById('zf-geo').addEventListener('change', rzalivs)
+document.getElementById('zf-status').addEventListener('change', rzalivs)
+document.getElementById('zf-q').addEventListener('input', rzalivs)
+document.getElementById('btn-new-zaliv').addEventListener('click', openMoZaliv)
+
+// Domain filters
+document.getElementById('df-geo').addEventListener('change', rdomains)
+document.getElementById('df-q').addEventListener('input', rdomains)
+document.getElementById('btn-new-domain').addEventListener('click', () => document.getElementById('mo-domain').classList.add('open'))
+
+// Tasks filter
+document.getElementById('tf-u').addEventListener('change', rtasks)
+
+// Modal closes
+document.querySelectorAll('[data-close]').forEach(btn => {
+  btn.addEventListener('click', function(){ document.getElementById(this.dataset.close).classList.remove('open') })
+})
+document.querySelectorAll('.mo').forEach(mo => {
+  mo.addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open') })
+})
+
+// Zaliv modal - geo
+document.querySelectorAll('[data-geo]').forEach(btn => {
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('[data-geo]').forEach(b=>b.classList.remove('sel'))
+    this.classList.add('sel')
+    moGeo = this.dataset.geo
+    updDomains()
+    updPrev()
+  })
+})
+
+// Zaliv modal - score
+document.querySelectorAll('#mo-score .spb').forEach(btn => {
+  btn.addEventListener('click', function(){
+    moScore = parseInt(this.dataset.score)
+    document.querySelectorAll('#mo-score .spb').forEach(b=>b.className='spb')
+    this.className = 'spb s'+moScore
+  })
+})
+
+document.getElementById('mr').addEventListener('input', updPrev)
+document.getElementById('btn-add-creo').addEventListener('click', addCreoField)
+document.getElementById('btn-add-goal').addEventListener('click', addGoalField)
+document.getElementById('btn-create-zaliv').addEventListener('click', svz)
+
+// Domain modal - geo
+document.querySelectorAll('[data-dgeo]').forEach(btn => {
+  btn.addEventListener('click', function(){
+    if(domGeoSel.includes(this.dataset.dgeo)){
+      domGeoSel = domGeoSel.filter(x=>x!==this.dataset.dgeo)
+      this.classList.remove('sel')
+    } else {
+      domGeoSel.push(this.dataset.dgeo)
+      this.classList.add('sel')
+    }
+  })
+})
+document.getElementById('btn-create-domain').addEventListener('click', saveDomain)
+
+// Journal toolbar
+document.querySelectorAll('[data-ji]').forEach(btn => {
+  btn.addEventListener('click', function(){ ji(this.dataset.ji) })
+})
+document.querySelectorAll('[data-jw]').forEach(btn => {
+  btn.addEventListener('click', function(){ jw(this.dataset.jw, this.dataset.jw) })
+})
+document.getElementById('btn-jtable').addEventListener('click', jtable)
+document.getElementById('btn-jsave').addEventListener('click', saveDoc)
+document.querySelectorAll('[data-jtab]').forEach(btn => {
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('[data-jtab]').forEach(b=>b.classList.remove('active'))
+    this.classList.add('active')
+    const tab = this.dataset.jtab
+    document.getElementById('j-edit').style.display = tab==='edit'?'flex':'none'
+    document.getElementById('j-prev').style.display = tab==='prev'?'block':'none'
+    if(tab==='prev') document.getElementById('j-preview').innerHTML = parseMd(document.getElementById('j-ta').value)
+  })
+})
+document.getElementById('btn-new-folder').addEventListener('click', newFolder)
+document.getElementById('btn-new-doc').addEventListener('click', newDoc)
+
+// Chart
+const dc = document.getElementById('dyn-chart')
+dc.addEventListener('mousemove', chartMouseMove)
+dc.addEventListener('mouseleave', () => document.getElementById('chart-tt').style.display='none')
+window.addEventListener('resize', () => { if(chartData) drawChart(chartData) })
+
+// ── LOGIN / LOGOUT ──
+function doLogin(userId) {
   CURRENT_USER = USERS[userId]
+  localStorage.setItem('jdl_user', userId)
+  document.getElementById('login').style.display = 'none'
+  document.getElementById('app').style.display = 'flex'
+  const ava = document.getElementById('uava')
+  ava.textContent = CURRENT_USER.initials
+  ava.style.background = CURRENT_USER.bg
+  ava.style.color = CURRENT_USER.color
+  ava.style.borderColor = CURRENT_USER.border
+  document.getElementById('uname').textContent = CURRENT_USER.name
   init()
 }
-// Handle pending login (clicked before DOMContentLoaded)
-if (window._pendingUser) {
-  window.initCRM(window._pendingUser)
-} else {
-  // Auto-login from localStorage
-  const savedUser = localStorage.getItem('jdl_user')
-  if (savedUser && USERS[savedUser]) {
-    document.getElementById('login-screen').style.display = 'none'
-    document.getElementById('app').style.display = 'flex'
-    window.initCRM(savedUser)
-  }
+function doLogout() {
+  localStorage.removeItem('jdl_user')
+  CURRENT_USER = null
+  document.getElementById('login').style.display = 'flex'
+  document.getElementById('app').style.display = 'none'
 }
-// auto-login handled above
-
-const SB_URL = 'https://dkhkowkgiricjxkcngbf.supabase.co'
-const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRraGtvd2tnaXJpY2p4a2NuZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MTY3NDEsImV4cCI6MjA5NjQ5Mjc0MX0.48HS8eJ6wLPfimRtiz6behWHG1G8xz5_zfrT0cxnGrE'
-const GARNO_URL = 'https://bnyjwjuejrfalbubdbcv.supabase.co'
-const GARNO_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJueWp3anVlanJmYWxidWJkYmN2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTcyNDQ2NSwiZXhwIjoyMDk1MzAwNDY1fQ.l9ka9b_PzKdu-gock8ZACqODicJDZYCc1laMw_HMBvA'
-
-let db = null
-try {
-  const { createClient } = supabase
-  db = createClient(SB_URL, SB_ANON)
-} catch(e) {
-  console.error('Supabase init failed:', e)
-}
-
-// ── STATE ──
-let ZALIVS=[], DOMAINS=[], TASKS=[], METRICS=[], SALES_DATA=[]
-let expZ=null, dragId=null, dragCardId=null, moGeo='', moScore=0, domGeoSel=[]
-let curDoc=null, periodDays=1, chartData=null
-let jFolders=[], jLoose=[]
-let CURRENT_USER = null
 
 // ── INIT ──
 async function init() {
-  setSyncStatus('syncing','Загрузка...')
-  setTodayPeriod()
-  setTodaySalesPeriod()
-  await Promise.all([loadZalivs(), loadDomains(), loadTasks(), loadJournal(), loadMetrics(), loadSalesData()])
+  setSS('syncing','Загрузка...')
+  const today = new Date().toISOString().split('T')[0]
+  document.getElementById('pd-from').value = today
+  document.getElementById('pd-to').value = today
+  document.getElementById('sp-from').value = today
+  document.getElementById('sp-to').value = today
+  try {
+    db = supabase.createClient(SB_URL, SB_ANON)
+  } catch(e) { console.error('Supabase init:', e) }
+  await Promise.all([loadZ(), loadD(), loadT(), loadJ(), loadM(), loadSales()])
   rdash()
-  setupRealtime()
-  setSyncStatus('ok','Данные загружены')
+  setupRT()
+  setSS('ok','Данные загружены')
 }
 
-function setTodayPeriod() {
-  const t = new Date().toISOString().split('T')[0]
-  document.getElementById('pd-from').value = t
-  document.getElementById('pd-to').value = t
-}
-function setTodaySalesPeriod() {
-  const t = new Date().toISOString().split('T')[0]
-  document.getElementById('sp-from').value = t
-  document.getElementById('sp-to').value = t
-}
-
-function setSyncStatus(state, text) {
-  const dot = document.getElementById('sync-dot')
-  const txt = document.getElementById('sync-text')
-  dot.className = 'sync-dot ' + state
-  txt.textContent = text
-}
+function setSS(s,t){ document.getElementById('sdot').className='sdot '+s; document.getElementById('stxt').textContent=t }
 
 async function manualSync() {
-  setSyncStatus('syncing','Синхронизация...')
+  setSS('syncing','Синхронизация...')
   try {
-    const res = await fetch(SB_URL+'/functions/v1/sync', {
-      method:'POST', headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'}, body:'{}'
-    })
-    const data = await res.json()
-    if (data.ok) {
-      await loadMetrics()
-      await loadSalesData()
-      rdash()
-      setSyncStatus('ok','Обновлено · '+data.days+' дней')
-    } else setSyncStatus('','Ошибка sync')
-  } catch(e) { setSyncStatus('','Ошибка соединения') }
+    const r = await fetch(SB_URL+'/functions/v1/sync', {method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:'{}'})
+    const d = await r.json()
+    if(d.ok){ await loadM(); await loadSales(); rdash(); setSS('ok','Обновлено · '+d.days+' дней') }
+    else setSS('','Ошибка')
+  } catch(e){ setSS('','Ошибка соединения') }
 }
 
-function setupRealtime() {
+function setupRT() {
+  if(!db) return
   db.channel('jdl-rt')
-    .on('postgres_changes',{event:'*',schema:'public',table:'zalivs'},()=>{loadZalivs().then(rzalivs)})
-    .on('postgres_changes',{event:'*',schema:'public',table:'tasks'},()=>{loadTasks().then(rtasks)})
-    .on('postgres_changes',{event:'*',schema:'public',table:'domains'},()=>{loadDomains().then(rdomains)})
-    .on('postgres_changes',{event:'*',schema:'public',table:'journal_docs'},()=>{loadJournal().then(rtree)})
-    .on('postgres_changes',{event:'*',schema:'public',table:'metrics_daily'},()=>{loadMetrics().then(rdash)})
+    .on('postgres_changes',{event:'*',schema:'public',table:'zalivs'},()=>loadZ().then(rzalivs))
+    .on('postgres_changes',{event:'*',schema:'public',table:'tasks'},()=>loadT().then(rtasks))
+    .on('postgres_changes',{event:'*',schema:'public',table:'domains'},()=>loadD().then(rdomains))
+    .on('postgres_changes',{event:'*',schema:'public',table:'journal_docs'},()=>loadJ().then(rtree))
+    .on('postgres_changes',{event:'*',schema:'public',table:'metrics_daily'},()=>loadM().then(rdash))
     .subscribe()
 }
 
 // ── LOAD ──
-async function loadZalivs(){const{data}=await db.from('zalivs').select('*').order('created_at',{ascending:false});ZALIVS=data||[]}
-async function loadDomains(){const{data}=await db.from('domains').select('*').order('created_at',{ascending:false});DOMAINS=data||[]}
-async function loadTasks(){const{data}=await db.from('tasks').select('*').order('created_at',{ascending:true});TASKS=data||[]}
-async function loadMetrics(){
+async function loadZ(){if(!db)return;const{data}=await db.from('zalivs').select('*').order('created_at',{ascending:false});ZALIVS=data||[]}
+async function loadD(){if(!db)return;const{data}=await db.from('domains').select('*').order('created_at',{ascending:false});DOMAINS=data||[]}
+async function loadT(){if(!db)return;const{data}=await db.from('tasks').select('*').order('created_at',{ascending:true});TASKS=data||[]}
+async function loadM(){
+  if(!db)return
   const{data}=await db.from('metrics_daily').select('*').order('day',{ascending:true})
   METRICS=data||[]
-  if(METRICS.length>0){const last=METRICS[METRICS.length-1];const mins=Math.round((Date.now()-new Date(last.synced_at))/60000);setSyncStatus('ok','Синк '+mins+'м назад')}
+  if(METRICS.length>0){const l=METRICS[METRICS.length-1];const m=Math.round((Date.now()-new Date(l.synced_at))/60000);setSS('ok','Синк '+m+'м назад')}
 }
-async function loadJournal(){
+async function loadJ(){
+  if(!db)return
   const{data}=await db.from('journal_docs').select('*').order('sort_order',{ascending:true})
   const docs=data||[];jFolders=[];jLoose=[]
   const fm={}
@@ -712,121 +742,90 @@ async function loadJournal(){
   jFolders=Object.values(fm)
   if(!curDoc&&docs.length>0)curDoc=docs[0].id
 }
-async function loadSalesData(){
-  // Load from GarnoCRM directly
+async function loadSales(){
   try {
-    const r = await fetch(GARNO_URL+'/rest/v1/garnocrm?select=data&id=eq.1',{
-      headers:{'apikey':GARNO_ANON,'Authorization':'Bearer '+GARNO_ANON}
-    })
-    if(!r.ok) return
+    const r = await fetch(GARNO_URL+'/rest/v1/garnocrm?select=data&id=eq.1',{headers:{'apikey':GARNO_KEY,'Authorization':'Bearer '+GARNO_KEY}})
+    if(!r.ok)return
     const arr = await r.json()
     if(arr&&arr[0]&&arr[0].data&&arr[0].data.sales){
-      SALES_DATA = arr[0].data.sales.filter(s => {
-        const src = (s.source||'').toLowerCase()
-        return !src.includes('шоу рум') && !src.includes('showroom') && !src.includes('шоурум') && !src.includes('salon') && !src.includes('show room')
+      SALES_DATA = arr[0].data.sales.filter(s=>{
+        const src=(s.source||'').toLowerCase()
+        return !src.includes('шоу') && !src.includes('showroom') && !src.includes('salon') && !src.includes('show')
       })
     }
-  } catch(e){ console.log('Sales load error:', e) }
+  } catch(e){console.log('Sales error:',e)}
 }
 
-// ── PERIOD ──
-function setPeriod(days, btn) {
-  periodDays = days
-  document.querySelectorAll('.period-btns .pb').forEach(b=>b.classList.remove('active'))
-  btn.classList.add('active')
-  const today = new Date()
-  const from = days>0 ? new Date(today-days*86400000) : new Date('2026-01-01')
-  document.getElementById('pd-from').value = from.toISOString().split('T')[0]
-  document.getElementById('pd-to').value = today.toISOString().split('T')[0]
-  rdash()
-}
-function onDateChange(){
-  document.querySelectorAll('.period-btns .pb').forEach(b=>b.classList.remove('active'))
-  rdash()
+// ── NAV ──
+function gp(id, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'))
+  document.getElementById('page-'+id).classList.add('active')
+  el.classList.add('active')
+  if(id==='zalivs') rzalivs()
+  if(id==='domains') rdomains()
+  if(id==='tasks') rtasks()
+  if(id==='sales') rsales()
+  if(id==='journal'){rtree();if(curDoc)loadDocById(curDoc)}
+  if(id==='dash') rdash()
 }
 
-function getFilteredMetrics(){
-  const f=document.getElementById('pd-from').value
-  const t=document.getElementById('pd-to').value
-  return METRICS.filter(m=>m.day>=f&&m.day<=t)
-}
-
-// ── COUNT UP ANIMATION ──
-function animateCount(el, target, prefix='', suffix='', duration=800) {
+// ── COUNT UP ──
+function countUp(el, target, pre='', suf='', dur=800) {
+  const n = parseFloat(target)
+  if(isNaN(n)){el.textContent=target;return}
   const start = Date.now()
-  const num = parseFloat(target)
-  if(isNaN(num)){el.textContent=target;return}
   const timer = setInterval(()=>{
-    const p = Math.min((Date.now()-start)/duration, 1)
-    const ease = 1-Math.pow(1-p,3)
-    const cur = num*ease
-    el.textContent = prefix+(Number.isInteger(num)?Math.round(cur):cur.toFixed(1))+suffix
-    if(p>=1){clearInterval(timer);el.textContent=prefix+target+suffix}
-  }, 16)
+    const p = Math.min((Date.now()-start)/dur,1)
+    const e = 1-Math.pow(1-p,3)
+    const cur = n*e
+    el.textContent = pre+(Number.isInteger(n)?Math.round(cur):cur.toFixed(1))+suf
+    if(p>=1){clearInterval(timer);el.textContent=pre+target+suf}
+  },16)
 }
 
 // ── DASHBOARD ──
-function rdash(){
-  const rows=getFilteredMetrics()
-  let tSpend=0,tSpendPL=0,tSpendPLUA=0,tLeads=0,tQuals=0,tSales=0,tSalesZl=0
+function rdash() {
+  const from = document.getElementById('pd-from').value
+  const to = document.getElementById('pd-to').value
+  const rows = METRICS.filter(m=>m.day>=from&&m.day<=to)
+  let tS=0,tPL=0,tPLUA=0,tL=0,tQ=0,tSzl=0
+  rows.forEach(r=>{tS+=parseFloat(r.spend_pl||0)+parseFloat(r.spend_plua||0);tPL+=parseFloat(r.spend_pl||0);tPLUA+=parseFloat(r.spend_plua||0);tL+=(r.leads_pl||0)+(r.leads_plua||0);tQ+=r.quals||0;tSzl+=parseFloat(r.sales_amount_zl||0)})
   const days=rows.length||1
-  rows.forEach(r=>{
-    tSpend+=parseFloat(r.spend_pl||0)+parseFloat(r.spend_plua||0)
-    tSpendPL+=parseFloat(r.spend_pl||0)
-    tSpendPLUA+=parseFloat(r.spend_plua||0)
-    tLeads+=(r.leads_pl||0)+(r.leads_plua||0)
-    tQuals+=r.quals||0
-    tSales+=r.sales_count||0
-    tSalesZl+=parseFloat(r.sales_amount_zl||0)
-  })
-  const cpl=tLeads>0?(tSpend/tLeads).toFixed(1):0
-  const cql=tQuals>0?(tSpend/tQuals).toFixed(1):0
-  const spDaily=(tSpend/days).toFixed(0)
-  const profit=tSalesZl*0.3*0.25
-  const roi=tSpend>0?Math.round((profit-tSpend)/tSpend*100):0
+  const cpl=tL>0?(tS/tL).toFixed(1):0, cql=tQ>0?(tS/tQ).toFixed(1):0
+  const spD=(tS/days).toFixed(0), profit=tSzl*0.3*0.25
+  const roi=tS>0?Math.round((profit-tS)/tS*100):0
   const avgCtr=rows.length>0?(rows.reduce((s,r)=>s+parseFloat(r.ctr||0),0)/rows.length).toFixed(2):0
 
-  // Animate KPIs
-  const spEl=document.getElementById('d-spend')
-  animateCount(spEl,Math.round(tSpend),'$','')
-  animateCount(document.getElementById('d-daily'),spDaily,'$','')
+  countUp(document.getElementById('d-spend'), Math.round(tS), '$')
+  countUp(document.getElementById('d-daily'), spD, '$')
 
-  const cplEl=document.getElementById('d-cpl')
-  const cplN=parseFloat(cpl)
+  const cplEl=document.getElementById('d-cpl'), cplN=parseFloat(cpl)
   if(cplN>0&&cplN<10){cplEl.style.color='var(--green)';cplEl.style.textShadow='0 0 12px rgba(46,160,67,.7)'}
   else if(cplN<=13){cplEl.style.color='var(--yellow)';cplEl.style.textShadow='0 0 12px rgba(212,160,23,.7)'}
   else if(cplN>0){cplEl.style.color='var(--red)';cplEl.style.textShadow='0 0 12px rgba(224,64,80,.6)'}
   else{cplEl.style.color='var(--text)';cplEl.style.textShadow=''}
-  animateCount(cplEl,cpl,'$','')
+  countUp(cplEl, cpl, '$')
 
-  const cqlEl=document.getElementById('d-cql')
-  const cqlN=parseFloat(cql)
+  const cqlEl=document.getElementById('d-cql'), cqlN=parseFloat(cql)
   if(cqlN>0&&cqlN<25){cqlEl.style.color='var(--green)';cqlEl.style.textShadow='0 0 12px rgba(46,160,67,.7)'}
   else if(cqlN<=35){cqlEl.style.color='var(--yellow)';cqlEl.style.textShadow='0 0 12px rgba(212,160,23,.7)'}
   else if(cqlN>0){cqlEl.style.color='var(--red)';cqlEl.style.textShadow='0 0 12px rgba(224,64,80,.6)'}
   else{cqlEl.style.color='var(--text)';cqlEl.style.textShadow=''}
-  animateCount(cqlEl,cql,'$','')
+  countUp(cqlEl, cql, '$')
 
   const roiEl=document.getElementById('d-roi')
   roiEl.style.color=roi>=100?'var(--green)':roi>0?'var(--yellow)':roi<0?'var(--red)':'var(--text)'
   roiEl.style.textShadow=roi>=100?'0 0 12px rgba(46,160,67,.7)':''
-  animateCount(roiEl,roi,roi>0?'+':'','%')
+  countUp(roiEl, roi, roi>0?'+':'', '%')
+  countUp(document.getElementById('d-ctr'), avgCtr, '', '%')
 
-  animateCount(document.getElementById('d-ctr'),avgCtr,'','%')
+  document.getElementById('d-zalivs').innerHTML = ZALIVS.slice(0,5).map(z=>`<div class="zrow"><div class="zdot" style="background:${z.ind==='profit'?'var(--green)':z.ind==='drop'?'var(--yellow)':'var(--red)'}"></div><span class="zgeo ${z.geo==='PL'?'gpl':'gplua'}">${z.geo}</span><div class="zname">${z.name}</div><div class="zbud">$${z.rk_budget}/d</div></div>`).join('') || '<div class="empty">Нет заливов</div>'
 
-  // Zalivs
-  const zList=ZALIVS.slice(0,5)
-  document.getElementById('d-zalivs').innerHTML=zList.length?zList.map(z=>`<div class="zrow"><div class="zdot" style="background:${z.ind==='profit'?'var(--green)':z.ind==='drop'?'var(--yellow)':'var(--red)'}"></div><span class="zgeo geo-${z.geo}">${z.geo}</span><div class="zname">${z.name}</div><div class="zbud">$${z.rk_budget}/d</div></div>`).join(''):'<div class="empty-state">Нет заливов</div>'
+  const mx=Math.max(tPL,tPLUA,1)
+  document.getElementById('d-geo').innerHTML=`<div class="brow"><div class="bhdr"><span class="zgeo gpl">PL</span><span style="font-weight:700;color:var(--yellow);font-family:var(--mono)">$${Math.round(tPL)}</span></div><div class="btrk"><div class="bfill" style="width:${Math.round(tPL/mx*100)}%;background:#4080ff"></div></div></div><div class="brow"><div class="bhdr"><span class="zgeo gplua">PLUA</span><span style="font-weight:700;color:var(--yellow);font-family:var(--mono)">$${Math.round(tPLUA)}</span></div><div class="btrk"><div class="bfill" style="width:${Math.round(tPLUA/mx*100)}%;background:#9060d0"></div></div></div>`
 
-  // Geo bars
-  const mx=Math.max(tSpendPL,tSpendPLUA,1)
-  document.getElementById('d-geo').innerHTML=`
-    <div class="bar-row"><div class="bar-hdr"><span class="zgeo geo-PL">PL</span><span style="font-weight:700;color:var(--yellow);font-family:var(--mono)">$${Math.round(tSpendPL)}</span></div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(tSpendPL/mx*100)}%;background:#4080ff"></div></div></div>
-    <div class="bar-row"><div class="bar-hdr"><span class="zgeo geo-PLUA">PLUA</span><span style="font-weight:700;color:var(--yellow);font-family:var(--mono)">$${Math.round(tSpendPLUA)}</span></div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(tSpendPLUA/mx*100)}%;background:#9060d0"></div></div></div>`
-
-  // Tasks
-  const at=TASKS.filter(t=>t.col!=='done').slice(0,4)
-  document.getElementById('d-tasks').innerHTML=at.length?at.map(t=>`<div class="tmini"><div class="tpbar" style="background:${t.priority==='high'?'var(--red)':t.priority==='mid'?'var(--yellow)':'var(--green)'}"></div><div class="tmt">${t.title}</div><span class="tms ${t.col==='process'?'ts-proc':'ts-todo'}">${t.col==='process'?'In Progress':'TO DO'}</span>${t.assignee?`<span class="tma">${t.assignee}</span>`:''}</div>`).join(''):'<div class="empty-state">Нет задач</div>'
+  document.getElementById('d-tasks').innerHTML = TASKS.filter(t=>t.col!=='done').slice(0,4).map(t=>`<div class="tmini"><div class="tpb" style="background:${t.priority==='high'?'var(--red)':t.priority==='mid'?'var(--yellow)':'var(--green)'}"></div><div class="tmt">${t.title}</div><span class="tms ${t.col==='process'?'ts-proc':'ts-todo'}">${t.col==='process'?'In Progress':'TO DO'}</span>${t.assignee?`<span class="tma">${t.assignee}</span>`:''}</div>`).join('') || '<div class="empty">Нет задач</div>'
 
   drawChart(rows)
 }
@@ -834,406 +833,323 @@ function rdash(){
 // ── CHART ──
 function drawChart(rows){chartData=rows;const c=document.getElementById('dyn-chart');if(!c)return;c.width=c.parentElement.offsetWidth||600;c.height=130;renderChart()}
 function renderChart(){
-  if(!chartData||chartData.length<1)return
-  const rows=chartData,canvas=document.getElementById('dyn-chart'),ctx=canvas.getContext('2d')
-  const W=canvas.width,H=canvas.height,PAD={t:10,b:22,l:10,r:10}
-  const cw=W-PAD.l-PAD.r,ch=H-PAD.t-PAD.b
+  if(!chartData||!chartData.length)return
+  const rows=chartData,c=document.getElementById('dyn-chart'),ctx=c.getContext('2d')
+  const W=c.width,H=c.height,P={t:10,b:22,l:10,r:10},cw=W-P.l-P.r,ch=H-P.t-P.b
   ctx.clearRect(0,0,W,H)
-  const series=[{data:rows.map(r=>parseFloat(r.cpl)||0),color:'#4080ff',label:'CPL'},{data:rows.map(r=>parseFloat(r.cql)||0),color:'#d4a017',label:'CQL'},{data:rows.map(r=>parseFloat(r.ctr)||0),color:'#2ea043',label:'CTR'}]
-  series.forEach(s=>{s.mn=Math.min(...s.data);s.mx=Math.max(...s.data);if(s.mx===s.mn)s.mx=s.mn+1})
-  const n=rows.length,xStep=n>1?cw/(n-1):0
-  const ptX=i=>PAD.l+i*xStep,ptY=(v,s)=>PAD.t+ch*(1-(v-s.mn)/(s.mx-s.mn))
+  const S=[{d:rows.map(r=>parseFloat(r.cpl)||0),c:'#4080ff',l:'CPL'},{d:rows.map(r=>parseFloat(r.cql)||0),c:'#d4a017',l:'CQL'},{d:rows.map(r=>parseFloat(r.ctr)||0),c:'#2ea043',l:'CTR'}]
+  S.forEach(s=>{s.mn=Math.min(...s.d);s.mx=Math.max(...s.d);if(s.mx===s.mn)s.mx=s.mn+1})
+  const n=rows.length,xs=n>1?cw/(n-1):0
+  const px=i=>P.l+i*xs,py=(v,s)=>P.t+ch*(1-(v-s.mn)/(s.mx-s.mn))
   ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1
-  for(let i=0;i<=4;i++){const y=PAD.t+ch*i/4;ctx.beginPath();ctx.moveTo(PAD.l,y);ctx.lineTo(PAD.l+cw,y);ctx.stroke()}
-  series.forEach(s=>{
+  for(let i=0;i<=4;i++){const y=P.t+ch*i/4;ctx.beginPath();ctx.moveTo(P.l,y);ctx.lineTo(P.l+cw,y);ctx.stroke()}
+  S.forEach(s=>{
     ctx.save()
-    ctx.beginPath();ctx.moveTo(ptX(0),H-PAD.b);ctx.lineTo(ptX(0),ptY(s.data[0],s))
-    for(let i=1;i<n;i++){const x0=ptX(i-1),y0=ptY(s.data[i-1],s),x1=ptX(i),y1=ptY(s.data[i],s),cpx=(x0+x1)/2;ctx.bezierCurveTo(cpx,y0,cpx,y1,x1,y1)}
-    ctx.lineTo(ptX(n-1),H-PAD.b);ctx.closePath()
-    const gr=ctx.createLinearGradient(0,PAD.t,0,H-PAD.b);gr.addColorStop(0,s.color+'33');gr.addColorStop(1,s.color+'00');ctx.fillStyle=gr;ctx.fill()
-    ctx.beginPath();ctx.moveTo(ptX(0),ptY(s.data[0],s))
-    for(let i=1;i<n;i++){const x0=ptX(i-1),y0=ptY(s.data[i-1],s),x1=ptX(i),y1=ptY(s.data[i],s),cpx=(x0+x1)/2;ctx.bezierCurveTo(cpx,y0,cpx,y1,x1,y1)}
-    ctx.strokeStyle=s.color;ctx.lineWidth=2;ctx.stroke()
-    for(let i=0;i<n;i++){ctx.beginPath();ctx.arc(ptX(i),ptY(s.data[i],s),3,0,Math.PI*2);ctx.fillStyle=s.color;ctx.fill()}
+    ctx.beginPath();ctx.moveTo(px(0),H-P.b);ctx.lineTo(px(0),py(s.d[0],s))
+    for(let i=1;i<n;i++){const x0=px(i-1),y0=py(s.d[i-1],s),x1=px(i),y1=py(s.d[i],s),cx=(x0+x1)/2;ctx.bezierCurveTo(cx,y0,cx,y1,x1,y1)}
+    ctx.lineTo(px(n-1),H-P.b);ctx.closePath()
+    const g=ctx.createLinearGradient(0,P.t,0,H-P.b);g.addColorStop(0,s.c+'33');g.addColorStop(1,s.c+'00');ctx.fillStyle=g;ctx.fill()
+    ctx.beginPath();ctx.moveTo(px(0),py(s.d[0],s))
+    for(let i=1;i<n;i++){const x0=px(i-1),y0=py(s.d[i-1],s),x1=px(i),y1=py(s.d[i],s),cx=(x0+x1)/2;ctx.bezierCurveTo(cx,y0,cx,y1,x1,y1)}
+    ctx.strokeStyle=s.c;ctx.lineWidth=2;ctx.stroke()
+    for(let i=0;i<n;i++){ctx.beginPath();ctx.arc(px(i),py(s.d[i],s),3,0,Math.PI*2);ctx.fillStyle=s.c;ctx.fill()}
     ctx.restore()
   })
   ctx.fillStyle='rgba(144,144,168,.6)';ctx.font='10px Manrope,sans-serif';ctx.textAlign='center'
   const li=[0,Math.floor((n-1)/2),n-1].filter((v,i,a)=>a.indexOf(v)===i)
-  li.forEach(i=>ctx.fillText(rows[i]?.day?.slice(5)||'',ptX(i),H-4))
-  canvas._s=series;canvas._rows=rows;canvas._PAD=PAD;canvas._cw=cw;canvas._ch=ch
+  li.forEach(i=>ctx.fillText(rows[i]?.day?.slice(5)||'',px(i),H-4))
+  c._S=S;c._rows=rows;c._P=P;c._cw=cw;c._ch=ch
 }
-const dc=document.getElementById('dyn-chart')
-dc.addEventListener('mousemove',function(e){
-  if(!this._rows)return
-  const rect=this.getBoundingClientRect(),mx=(e.clientX-rect.left)*(this.width/rect.width)
-  const n=this._rows.length,xStep=n>1?this._cw/(n-1):0
+function chartMouseMove(e){
+  const c=this;if(!c._rows)return
+  const rect=c.getBoundingClientRect(),mx=(e.clientX-rect.left)*(c.width/rect.width)
+  const n=c._rows.length,xs=n>1?c._cw/(n-1):0
   let ci=0,md=9999
-  for(let i=0;i<n;i++){const x=this._PAD.l+i*xStep,d=Math.abs(mx-x);if(d<md){md=d;ci=i}}
+  for(let i=0;i<n;i++){const x=c._P.l+i*xs,d=Math.abs(mx-x);if(d<md){md=d;ci=i}}
   if(md>40){document.getElementById('chart-tt').style.display='none';return}
   const tt=document.getElementById('chart-tt');tt.style.display='block'
-  let tx=e.clientX-this.closest('.card').getBoundingClientRect().left+14
-  if(tx>this.width-170)tx=e.clientX-this.closest('.card').getBoundingClientRect().left-170
+  let tx=e.clientX-c.closest('.card').getBoundingClientRect().left+14
+  if(tx>c.width-170)tx=e.clientX-c.closest('.card').getBoundingClientRect().left-170
   tt.style.left=tx+'px';tt.style.top='4px'
-  const r=this._rows[ci]
-  tt.innerHTML=`<strong>${r.day}</strong>`+this._s.map(s=>`<div class="ct-row"><span class="ct-label" style="color:${s.color}">${s.label}</span><span class="ct-val" style="color:${s.color}">${s.data[ci]}</span></div>`).join('')+`<div class="ct-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px"><span class="ct-label">Spend</span><span class="ct-val">$${Math.round((parseFloat(r.spend_pl)||0)+(parseFloat(r.spend_plua)||0))}</span></div><div class="ct-row"><span class="ct-label">Leads</span><span class="ct-val">${(r.leads_pl||0)+(r.leads_plua||0)}</span></div>`
-})
-dc.addEventListener('mouseleave',()=>document.getElementById('chart-tt').style.display='none')
-window.addEventListener('resize',()=>{if(chartData)drawChart(chartData)})
-
-// ── NAV ──
-function gp(id,el){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
-  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'))
-  document.getElementById('page-'+id).classList.add('active')
-  el.classList.add('active')
-  if(id==='zalivs')rzalivs()
-  if(id==='domains')rdomains()
-  if(id==='tasks')rtasks()
-  if(id==='sales')rsales()
-  if(id==='journal'){rtree();if(curDoc)loadDocById(curDoc)}
-  if(id==='dash')rdash()
-}
-
-// ── SALES ──
-function parseSaleDate(ds){
-  if(!ds)return null
-  if(ds.includes('-'))return new Date(ds)
-  const p=ds.split('.')
-  if(p.length===3)return new Date(p[2]+'-'+p[1]+'-'+p[0])
-  return null
-}
-
-function setSalesPeriod(days,btn){
-  document.querySelectorAll('#page-sales .period-btns .pb').forEach(b=>b.classList.remove('active'))
-  btn.classList.add('active')
-  const today=new Date()
-  const from=days>0?new Date(today-days*86400000):new Date('2026-01-01')
-  document.getElementById('sp-from').value=from.toISOString().split('T')[0]
-  document.getElementById('sp-to').value=today.toISOString().split('T')[0]
-  rsales()
-}
-
-function rsales(){
-  const from=document.getElementById('sp-from').value
-  const to=document.getElementById('sp-to').value
-
-  const filtered=SALES_DATA.filter(s=>{
-    const d=parseSaleDate(s.createdAt)
-    if(!d)return false
-    const day=d.toISOString().split('T')[0]
-    return day>=from&&day<=to
-  })
-
-  document.getElementById('sales-count').textContent='('+filtered.length+')'
-
-  // KPI
-  const total=filtered.reduce((s,r)=>s+(r.saleAmount||0),0)
-  const avg=filtered.length>0?Math.round(total/filtered.length):0
-
-  document.getElementById('sales-kpi').innerHTML=`
-    <div class="sales-kpi-card">
-      <div class="sales-kpi-label">Total Revenue</div>
-      <div class="sales-kpi-val" id="sk-total">0 zł</div>
-      <div class="sales-kpi-sub">${filtered.length} продаж</div>
-    </div>
-    <div class="sales-kpi-card">
-      <div class="sales-kpi-label">Avg Deal</div>
-      <div class="sales-kpi-val" id="sk-avg">0 zł</div>
-      <div class="sales-kpi-sub">средний чек</div>
-    </div>
-    <div class="sales-kpi-card">
-      <div class="sales-kpi-label">Кол-во продаж</div>
-      <div class="sales-kpi-val" id="sk-cnt">0</div>
-      <div class="sales-kpi-sub">за период</div>
-    </div>`
-
-  // Animate
-  setTimeout(()=>{
-    animateCount(document.getElementById('sk-total'),total.toLocaleString('ru'),'','  zł',1000)
-    animateCount(document.getElementById('sk-avg'),avg.toLocaleString('ru'),'','  zł',800)
-    animateCount(document.getElementById('sk-cnt'),filtered.length,'','',600)
-  },50)
-
-  // By source
-  const srcMap={}
-  filtered.forEach(s=>{
-    const src=s.source||'Неизвестно'
-    if(!srcMap[src])srcMap[src]={count:0,amount:0}
-    srcMap[src].count++
-    srcMap[src].amount+=s.saleAmount||0
-  })
-  const srcs=Object.entries(srcMap).sort((a,b)=>b[1].amount-a[1].amount)
-  document.getElementById('sales-sources').innerHTML=srcs.length?srcs.map(([src,v])=>`
-    <div class="src-card">
-      <div class="src-card-top"><span class="src-name">${src}</span><span class="src-count">${v.count} пр.</span></div>
-      <div class="src-amount">${v.amount.toLocaleString('ru')} zł</div>
-      <div class="src-sub">avg ${Math.round(v.amount/v.count).toLocaleString('ru')} zł</div>
-    </div>`).join(''):'<div class="empty-state">Нет продаж за период</div>'
-
-  // List
-  const sorted=[...filtered].sort((a,b)=>{
-    const da=parseSaleDate(a.createdAt)||new Date(0)
-    const db=parseSaleDate(b.createdAt)||new Date(0)
-    return db-da
-  })
-  document.getElementById('sales-list').innerHTML=sorted.length?sorted.map(s=>{
-    const init=(s.name||'?').substring(0,2).toUpperCase()
-    return`<div class="sale-row">
-      <div class="sale-ava">${init}</div>
-      <div><div class="sale-name">${s.name||'—'}</div><div style="font-size:10px;color:var(--text3)">${s.phone||''}</div></div>
-      <span class="sale-src">${s.source||'—'}</span>
-      <span class="sale-date">${s.createdAt||'—'}</span>
-      <span class="sale-amount">${(s.saleAmount||0).toLocaleString('ru')} zł</span>
-    </div>`
-  }).join(''):'<div class="empty-state">Нет продаж за период</div>'
+  const r=c._rows[ci]
+  tt.innerHTML=`<strong>${r.day}</strong>`+c._S.map(s=>`<div class="ctrow"><span class="ctl" style="color:${s.c}">${s.l}</span><span class="ctv" style="color:${s.c}">${s.d[ci]}</span></div>`).join('')+`<div class="ctrow" style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px"><span class="ctl">Spend</span><span class="ctv">$${Math.round((parseFloat(r.spend_pl)||0)+(parseFloat(r.spend_plua)||0))}</span></div>`
 }
 
 // ── ZALIVS ──
-const SCLS={Check:'s-check',Scale:'s-scale',OFF:'s-off',Test:'s-test',Proliw:'s-proliw',Perezaliw:'s-perezaliw'}
-function geoChip(g){const m={PL:['gc-pl','PL'],PLUA:['gc-plua','PLUA']};const[c,l]=m[g]||['gc-pl',g];return`<span class="geo-chip ${c}">${l}</span>`}
-function scoreBtn(z){return`<div style="display:flex;gap:3px">${Array.from({length:7},(_,i)=>`<button class="spb${z.score===i?' s'+i:''}" onclick="setZScore(${z.id},${i},event)">${i}</button>`).join('')}</div>`}
-function scoreToStatus(s){if(s<=2)return'OFF';if(s<=4)return'Check';return'Scale'}
+const SCLS={Check:'sc',Scale:'ss',OFF:'so',Test:'st',Proliw:'sp',Perezaliw:'sz'}
+function s2st(s){return s<=2?'OFF':s<=4?'Check':'Scale'}
+function gchip(g){return`<span class="zgeo gchip ${g==='PL'?'gpl':'gplua'}">${g}</span>`}
+function spbs(z){return Array.from({length:7},(_,i)=>`<button class="spb${z.score===i?' s'+i:''}" data-zid="${z.id}" data-sc="${i}">${i}</button>`).join('')}
 
 function rzalivs(){
-  const geo=document.getElementById('zf-geo').value
-  const status=document.getElementById('zf-status').value
-  const q=document.getElementById('zf-q').value.toLowerCase()
-  const f=ZALIVS.filter(z=>(!geo||z.geo===geo)&&(!status||z.status===status)&&(!q||z.name.toLowerCase().includes(q)))
+  const geo=document.getElementById('zf-geo').value,st=document.getElementById('zf-status').value,q=document.getElementById('zf-q').value.toLowerCase()
+  const f=ZALIVS.filter(z=>(!geo||z.geo===geo)&&(!st||z.status===st)&&(!q||z.name.toLowerCase().includes(q)))
   document.getElementById('z-count').textContent='('+f.length+')'
   let html=''
   f.forEach(z=>{
-    const rc=`row-${z.ind}${expZ===z.id?' row-exp':''}`
-    html+=`<tr class="${rc}" onclick="togZ(${z.id})" style="cursor:pointer">
-      <td onclick="event.stopPropagation()"><div class="ind-tumbler">
-        <button class="ind-tb${z.ind==='profit'?' active-profit':''}" onclick="setZInd(${z.id},'profit',event)">P</button>
-        <button class="ind-tb${z.ind==='drop'?' active-drop':''}" onclick="setZInd(${z.id},'drop',event)">D</button>
-        <button class="ind-tb${z.ind==='off'?' active-off':''}" onclick="setZInd(${z.id},'off',event)">O</button>
+    const rc=`${z.ind==='profit'?'rp':z.ind==='drop'?'rd':'ro'}${expZ===z.id?' rex':''}`
+    html+=`<tr class="${rc}" data-zid="${z.id}" style="cursor:pointer">
+      <td><div class="ind-t">
+        <button class="itb${z.ind==='profit'?' ap':''}" data-zid="${z.id}" data-ind="profit">P</button>
+        <button class="itb${z.ind==='drop'?' ad':''}" data-zid="${z.id}" data-ind="drop">D</button>
+        <button class="itb${z.ind==='off'?' ao':''}" data-zid="${z.id}" data-ind="off">O</button>
       </div></td>
       <td style="color:var(--text3);font-size:11px;font-family:var(--mono)">${z.date||'—'}</td>
-      <td>${geoChip(z.geo)}</td>
-      <td><div class="rk-name">${z.name}</div></td>
-      <td onclick="event.stopPropagation()">${scoreBtn(z)}</td>
-      <td onclick="event.stopPropagation()"><select class="status-sel ${SCLS[z.status]||''}" onchange="setZStatus(${z.id},this)">${['Check','Scale','OFF','Test','Proliw','Perezaliw'].map(o=>`<option${z.status===o?' selected':''}>${o}</option>`).join('')}</select></td>
+      <td>${gchip(z.geo)}</td>
+      <td><div class="rkn">${z.name}</div></td>
+      <td><div style="display:flex;gap:3px">${spbs(z)}</div></td>
+      <td><select class="ssel ${SCLS[z.status]||''}" data-zid="${z.id}">${['Check','Scale','OFF','Test','Proliw','Perezaliw'].map(o=>`<option${z.status===o?' selected':''}>${o}</option>`).join('')}</select></td>
       <td class="budg">$${z.ad_budget}<small>/$${z.rk_budget}</small></td>
-      <td><a class="domain-link" href="#" onclick="return false">${(z.domain||'—').split('/')[0]}</a></td>
-      <td onclick="event.stopPropagation()"><div class="creo-wrap">${(z.creos||[]).map(c=>`<span class="creo-tag">${c}</span>`).join('')}${(z.creos||[]).length<5?`<button class="creo-add-btn" onclick="addCreoInline(${z.id},event)">+ крео</button>`:''}</div></td>
-      <td><span class="bf-buyer">${z.buyer}</span></td>
+      <td><a class="dlnk" href="#">${(z.domain||'—').split('/')[0]}</a></td>
+      <td><div class="cwrp">${(z.creos||[]).map(c=>`<span class="ctag">${c}</span>`).join('')}${(z.creos||[]).length<5?`<button class="cadd" data-zid="${z.id}">+ крео</button>`:''}</div></td>
+      <td>${z.buyer||'—'}</td>
     </tr>`
-    if(expZ===z.id)html+=expandRow(z)
+    if(expZ===z.id) html+=exRow(z)
   })
-  document.getElementById('zt-body').innerHTML=html||'<tr><td colspan="10" class="empty-state">Нет заливов</td></tr>'
+  document.getElementById('zt-body').innerHTML = html||`<tr><td colspan="10" class="empty">Нет заливов</td></tr>`
+  // Bind events
+  document.querySelectorAll('#zt-body tr[data-zid]').forEach(tr=>{
+    tr.addEventListener('click', e=>{if(!e.target.closest('button,select,a'))togZ(parseInt(tr.dataset.zid))})
+  })
+  document.querySelectorAll('.itb[data-ind]').forEach(btn=>{
+    btn.addEventListener('click', e=>{e.stopPropagation();setInd(parseInt(btn.dataset.zid),btn.dataset.ind)})
+  })
+  document.querySelectorAll('.spb[data-sc]').forEach(btn=>{
+    btn.addEventListener('click', e=>{e.stopPropagation();setScore(parseInt(btn.dataset.zid),parseInt(btn.dataset.sc))})
+  })
+  document.querySelectorAll('.ssel[data-zid]').forEach(sel=>{
+    sel.addEventListener('click', e=>e.stopPropagation())
+    sel.addEventListener('change', ()=>setStatus(parseInt(sel.dataset.zid),sel))
+  })
+  document.querySelectorAll('.cadd[data-zid]').forEach(btn=>{
+    btn.addEventListener('click', e=>{e.stopPropagation();addCreoInline(parseInt(btn.dataset.zid))})
+  })
+  document.querySelectorAll('.dlnk').forEach(a=>a.addEventListener('click',e=>e.preventDefault()))
+  // expand row events
+  document.querySelectorAll('.sbsv[data-zid]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();saveEdit(parseInt(btn.dataset.zid))}))
+  document.querySelectorAll('.sbdl[data-zid]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();delZaliv(parseInt(btn.dataset.zid))}))
+  document.querySelectorAll('.spb-e[data-sc]').forEach(btn=>{
+    btn.addEventListener('click', e=>{e.stopPropagation();setScore(parseInt(btn.dataset.zid),parseInt(btn.dataset.sc))})
+  })
 }
 
-function expandRow(z){
-  const sc=z.score,hint=sc<=2?'→ OFF (красный)':sc<=4?'→ Check (жёлтый)':'→ Scale (синий)'
-  return`<tr class="exp-row row-${z.ind}"><td colspan="10"><div class="exp-inner">
-    <div class="exp-block">
-      <div class="exp-label">Редактировать</div>
-      <div style="margin-bottom:8px"><div class="edit-label">Название РК</div><input class="edit-fi" id="ef-name-${z.id}" value="${(z.name||'').replace(/"/g,'&quot;')}"></div>
-      <div class="edit-row">
-        <div><div class="edit-label">AD $</div><input class="edit-fi" id="ef-ad-${z.id}" type="number" value="${z.ad_budget}"></div>
-        <div><div class="edit-label">RK $</div><input class="edit-fi" id="ef-rk-${z.id}" type="number" value="${z.rk_budget}"></div>
+function exRow(z){
+  return`<tr class="exrow ${z.ind==='profit'?'rp':z.ind==='drop'?'rd':'ro'} rex"><td colspan="10"><div class="exin">
+    <div class="exbl">
+      <div class="exlb">Редактировать</div>
+      <div style="margin-bottom:8px"><div class="elb">Название</div><input class="efi" id="ef-name-${z.id}" value="${(z.name||'').replace(/"/g,'&quot;')}"></div>
+      <div class="erow">
+        <div><div class="elb">AD $</div><input class="efi" id="ef-ad-${z.id}" type="number" value="${z.ad_budget}"></div>
+        <div><div class="elb">RK $</div><input class="efi" id="ef-rk-${z.id}" type="number" value="${z.rk_budget}"></div>
       </div>
-      <div style="margin-bottom:8px"><div class="edit-label">Score (0–6)</div>
-        <div style="display:flex;gap:3px">${Array.from({length:7},(_,i)=>`<button class="spb${z.score===i?' s'+i:''}" onclick="setZScoreEdit(${z.id},${i})">${i}</button>`).join('')}</div>
-        <div style="font-size:10px;margin-top:4px;color:${sc<=2?'var(--red)':sc<=4?'var(--yellow)':'var(--blue)'}">${hint}</div>
+      <div style="margin-bottom:8px"><div class="elb">Домен</div><input class="efi" id="ef-dom-${z.id}" value="${z.domain||''}"></div>
+      <div style="margin-bottom:8px"><div class="elb">Score (0–6)</div>
+        <div style="display:flex;gap:3px">${Array.from({length:7},(_,i)=>`<button class="spb spb-e${z.score===i?' s'+i:''}" data-zid="${z.id}" data-sc="${i}">${i}</button>`).join('')}</div>
       </div>
-      <div><div class="edit-label">Домен</div><input class="edit-fi" id="ef-dom-${z.id}" value="${z.domain||''}"></div>
-      <div class="save-row">
-        <button class="del-btn" onclick="delZaliv(${z.id})">🗑 Удалить</button>
-        <button class="save-btn" onclick="saveZalivEdit(${z.id})">💾 Сохранить</button>
+      <div class="srow">
+        <button class="sbdl" data-zid="${z.id}">🗑 Удалить</button>
+        <button class="sbsv" data-zid="${z.id}">💾 Сохранить</button>
       </div>
     </div>
-    <div class="exp-block">
-      <div class="exp-label">Инсайты</div>
-      <textarea class="ins-ta" id="ef-ins-${z.id}" onclick="event.stopPropagation()">${z.insights||''}</textarea>
-      <div class="exp-label" style="margin-top:10px">Цели</div>
-      ${(z.goals||[]).map(g=>`<span class="goal-tag">— ${g}</span>`).join('')}
-      <div class="rk-mono">D{${z.date||''}}${z.geo}/PH1./${z.funnel}\\LEADS/${z.rk_budget}$</div>
+    <div class="exbl">
+      <div class="exlb">Инсайты</div>
+      <textarea class="insta" id="ef-ins-${z.id}">${z.insights||''}</textarea>
+      <div class="exlb" style="margin-top:10px">Цели</div>
+      ${(z.goals||[]).map(g=>`<span class="gtag">— ${g}</span>`).join('')}
+      <div class="rkm">D{${z.date||''}}${z.geo}/PH1./${z.funnel}\\LEADS/${z.rk_budget}$</div>
     </div>
   </div></td></tr>`
 }
 
 function togZ(id){expZ=(expZ===id?null:id);rzalivs()}
-async function setZInd(id,ind,e){e.stopPropagation();await db.from('zalivs').update({ind,updated_at:new Date().toISOString()}).eq('id',id);const z=ZALIVS.find(x=>x.id===id);if(z)z.ind=ind;rzalivs()}
-async function setZScore(id,score,e){
-  e.stopPropagation();const z=ZALIVS.find(x=>x.id===id);if(!z)return
-  const ns=['OFF','Check','Scale'].includes(z.status)?scoreToStatus(score):z.status
+async function setInd(id,ind){await db.from('zalivs').update({ind,updated_at:new Date().toISOString()}).eq('id',id);const z=ZALIVS.find(x=>x.id===id);if(z)z.ind=ind;rzalivs()}
+async function setScore(id,score){
+  const z=ZALIVS.find(x=>x.id===id);if(!z)return
+  const ns=['OFF','Check','Scale'].includes(z.status)?s2st(score):z.status
   await db.from('zalivs').update({score,status:ns,updated_at:new Date().toISOString()}).eq('id',id)
   z.score=score;z.status=ns;rzalivs()
 }
-async function setZScoreEdit(id,score){
+async function setStatus(id,sel){
   const z=ZALIVS.find(x=>x.id===id);if(!z)return
-  const ns=['OFF','Check','Scale'].includes(z.status)?scoreToStatus(score):z.status
-  await db.from('zalivs').update({score,status:ns,updated_at:new Date().toISOString()}).eq('id',id)
-  z.score=score;z.status=ns;rzalivs()
-}
-async function setZStatus(id,sel){
-  const z=ZALIVS.find(x=>x.id===id);if(!z)return
-  z.status=sel.value;sel.className='status-sel '+(SCLS[sel.value]||'')
+  z.status=sel.value;sel.className='ssel '+(SCLS[sel.value]||'')
   await db.from('zalivs').update({status:sel.value,updated_at:new Date().toISOString()}).eq('id',id)
 }
-async function saveZalivEdit(id){
+async function saveEdit(id){
   const z=ZALIVS.find(x=>x.id===id);if(!z)return
-  const updates={name:document.getElementById('ef-name-'+id).value.trim()||z.name,ad_budget:parseFloat(document.getElementById('ef-ad-'+id).value)||z.ad_budget,rk_budget:parseFloat(document.getElementById('ef-rk-'+id).value)||z.rk_budget,domain:document.getElementById('ef-dom-'+id).value.trim(),insights:document.getElementById('ef-ins-'+id).value,updated_at:new Date().toISOString()}
-  await db.from('zalivs').update(updates).eq('id',id);Object.assign(z,updates);rzalivs()
+  const u={name:document.getElementById('ef-name-'+id).value.trim()||z.name,ad_budget:parseFloat(document.getElementById('ef-ad-'+id).value)||z.ad_budget,rk_budget:parseFloat(document.getElementById('ef-rk-'+id).value)||z.rk_budget,domain:document.getElementById('ef-dom-'+id).value.trim(),insights:document.getElementById('ef-ins-'+id).value,updated_at:new Date().toISOString()}
+  await db.from('zalivs').update(u).eq('id',id);Object.assign(z,u);rzalivs()
 }
-async function delZaliv(id){if(!confirm('Удалить залив?'))return;await db.from('zalivs').delete().eq('id',id);ZALIVS=ZALIVS.filter(z=>z.id!==id);expZ=null;rzalivs()}
-async function addCreoInline(id,e){e.stopPropagation();const val=prompt('Крео ID:');if(!val?.trim())return;const z=ZALIVS.find(x=>x.id===id);if(!z||(z.creos||[]).length>=5)return;z.creos=[...(z.creos||[]),val.trim()];await db.from('zalivs').update({creos:z.creos}).eq('id',id);rzalivs()}
+async function delZaliv(id){if(!confirm('Удалить?'))return;await db.from('zalivs').delete().eq('id',id);ZALIVS=ZALIVS.filter(z=>z.id!==id);expZ=null;rzalivs()}
+async function addCreoInline(id){const v=prompt('Крео ID:');if(!v?.trim())return;const z=ZALIVS.find(x=>x.id===id);if(!z||(z.creos||[]).length>=5)return;z.creos=[...(z.creos||[]),v.trim()];await db.from('zalivs').update({creos:z.creos}).eq('id',id);rzalivs()}
 
-// MODAL ZALIV
-function openMo(){
-  document.getElementById('mo').classList.add('open')
+// Modal Zaliv
+function openMoZaliv(){
   moGeo='';moScore=0
-  document.querySelectorAll('#mo .go').forEach(g=>g.classList.remove('sel'))
+  document.querySelectorAll('[data-geo]').forEach(b=>b.classList.remove('sel'))
+  document.querySelectorAll('#mo-score .spb').forEach((b,i)=>b.className='spb'+(i===0?' s0':''))
   document.getElementById('mn').value='';document.getElementById('ma').value='';document.getElementById('mr').value=''
-  setMoScore(0)
   document.getElementById('mcreo-list').innerHTML='';document.getElementById('mg-list').innerHTML=''
-  addCreoField();addGoalField();updds('');updprev()
+  addCreoField();addGoalField();updDomains();updPrev()
+  document.getElementById('mo-zaliv').classList.add('open')
 }
-function cmox(){document.getElementById('mo').classList.remove('open')}
-function pgeo(el,g){document.querySelectorAll('#mo .go').forEach(x=>x.classList.remove('sel'));el.classList.add('sel');moGeo=g;updds(g);updprev()}
-function updds(geo){const sel=document.getElementById('md');const f=geo?DOMAINS.filter(d=>(d.geos||[]).includes(geo)&&d.active):DOMAINS.filter(d=>d.active);sel.innerHTML='<option value="">— выбрать —</option>'+f.map(d=>`<option value="${d.url}">${d.url}</option>`).join('')}
-function updprev(){const g=moGeo||'GEO',b=document.getElementById('mr').value||'budget';document.getElementById('mo-prev').textContent=`D{${new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})}}${g}/PH1./garno/kalk\\LEADS/${b}$`}
-function setMoScore(s){moScore=s;for(let i=0;i<=6;i++){const btn=document.getElementById('mo-spb-'+i);if(!btn)continue;btn.className='spb'+(i===s?' s'+s:'')}}
-function addCreoField(){const list=document.getElementById('mcreo-list');if(list.children.length>=5)return;const div=document.createElement('div');div.className='gr';const inp=document.createElement('input');inp.className='fi mcreo-input';inp.placeholder='Крео #'+(list.children.length+1);const btn=document.createElement('button');btn.type='button';btn.className='rm-btn';btn.textContent='×';btn.onclick=()=>{if(list.children.length>1)div.remove()};div.appendChild(inp);div.appendChild(btn);list.appendChild(div)}
-function addGoalField(){const list=document.getElementById('mg-list');const div=document.createElement('div');div.className='gr';const inp=document.createElement('input');inp.className='fi mgoal-input';inp.placeholder='Цель '+(list.children.length+1);const btn=document.createElement('button');btn.type='button';btn.className='rm-btn';btn.textContent='×';btn.onclick=()=>{if(list.children.length>1)div.remove()};div.appendChild(inp);div.appendChild(btn);list.appendChild(div)}
+function updDomains(){
+  const sel=document.getElementById('md')
+  const f=moGeo?DOMAINS.filter(d=>(d.geos||[]).includes(moGeo)&&d.active):DOMAINS.filter(d=>d.active)
+  sel.innerHTML='<option value="">— выбрать —</option>'+f.map(d=>`<option value="${d.url}">${d.url}</option>`).join('')
+}
+function updPrev(){const g=moGeo||'GEO',b=document.getElementById('mr').value||'budget';document.getElementById('mo-prev').textContent=`D{${new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})}}${g}/PH1./garno/kalk\\LEADS/${b}$`}
+function addCreoField(){const l=document.getElementById('mcreo-list');if(l.children.length>=5)return;const d=document.createElement('div');d.className='gr';const i=document.createElement('input');i.className='fi mcreo-input';i.placeholder='Крео #'+(l.children.length+1);const b=document.createElement('button');b.type='button';b.className='rmbtn';b.textContent='×';b.onclick=()=>{if(l.children.length>1)d.remove()};d.appendChild(i);d.appendChild(b);l.appendChild(d)}
+function addGoalField(){const l=document.getElementById('mg-list');const d=document.createElement('div');d.className='gr';const i=document.createElement('input');i.className='fi mgoal-input';i.placeholder='Цель '+(l.children.length+1);const b=document.createElement('button');b.type='button';b.className='rmbtn';b.textContent='×';b.onclick=()=>{if(l.children.length>1)d.remove()};d.appendChild(i);d.appendChild(b);l.appendChild(d)}
 async function svz(){
   const name=document.getElementById('mn').value.trim()
   if(!name||!moGeo){alert('Укажи GEO и название');return}
   const creos=[...document.querySelectorAll('.mcreo-input')].map(i=>i.value.trim()).filter(Boolean)
   const goals=[...document.querySelectorAll('.mgoal-input')].map(i=>i.value.trim()).filter(Boolean)
-  const initStatus=scoreToStatus(moScore)
   const today=new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
-  const{data,error}=await db.from('zalivs').insert({geo:moGeo,name,ad_budget:parseFloat(document.getElementById('ma').value)||0,rk_budget:parseFloat(document.getElementById('mr').value)||0,domain:document.getElementById('md').value,creos,goals,ind:'profit',status:initStatus,insights:'',buyer:document.getElementById('mb').value,funnel:document.getElementById('mf').value,score:moScore,date:today}).select().single()
-  if(!error&&data){ZALIVS.unshift(data);cmox();rzalivs()}else alert('Ошибка: '+JSON.stringify(error))
+  const{data,error}=await db.from('zalivs').insert({geo:moGeo,name,ad_budget:parseFloat(document.getElementById('ma').value)||0,rk_budget:parseFloat(document.getElementById('mr').value)||0,domain:document.getElementById('md').value,creos,goals,ind:'profit',status:s2st(moScore),insights:'',buyer:document.getElementById('mb').value,funnel:document.getElementById('mf').value,score:moScore,date:today}).select().single()
+  if(!error&&data){ZALIVS.unshift(data);document.getElementById('mo-zaliv').classList.remove('open');rzalivs()}
+  else alert('Ошибка: '+JSON.stringify(error))
 }
-document.getElementById('mr').addEventListener('input',updprev)
-document.getElementById('mo').addEventListener('keydown',function(e){
-  if(e.key!=='Enter')return
-  const inputs=[...this.querySelectorAll('input.fi,select.fi,.mcreo-input,.mgoal-input')].filter(el=>window.getComputedStyle(el).display!=='none')
-  const idx=inputs.indexOf(document.activeElement)
-  if(idx===-1)return
-  if(idx<inputs.length-1){e.preventDefault();inputs[idx+1].focus()}else{e.preventDefault();svz()}
-})
+
+// ── SALES ──
+function parseDt(ds){if(!ds)return null;if(ds.includes('-'))return new Date(ds);const p=ds.split('.');if(p.length===3)return new Date(p[2]+'-'+p[1]+'-'+p[0]);return null}
+function rsales(){
+  const from=document.getElementById('sp-from').value,to=document.getElementById('sp-to').value
+  const f=SALES_DATA.filter(s=>{const d=parseDt(s.createdAt);if(!d)return false;const day=d.toISOString().split('T')[0];return day>=from&&day<=to})
+  document.getElementById('sales-count').textContent='('+f.length+')'
+  const total=f.reduce((s,r)=>s+(r.saleAmount||0),0),avg=f.length?Math.round(total/f.length):0
+  document.getElementById('sales-kpi').innerHTML=`
+    <div class="skc"><div class="sklb">Total Revenue</div><div class="skvl" id="sk-total">0 zł</div><div class="sksb">${f.length} продаж</div></div>
+    <div class="skc"><div class="sklb">Avg Deal</div><div class="skvl" id="sk-avg">0 zł</div><div class="sksb">средний чек</div></div>
+    <div class="skc"><div class="sklb">Кол-во продаж</div><div class="skvl" id="sk-cnt">0</div><div class="sksb">за период</div></div>`
+  setTimeout(()=>{
+    countUp(document.getElementById('sk-total'),total.toLocaleString('ru'),'','  zł',1000)
+    countUp(document.getElementById('sk-avg'),avg.toLocaleString('ru'),'','  zł',800)
+    countUp(document.getElementById('sk-cnt'),f.length,'','',600)
+  },50)
+  const sm={}
+  f.forEach(s=>{const src=s.source||'Неизвестно';if(!sm[src])sm[src]={count:0,amount:0};sm[src].count++;sm[src].amount+=s.saleAmount||0})
+  const srcs=Object.entries(sm).sort((a,b)=>b[1].amount-a[1].amount)
+  document.getElementById('sales-sources').innerHTML=srcs.map(([src,v])=>`<div class="ssrc"><div class="sstop"><span class="ssn">${src}</span><span class="sscnt">${v.count} пр.</span></div><div class="ssamt">${v.amount.toLocaleString('ru')} zł</div><div class="sssub">avg ${Math.round(v.amount/v.count).toLocaleString('ru')} zł</div></div>`).join('')||'<div class="empty">Нет продаж за период</div>'
+  document.getElementById('sales-list').innerHTML=[...f].sort((a,b)=>{const da=parseDt(a.createdAt)||new Date(0),db=parseDt(b.createdAt)||new Date(0);return db-da}).map(s=>`<div class="slrow"><div class="slava">${(s.name||'?').substring(0,2).toUpperCase()}</div><div><div class="slnm">${s.name||'—'}</div><div style="font-size:10px;color:var(--text3)">${s.phone||''}</div></div><span class="slsr">${s.source||'—'}</span><span class="sldt">${s.createdAt||'—'}</span><span class="slam">${(s.saleAmount||0).toLocaleString('ru')} zł</span></div>`).join('')||'<div class="empty">Нет продаж за период</div>'
+}
 
 // ── DOMAINS ──
-function openDomMo(){document.getElementById('dom-mo').classList.add('open');document.getElementById('dm-url').value='';document.getElementById('dm-desc').value='';domGeoSel=[];document.querySelectorAll('#dm-geos .go').forEach(g=>g.classList.remove('sel'))}
-function closeDomMo(){document.getElementById('dom-mo').classList.remove('open')}
-function toggleDomGeo(el,g){if(domGeoSel.includes(g)){domGeoSel=domGeoSel.filter(x=>x!==g);el.classList.remove('sel')}else{domGeoSel.push(g);el.classList.add('sel')}}
 async function saveDomain(){
   const url=document.getElementById('dm-url').value.trim().replace(/^https?:\/\//,'')
   if(!url){alert('Введи URL');return}
   if(!domGeoSel.length){alert('Выбери GEO');return}
   const{data,error}=await db.from('domains').insert({url,description:document.getElementById('dm-desc').value.trim(),geos:[...domGeoSel],funnel:document.getElementById('dm-funnel').value,active:true}).select().single()
-  if(!error&&data){DOMAINS.push(data);closeDomMo();rdomains()}
+  if(!error&&data){DOMAINS.push(data);document.getElementById('mo-domain').classList.remove('open');domGeoSel=[];document.querySelectorAll('[data-dgeo]').forEach(b=>b.classList.remove('sel'));rdomains()}
 }
-async function deleteDomain(id){if(!confirm('Удалить?'))return;await db.from('domains').delete().eq('id',id);DOMAINS=DOMAINS.filter(d=>d.id!==id);rdomains()}
+async function delDomain(id){if(!confirm('Удалить?'))return;await db.from('domains').delete().eq('id',id);DOMAINS=DOMAINS.filter(d=>d.id!==id);rdomains()}
 function rdomains(){
   const geo=document.getElementById('df-geo').value,q=document.getElementById('df-q').value.toLowerCase()
   const f=DOMAINS.filter(d=>(!geo||(d.geos||[]).includes(geo))&&(!q||d.url.toLowerCase().includes(q)))
   document.getElementById('d-count').textContent='('+f.length+')'
-  document.getElementById('dom-grid').innerHTML=f.length?f.map(d=>`<div class="dom-card"><div class="dom-top"><span style="font-size:16px">${(d.geos||[]).map(g=>({PL:'🇵🇱',PLUA:'🇵🇱🇺🇦'}[g]||'')).filter((v,i,a)=>a.indexOf(v)===i).join('')}</span><a class="dom-url" href="#" onclick="return false">${d.url}</a><div class="dom-led ${d.active?'led-on':'led-off'}"></div></div><div class="dom-desc">${d.description||''}</div><div class="dom-footer">${(d.geos||[]).map(g=>`<span class="geo-chip ${g==='PL'?'gc-pl':'gc-plua'}">${g}</span>`).join('')}<span class="funnel-chip">${d.funnel}</span><span style="margin-left:auto;font-size:11px;font-weight:600;color:${d.active?'var(--green)':'var(--text3)'}">${d.active?'● Активный':'○ Неактивный'}</span><button onclick="deleteDomain(${d.id})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:0 4px" title="Удалить">✕</button></div></div>`).join(''):'<div class="empty-state">Нет доменов</div>'
+  document.getElementById('dom-grid').innerHTML=f.map(d=>`<div class="dc"><div class="dctop"><span style="font-size:16px">${(d.geos||[]).map(g=>({PL:'🇵🇱',PLUA:'🇵🇱🇺🇦'}[g]||'')).filter((v,i,a)=>a.indexOf(v)===i).join('')}</span><a class="dcurl" href="#" onclick="return false">${d.url}</a><div class="dled ${d.active?'lon':'loff'}"></div></div><div class="ddsc">${d.description||''}</div><div class="dftr">${(d.geos||[]).map(g=>`<span class="zgeo gchip ${g==='PL'?'gpl':'gplua'}">${g}</span>`).join('')}<span class="fchip">${d.funnel}</span><span style="margin-left:auto;font-size:11px;font-weight:600;color:${d.active?'var(--green)':'var(--text3)'}">${d.active?'● Активный':'○ Неактивный'}</span><button onclick="delDomain(${d.id})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:0 4px">✕</button></div></div>`).join('')||'<div class="empty">Нет доменов</div>'
 }
 
 // ── TASKS ──
-async function saveTask(title, col, who){
-  if(!title.trim())return
-  const{data,error}=await db.from('tasks').insert({title:title.trim(),col,assignee:who||'',priority:'mid',deadline:null}).select().single()
-  if(!error&&data){TASKS.push(data);rtasks()}
-}
-async function deleteTask(id){if(!confirm('Удалить?'))return;await db.from('tasks').delete().eq('id',id);TASKS=TASKS.filter(t=>t.id!==id);rtasks()}
-async function moveTask(id,col){await db.from('tasks').update({col,updated_at:new Date().toISOString()}).eq('id',id);const t=TASKS.find(x=>x.id===id);if(t)t.col=col;rtasks()}
-async function updateTaskPriority(id,pr){await db.from('tasks').update({priority:pr,updated_at:new Date().toISOString()}).eq('id',id);const t=TASKS.find(x=>x.id===id);if(t)t.priority=pr;rtasks()}
+async function saveTk(title,col,who){if(!title.trim())return;const{data,error}=await db.from('tasks').insert({title:title.trim(),col,assignee:who||'',priority:'mid',deadline:null}).select().single();if(!error&&data){TASKS.push(data);rtasks()}}
+async function delTk(id){if(!confirm('Удалить?'))return;await db.from('tasks').delete().eq('id',id);TASKS=TASKS.filter(t=>t.id!==id);rtasks()}
+async function moveTk(id,col){await db.from('tasks').update({col,updated_at:new Date().toISOString()}).eq('id',id);const t=TASKS.find(x=>x.id===id);if(t)t.col=col;rtasks()}
+async function cyclePr(id,cur){const o=['low','mid','high'],n=o[(o.indexOf(cur)+1)%3];await db.from('tasks').update({priority:n,updated_at:new Date().toISOString()}).eq('id',id);const t=TASKS.find(x=>x.id===id);if(t)t.priority=n;rtasks()}
 
-function showQuickAdd(colId){
-  // Hide all other quick adds
-  document.querySelectorAll('.k-quick').forEach(q=>q.classList.remove('open'))
-  const q=document.getElementById('kq-'+colId)
-  if(q){q.classList.add('open');q.querySelector('input').focus()}
-}
-function hideQuickAdd(colId){
-  const q=document.getElementById('kq-'+colId)
-  if(q)q.classList.remove('open')
-}
+function showQA(col){document.querySelectorAll('.kqwrap').forEach(q=>q.classList.remove('open'));const q=document.getElementById('kq-'+col);if(q){q.classList.add('open');q.querySelector('input').focus()}}
+function hideQA(col){const q=document.getElementById('kq-'+col);if(q)q.classList.remove('open')}
 
 function rtasks(){
   const uf=document.getElementById('tf-u').value
-  const whoDefault=CURRENT_USER?CURRENT_USER.name:''
+  const who=CURRENT_USER?CURRENT_USER.name:''
   const cols=[{id:'all',t:'All Tasks',c:'var(--text2)'},{id:'todo',t:'TO DO',c:'var(--blue)'},{id:'process',t:'Process',c:'var(--yellow)'},{id:'done',t:'Done',c:'var(--green)'}]
   const filt=uf?TASKS.filter(t=>t.assignee===uf):TASKS
   document.getElementById('kanban').innerHTML=cols.map(c=>{
     const tasks=filt.filter(t=>t.col===c.id)
-    return`<div class="k-col" id="kc-${c.id}" ondragover="dov(event)" ondrop="ddr(event,'${c.id}')">
-      <div class="k-hdr"><div class="k-title"><div class="k-ind" style="background:${c.c}"></div>${c.t}</div><span class="k-cnt">${tasks.length}</span></div>
+    return`<div class="kcol" id="kc-${c.id}">
+      <div class="kchdr"><div class="kctit"><div class="kcind" style="background:${c.c}"></div>${c.t}</div><span class="kccnt">${tasks.length}</span></div>
       <div id="kl-${c.id}">${tasks.map(t=>tcard(t)).join('')}</div>
-      <button class="k-add" onclick="showQuickAdd('${c.id}')">+ Add a card</button>
-      <div class="k-quick" id="kq-${c.id}">
-        <input class="k-quick-inp" placeholder="Название задачи..." onkeydown="if(event.key==='Enter'){const v=this.value;if(v){saveTask(v,'${c.id}','${whoDefault}');hideQuickAdd('${c.id}')}}else if(event.key==='Escape')hideQuickAdd('${c.id}')">
-        <div class="k-quick-foot">
-          <button class="k-quick-save" onclick="const inp=this.closest('.k-quick').querySelector('input');const v=inp.value;if(v){saveTask(v,'${c.id}','${whoDefault}');hideQuickAdd('${c.id}')}">Создать</button>
-          <button class="k-quick-cancel" onclick="hideQuickAdd('${c.id}')">✕</button>
+      <button class="kadd" data-col="${c.id}">+ Add a card</button>
+      <div class="kqwrap" id="kq-${c.id}">
+        <input class="kqinp" placeholder="Название задачи..." data-col="${c.id}" data-who="${who}">
+        <div class="kqfoot">
+          <button class="kqsv" data-col="${c.id}" data-who="${who}">Создать</button>
+          <button class="kqcn" data-col="${c.id}">✕</button>
         </div>
       </div>
     </div>`
   }).join('')
+  // bind
+  document.querySelectorAll('.kadd[data-col]').forEach(b=>b.addEventListener('click',()=>showQA(b.dataset.col)))
+  document.querySelectorAll('.kqinp').forEach(inp=>{
+    inp.addEventListener('keydown', e=>{
+      if(e.key==='Enter'){const v=inp.value;if(v){saveTk(v,inp.dataset.col,inp.dataset.who);hideQA(inp.dataset.col)}}
+      if(e.key==='Escape')hideQA(inp.dataset.col)
+    })
+  })
+  document.querySelectorAll('.kqsv').forEach(b=>{
+    b.addEventListener('click',()=>{const inp=document.querySelector(`#kq-${b.dataset.col} .kqinp`);if(inp?.value){saveTk(inp.value,b.dataset.col,b.dataset.who);hideQA(b.dataset.col)}})
+  })
+  document.querySelectorAll('.kqcn').forEach(b=>b.addEventListener('click',()=>hideQA(b.dataset.col)))
+  document.querySelectorAll('.kcol').forEach(col=>{
+    col.addEventListener('dragover',e=>e.preventDefault())
+    col.addEventListener('drop',e=>{e.preventDefault();if(dragId)moveTk(dragId,col.id.replace('kc-',''))})
+  })
 }
-
 function tcard(t){
   const ov=t.deadline&&t.deadline<new Date().toISOString().split('T')[0]
-  const prColors={high:'var(--red)',mid:'var(--yellow)',low:'var(--green)'}
-  return`<div class="t-card tc-${t.priority}" draggable="true" id="tc-${t.id}" ondragstart="dstart(event,${t.id})" ondragend="dend(event)" ondragover="dcov(event,this)" ondragleave="dcl(event,this)">
-    <div class="t-name">${t.title}</div>
-    <div class="t-foot">
-      <span class="t-pr-badge pr-${t.priority}" onclick="cyclePriority(${t.id},'${t.priority}',event)">${t.priority.toUpperCase()}</span>
-      ${t.assignee?`<span class="t-who">${t.assignee}</span>`:''}
-      ${t.deadline?`<span class="t-dl${ov?' ov':''}">${ov?'⚠ ':''} ${t.deadline}</span>`:''}
-      <button class="t-del" onclick="deleteTask(${t.id})" title="Удалить">✕</button>
+  return`<div class="tcard ${t.priority==='high'?'th':t.priority==='mid'?'tm':'tl'}" draggable="true" id="tc-${t.id}" data-id="${t.id}">
+    <div class="tnm">${t.title}</div>
+    <div class="tft">
+      <span class="tpr ${t.priority==='high'?'ph':t.priority==='mid'?'pm':'pl'}" data-id="${t.id}" data-pr="${t.priority}">${t.priority.toUpperCase()}</span>
+      ${t.assignee?`<span class="two">${t.assignee}</span>`:''}
+      ${t.deadline?`<span class="tdl${ov?' ov':''}">${ov?'⚠ ':''} ${t.deadline}</span>`:''}
+      <button class="tdel" data-id="${t.id}">✕</button>
     </div>
   </div>`
 }
-
-function cyclePriority(id, current, e){
-  e.stopPropagation()
-  const order=['low','mid','high']
-  const next=order[(order.indexOf(current)+1)%3]
-  updateTaskPriority(id,next)
-}
-
-// Drag within column (reorder)
-let dragCardId=null,dragOverCardId=null
-function dstart(e,id){dragCardId=id;setTimeout(()=>{const el=document.getElementById('tc-'+id);if(el)el.classList.add('dragging')},0)}
-function dend(e){const el=document.getElementById('tc-'+dragCardId);if(el)el.classList.remove('dragging');dragCardId=null;rtasks()}
-function dov(e){e.preventDefault()}
-function dcov(e,el){e.preventDefault();el.classList.add('drag-over')}
-function dcl(e,el){el.classList.remove('drag-over')}
-function ddr(e,col){e.preventDefault();if(dragCardId===null)return;moveTask(dragCardId,col);dragCardId=null}
+document.addEventListener('click', e=>{
+  const pr=e.target.closest('.tpr[data-id]')
+  if(pr){e.stopPropagation();cyclePr(parseInt(pr.dataset.id),pr.dataset.pr);return}
+  const del=e.target.closest('.tdel[data-id]')
+  if(del){e.stopPropagation();delTk(parseInt(del.dataset.id));return}
+})
+document.addEventListener('dragstart', e=>{const tc=e.target.closest('.tcard[data-id]');if(tc){dragId=parseInt(tc.dataset.id);setTimeout(()=>tc.classList.add('dragging'),0)}})
+document.addEventListener('dragend', e=>{const tc=e.target.closest('.tcard');if(tc)tc.classList.remove('dragging');dragId=null})
 
 // ── JOURNAL ──
-async function rtree(){
+function rtree(){
   let h=''
-  jLoose.forEach(d=>{h+=jItem(d,false)})
+  jLoose.forEach(d=>{h+=ji2(d,false)})
   jFolders.forEach(f=>{
-    h+=`<div class="j-group"><span>📁 ${f.name}</span><div class="j-group-btns"><button class="j-group-btn" onclick="newDocInFolder('${f.id}','${f.name.replace(/'/g,"\\'")}')">+</button><button class="j-group-btn" onclick="deleteFolder('${f.id}')" style="color:var(--red)">✕</button></div></div>`
-    f.docs.forEach(d=>{h+=jItem(d,true)})
+    h+=`<div class="jgrp"><span>📁 ${f.name}</span><div class="jgbtns"><button class="jgbtn" data-fid="${f.id}" data-fname="${f.name}">+</button><button class="jgbtn" style="color:var(--red)" data-delfid="${f.id}">✕</button></div></div>`
+    f.docs.forEach(d=>{h+=ji2(d,true)})
   })
-  document.getElementById('j-tree').innerHTML=h||'<div class="empty-state" style="padding:12px">Нет документов</div>'
+  document.getElementById('j-tree').innerHTML=h||'<div class="empty" style="padding:12px">Нет документов</div>'
+  document.querySelectorAll('[data-docid]').forEach(el=>el.addEventListener('click',()=>loadDocById(el.dataset.docid)))
+  document.querySelectorAll('[data-deldoc]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();deleteDoc(btn.dataset.deldoc)}))
+  document.querySelectorAll('[data-fid]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();newDocInFolder(btn.dataset.fid,btn.dataset.fname)}))
+  document.querySelectorAll('[data-delfid]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();deleteFolder(btn.dataset.delfid)}))
 }
-function jItem(d,child){return`<div class="j-item${child?' j-item-child':''}${curDoc===d.id?' active':''}" onclick="loadDocById('${d.id}')"><span>📄</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">${d.title}</span><div class="j-item-actions"><button class="j-ia-btn" onclick="deleteDoc('${d.id}',event)">✕</button></div></div>`}
-async function loadDocById(id){curDoc=id;const all=[...jLoose,...jFolders.flatMap(f=>f.docs)];const d=all.find(x=>x.id===id);if(d){document.getElementById('j-title').value=d.title;document.getElementById('j-ta').value=d.body}jtab('edit',document.querySelector('.j-tab'));rtree()}
-async function saveDoc(){if(!curDoc)return;const title=document.getElementById('j-title').value,body=document.getElementById('j-ta').value;await db.from('journal_docs').update({title,body,updated_at:new Date().toISOString()}).eq('id',curDoc);const all=[...jLoose,...jFolders.flatMap(f=>f.docs)];const d=all.find(x=>x.id===curDoc);if(d){d.title=title;d.body=body}const btn=event.currentTarget;btn.textContent='✅ Saved';setTimeout(()=>btn.textContent='💾 Save',1500);rtree()}
+function ji2(d,child){return`<div class="jitem${child?' jich':''}${curDoc===d.id?' active':''}" data-docid="${d.id}"><span>📄</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">${d.title}</span><div class="jiact"><button class="jiab" data-deldoc="${d.id}">✕</button></div></div>`}
+function loadDocById(id){curDoc=id;const all=[...jLoose,...jFolders.flatMap(f=>f.docs)];const d=all.find(x=>x.id===id);if(d){document.getElementById('j-title').value=d.title;document.getElementById('j-ta').value=d.body}rtree()}
+async function saveDoc(){if(!curDoc)return;const title=document.getElementById('j-title').value,body=document.getElementById('j-ta').value;await db.from('journal_docs').update({title,body,updated_at:new Date().toISOString()}).eq('id',curDoc);const all=[...jLoose,...jFolders.flatMap(f=>f.docs)];const d=all.find(x=>x.id===curDoc);if(d){d.title=title;d.body=body}const btn=document.getElementById('btn-jsave');btn.textContent='✅ Saved';setTimeout(()=>btn.textContent='💾 Save',1500);rtree()}
 async function newDoc(){const title=prompt('Название:');if(!title)return;const id='doc_'+Date.now();const{data}=await db.from('journal_docs').insert({id,title,body:'## '+title+'\n\n',folder_id:'',folder_name:'',sort_order:Date.now()}).select().single();if(data){jLoose.push(data);curDoc=id;rtree();loadDocById(id)}}
-async function newFolder(){const name=prompt('Название папки:');if(!name)return;const fid='folder_'+Date.now();const docId='doc_'+Date.now();const{data}=await db.from('journal_docs').insert({id:docId,title:'Новый документ',body:'',folder_id:fid,folder_name:name,sort_order:Date.now()}).select().single();if(data){jFolders.push({id:fid,name,docs:[data]});curDoc=docId;rtree();loadDocById(docId)}}
+async function newFolder(){const name=prompt('Папка:');if(!name)return;const fid='folder_'+Date.now(),docId='doc_'+Date.now();const{data}=await db.from('journal_docs').insert({id:docId,title:'Новый документ',body:'',folder_id:fid,folder_name:name,sort_order:Date.now()}).select().single();if(data){jFolders.push({id:fid,name,docs:[data]});curDoc=docId;rtree();loadDocById(docId)}}
 async function newDocInFolder(fid,fname){const title=prompt('Название:');if(!title)return;const id='doc_'+Date.now();const{data}=await db.from('journal_docs').insert({id,title,body:'',folder_id:fid,folder_name:fname,sort_order:Date.now()}).select().single();if(data){const f=jFolders.find(x=>x.id===fid);if(f)f.docs.push(data);curDoc=id;rtree();loadDocById(id)}}
-async function deleteDoc(id,e){e.stopPropagation();if(!confirm('Удалить документ?'))return;await db.from('journal_docs').delete().eq('id',id);jLoose=jLoose.filter(d=>d.id!==id);jFolders.forEach(f=>{f.docs=f.docs.filter(d=>d.id!==id)});const all=[...jLoose,...jFolders.flatMap(f=>f.docs)];curDoc=all[0]?.id||null;rtree();if(curDoc)loadDocById(curDoc)}
-async function deleteFolder(fid){if(!confirm('Удалить папку и все документы?'))return;const f=jFolders.find(x=>x.id===fid);if(f)for(const d of f.docs)await db.from('journal_docs').delete().eq('id',d.id);jFolders=jFolders.filter(x=>x.id!==fid);curDoc=jLoose[0]?.id||null;rtree();if(curDoc)loadDocById(curDoc)}
-function jtab(tab,el){document.querySelectorAll('.j-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.getElementById('j-edit').style.display=tab==='edit'?'flex':'none';document.getElementById('j-prev').style.display=tab==='prev'?'block':'none';if(tab==='prev')document.getElementById('j-preview').innerHTML=parseMd(document.getElementById('j-ta').value)}
+async function deleteDoc(id){if(!confirm('Удалить документ?'))return;await db.from('journal_docs').delete().eq('id',id);jLoose=jLoose.filter(d=>d.id!==id);jFolders.forEach(f=>{f.docs=f.docs.filter(d=>d.id!==id)});const all=[...jLoose,...jFolders.flatMap(f=>f.docs)];curDoc=all[0]?.id||null;rtree();if(curDoc)loadDocById(curDoc)}
+async function deleteFolder(fid){if(!confirm('Удалить папку?'))return;const f=jFolders.find(x=>x.id===fid);if(f)for(const d of f.docs)await db.from('journal_docs').delete().eq('id',d.id);jFolders=jFolders.filter(x=>x.id!==fid);curDoc=jLoose[0]?.id||null;rtree();if(curDoc)loadDocById(curDoc)}
 function ji(p){const ta=document.getElementById('j-ta'),s=ta.selectionStart;ta.value=ta.value.substring(0,s)+p+ta.value.substring(s);ta.focus();ta.selectionStart=ta.selectionEnd=s+p.length}
 function jw(b,a){const ta=document.getElementById('j-ta'),s=ta.selectionStart,e=ta.selectionEnd,sel=ta.value.substring(s,e);ta.value=ta.value.substring(0,s)+b+sel+a+ta.value.substring(e);ta.focus();ta.selectionStart=s+b.length;ta.selectionEnd=e+b.length}
 function jtable(){const ta=document.getElementById('j-ta'),s=ta.selectionStart;ta.value=ta.value.substring(0,s)+'\n| Кол1 | Кол2 | Кол3 |\n|------|------|------|\n| val  | val  | val  |\n'+ta.value.substring(s);ta.focus()}
-function parseMd(md){return md.replace(/^#([^#\n][^\n]*)$/gm,'<h2>$1</h2>').replace(/^## (.+)$/gm,'<h2>$1</h2>').replace(/^### (.+)$/gm,'<h3>$1</h3>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/`(.+?)`/g,'<code>$1</code>').replace(/^---$/gm,'<hr>').replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>').replace(/^- (.+)$/gm,'<li>$1</li>').replace(/(<li>.*<\/li>\n?)+/g,s=>`<ul>${s}</ul>`).replace(/(\|[^\n]+\|\n?)+/g,t=>{const rows=t.trim().split('\n');if(rows.length<2)return t;const head=rows[0].split('|').filter(c=>c.trim()).map(c=>`<th>${c.trim()}</th>`).join('');const body=rows.slice(2).map(r=>'<tr>'+r.split('|').filter(c=>c.trim()).map(c=>`<td>${c.trim()}</td>`).join('')+'</tr>').join('');return`<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`}).replace(/\n/g,'<br>')}
+function parseMd(md){return md.replace(/^## (.+)$/gm,'<h2>$1</h2>').replace(/^### (.+)$/gm,'<h3>$1</h3>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/`(.+?)`/g,'<code>$1</code>').replace(/^---$/gm,'<hr>').replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>').replace(/^- (.+)$/gm,'<li>$1</li>').replace(/(<li>.*<\/li>\n?)+/g,s=>`<ul>${s}</ul>`).replace(/(\|[^\n]+\|\n?)+/g,t=>{const rows=t.trim().split('\n');if(rows.length<2)return t;const head=rows[0].split('|').filter(c=>c.trim()).map(c=>`<th>${c.trim()}</th>`).join('');const body=rows.slice(2).map(r=>'<tr>'+r.split('|').filter(c=>c.trim()).map(c=>`<td>${c.trim()}</td>`).join('')+'</tr>').join('');return`<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`}).replace(/\n/g,'<br>')}
 
-});
+document.getElementById('btn-new-folder').addEventListener('click', newFolder)
+document.getElementById('btn-new-doc').addEventListener('click', newDoc)
+
+// Auto-login
+const _saved = localStorage.getItem('jdl_user')
+if(_saved && USERS[_saved]) doLogin(_saved)
 </script>
 </body>
 </html>
