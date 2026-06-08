@@ -212,7 +212,8 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .kccnt{background:var(--bg4);border:1px solid var(--border);border-radius:8px;padding:0 7px;font-size:11px;color:var(--text3);font-family:var(--mono)}
 .tcard{background:var(--bg3);border:1px solid var(--border);border-left:3px solid transparent;border-radius:7px;padding:10px 12px;margin-bottom:7px;cursor:grab;user-select:none}
 .tcard:hover{border-color:var(--border2)}.tcard.dragging{opacity:.4}
-.tcard.dov{border-left-color:var(--bord2)!important;background:rgba(181,34,64,.06)}
+.tcard.dov{border-top:2px solid var(--bord2)!important;background:rgba(181,34,64,.06)}
+.kcol.dov{background:rgba(181,34,64,.04)!important;border-color:var(--bord)!important}
 .th{border-left-color:var(--red)!important}.tm{border-left-color:var(--yellow)!important}.tl{border-left-color:var(--green)!important}
 .tnm{font-size:12px;font-weight:600;color:#fff;margin-bottom:8px;line-height:1.4}
 .tft{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
@@ -1142,50 +1143,67 @@ document.addEventListener('click', e=>{
   const del=e.target.closest('.tdel[data-id]')
   if(del){e.stopPropagation();delTk(parseInt(del.dataset.id));return}
 })
+// ── TASK DRAG & DROP ──
 document.addEventListener('dragstart', e=>{
-  const tc=e.target.closest('.tcard[data-id]')
-  if(tc){
-    dragId=parseInt(tc.dataset.id)
-    dragCol=tc.closest('.kcol')?.id?.replace('kc-','')
-    setTimeout(()=>tc.classList.add('dragging'),0)
-  }
+  const tc = e.target.closest('.tcard[data-id]')
+  if(!tc) return
+  dragId = parseInt(tc.dataset.id)
+  e.dataTransfer.effectAllowed = 'move'
+  e.dataTransfer.setData('text/plain', dragId)
+  setTimeout(()=>tc.classList.add('dragging'), 0)
 })
-document.addEventListener('dragend', e=>{
-  document.querySelectorAll('.tcard').forEach(t=>t.classList.remove('dragging','dov'))
-  dragId=null; dragCol=null
+
+document.addEventListener('dragend', ()=>{
+  document.querySelectorAll('.tcard.dragging').forEach(t=>t.classList.remove('dragging'))
+  document.querySelectorAll('.tcard.dov, .kcol.dov').forEach(t=>t.classList.remove('dov'))
+  dragId = null
 })
+
 document.addEventListener('dragover', e=>{
-  const tc=e.target.closest('.tcard[data-id]')
-  if(tc&&dragId&&parseInt(tc.dataset.id)!==dragId){
-    document.querySelectorAll('.tcard').forEach(t=>t.classList.remove('dov'))
+  e.preventDefault()
+  e.dataTransfer.dropEffect = 'move'
+  // highlight drop target
+  document.querySelectorAll('.tcard.dov, .kcol.dov').forEach(t=>t.classList.remove('dov'))
+  const tc = e.target.closest('.tcard[data-id]')
+  if(tc && dragId && parseInt(tc.dataset.id) !== dragId) {
     tc.classList.add('dov')
+  } else {
+    const col = e.target.closest('.kcol')
+    if(col) col.classList.add('dov')
   }
 })
+
 document.addEventListener('drop', e=>{
-  const tc=e.target.closest('.tcard[data-id]')
-  const col=e.target.closest('.kcol')
+  e.preventDefault()
+  document.querySelectorAll('.tcard.dov, .kcol.dov').forEach(t=>t.classList.remove('dov'))
   if(!dragId) return
-  if(tc&&parseInt(tc.dataset.id)!==dragId){
-    // reorder within/across column
-    const targetId=parseInt(tc.dataset.id)
-    const targetTask=TASKS.find(t=>t.id===targetId)
-    const dragTask=TASKS.find(t=>t.id===dragId)
-    if(targetTask&&dragTask){
-      const targetCol=targetTask.col
-      // Move drag task to target col
-      dragTask.col=targetCol
-      // Reorder: insert before target
-      const idx=TASKS.indexOf(targetTask)
-      TASKS.splice(TASKS.indexOf(dragTask),1)
-      TASKS.splice(TASKS.indexOf(targetTask),0,dragTask)
-      db.from('tasks').update({col:targetCol,updated_at:new Date().toISOString()}).eq('id',dragId)
-      rtasks()
+
+  const tc = e.target.closest('.tcard[data-id]')
+  const col = e.target.closest('.kcol')
+  const dragTask = TASKS.find(t=>t.id===dragId)
+  if(!dragTask) return
+
+  if(tc && parseInt(tc.dataset.id) !== dragId) {
+    // Drop ON another card: reorder
+    const targetTask = TASKS.find(t=>t.id===parseInt(tc.dataset.id))
+    if(!targetTask) return
+    const newCol = targetTask.col
+    dragTask.col = newCol
+    // Reorder in array
+    TASKS.splice(TASKS.indexOf(dragTask), 1)
+    TASKS.splice(TASKS.indexOf(targetTask), 0, dragTask)
+    db.from('tasks').update({col: newCol, updated_at: new Date().toISOString()}).eq('id', dragId)
+  } else if(col) {
+    // Drop on column: move to end of that column
+    const newCol = col.id.replace('kc-', '')
+    if(dragTask.col !== newCol) {
+      dragTask.col = newCol
+      db.from('tasks').update({col: newCol, updated_at: new Date().toISOString()}).eq('id', dragId)
     }
-  } else if(col&&!tc){
-    const colId=col.id.replace('kc-','')
-    moveTk(dragId,colId)
   }
-  dragId=null; dragCol=null
+
+  rtasks()
+  dragId = null
 })
 
 // ── JOURNAL ──
