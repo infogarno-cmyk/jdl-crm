@@ -1,0 +1,5 @@
+[project]
+id = "dkhkowkgiricjxkcngbf"
+
+[functions.sync]
+verify_jwt = false
