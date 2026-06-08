@@ -1,0 +1,19 @@
+name: Hourly Sync
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # every hour
+  workflow_dispatch:      # manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Edge Function
+        run: |
+          curl -X POST \
+            "https://dkhkowkgiricjxkcngbf.supabase.co/functions/v1/sync" \
+            -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRraGtvd2tnaXJpY2p4a2NuZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MTY3NDEsImV4cCI6MjA5NjQ5Mjc0MX0.48HS8eJ6wLPfimRtiz6behWHG1G8xz5_zfrT0cxnGrE" \
+            -H "Content-Type: application/json" \
+            -d '{}'
+          echo "Sync triggered"
