@@ -576,8 +576,13 @@ const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsIn
 const GARNO_URL = 'https://bnyjwjuejrfalbubdbcv.supabase.co'
 const GARNO_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJueWp3anVlanJmYWxidWJkYmN2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTcyNDQ2NSwiZXhwIjoyMDk1MzAwNDY1fQ.l9ka9b_PzKdu-gock8ZACqODicJDZYCc1laMw_HMBvA'
 
-const { createClient } = supabase
-const db = createClient(SB_URL, SB_ANON)
+let db = null
+try {
+  const { createClient } = supabase
+  db = createClient(SB_URL, SB_ANON)
+} catch(e) {
+  console.error('Supabase init failed:', e)
+}
 
 // ── STATE ──
 let ZALIVS=[], DOMAINS=[], TASKS=[], METRICS=[], SALES_DATA=[]
@@ -612,10 +617,12 @@ function logout() {
   document.getElementById('app').style.display = 'none'
 }
 // Auto-login
-const savedUser = localStorage.getItem('jdl_user')
-if (savedUser && USERS[savedUser]) {
-  login(savedUser)
-}
+try {
+  const savedUser = localStorage.getItem('jdl_user')
+  if (savedUser && USERS[savedUser]) {
+    login(savedUser)
+  }
+} catch(e) { console.error('Auto-login error:', e) }
 
 // ── INIT ──
 async function init() {
