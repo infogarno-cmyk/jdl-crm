@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JDL · CRM</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230a0a0f'/><path d='M6 10h4v12H6zm6 0h4l4 6-4 6h-4l4-6zm6 0h4v12h-4z' fill='%23b52240' opacity='.9'/></svg>">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="window._sbLoaded=true"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -326,6 +326,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:13
 .empty-state{text-align:center;padding:30px;color:var(--text3);font-size:13px}
 </style>
 <script>
+document.addEventListener("DOMContentLoaded", function() {
+
 var USERS = {
   illia: { name:'Illia', role:'Junior Buyer', initials:'IB', color:'var(--bord2)', bg:'rgba(181,34,64,.15)', border:'var(--bord)' },
   danya: { name:'Danya', role:'Head of Marketing', initials:'DM', color:'#6090ff', bg:'rgba(64,128,255,.1)', border:'#1a3060' }
@@ -1235,6 +1237,8 @@ function ji(p){const ta=document.getElementById('j-ta'),s=ta.selectionStart;ta.v
 function jw(b,a){const ta=document.getElementById('j-ta'),s=ta.selectionStart,e=ta.selectionEnd,sel=ta.value.substring(s,e);ta.value=ta.value.substring(0,s)+b+sel+a+ta.value.substring(e);ta.focus();ta.selectionStart=s+b.length;ta.selectionEnd=e+b.length}
 function jtable(){const ta=document.getElementById('j-ta'),s=ta.selectionStart;ta.value=ta.value.substring(0,s)+'\n| Кол1 | Кол2 | Кол3 |\n|------|------|------|\n| val  | val  | val  |\n'+ta.value.substring(s);ta.focus()}
 function parseMd(md){return md.replace(/^#([^#\n][^\n]*)$/gm,'<h2>$1</h2>').replace(/^## (.+)$/gm,'<h2>$1</h2>').replace(/^### (.+)$/gm,'<h3>$1</h3>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/`(.+?)`/g,'<code>$1</code>').replace(/^---$/gm,'<hr>').replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>').replace(/^- (.+)$/gm,'<li>$1</li>').replace(/(<li>.*<\/li>\n?)+/g,s=>`<ul>${s}</ul>`).replace(/(\|[^\n]+\|\n?)+/g,t=>{const rows=t.trim().split('\n');if(rows.length<2)return t;const head=rows[0].split('|').filter(c=>c.trim()).map(c=>`<th>${c.trim()}</th>`).join('');const body=rows.slice(2).map(r=>'<tr>'+r.split('|').filter(c=>c.trim()).map(c=>`<td>${c.trim()}</td>`).join('')+'</tr>').join('');return`<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`}).replace(/\n/g,'<br>')}
+
+});
 </script>
 </body>
 </html>
