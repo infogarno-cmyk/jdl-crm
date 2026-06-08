@@ -602,28 +602,23 @@ const USERS = {
 }
 
 // ── LOGIN ──
-function completeLogin(userId) {
+window.initCRM = function(userId) {
   CURRENT_USER = USERS[userId]
-  const ava = document.getElementById('user-ava')
-  if (ava) {
-    ava.textContent = CURRENT_USER.initials
-    ava.style.background = CURRENT_USER.bg
-    ava.style.color = CURRENT_USER.color
-    ava.style.borderColor = CURRENT_USER.border
-  }
-  const un = document.getElementById('user-name')
-  if (un) un.textContent = CURRENT_USER.name
   init()
 }
-// Override the head login to complete initialization
-window._loginReady = completeLogin
-// Auto-login
-try {
+// Handle pending login (clicked before DOMContentLoaded)
+if (window._pendingUser) {
+  window.initCRM(window._pendingUser)
+} else {
+  // Auto-login from localStorage
   const savedUser = localStorage.getItem('jdl_user')
   if (savedUser && USERS[savedUser]) {
-    completeLogin(savedUser)
+    document.getElementById('login-screen').style.display = 'none'
+    document.getElementById('app').style.display = 'flex'
+    window.initCRM(savedUser)
   }
-} catch(e) { console.error('Auto-login error:', e) }
+}
+// auto-login handled above
 
 const SB_URL = 'https://dkhkowkgiricjxkcngbf.supabase.co'
 const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRraGtvd2tnaXJpY2p4a2NuZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MTY3NDEsImV4cCI6MjA5NjQ5Mjc0MX0.48HS8eJ6wLPfimRtiz6behWHG1G8xz5_zfrT0cxnGrE'
