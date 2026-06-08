@@ -62,14 +62,22 @@ function getLeads(actions: any[]): number {
   return a ? parseInt(a.value)||0 : 0
 }
 
-// Determine if campaign belongs to PL or PLUA based on name
-function campaignGeo(name: string): "pl"|"plua"|"other" {
+// Determine geo from campaign name format: D{date}GEO/...
+// Examples: D{02.06}PL/PH1./garno -> PL
+//           D{02.06}UA/PH1./uagarno -> PLUA
+//           D{02.06}PLUA/PH1. -> PLUA
+function campaignGeo(name: string): "pl"|"plua" {
+  // Extract GEO part after D{date} pattern
+  const match = name.match(/D\{[^}]+\}([A-Z]+)\//i)
+  if (match) {
+    const geo = match[1].toUpperCase()
+    if (geo === "PL") return "pl"
+    if (geo === "UA" || geo === "PLUA" || geo === "CZUA") return "plua"
+  }
+  // Fallback: if name contains PLUA or UA -> plua, else pl
   const n = (name||"").toUpperCase()
-  if (n.includes("PLUA") || n.includes("UA/PL") || n.includes("PL/UA")) return "plua"
-  if (n.includes("/PL/") || n.includes("/PL ") || n.match(/[^A-Z]PL[^A-Z]/)) return "pl"
-  if (n.startsWith("PL") || n.includes(" PL ") || n.includes("/PL")) return "pl"
-  if (n.includes("UA") || n.includes("RODA") || n.includes("FAST")) return "plua"
-  return "pl" // default to PL for account 1
+  if (n.includes("PLUA") || n.startsWith("UA") || n.includes("/UA/")) return "plua"
+  return "pl"
 }
 
 serve(async()=>{
