@@ -571,25 +571,6 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:13
 </div></div>
 
 <script>
-const SB_URL = 'https://dkhkowkgiricjxkcngbf.supabase.co'
-const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRraGtvd2tnaXJpY2p4a2NuZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MTY3NDEsImV4cCI6MjA5NjQ5Mjc0MX0.48HS8eJ6wLPfimRtiz6behWHG1G8xz5_zfrT0cxnGrE'
-const GARNO_URL = 'https://bnyjwjuejrfalbubdbcv.supabase.co'
-const GARNO_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJueWp3anVlanJmYWxidWJkYmN2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTcyNDQ2NSwiZXhwIjoyMDk1MzAwNDY1fQ.l9ka9b_PzKdu-gock8ZACqODicJDZYCc1laMw_HMBvA'
-
-let db = null
-try {
-  const { createClient } = supabase
-  db = createClient(SB_URL, SB_ANON)
-} catch(e) {
-  console.error('Supabase init failed:', e)
-}
-
-// ── STATE ──
-let ZALIVS=[], DOMAINS=[], TASKS=[], METRICS=[], SALES_DATA=[]
-let expZ=null, dragId=null, dragCardId=null, moGeo='', moScore=0, domGeoSel=[]
-let curDoc=null, periodDays=1, chartData=null
-let jFolders=[], jLoose=[]
-let CURRENT_USER = null
 
 const USERS = {
   illia: { name:'Illia', role:'Junior Buyer', initials:'IB', color:'var(--bord2)', bg:'rgba(181,34,64,.15)', border:'var(--bord)' },
@@ -623,6 +604,26 @@ try {
     login(savedUser)
   }
 } catch(e) { console.error('Auto-login error:', e) }
+
+const SB_URL = 'https://dkhkowkgiricjxkcngbf.supabase.co'
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRraGtvd2tnaXJpY2p4a2NuZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MTY3NDEsImV4cCI6MjA5NjQ5Mjc0MX0.48HS8eJ6wLPfimRtiz6behWHG1G8xz5_zfrT0cxnGrE'
+const GARNO_URL = 'https://bnyjwjuejrfalbubdbcv.supabase.co'
+const GARNO_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJueWp3anVlanJmYWxidWJkYmN2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTcyNDQ2NSwiZXhwIjoyMDk1MzAwNDY1fQ.l9ka9b_PzKdu-gock8ZACqODicJDZYCc1laMw_HMBvA'
+
+let db = null
+try {
+  const { createClient } = supabase
+  db = createClient(SB_URL, SB_ANON)
+} catch(e) {
+  console.error('Supabase init failed:', e)
+}
+
+// ── STATE ──
+let ZALIVS=[], DOMAINS=[], TASKS=[], METRICS=[], SALES_DATA=[]
+let expZ=null, dragId=null, dragCardId=null, moGeo='', moScore=0, domGeoSel=[]
+let curDoc=null, periodDays=1, chartData=null
+let jFolders=[], jLoose=[]
+let CURRENT_USER = null
 
 // ── INIT ──
 async function init() {
