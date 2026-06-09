@@ -10,10 +10,6 @@
 <div id="root"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// ══════════════════════════════════════════
-//  JDL CRM — полный скрипт
-// ══════════════════════════════════════════
-
 const SB_URL  = 'https://dkhkowkgiricjxkcngbf.supabase.co'
 const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRraGtvd2tnaXJpY2p4a2NuZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MTY3NDEsImV4cCI6MjA5NjQ5Mjc0MX0.48HS8eJ6wLPfimRtiz6behWHG1G8xz5_zfrT0cxnGrE'
 const GARNO_URL = 'https://bnyjwjuejrfalbubdbcv.supabase.co'
@@ -24,9 +20,12 @@ const USERS = {
   danya: {name:'Danya', role:'Head of Marketing', initials:'DM', color:'#6090ff', bg:'rgba(64,128,255,.1)', border:'#1a3060'}
 }
 
+// Статусы которые НЕ трогаем при авто-смене по score
+const AUTO_STATUS_LOCKED = ['Proliw','Perezaliw']
+
 let db, CURRENT_USER=null
-let ZALIVS=[], DOMAINS=[], TASKS=[], METRICS=[], SALES_DATA=[]
-let expZ=null, dragId=null, dragCol=null, moGeo='', moScore=0, domGeoSel=[]
+let ZALIVS=[], DOMAINS=[], TASKS=[], METRICS=[], SALES_DATA=[], TEMPLATES=[]
+let expZ=null, dragId=null, moGeo='', moScore=0, domGeoSel=[]
 let curDoc=null, chartData=null, jFolders=[], jLoose=[]
 
 // ── CSS ──
@@ -35,6 +34,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#0a0a0f;--bg2:#111118;--bg3:#18181f;--bg4:#1e1e28;--bg5:#252530;--border:#2a2a3a;--border2:#3a3a50;--border3:#4a4a65;--text:#f0f0f5;--text2:#9090a8;--text3:#5a5a70;--bord:#8b1a2e;--bord2:#b52240;--bord3:#d42a50;--bord-dim:#3a0d18;--green:#2ea043;--green-bg:#0d2818;--yellow:#d4a017;--yellow-bg:#2a1f08;--red:#e04050;--red-bg:#2a0d12;--blue:#4080ff;--blue-bg:#0d1a3a;--purple:#9060d0;--mono:'JetBrains Mono',monospace;--sans:'Manrope',system-ui,sans-serif}
 html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--bg);color:var(--text);font-size:13px}
+
 /* LOGIN */
 #login{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;z-index:999}
 .l-logo{font-size:28px;font-weight:800;letter-spacing:4px;color:#fff;margin-bottom:6px}.l-logo em{color:var(--bord2);font-style:normal}
@@ -45,6 +45,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .l-ava{width:56px;height:56px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;font-family:var(--mono)}
 .l-name{font-size:15px;font-weight:700;color:#fff;margin-bottom:4px}
 .l-role{font-size:11px;color:var(--text3)}
+
 /* APP */
 #app{display:none;flex-direction:column;height:100vh}
 .topbar{display:flex;align-items:center;height:46px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;padding:0 20px}
@@ -59,11 +60,44 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .stxt{font-size:10px;color:var(--text3)}
 .sbtn{background:none;border:1px solid var(--border2);border-radius:4px;color:var(--text3);font-size:10px;padding:2px 8px;cursor:pointer}
 .sbtn:hover{border-color:var(--bord2);color:var(--bord2)}
+
+/* Cmd+K поиск кнопка */
+.search-btn{display:flex;align-items:center;gap:7px;padding:4px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;cursor:pointer;font-size:11px;color:var(--text3);margin-right:8px;transition:all .15s}
+.search-btn:hover{border-color:var(--bord);color:var(--text2)}
+.search-btn kbd{background:var(--bg5);border:1px solid var(--border2);border-radius:3px;padding:1px 5px;font-size:10px;font-family:var(--mono)}
+
 .uchip{display:flex;align-items:center;gap:7px;margin-left:12px;padding:3px 10px 3px 3px;border-radius:20px;border:1px solid var(--border);background:var(--bg3);cursor:pointer}
 .uava{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-family:var(--mono)}
 .uname{font-size:11px;font-weight:600;color:var(--text2)}
 .content{flex:1;overflow:auto}
 .page{display:none;padding:20px}.page.active{display:block}
+
+/* TOAST */
+#toast-wrap{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 16px;font-size:12px;color:var(--text);box-shadow:0 8px 24px rgba(0,0,0,.5);display:flex;align-items:center;gap:8px;min-width:220px;animation:toastIn .2s ease;pointer-events:auto}
+.toast.ok{border-left:3px solid var(--green)}.toast.err{border-left:3px solid var(--red)}.toast.info{border-left:3px solid var(--blue)}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* GLOBAL SEARCH MODAL */
+#mo-search{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:flex-start;justify-content:center;z-index:800;backdrop-filter:blur(2px);padding-top:80px}
+#mo-search.open{display:flex}
+.srch-box{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;width:600px;max-height:70vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.6)}
+.srch-inp-wrap{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border)}
+.srch-ico{font-size:16px;color:var(--text3)}
+.srch-inp{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:15px;font-family:var(--sans)}
+.srch-inp::placeholder{color:var(--text3)}
+.srch-esc{font-size:10px;color:var(--text3);background:var(--bg4);border:1px solid var(--border2);border-radius:4px;padding:2px 7px;font-family:var(--mono)}
+.srch-results{overflow-y:auto;padding:8px 0;max-height:calc(70vh - 60px)}
+.srch-section{padding:4px 18px 2px;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-top:6px}
+.srch-item{display:flex;align-items:center;gap:10px;padding:8px 18px;cursor:pointer;transition:background .1s}
+.srch-item:hover,.srch-item.sel{background:rgba(181,34,64,.08)}
+.srch-item-ico{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.srch-item-body{flex:1;min-width:0}
+.srch-item-title{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srch-item-sub{font-size:11px;color:var(--text3)}
+.srch-item-badge{font-size:10px;padding:2px 8px;border-radius:4px;background:var(--bg4);color:var(--text3);flex-shrink:0}
+.srch-empty{text-align:center;padding:32px;color:var(--text3);font-size:13px}
+
 /* PERIOD */
 .pbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
 .pdates{display:flex;align-items:center;gap:6px}
@@ -74,12 +108,14 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .pbtns{display:flex;gap:3px}
 .pb{padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;font-family:var(--sans);font-weight:500}
 .pb:hover{color:var(--text2)}.pb.active{background:var(--bord-dim);border-color:var(--bord2);color:var(--bord2)}
+
 /* KPI */
 .krow{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:18px}
 .kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:22px;position:relative;overflow:hidden}
 .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--bord),var(--bord2))}
 .klab{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:700}
 .kval{font-size:42px;font-weight:800;color:#fff;line-height:1;font-family:var(--mono)}
+
 /* DASH */
 .dgrid{display:grid;grid-template-columns:1.5fr 1fr;gap:12px;margin-bottom:12px}
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
@@ -104,6 +140,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .tms{font-size:10px;padding:2px 7px;border-radius:3px;font-weight:600}
 .ts-todo{background:var(--bg4);color:var(--text3)}.ts-proc{background:var(--yellow-bg);color:var(--yellow)}
 .tma{font-size:10px;color:var(--text3);background:var(--bg4);padding:2px 6px;border-radius:10px;border:1px solid var(--border)}
+
 /* CHART */
 .cwrap{position:relative}
 .ccanv{display:block;width:100%;cursor:crosshair}
@@ -111,6 +148,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .ctt strong{color:#fff;display:block;margin-bottom:4px}
 .ctrow{display:flex;justify-content:space-between;gap:16px;margin-bottom:2px}
 .ctl{color:var(--text3)}.ctv{font-family:var(--mono);font-weight:600}
+
 /* ZALIVS */
 .fhdr{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
 .fhtit{font-size:18px;font-weight:800;color:#fff}
@@ -122,6 +160,11 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .fsrch:focus{border-color:var(--bord)}.fsrch::placeholder{color:var(--text3)}
 .badd{padding:6px 14px;border-radius:6px;border:1px solid var(--bord);background:var(--bord-dim);color:var(--bord2);font-size:11px;cursor:pointer;font-weight:700;margin-left:auto;font-family:var(--sans)}
 .badd:hover{background:var(--bord);color:#fff}
+
+/* Кнопка шаблонов */
+.btpl{padding:6px 14px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;cursor:pointer;font-weight:600;font-family:var(--sans)}
+.btpl:hover{border-color:var(--border3);color:var(--text)}
+
 .ztwrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .zt{width:100%;border-collapse:collapse}
 .zt th{padding:9px 10px;text-align:left;font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--border2);background:var(--bg3);white-space:nowrap}
@@ -148,10 +191,14 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .budg{color:var(--yellow);font-weight:700;font-family:var(--mono)}
 .budg small{color:var(--text3);font-size:10px;font-weight:400}
 .dlnk{color:var(--blue);font-size:11px;text-decoration:none;font-family:var(--mono)}
+
+/* КРЕО-ТЕГИ — кликабельные */
 .cwrp{display:flex;flex-direction:column;gap:2px;min-width:80px}
-.ctag{font-size:10px;font-family:var(--mono);color:var(--purple)}
+.ctag{font-size:10px;font-family:var(--mono);color:var(--purple);cursor:pointer;padding:1px 4px;border-radius:3px;transition:background .1s}
+.ctag:hover{background:rgba(144,96,208,.15)}
 .cadd{font-size:10px;color:var(--text3);cursor:pointer;border:none;background:none;font-family:var(--sans);text-align:left}
 .cadd:hover{color:var(--bord2)}
+
 .exrow td{padding:0!important;background:transparent!important}
 .exin{padding:14px 16px;display:grid;grid-template-columns:1.2fr 1fr;gap:12px;border-top:1px solid var(--bord-dim)}
 .exbl{background:var(--bg4);border-radius:7px;padding:12px}
@@ -169,6 +216,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .sbdl{padding:5px 12px;border-radius:5px;border:1px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11px;cursor:pointer;font-family:var(--sans)}
 .sbdl:hover{background:var(--red);color:#fff}
 .rkm{font-family:var(--mono);font-size:11px;color:var(--text3);background:var(--bg5);padding:5px 8px;border-radius:4px;margin-top:8px}
+
 /* SALES */
 .skrow{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
 .skc{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px 28px;position:relative;overflow:hidden}
@@ -192,6 +240,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .sldt{font-size:11px;color:var(--text3);font-family:var(--mono)}
 .slsr{font-size:10px;padding:2px 8px;border-radius:4px;background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
 .slam{font-weight:700;color:var(--yellow);font-family:var(--mono)}
+
 /* DOMAINS */
 .dgr{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .dc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:7px}
@@ -203,6 +252,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .ddsc{font-size:12px;color:var(--text2)}
 .dftr{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .fchip{font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
+
 /* TASKS */
 .kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-items:start}
 .kcol{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;min-height:200px}
@@ -231,6 +281,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .kqsv{flex:1;padding:5px;border-radius:5px;border:1px solid var(--bord2);background:var(--bord-dim);color:var(--bord2);font-size:11px;cursor:pointer;font-weight:700;font-family:var(--sans)}
 .kqsv:hover{background:var(--bord);color:#fff}
 .kqcn{padding:5px 10px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;font-family:var(--sans)}
+
 /* JOURNAL */
 .jlay{display:grid;grid-template-columns:240px 1fr;height:calc(100vh - 46px);overflow:hidden;margin:-20px}
 .jsb{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
@@ -268,6 +319,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .jprev code{background:var(--bg4);border-radius:3px;padding:1px 6px;font-family:var(--mono);font-size:11px;color:var(--bord2)}
 .jprev hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .jprev blockquote{border-left:3px solid var(--bord);padding-left:14px;color:var(--text2);margin:8px 0;font-style:italic}
+
 /* MODAL */
 .mo{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:400;backdrop-filter:blur(2px)}
 .mo.open{display:flex}
@@ -293,10 +345,44 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .bsv{padding:7px 16px;border-radius:6px;border:1px solid var(--bord2);background:var(--bord-dim);color:var(--bord2);font-size:12px;cursor:pointer;font-weight:700;font-family:var(--sans)}
 .bsv:hover{background:var(--bord);color:#fff}
 .empty{text-align:center;padding:30px;color:var(--text3);font-size:13px}
+
+/* TEMPLATES MODAL */
+.tpl-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;max-height:260px;overflow-y:auto}
+.tpl-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;cursor:pointer;transition:border-color .15s}
+.tpl-item:hover{border-color:var(--bord)}
+.tpl-name{flex:1;font-size:13px;font-weight:600;color:var(--text)}
+.tpl-meta{font-size:11px;color:var(--text3)}
+.tpl-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px 5px}
+.tpl-del:hover{color:var(--red)}
+.tpl-geo{font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;font-family:var(--mono)}
+
+/* CREO GALLERY MODAL */
+.creo-gallery-wrap{display:flex;flex-direction:column;gap:12px}
+.creo-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.creo-id{font-size:14px;font-weight:700;color:var(--purple);font-family:var(--mono)}
+.creo-zaliv{font-size:11px;color:var(--text3)}
+.creo-img-area{background:var(--bg4);border:2px dashed var(--border2);border-radius:10px;min-height:180px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;cursor:pointer;transition:border-color .15s;position:relative;overflow:hidden}
+.creo-img-area:hover{border-color:var(--bord)}
+.creo-img-area img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border-radius:8px}
+.creo-upload-hint{font-size:12px;color:var(--text3);text-align:center;pointer-events:none}
+.creo-upload-hint strong{display:block;font-size:14px;color:var(--text2);margin-bottom:4px}
+#creo-file-inp{display:none}
+.creo-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.creo-stat{background:var(--bg4);border-radius:7px;padding:10px 12px;text-align:center}
+.creo-stat-val{font-size:20px;font-weight:800;color:#fff;font-family:var(--mono)}
+.creo-stat-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+.creo-actions{display:flex;gap:8px;margin-top:8px}
+.creo-dl{padding:6px 14px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;cursor:pointer;font-family:var(--sans)}
+.creo-dl:hover{border-color:var(--border3);color:var(--text)}
+
+/* Авто-статус бейдж */
+.auto-badge{font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(144,96,208,.15);color:var(--purple);border:1px solid rgba(144,96,208,.3);margin-left:6px;font-weight:700;letter-spacing:.3px}
 </style>`)
 
-// ── RENDER APP HTML ──
+// ── APP HTML ──
 document.getElementById('root').innerHTML = `
+<div id="toast-wrap"></div>
+
 <div id="login">
   <div class="l-logo">JDL <em>·</em> CRM</div>
   <div class="l-sub">Traffic Team Dashboard</div>
@@ -330,6 +416,7 @@ document.getElementById('root').innerHTML = `
       <span class="stxt" id="stxt">—</span>
       <button class="sbtn" id="sync-btn">↻ Sync</button>
     </div>
+    <button class="search-btn" id="topbar-search">🔍 Поиск <kbd>⌘K</kbd></button>
     <div class="uchip" id="uchip">
       <div class="uava" id="uava"></div>
       <span class="uname" id="uname"></span>
@@ -392,18 +479,21 @@ document.getElementById('root').innerHTML = `
         <div class="cwrap"><canvas id="dyn-chart" class="ccanv" height="130"></canvas><div class="ctt" id="chart-tt"></div></div>
       </div>
     </div>
+
     <div class="page" id="page-zalivs">
       <div class="fhdr"><span class="fhtit">Все РК</span><span class="fhcnt" id="z-count">(0)</span></div>
       <div class="fbar">
         <select class="fsel" id="zf-geo"><option value="">🌐 GEO</option><option value="PL">🇵🇱 PL</option><option value="PLUA">🇵🇱🇺🇦 PLUA</option></select>
         <select class="fsel" id="zf-status"><option value="">🏷 Статус</option><option value="Check">Check</option><option value="Scale">Scale</option><option value="OFF">OFF</option><option value="Test">Test</option><option value="Proliw">Proliw</option><option value="Perezaliw">Perezaliw</option></select>
         <input class="fsrch" id="zf-q" placeholder="🔍 Поиск...">
+        <button class="btpl" id="btn-open-templates">📋 Шаблоны</button>
         <button class="badd" id="btn-new-zaliv">+ Новый залив</button>
       </div>
       <div class="ztwrap"><table class="zt"><thead><tr>
         <th>IND</th><th>ДАТА</th><th>GEO</th><th>НАЗВАНИЕ РК</th><th>SCORE</th><th>СТАТУС</th><th>AD/RK $</th><th>ДОМЕН</th><th>КРЕО</th><th>БАЕР</th>
       </tr></thead><tbody id="zt-body"></tbody></table></div>
     </div>
+
     <div class="page" id="page-domains">
       <div class="fhdr"><span class="fhtit">Домены</span><span class="fhcnt" id="d-count">(0)</span></div>
       <div class="fbar">
@@ -413,6 +503,7 @@ document.getElementById('root').innerHTML = `
       </div>
       <div class="dgr" id="dom-grid"><div class="empty">Загрузка...</div></div>
     </div>
+
     <div class="page" id="page-sales">
       <div class="pbar">
         <div class="pdates">
@@ -435,6 +526,7 @@ document.getElementById('root').innerHTML = `
       <div class="fhdr" style="margin-bottom:12px"><span class="fhtit">Список продаж</span><span class="fhcnt" id="sales-count">(0)</span></div>
       <div class="slst" id="sales-list"></div>
     </div>
+
     <div class="page" id="page-tasks">
       <div class="fhdr" style="margin-bottom:12px"><span class="fhtit">Tasks</span></div>
       <div class="fbar" style="margin-bottom:14px">
@@ -442,6 +534,7 @@ document.getElementById('root').innerHTML = `
       </div>
       <div class="kanban" id="kanban"></div>
     </div>
+
     <div class="page" id="page-journal" style="padding:0">
       <div class="jlay">
         <div class="jsb">
@@ -480,6 +573,18 @@ document.getElementById('root').innerHTML = `
   </div>
 </div>
 
+<!-- GLOBAL SEARCH -->
+<div id="mo-search">
+  <div class="srch-box">
+    <div class="srch-inp-wrap">
+      <span class="srch-ico">🔍</span>
+      <input class="srch-inp" id="srch-inp" placeholder="Поиск по заливам, доменам, задачам, журналу...">
+      <span class="srch-esc">ESC</span>
+    </div>
+    <div class="srch-results" id="srch-results"><div class="srch-empty">Начни вводить для поиска</div></div>
+  </div>
+</div>
+
 <!-- MODAL ZALIV -->
 <div class="mo" id="mo-zaliv">
   <div class="mob">
@@ -506,7 +611,30 @@ document.getElementById('root').innerHTML = `
     <div class="fl"><label>Крео (до 5)</label><div id="mcreo-list"></div><button class="addg" id="btn-add-creo">+ Крео</button></div>
     <div class="fl"><label>Цели</label><div id="mg-list"></div><button class="addg" id="btn-add-goal">+ Цель</button></div>
     <div class="rkpv" id="mo-prev">D{дата}GEO/PH1./garno/kalk\LEADS/budget$</div>
-    <div class="mofoot"><button class="bcn" data-close="mo-zaliv">Отмена</button><button class="bsv" id="btn-create-zaliv">Создать</button></div>
+    <div class="mofoot">
+      <button class="bcn" id="btn-save-as-tpl" style="border-color:var(--border3);color:var(--text2)">💾 Сохранить шаблон</button>
+      <button class="bcn" data-close="mo-zaliv">Отмена</button>
+      <button class="bsv" id="btn-create-zaliv">Создать</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TEMPLATES -->
+<div class="mo" id="mo-templates">
+  <div class="mob" style="width:480px">
+    <div class="motit">📋 Шаблоны заливов <button class="mox" data-close="mo-templates">×</button></div>
+    <div class="tpl-list" id="tpl-list"><div class="empty">Нет шаблонов</div></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center">Выбери шаблон чтобы создать залив на его основе</div>
+    <div class="mofoot"><button class="bcn" data-close="mo-templates">Закрыть</button></div>
+  </div>
+</div>
+
+<!-- MODAL CREO GALLERY -->
+<div class="mo" id="mo-creo">
+  <div class="mob" style="width:480px">
+    <div class="motit" id="creo-modal-title">🎨 Крео <button class="mox" data-close="mo-creo">×</button></div>
+    <div class="creo-gallery-wrap" id="creo-gallery-content"></div>
+    <div class="mofoot"><button class="bcn" data-close="mo-creo">Закрыть</button><button class="bsv" id="btn-upload-creo">⬆ Загрузить скрин</button></div>
   </div>
 </div>
 
@@ -526,13 +654,24 @@ document.getElementById('root').innerHTML = `
 </div>
 `
 
-// ── EVENT LISTENERS (все через addEventListener, не onclick) ──
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+function toast(msg, type='ok') {
+  const w = document.getElementById('toast-wrap')
+  const t = document.createElement('div')
+  t.className = `toast ${type}`
+  t.innerHTML = `<span>${type==='ok'?'✓':type==='err'?'✗':'ℹ'}</span><span>${msg}</span>`
+  w.appendChild(t)
+  setTimeout(() => t.remove(), 3000)
+}
 
-// Login
+// ══════════════════════════════════════════
+// EVENT LISTENERS
+// ══════════════════════════════════════════
 document.getElementById('btn-illia').addEventListener('click', () => doLogin('illia'))
 document.getElementById('btn-danya').addEventListener('click', () => doLogin('danya'))
 
-// Nav
 document.getElementById('nb-dash').addEventListener('click', function(){ gp('dash', this) })
 document.getElementById('nb-zalivs').addEventListener('click', function(){ gp('zalivs', this) })
 document.getElementById('nb-domains').addEventListener('click', function(){ gp('domains', this) })
@@ -540,7 +679,6 @@ document.getElementById('nb-sales').addEventListener('click', function(){ gp('sa
 document.getElementById('nb-tasks').addEventListener('click', function(){ gp('tasks', this) })
 document.getElementById('nb-journal').addEventListener('click', function(){ gp('journal', this) })
 
-// Sync
 document.getElementById('sync-btn').addEventListener('click', manualSync)
 document.getElementById('uchip').addEventListener('click', doLogout)
 document.getElementById('lnk-zalivs').addEventListener('click', function(){ gp('zalivs', document.getElementById('nb-zalivs')) })
@@ -579,18 +717,19 @@ document.querySelectorAll('#sp-btns .pb').forEach(btn => {
 document.getElementById('sp-from').addEventListener('change', rsales)
 document.getElementById('sp-to').addEventListener('change', rsales)
 
-// Zalivs filters
+// Zalivs
 document.getElementById('zf-geo').addEventListener('change', rzalivs)
 document.getElementById('zf-status').addEventListener('change', rzalivs)
 document.getElementById('zf-q').addEventListener('input', rzalivs)
 document.getElementById('btn-new-zaliv').addEventListener('click', openMoZaliv)
+document.getElementById('btn-open-templates').addEventListener('click', openTemplates)
 
-// Domain filters
+// Domains
 document.getElementById('df-geo').addEventListener('change', rdomains)
 document.getElementById('df-q').addEventListener('input', rdomains)
 document.getElementById('btn-new-domain').addEventListener('click', () => document.getElementById('mo-domain').classList.add('open'))
 
-// Tasks filter
+// Tasks
 document.getElementById('tf-u').addEventListener('change', rtasks)
 
 // Modal closes
@@ -601,7 +740,7 @@ document.querySelectorAll('.mo').forEach(mo => {
   mo.addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open') })
 })
 
-// Zaliv modal - geo
+// Zaliv modal geo
 document.querySelectorAll('[data-geo]').forEach(btn => {
   btn.addEventListener('click', function(){
     document.querySelectorAll('[data-geo]').forEach(b=>b.classList.remove('sel'))
@@ -612,7 +751,7 @@ document.querySelectorAll('[data-geo]').forEach(btn => {
   })
 })
 
-// Zaliv modal - score
+// Score picker
 document.querySelectorAll('#mo-score .spb').forEach(btn => {
   btn.addEventListener('click', function(){
     moScore = parseInt(this.dataset.score)
@@ -625,8 +764,9 @@ document.getElementById('mr').addEventListener('input', updPrev)
 document.getElementById('btn-add-creo').addEventListener('click', addCreoField)
 document.getElementById('btn-add-goal').addEventListener('click', addGoalField)
 document.getElementById('btn-create-zaliv').addEventListener('click', svz)
+document.getElementById('btn-save-as-tpl').addEventListener('click', saveAsTemplate)
 
-// Domain modal - geo
+// Domain modal geo
 document.querySelectorAll('[data-dgeo]').forEach(btn => {
   btn.addEventListener('click', function(){
     if(domGeoSel.includes(this.dataset.dgeo)){
@@ -668,7 +808,190 @@ dc.addEventListener('mousemove', chartMouseMove)
 dc.addEventListener('mouseleave', () => document.getElementById('chart-tt').style.display='none')
 window.addEventListener('resize', () => { if(chartData) drawChart(chartData) })
 
-// ── LOGIN / LOGOUT ──
+// Creo upload
+document.getElementById('btn-upload-creo').addEventListener('click', () => document.getElementById('creo-file-inp')?.click())
+
+// ══════════════════════════════════════════
+// GLOBAL SEARCH (Cmd+K)
+// ══════════════════════════════════════════
+let srchSelIdx = -1
+
+document.getElementById('topbar-search').addEventListener('click', openSearch)
+
+document.addEventListener('keydown', e => {
+  // Cmd+K / Ctrl+K
+  if((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault()
+    openSearch()
+    return
+  }
+  // Ctrl+S — сохранить документ в журнале
+  if((e.metaKey || e.ctrlKey) && e.key === 's') {
+    e.preventDefault()
+    if(document.querySelector('.nb.active')?.id === 'nb-journal') saveDoc()
+    return
+  }
+  const mo = document.getElementById('mo-search')
+  if(!mo.classList.contains('open')) return
+  if(e.key === 'Escape') { mo.classList.remove('open'); return }
+  if(e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault()
+    const items = document.querySelectorAll('.srch-item')
+    items.forEach(i=>i.classList.remove('sel'))
+    srchSelIdx = e.key === 'ArrowDown'
+      ? Math.min(srchSelIdx+1, items.length-1)
+      : Math.max(srchSelIdx-1, 0)
+    items[srchSelIdx]?.classList.add('sel')
+    items[srchSelIdx]?.scrollIntoView({block:'nearest'})
+    return
+  }
+  if(e.key === 'Enter') {
+    const sel = document.querySelector('.srch-item.sel')
+    if(sel) sel.click()
+  }
+})
+
+function openSearch() {
+  const mo = document.getElementById('mo-search')
+  mo.classList.add('open')
+  const inp = document.getElementById('srch-inp')
+  inp.value = ''
+  srchSelIdx = -1
+  document.getElementById('srch-results').innerHTML = '<div class="srch-empty">Начни вводить для поиска</div>'
+  setTimeout(() => inp.focus(), 50)
+}
+
+document.getElementById('srch-inp').addEventListener('input', function() {
+  const q = this.value.trim().toLowerCase()
+  srchSelIdx = -1
+  if(!q) {
+    document.getElementById('srch-results').innerHTML = '<div class="srch-empty">Начни вводить для поиска</div>'
+    return
+  }
+  doSearch(q)
+})
+
+function doSearch(q) {
+  let html = ''
+
+  // Заливы
+  const zRes = ZALIVS.filter(z =>
+    z.name?.toLowerCase().includes(q) ||
+    z.geo?.toLowerCase().includes(q) ||
+    z.status?.toLowerCase().includes(q) ||
+    (z.creos||[]).some(c=>c.toLowerCase().includes(q)) ||
+    z.domain?.toLowerCase().includes(q)
+  ).slice(0, 5)
+  if(zRes.length) {
+    html += `<div class="srch-section">Заливы</div>`
+    zRes.forEach(z => {
+      const col = z.ind==='profit'?'var(--green)':z.ind==='drop'?'var(--yellow)':'var(--red)'
+      html += `<div class="srch-item" data-type="zaliv" data-id="${z.id}">
+        <div class="srch-item-ico" style="background:rgba(181,34,64,.1)">🏹</div>
+        <div class="srch-item-body">
+          <div class="srch-item-title">${z.name}</div>
+          <div class="srch-item-sub">${z.geo} · ${z.status} · $${z.rk_budget}/d</div>
+        </div>
+        <div class="srch-item-badge">${z.score}/6</div>
+        <div style="width:7px;height:7px;border-radius:50%;background:${col};flex-shrink:0"></div>
+      </div>`
+    })
+  }
+
+  // Домены
+  const dRes = DOMAINS.filter(d =>
+    d.url?.toLowerCase().includes(q) ||
+    d.description?.toLowerCase().includes(q) ||
+    d.funnel?.toLowerCase().includes(q)
+  ).slice(0, 4)
+  if(dRes.length) {
+    html += `<div class="srch-section">Домены</div>`
+    dRes.forEach(d => {
+      html += `<div class="srch-item" data-type="domain">
+        <div class="srch-item-ico" style="background:rgba(64,128,255,.1)">🌐</div>
+        <div class="srch-item-body">
+          <div class="srch-item-title">${d.url}</div>
+          <div class="srch-item-sub">${d.description||''} · ${(d.geos||[]).join('/')}</div>
+        </div>
+        <div class="srch-item-badge">${d.funnel}</div>
+      </div>`
+    })
+  }
+
+  // Задачи
+  const tRes = TASKS.filter(t =>
+    t.title?.toLowerCase().includes(q) ||
+    t.assignee?.toLowerCase().includes(q)
+  ).slice(0, 4)
+  if(tRes.length) {
+    html += `<div class="srch-section">Задачи</div>`
+    tRes.forEach(t => {
+      const prColor = t.priority==='high'?'var(--red)':t.priority==='mid'?'var(--yellow)':'var(--green)'
+      html += `<div class="srch-item" data-type="task" data-id="${t.id}">
+        <div class="srch-item-ico" style="background:rgba(212,160,23,.1)">📋</div>
+        <div class="srch-item-body">
+          <div class="srch-item-title">${t.title}</div>
+          <div class="srch-item-sub">${t.col} · ${t.assignee||'—'}</div>
+        </div>
+        <div style="width:8px;height:8px;border-radius:50%;background:${prColor};flex-shrink:0"></div>
+      </div>`
+    })
+  }
+
+  // Журнал
+  const allDocs = [...jLoose, ...jFolders.flatMap(f=>f.docs)]
+  const jRes = allDocs.filter(d =>
+    d.title?.toLowerCase().includes(q) ||
+    d.body?.toLowerCase().includes(q)
+  ).slice(0, 4)
+  if(jRes.length) {
+    html += `<div class="srch-section">Журнал</div>`
+    jRes.forEach(d => {
+      html += `<div class="srch-item" data-type="doc" data-id="${d.id}">
+        <div class="srch-item-ico" style="background:rgba(144,96,208,.1)">📄</div>
+        <div class="srch-item-body">
+          <div class="srch-item-title">${d.title}</div>
+          <div class="srch-item-sub">${d.folder_name||'Документы'}</div>
+        </div>
+      </div>`
+    })
+  }
+
+  if(!html) html = `<div class="srch-empty">Ничего не найдено по «${q}»</div>`
+
+  const res = document.getElementById('srch-results')
+  res.innerHTML = html
+
+  // Навигация из поиска
+  res.querySelectorAll('.srch-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.getElementById('mo-search').classList.remove('open')
+      const type = item.dataset.type
+      const id = item.dataset.id
+      if(type === 'zaliv') {
+        gp('zalivs', document.getElementById('nb-zalivs'))
+        expZ = parseInt(id)
+        rzalivs()
+        // scroll to row
+        setTimeout(() => {
+          const row = document.querySelector(`tr[data-zid="${id}"]`)
+          row?.scrollIntoView({behavior:'smooth', block:'center'})
+        }, 100)
+      } else if(type === 'domain') {
+        gp('domains', document.getElementById('nb-domains'))
+      } else if(type === 'task') {
+        gp('tasks', document.getElementById('nb-tasks'))
+      } else if(type === 'doc') {
+        gp('journal', document.getElementById('nb-journal'))
+        loadDocById(id)
+      }
+    })
+  })
+}
+
+// ══════════════════════════════════════════
+// LOGIN / LOGOUT
+// ══════════════════════════════════════════
 function doLogin(userId) {
   CURRENT_USER = USERS[userId]
   localStorage.setItem('jdl_user', userId)
@@ -689,7 +1012,9 @@ function doLogout() {
   document.getElementById('app').style.display = 'none'
 }
 
-// ── INIT ──
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
 async function init() {
   setSS('syncing','Загрузка...')
   const today = new Date().toISOString().split('T')[0]
@@ -700,7 +1025,7 @@ async function init() {
   try {
     db = supabase.createClient(SB_URL, SB_ANON)
   } catch(e) { console.error('Supabase init:', e) }
-  await Promise.all([loadZ(), loadD(), loadT(), loadJ(), loadM(), loadSales()])
+  await Promise.all([loadZ(), loadD(), loadT(), loadJ(), loadM(), loadSales(), loadTemplates()])
   rdash()
   setupRT()
   setSS('ok','Данные загружены')
@@ -729,7 +1054,9 @@ function setupRT() {
     .subscribe()
 }
 
-// ── LOAD ──
+// ══════════════════════════════════════════
+// LOAD
+// ══════════════════════════════════════════
 async function loadZ(){if(!db)return;const{data}=await db.from('zalivs').select('*').order('created_at',{ascending:false});ZALIVS=data||[]}
 async function loadD(){if(!db)return;const{data}=await db.from('domains').select('*').order('created_at',{ascending:false});DOMAINS=data||[]}
 async function loadT(){if(!db)return;const{data}=await db.from('tasks').select('*').order('created_at',{ascending:true});TASKS=data||[]}
@@ -762,7 +1089,26 @@ async function loadSales(){
   } catch(e){console.log('Sales error:',e)}
 }
 
-// ── NAV ──
+// ── Загрузка шаблонов ──
+async function loadTemplates(){
+  if(!db)return
+  try {
+    // Пробуем загрузить из таблицы zaliv_templates
+    // Если таблица ещё не создана — падаем тихо
+    const{data,error}=await db.from('zaliv_templates').select('*').order('created_at',{ascending:false})
+    if(!error) TEMPLATES=data||[]
+    else {
+      // Таблица не создана — читаем из localStorage как fallback
+      TEMPLATES = JSON.parse(localStorage.getItem('jdl_templates')||'[]')
+    }
+  } catch(e){
+    TEMPLATES = JSON.parse(localStorage.getItem('jdl_templates')||'[]')
+  }
+}
+
+// ══════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════
 function gp(id, el) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'))
@@ -776,7 +1122,9 @@ function gp(id, el) {
   if(id==='dash') rdash()
 }
 
-// ── COUNT UP ──
+// ══════════════════════════════════════════
+// COUNT UP
+// ══════════════════════════════════════════
 function countUp(el, target, pre='', suf='', dur=800) {
   const n = parseFloat(target)
   if(isNaN(n)){el.textContent=target;return}
@@ -790,7 +1138,9 @@ function countUp(el, target, pre='', suf='', dur=800) {
   },16)
 }
 
-// ── DASHBOARD ──
+// ══════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════
 function rdash() {
   const from = document.getElementById('pd-from').value
   const to = document.getElementById('pd-to').value
@@ -833,7 +1183,6 @@ function rdash() {
 
   document.getElementById('d-tasks').innerHTML = TASKS.filter(t=>t.col!=='done').slice(0,4).map(t=>`<div class="tmini"><div class="tpb" style="background:${t.priority==='high'?'var(--red)':t.priority==='mid'?'var(--yellow)':'var(--green)'}"></div><div class="tmt">${t.title}</div><span class="tms ${t.col==='process'?'ts-proc':'ts-todo'}">${t.col==='process'?'In Progress':'TO DO'}</span>${t.assignee?`<span class="tma">${t.assignee}</span>`:''}</div>`).join('') || '<div class="empty">Нет задач</div>'
 
-  // Sales KPI on dashboard
   const spFrom = document.getElementById('pd-from').value
   const spTo = document.getElementById('pd-to').value
   const sf = SALES_DATA.filter(s=>{const d=parseDt(s.createdAt);if(!d)return false;const day=d.toISOString().split('T')[0];return day>=spFrom&&day<=spTo})
@@ -862,7 +1211,9 @@ function rdash() {
   drawChart(rows)
 }
 
-// ── CHART ──
+// ══════════════════════════════════════════
+// CHART
+// ══════════════════════════════════════════
 function drawChart(rows){chartData=rows;const c=document.getElementById('dyn-chart');if(!c)return;c.width=c.parentElement.offsetWidth||600;c.height=130;renderChart()}
 function renderChart(){
   if(!chartData||!chartData.length)return
@@ -907,9 +1258,22 @@ function chartMouseMove(e){
   tt.innerHTML=`<strong>${r.day}</strong>`+c._S.map(s=>`<div class="ctrow"><span class="ctl" style="color:${s.c}">${s.l}</span><span class="ctv" style="color:${s.c}">${s.d[ci]}</span></div>`).join('')+`<div class="ctrow" style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px"><span class="ctl">Spend</span><span class="ctv">$${Math.round((parseFloat(r.spend_pl)||0)+(parseFloat(r.spend_plua)||0))}</span></div>`
 }
 
-// ── ZALIVS ──
+// ══════════════════════════════════════════
+// ZALIVS
+// ══════════════════════════════════════════
 const SCLS={Check:'sc',Scale:'ss',OFF:'so',Test:'st',Proliw:'sp',Perezaliw:'sz'}
-function s2st(s){return s<=2?'OFF':s<=4?'Check':'Scale'}
+
+// ── АВТО-СТАТУС ПО SCORE ──
+// Правило: 0-2 → OFF, 3-4 → Check, 5-6 → Scale
+// НЕ трогаем Proliw и Perezaliw
+function scoreToAutoStatus(score) {
+  if(score <= 2) return 'OFF'
+  if(score <= 4) return 'Check'
+  return 'Scale'
+}
+
+function s2st(s){ return scoreToAutoStatus(s) }
+
 function gchip(g){return`<span class="zgeo gchip ${g==='PL'?'gpl':'gplua'}">${g}</span>`}
 function spbs(z){return Array.from({length:7},(_,i)=>`<button class="spb${z.score===i?' s'+i:''}" data-zid="${z.id}" data-sc="${i}">${i}</button>`).join('')}
 
@@ -920,6 +1284,9 @@ function rzalivs(){
   let html=''
   f.forEach(z=>{
     const rc=`${z.ind==='profit'?'rp':z.ind==='drop'?'rd':'ro'}${expZ===z.id?' rex':''}`
+    // Показываем бейдж auto если статус выставлен автоматически
+    const isAutoStatus = !AUTO_STATUS_LOCKED.includes(z.status)
+    const statusBadge = isAutoStatus ? `<span class="auto-badge">auto</span>` : ''
     html+=`<tr class="${rc}" data-zid="${z.id}" style="cursor:pointer">
       <td><div class="ind-t">
         <button class="itb${z.ind==='profit'?' ap':''}" data-zid="${z.id}" data-ind="profit">P</button>
@@ -930,18 +1297,22 @@ function rzalivs(){
       <td>${gchip(z.geo)}</td>
       <td><div class="rkn">${z.name}</div></td>
       <td><div style="display:flex;gap:3px">${spbs(z)}</div></td>
-      <td><select class="ssel ${SCLS[z.status]||''}" data-zid="${z.id}">${['Check','Scale','OFF','Test','Proliw','Perezaliw'].map(o=>`<option${z.status===o?' selected':''}>${o}</option>`).join('')}</select></td>
+      <td>
+        <select class="ssel ${SCLS[z.status]||''}" data-zid="${z.id}">${['Check','Scale','OFF','Test','Proliw','Perezaliw'].map(o=>`<option${z.status===o?' selected':''}>${o}</option>`).join('')}</select>
+        ${statusBadge}
+      </td>
       <td class="budg">$${z.ad_budget}<small>/$${z.rk_budget}</small></td>
       <td><a class="dlnk" href="#">${(z.domain||'—').split('/')[0]}</a></td>
-      <td><div class="cwrp">${(z.creos||[]).map(c=>`<span class="ctag">${c}</span>`).join('')}${(z.creos||[]).length<5?`<button class="cadd" data-zid="${z.id}">+ крео</button>`:''}</div></td>
+      <td><div class="cwrp">${(z.creos||[]).map(c=>`<span class="ctag" data-zid="${z.id}" data-creo="${c}">${c}</span>`).join('')}${(z.creos||[]).length<5?`<button class="cadd" data-zid="${z.id}">+ крео</button>`:''}</div></td>
       <td>${z.buyer||'—'}</td>
     </tr>`
     if(expZ===z.id) html+=exRow(z)
   })
   document.getElementById('zt-body').innerHTML = html||`<tr><td colspan="10" class="empty">Нет заливов</td></tr>`
+
   // Bind events
   document.querySelectorAll('#zt-body tr[data-zid]').forEach(tr=>{
-    tr.addEventListener('click', e=>{if(!e.target.closest('button,select,a'))togZ(parseInt(tr.dataset.zid))})
+    tr.addEventListener('click', e=>{if(!e.target.closest('button,select,a,span.ctag'))togZ(parseInt(tr.dataset.zid))})
   })
   document.querySelectorAll('.itb[data-ind]').forEach(btn=>{
     btn.addEventListener('click', e=>{e.stopPropagation();setInd(parseInt(btn.dataset.zid),btn.dataset.ind)})
@@ -956,8 +1327,11 @@ function rzalivs(){
   document.querySelectorAll('.cadd[data-zid]').forEach(btn=>{
     btn.addEventListener('click', e=>{e.stopPropagation();addCreoInline(parseInt(btn.dataset.zid))})
   })
+  // Крео-тег → открываем галерею
+  document.querySelectorAll('.ctag[data-creo]').forEach(tag=>{
+    tag.addEventListener('click', e=>{e.stopPropagation();openCreoGallery(parseInt(tag.dataset.zid), tag.dataset.creo)})
+  })
   document.querySelectorAll('.dlnk').forEach(a=>a.addEventListener('click',e=>e.preventDefault()))
-  // expand row events
   document.querySelectorAll('.sbsv[data-zid]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();saveEdit(parseInt(btn.dataset.zid))}))
   document.querySelectorAll('.sbdl[data-zid]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();delZaliv(parseInt(btn.dataset.zid))}))
   document.querySelectorAll('.spb-e[data-sc]').forEach(btn=>{
@@ -995,12 +1369,36 @@ function exRow(z){
 
 function togZ(id){expZ=(expZ===id?null:id);rzalivs()}
 async function setInd(id,ind){await db.from('zalivs').update({ind,updated_at:new Date().toISOString()}).eq('id',id);const z=ZALIVS.find(x=>x.id===id);if(z)z.ind=ind;rzalivs()}
-async function setScore(id,score){
-  const z=ZALIVS.find(x=>x.id===id);if(!z)return
-  const ns=['OFF','Check','Scale'].includes(z.status)?s2st(score):z.status
-  await db.from('zalivs').update({score,status:ns,updated_at:new Date().toISOString()}).eq('id',id)
-  z.score=score;z.status=ns;rzalivs()
+
+// ── АВТО-СТАТУС при изменении score ──
+async function setScore(id, score) {
+  const z = ZALIVS.find(x=>x.id===id)
+  if(!z) return
+
+  // Определяем новый статус
+  let newStatus = z.status
+  const isLocked = AUTO_STATUS_LOCKED.includes(z.status)
+
+  if(!isLocked) {
+    // Только для Check/Scale/OFF — меняем автоматически
+    newStatus = scoreToAutoStatus(score)
+  }
+
+  await db.from('zalivs').update({score, status: newStatus, updated_at: new Date().toISOString()}).eq('id', id)
+  z.score = score
+
+  if(!isLocked && newStatus !== z.status) {
+    const prev = z.status
+    z.status = newStatus
+    toast(`Score ${score} → статус ${prev} → ${newStatus}`, 'info')
+  } else {
+    z.score = score
+    if(isLocked) toast(`Score обновлён. Статус ${z.status} сохранён (locked)`, 'info')
+  }
+
+  rzalivs()
 }
+
 async function setStatus(id,sel){
   const z=ZALIVS.find(x=>x.id===id);if(!z)return
   z.status=sel.value;sel.className='ssel '+(SCLS[sel.value]||'')
@@ -1009,41 +1407,325 @@ async function setStatus(id,sel){
 async function saveEdit(id){
   const z=ZALIVS.find(x=>x.id===id);if(!z)return
   const u={name:document.getElementById('ef-name-'+id).value.trim()||z.name,ad_budget:parseFloat(document.getElementById('ef-ad-'+id).value)||z.ad_budget,rk_budget:parseFloat(document.getElementById('ef-rk-'+id).value)||z.rk_budget,domain:document.getElementById('ef-dom-'+id).value.trim(),insights:document.getElementById('ef-ins-'+id).value,updated_at:new Date().toISOString()}
-  await db.from('zalivs').update(u).eq('id',id);Object.assign(z,u);rzalivs()
+  await db.from('zalivs').update(u).eq('id',id);Object.assign(z,u);toast('Залив сохранён','ok');rzalivs()
 }
-async function delZaliv(id){if(!confirm('Удалить?'))return;await db.from('zalivs').delete().eq('id',id);ZALIVS=ZALIVS.filter(z=>z.id!==id);expZ=null;rzalivs()}
-async function addCreoInline(id){const v=prompt('Крео ID:');if(!v?.trim())return;const z=ZALIVS.find(x=>x.id===id);if(!z||(z.creos||[]).length>=5)return;z.creos=[...(z.creos||[]),v.trim()];await db.from('zalivs').update({creos:z.creos}).eq('id',id);rzalivs()}
+async function delZaliv(id){
+  if(!confirm('Удалить?'))return
+  await db.from('zalivs').delete().eq('id',id)
+  ZALIVS=ZALIVS.filter(z=>z.id!==id);expZ=null
+  toast('Залив удалён','ok');rzalivs()
+}
+async function addCreoInline(id){
+  const v=prompt('Крео ID:')
+  if(!v?.trim())return
+  const z=ZALIVS.find(x=>x.id===id)
+  if(!z||(z.creos||[]).length>=5)return
+  z.creos=[...(z.creos||[]),v.trim()]
+  await db.from('zalivs').update({creos:z.creos}).eq('id',id)
+  rzalivs()
+}
 
-// Modal Zaliv
-function openMoZaliv(){
+// ══════════════════════════════════════════
+// MODAL ZALIV
+// ══════════════════════════════════════════
+function openMoZaliv(tpl=null){
   moGeo='';moScore=0
   document.querySelectorAll('[data-geo]').forEach(b=>b.classList.remove('sel'))
   document.querySelectorAll('#mo-score .spb').forEach((b,i)=>b.className='spb'+(i===0?' s0':''))
-  document.getElementById('mn').value='';document.getElementById('ma').value='';document.getElementById('mr').value=''
-  document.getElementById('mcreo-list').innerHTML='';document.getElementById('mg-list').innerHTML=''
-  addCreoField();addGoalField();updDomains();updPrev()
+  document.getElementById('mn').value=''
+  document.getElementById('ma').value=''
+  document.getElementById('mr').value=''
+  document.getElementById('mcreo-list').innerHTML=''
+  document.getElementById('mg-list').innerHTML=''
+
+  if(tpl) {
+    // Заполняем из шаблона
+    moGeo = tpl.geo || ''
+    moScore = tpl.score || 0
+    document.getElementById('mn').value = tpl.name_template || ''
+    document.getElementById('ma').value = tpl.ad_budget || ''
+    document.getElementById('mr').value = tpl.rk_budget || ''
+    if(tpl.buyer) document.getElementById('mb').value = tpl.buyer
+    if(tpl.funnel) document.getElementById('mf').value = tpl.funnel
+
+    // GEO кнопка
+    if(moGeo) {
+      document.querySelectorAll('[data-geo]').forEach(b=>{
+        if(b.dataset.geo===moGeo) b.classList.add('sel')
+      })
+    }
+    // Score
+    document.querySelectorAll('#mo-score .spb').forEach(b=>{
+      b.className = 'spb' + (parseInt(b.dataset.score)===moScore?' s'+moScore:'')
+    })
+    // Крео
+    ;(tpl.creos||[]).forEach(c=>{addCreoField(c)})
+    ;(tpl.goals||[]).forEach(g=>{addGoalField(g)})
+  } else {
+    addCreoField()
+    addGoalField()
+  }
+
+  updDomains()
+  updPrev()
   document.getElementById('mo-zaliv').classList.add('open')
 }
+
 function updDomains(){
   const sel=document.getElementById('md')
   const f=moGeo?DOMAINS.filter(d=>(d.geos||[]).includes(moGeo)&&d.active):DOMAINS.filter(d=>d.active)
   sel.innerHTML='<option value="">— выбрать —</option>'+f.map(d=>`<option value="${d.url}">${d.url}</option>`).join('')
 }
-function updPrev(){const g=moGeo||'GEO',b=document.getElementById('mr').value||'budget';document.getElementById('mo-prev').textContent=`D{${new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})}}${g}/PH1./garno/kalk\\LEADS/${b}$`}
-function addCreoField(){const l=document.getElementById('mcreo-list');if(l.children.length>=5)return;const d=document.createElement('div');d.className='gr';const i=document.createElement('input');i.className='fi mcreo-input';i.placeholder='Крео #'+(l.children.length+1);const b=document.createElement('button');b.type='button';b.className='rmbtn';b.textContent='×';b.onclick=()=>{if(l.children.length>1)d.remove()};d.appendChild(i);d.appendChild(b);l.appendChild(d)}
-function addGoalField(){const l=document.getElementById('mg-list');const d=document.createElement('div');d.className='gr';const i=document.createElement('input');i.className='fi mgoal-input';i.placeholder='Цель '+(l.children.length+1);const b=document.createElement('button');b.type='button';b.className='rmbtn';b.textContent='×';b.onclick=()=>{if(l.children.length>1)d.remove()};d.appendChild(i);d.appendChild(b);l.appendChild(d)}
+
+function updPrev(){
+  const g=moGeo||'GEO',b=document.getElementById('mr').value||'budget'
+  document.getElementById('mo-prev').textContent=`D{${new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})}}${g}/PH1./garno/kalk\\LEADS/${b}$`
+}
+
+function addCreoField(val=''){
+  const l=document.getElementById('mcreo-list')
+  if(l.children.length>=5)return
+  const d=document.createElement('div');d.className='gr'
+  const i=document.createElement('input');i.className='fi mcreo-input';i.placeholder='Крео #'+(l.children.length+1);i.value=val
+  const b=document.createElement('button');b.type='button';b.className='rmbtn';b.textContent='×'
+  b.onclick=()=>{if(l.children.length>1)d.remove()}
+  d.appendChild(i);d.appendChild(b);l.appendChild(d)
+}
+
+function addGoalField(val=''){
+  const l=document.getElementById('mg-list')
+  const d=document.createElement('div');d.className='gr'
+  const i=document.createElement('input');i.className='fi mgoal-input';i.placeholder='Цель '+(l.children.length+1);i.value=val
+  const b=document.createElement('button');b.type='button';b.className='rmbtn';b.textContent='×'
+  b.onclick=()=>{if(l.children.length>1)d.remove()}
+  d.appendChild(i);d.appendChild(b);l.appendChild(d)
+}
+
 async function svz(){
   const name=document.getElementById('mn').value.trim()
-  if(!name||!moGeo){alert('Укажи GEO и название');return}
+  if(!name||!moGeo){toast('Укажи GEO и название','err');return}
   const creos=[...document.querySelectorAll('.mcreo-input')].map(i=>i.value.trim()).filter(Boolean)
   const goals=[...document.querySelectorAll('.mgoal-input')].map(i=>i.value.trim()).filter(Boolean)
   const today=new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
-  const{data,error}=await db.from('zalivs').insert({geo:moGeo,name,ad_budget:parseFloat(document.getElementById('ma').value)||0,rk_budget:parseFloat(document.getElementById('mr').value)||0,domain:document.getElementById('md').value,creos,goals,ind:'profit',status:s2st(moScore),insights:'',buyer:document.getElementById('mb').value,funnel:document.getElementById('mf').value,score:moScore,date:today}).select().single()
-  if(!error&&data){ZALIVS.unshift(data);document.getElementById('mo-zaliv').classList.remove('open');rzalivs()}
-  else alert('Ошибка: '+JSON.stringify(error))
+  const{data,error}=await db.from('zalivs').insert({
+    geo:moGeo,name,
+    ad_budget:parseFloat(document.getElementById('ma').value)||0,
+    rk_budget:parseFloat(document.getElementById('mr').value)||0,
+    domain:document.getElementById('md').value,
+    creos,goals,ind:'profit',
+    status:scoreToAutoStatus(moScore),
+    insights:'',
+    buyer:document.getElementById('mb').value,
+    funnel:document.getElementById('mf').value,
+    score:moScore,date:today
+  }).select().single()
+  if(!error&&data){
+    ZALIVS.unshift(data)
+    document.getElementById('mo-zaliv').classList.remove('open')
+    toast('Залив создан','ok')
+    rzalivs()
+  } else {
+    toast('Ошибка: '+JSON.stringify(error),'err')
+  }
 }
 
-// ── SALES ──
+// ══════════════════════════════════════════
+// TEMPLATES — Шаблоны заливов
+// ══════════════════════════════════════════
+async function saveAsTemplate(){
+  const name = prompt('Название шаблона:')
+  if(!name?.trim()) return
+  if(!moGeo) { toast('Выбери GEO','err'); return }
+
+  const creos=[...document.querySelectorAll('.mcreo-input')].map(i=>i.value.trim()).filter(Boolean)
+  const goals=[...document.querySelectorAll('.mgoal-input')].map(i=>i.value.trim()).filter(Boolean)
+
+  const tpl = {
+    id: 'tpl_'+Date.now(),
+    name,
+    geo: moGeo,
+    name_template: document.getElementById('mn').value.trim(),
+    ad_budget: parseFloat(document.getElementById('ma').value)||0,
+    rk_budget: parseFloat(document.getElementById('mr').value)||0,
+    buyer: document.getElementById('mb').value,
+    funnel: document.getElementById('mf').value,
+    score: moScore,
+    creos,
+    goals,
+    created_at: new Date().toISOString()
+  }
+
+  // Сохраняем в Supabase (если таблица есть) или localStorage
+  try {
+    const{error} = await db.from('zaliv_templates').insert(tpl)
+    if(!error) {
+      TEMPLATES.unshift(tpl)
+      toast(`Шаблон «${name}» сохранён`, 'ok')
+      return
+    }
+  } catch(e){}
+
+  // Fallback: localStorage
+  TEMPLATES.unshift(tpl)
+  localStorage.setItem('jdl_templates', JSON.stringify(TEMPLATES))
+  toast(`Шаблон «${name}» сохранён (local)`, 'ok')
+}
+
+function openTemplates(){
+  renderTemplateList()
+  document.getElementById('mo-templates').classList.add('open')
+}
+
+function renderTemplateList(){
+  const list = document.getElementById('tpl-list')
+  if(!TEMPLATES.length){
+    list.innerHTML='<div class="empty">Нет шаблонов. Создай залив и нажми «Сохранить шаблон»</div>'
+    return
+  }
+  list.innerHTML = TEMPLATES.map(t=>`
+    <div class="tpl-item" data-tplid="${t.id}">
+      <div>
+        <span class="tpl-geo ${t.geo==='PL'?'gpl':'gplua'} zgeo">${t.geo}</span>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="tpl-name">${t.name}</div>
+        <div class="tpl-meta">${t.funnel} · $${t.ad_budget}/$${t.rk_budget} · score ${t.score}</div>
+      </div>
+      <button class="tpl-del" data-tplid="${t.id}" title="Удалить шаблон">✕</button>
+    </div>
+  `).join('')
+
+  list.querySelectorAll('.tpl-item').forEach(item=>{
+    item.addEventListener('click', e=>{
+      if(e.target.closest('.tpl-del')) return
+      const tpl = TEMPLATES.find(t=>t.id===item.dataset.tplid)
+      if(!tpl) return
+      document.getElementById('mo-templates').classList.remove('open')
+      openMoZaliv(tpl)
+    })
+  })
+  list.querySelectorAll('.tpl-del').forEach(btn=>{
+    btn.addEventListener('click', async e=>{
+      e.stopPropagation()
+      const id = btn.dataset.tplid
+      TEMPLATES = TEMPLATES.filter(t=>t.id!==id)
+      try { await db.from('zaliv_templates').delete().eq('id',id) } catch(e){}
+      localStorage.setItem('jdl_templates', JSON.stringify(TEMPLATES))
+      toast('Шаблон удалён','ok')
+      renderTemplateList()
+    })
+  })
+}
+
+// ══════════════════════════════════════════
+// CREO GALLERY — Галерея крео
+// ══════════════════════════════════════════
+let creoCurrentZaliv = null
+let creoCurrentId = null
+
+async function openCreoGallery(zalivId, creoId) {
+  creoCurrentZaliv = zalivId
+  creoCurrentId = creoId
+  const z = ZALIVS.find(x=>x.id===zalivId)
+
+  document.getElementById('creo-modal-title').innerHTML =
+    `🎨 Крео <span style="color:var(--purple);font-family:var(--mono)">${creoId}</span> <button class="mox" data-close="mo-creo">×</button>`
+
+  // Заново вешаем close
+  document.querySelector('#creo-modal-title .mox').addEventListener('click', ()=>document.getElementById('mo-creo').classList.remove('open'))
+
+  // Ищем скрин в Supabase Storage
+  let imgUrl = null
+  try {
+    const path = `${zalivId}/${creoId}.png`
+    const { data } = db.storage.from('creo-screenshots').getPublicUrl(path)
+    // Проверяем существование
+    const check = await fetch(data.publicUrl, {method:'HEAD'})
+    if(check.ok) imgUrl = data.publicUrl
+  } catch(e){}
+
+  // Находим метрики крео из заливов (если есть creo_metrics)
+  // Пока показываем заглушку с данными залива
+  const cplVal = '—', ctrVal = '—', leadsVal = '—'
+
+  document.getElementById('creo-gallery-content').innerHTML = `
+    <div class="creo-header">
+      <div>
+        <div class="creo-id">${creoId}</div>
+        <div class="creo-zaliv">${z?.name||'—'}</div>
+      </div>
+      <span class="zgeo gchip ${z?.geo==='PL'?'gpl':'gplua'}">${z?.geo||''}</span>
+    </div>
+    <div class="creo-img-area" id="creo-drop-area">
+      ${imgUrl
+        ? `<img src="${imgUrl}?t=${Date.now()}" alt="Скрин крео">`
+        : `<div class="creo-upload-hint"><strong>Нет скриншота</strong>Нажми «Загрузить скрин» или перетащи файл</div>`
+      }
+    </div>
+    <input type="file" id="creo-file-inp" accept="image/*">
+    <div class="creo-stats">
+      <div class="creo-stat"><div class="creo-stat-val">${cplVal}</div><div class="creo-stat-lbl">CPL</div></div>
+      <div class="creo-stat"><div class="creo-stat-val">${ctrVal}</div><div class="creo-stat-lbl">CTR</div></div>
+      <div class="creo-stat"><div class="creo-stat-val">${leadsVal}</div><div class="creo-stat-lbl">Leads</div></div>
+    </div>
+    ${imgUrl ? `<div class="creo-actions"><a class="creo-dl" href="${imgUrl}" download="${creoId}.png" target="_blank">⬇ Скачать</a></div>` : ''}
+  `
+
+  // Upload обработчик
+  document.getElementById('creo-file-inp').addEventListener('change', handleCreoUpload)
+
+  // Drag & drop на область
+  const dropArea = document.getElementById('creo-drop-area')
+  dropArea.addEventListener('click', ()=>document.getElementById('creo-file-inp').click())
+  dropArea.addEventListener('dragover', e=>{e.preventDefault();dropArea.style.borderColor='var(--bord2)'})
+  dropArea.addEventListener('dragleave', ()=>dropArea.style.borderColor='')
+  dropArea.addEventListener('drop', e=>{
+    e.preventDefault()
+    dropArea.style.borderColor=''
+    const file = e.dataTransfer.files[0]
+    if(file && file.type.startsWith('image/')) uploadCreoFile(file)
+  })
+
+  document.getElementById('btn-upload-creo').onclick = ()=>document.getElementById('creo-file-inp').click()
+  document.getElementById('mo-creo').classList.add('open')
+}
+
+function handleCreoUpload(e){
+  const file = e.target.files[0]
+  if(!file) return
+  uploadCreoFile(file)
+}
+
+async function uploadCreoFile(file){
+  if(!creoCurrentZaliv || !creoCurrentId) return
+  toast('Загружаю скрин...', 'info')
+
+  try {
+    const path = `${creoCurrentZaliv}/${creoCurrentId}.png`
+    const { error } = await db.storage
+      .from('creo-screenshots')
+      .upload(path, file, {upsert: true, contentType: file.type})
+
+    if(error) {
+      if(error.message?.includes('Bucket not found')) {
+        toast('Создай bucket "creo-screenshots" в Supabase Storage', 'err')
+      } else {
+        toast('Ошибка: ' + error.message, 'err')
+      }
+      return
+    }
+
+    toast('Скрин загружен!', 'ok')
+    // Обновляем галерею
+    await openCreoGallery(creoCurrentZaliv, creoCurrentId)
+  } catch(e) {
+    toast('Ошибка загрузки: '+e.message, 'err')
+  }
+}
+
+// ══════════════════════════════════════════
+// SALES
+// ══════════════════════════════════════════
 function parseDt(ds){if(!ds)return null;if(ds.includes('-'))return new Date(ds);const p=ds.split('.');if(p.length===3)return new Date(p[2]+'-'+p[1]+'-'+p[0]);return null}
 function rsales(){
   const from=document.getElementById('sp-from').value,to=document.getElementById('sp-to').value
@@ -1063,18 +1745,21 @@ function rsales(){
   f.forEach(s=>{const src=s.source||'Неизвестно';if(!sm[src])sm[src]={count:0,amount:0};sm[src].count++;sm[src].amount+=s.saleAmount||0})
   const srcs=Object.entries(sm).sort((a,b)=>b[1].amount-a[1].amount)
   document.getElementById('sales-sources').innerHTML=srcs.map(([src,v])=>`<div class="ssrc"><div class="sstop"><span class="ssn">${src}</span><span class="sscnt">${v.count} пр.</span></div><div class="ssamt">${v.amount.toLocaleString('ru')} zł</div><div class="sssub">avg ${Math.round(v.amount/v.count).toLocaleString('ru')} zł</div></div>`).join('')||'<div class="empty">Нет продаж за период</div>'
-  document.getElementById('sales-list').innerHTML=[...f].sort((a,b)=>{const da=parseDt(a.createdAt)||new Date(0),db=parseDt(b.createdAt)||new Date(0);return db-da}).map(s=>`<div class="slrow"><div class="slava">${(s.name||'?').substring(0,2).toUpperCase()}</div><div><div class="slnm">${s.name||'—'}</div><div style="font-size:10px;color:var(--text3)">${s.phone||''}</div></div><span class="slsr">${s.source||'—'}</span><span class="sldt">${s.createdAt||'—'}</span><span class="slam">${(s.saleAmount||0).toLocaleString('ru')} zł</span></div>`).join('')||'<div class="empty">Нет продаж за период</div>'
+  document.getElementById('sales-list').innerHTML=[...f].sort((a,b)=>{const da=parseDt(a.createdAt)||new Date(0),db2=parseDt(b.createdAt)||new Date(0);return db2-da}).map(s=>`<div class="slrow"><div class="slava">${(s.name||'?').substring(0,2).toUpperCase()}</div><div><div class="slnm">${s.name||'—'}</div><div style="font-size:10px;color:var(--text3)">${s.phone||''}</div></div><span class="slsr">${s.source||'—'}</span><span class="sldt">${s.createdAt||'—'}</span><span class="slam">${(s.saleAmount||0).toLocaleString('ru')} zł</span></div>`).join('')||'<div class="empty">Нет продаж за период</div>'
 }
 
-// ── DOMAINS ──
+// ══════════════════════════════════════════
+// DOMAINS
+// ══════════════════════════════════════════
 async function saveDomain(){
   const url=document.getElementById('dm-url').value.trim().replace(/^https?:\/\//,'')
-  if(!url){alert('Введи URL');return}
-  if(!domGeoSel.length){alert('Выбери GEO');return}
+  if(!url){toast('Введи URL','err');return}
+  if(!domGeoSel.length){toast('Выбери GEO','err');return}
   const{data,error}=await db.from('domains').insert({url,description:document.getElementById('dm-desc').value.trim(),geos:[...domGeoSel],funnel:document.getElementById('dm-funnel').value,active:true}).select().single()
-  if(!error&&data){DOMAINS.push(data);document.getElementById('mo-domain').classList.remove('open');domGeoSel=[];document.querySelectorAll('[data-dgeo]').forEach(b=>b.classList.remove('sel'));rdomains()}
+  if(!error&&data){DOMAINS.push(data);document.getElementById('mo-domain').classList.remove('open');domGeoSel=[];document.querySelectorAll('[data-dgeo]').forEach(b=>b.classList.remove('sel'));toast('Домен добавлен','ok');rdomains()}
+  else toast('Ошибка: '+JSON.stringify(error),'err')
 }
-async function delDomain(id){if(!confirm('Удалить?'))return;await db.from('domains').delete().eq('id',id);DOMAINS=DOMAINS.filter(d=>d.id!==id);rdomains()}
+async function delDomain(id){if(!confirm('Удалить?'))return;await db.from('domains').delete().eq('id',id);DOMAINS=DOMAINS.filter(d=>d.id!==id);toast('Домен удалён','ok');rdomains()}
 function rdomains(){
   const geo=document.getElementById('df-geo').value,q=document.getElementById('df-q').value.toLowerCase()
   const f=DOMAINS.filter(d=>(!geo||(d.geos||[]).includes(geo))&&(!q||d.url.toLowerCase().includes(q)))
@@ -1082,10 +1767,11 @@ function rdomains(){
   document.getElementById('dom-grid').innerHTML=f.map(d=>`<div class="dc"><div class="dctop"><span style="font-size:16px">${(d.geos||[]).map(g=>({PL:'🇵🇱',PLUA:'🇵🇱🇺🇦'}[g]||'')).filter((v,i,a)=>a.indexOf(v)===i).join('')}</span><a class="dcurl" href="#" onclick="return false">${d.url}</a><div class="dled ${d.active?'lon':'loff'}"></div></div><div class="ddsc">${d.description||''}</div><div class="dftr">${(d.geos||[]).map(g=>`<span class="zgeo gchip ${g==='PL'?'gpl':'gplua'}">${g}</span>`).join('')}<span class="fchip">${d.funnel}</span><span style="margin-left:auto;font-size:11px;font-weight:600;color:${d.active?'var(--green)':'var(--text3)'}">${d.active?'● Активный':'○ Неактивный'}</span><button onclick="delDomain(${d.id})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:0 4px">✕</button></div></div>`).join('')||'<div class="empty">Нет доменов</div>'
 }
 
-// ── TASKS ──
+// ══════════════════════════════════════════
+// TASKS
+// ══════════════════════════════════════════
 async function saveTk(title,col,who){if(!title.trim())return;const{data,error}=await db.from('tasks').insert({title:title.trim(),col,assignee:who||'',priority:'mid',deadline:null}).select().single();if(!error&&data){TASKS.push(data);rtasks()}}
 async function delTk(id){if(!confirm('Удалить?'))return;await db.from('tasks').delete().eq('id',id);TASKS=TASKS.filter(t=>t.id!==id);rtasks()}
-async function moveTk(id,col){await db.from('tasks').update({col,updated_at:new Date().toISOString()}).eq('id',id);const t=TASKS.find(x=>x.id===id);if(t)t.col=col;rtasks()}
 async function cyclePr(id,cur){const o=['low','mid','high'],n=o[(o.indexOf(cur)+1)%3];await db.from('tasks').update({priority:n,updated_at:new Date().toISOString()}).eq('id',id);const t=TASKS.find(x=>x.id===id);if(t)t.priority=n;rtasks()}
 
 function showQA(col){document.querySelectorAll('.kqwrap').forEach(q=>q.classList.remove('open'));const q=document.getElementById('kq-'+col);if(q){q.classList.add('open');q.querySelector('input').focus()}}
@@ -1111,7 +1797,6 @@ function rtasks(){
       </div>
     </div>`
   }).join('')
-  // bind
   document.querySelectorAll('.kadd[data-col]').forEach(b=>b.addEventListener('click',()=>showQA(b.dataset.col)))
   document.querySelectorAll('.kqinp').forEach(inp=>{
     inp.addEventListener('keydown', e=>{
@@ -1123,8 +1808,8 @@ function rtasks(){
     b.addEventListener('click',()=>{const inp=document.querySelector(`#kq-${b.dataset.col} .kqinp`);if(inp?.value){saveTk(inp.value,b.dataset.col,b.dataset.who);hideQA(b.dataset.col)}})
   })
   document.querySelectorAll('.kqcn').forEach(b=>b.addEventListener('click',()=>hideQA(b.dataset.col)))
-  // drag handled globally
 }
+
 function tcard(t){
   const ov=t.deadline&&t.deadline<new Date().toISOString().split('T')[0]
   return`<div class="tcard ${t.priority==='high'?'th':t.priority==='mid'?'tm':'tl'}" draggable="true" id="tc-${t.id}" data-id="${t.id}">
@@ -1137,13 +1822,15 @@ function tcard(t){
     </div>
   </div>`
 }
+
 document.addEventListener('click', e=>{
   const pr=e.target.closest('.tpr[data-id]')
   if(pr){e.stopPropagation();cyclePr(parseInt(pr.dataset.id),pr.dataset.pr);return}
   const del=e.target.closest('.tdel[data-id]')
   if(del){e.stopPropagation();delTk(parseInt(del.dataset.id));return}
 })
-// ── TASK DRAG & DROP ──
+
+// Drag & Drop Tasks
 document.addEventListener('dragstart', e=>{
   const tc = e.target.closest('.tcard[data-id]')
   if(!tc) return
@@ -1152,17 +1839,14 @@ document.addEventListener('dragstart', e=>{
   e.dataTransfer.setData('text/plain', dragId)
   setTimeout(()=>tc.classList.add('dragging'), 0)
 })
-
 document.addEventListener('dragend', ()=>{
   document.querySelectorAll('.tcard.dragging').forEach(t=>t.classList.remove('dragging'))
   document.querySelectorAll('.tcard.dov, .kcol.dov').forEach(t=>t.classList.remove('dov'))
   dragId = null
 })
-
 document.addEventListener('dragover', e=>{
   e.preventDefault()
   e.dataTransfer.dropEffect = 'move'
-  // highlight drop target
   document.querySelectorAll('.tcard.dov, .kcol.dov').forEach(t=>t.classList.remove('dov'))
   const tc = e.target.closest('.tcard[data-id]')
   if(tc && dragId && parseInt(tc.dataset.id) !== dragId) {
@@ -1172,41 +1856,36 @@ document.addEventListener('dragover', e=>{
     if(col) col.classList.add('dov')
   }
 })
-
 document.addEventListener('drop', e=>{
   e.preventDefault()
   document.querySelectorAll('.tcard.dov, .kcol.dov').forEach(t=>t.classList.remove('dov'))
   if(!dragId) return
-
   const tc = e.target.closest('.tcard[data-id]')
   const col = e.target.closest('.kcol')
   const dragTask = TASKS.find(t=>t.id===dragId)
   if(!dragTask) return
-
   if(tc && parseInt(tc.dataset.id) !== dragId) {
-    // Drop ON another card: reorder
     const targetTask = TASKS.find(t=>t.id===parseInt(tc.dataset.id))
     if(!targetTask) return
     const newCol = targetTask.col
     dragTask.col = newCol
-    // Reorder in array
     TASKS.splice(TASKS.indexOf(dragTask), 1)
     TASKS.splice(TASKS.indexOf(targetTask), 0, dragTask)
     db.from('tasks').update({col: newCol, updated_at: new Date().toISOString()}).eq('id', dragId)
   } else if(col) {
-    // Drop on column: move to end of that column
     const newCol = col.id.replace('kc-', '')
     if(dragTask.col !== newCol) {
       dragTask.col = newCol
       db.from('tasks').update({col: newCol, updated_at: new Date().toISOString()}).eq('id', dragId)
     }
   }
-
   rtasks()
   dragId = null
 })
 
-// ── JOURNAL ──
+// ══════════════════════════════════════════
+// JOURNAL
+// ══════════════════════════════════════════
 function rtree(){
   let h=''
   jLoose.forEach(d=>{h+=ji2(d,false)})
@@ -1222,7 +1901,16 @@ function rtree(){
 }
 function ji2(d,child){return`<div class="jitem${child?' jich':''}${curDoc===d.id?' active':''}" data-docid="${d.id}"><span>📄</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">${d.title}</span><div class="jiact"><button class="jiab" data-deldoc="${d.id}">✕</button></div></div>`}
 function loadDocById(id){curDoc=id;const all=[...jLoose,...jFolders.flatMap(f=>f.docs)];const d=all.find(x=>x.id===id);if(d){document.getElementById('j-title').value=d.title;document.getElementById('j-ta').value=d.body}rtree()}
-async function saveDoc(){if(!curDoc)return;const title=document.getElementById('j-title').value,body=document.getElementById('j-ta').value;await db.from('journal_docs').update({title,body,updated_at:new Date().toISOString()}).eq('id',curDoc);const all=[...jLoose,...jFolders.flatMap(f=>f.docs)];const d=all.find(x=>x.id===curDoc);if(d){d.title=title;d.body=body}const btn=document.getElementById('btn-jsave');btn.textContent='✅ Saved';setTimeout(()=>btn.textContent='💾 Save',1500);rtree()}
+async function saveDoc(){
+  if(!curDoc)return
+  const title=document.getElementById('j-title').value,body=document.getElementById('j-ta').value
+  await db.from('journal_docs').update({title,body,updated_at:new Date().toISOString()}).eq('id',curDoc)
+  const all=[...jLoose,...jFolders.flatMap(f=>f.docs)];const d=all.find(x=>x.id===curDoc)
+  if(d){d.title=title;d.body=body}
+  toast('Документ сохранён','ok')
+  const btn=document.getElementById('btn-jsave');btn.textContent='✅ Saved';setTimeout(()=>btn.textContent='💾 Save',1500)
+  rtree()
+}
 async function newDoc(){const title=prompt('Название:');if(!title)return;const id='doc_'+Date.now();const{data}=await db.from('journal_docs').insert({id,title,body:'## '+title+'\n\n',folder_id:'',folder_name:'',sort_order:Date.now()}).select().single();if(data){jLoose.push(data);curDoc=id;rtree();loadDocById(id)}}
 async function newFolder(){const name=prompt('Папка:');if(!name)return;const fid='folder_'+Date.now(),docId='doc_'+Date.now();const{data}=await db.from('journal_docs').insert({id:docId,title:'Новый документ',body:'',folder_id:fid,folder_name:name,sort_order:Date.now()}).select().single();if(data){jFolders.push({id:fid,name,docs:[data]});curDoc=docId;rtree();loadDocById(docId)}}
 async function newDocInFolder(fid,fname){const title=prompt('Название:');if(!title)return;const id='doc_'+Date.now();const{data}=await db.from('journal_docs').insert({id,title,body:'',folder_id:fid,folder_name:fname,sort_order:Date.now()}).select().single();if(data){const f=jFolders.find(x=>x.id===fid);if(f)f.docs.push(data);curDoc=id;rtree();loadDocById(id)}}
@@ -1232,9 +1920,6 @@ function ji(p){const ta=document.getElementById('j-ta'),s=ta.selectionStart;ta.v
 function jw(b,a){const ta=document.getElementById('j-ta'),s=ta.selectionStart,e=ta.selectionEnd,sel=ta.value.substring(s,e);ta.value=ta.value.substring(0,s)+b+sel+a+ta.value.substring(e);ta.focus();ta.selectionStart=s+b.length;ta.selectionEnd=e+b.length}
 function jtable(){const ta=document.getElementById('j-ta'),s=ta.selectionStart;ta.value=ta.value.substring(0,s)+'\n| Кол1 | Кол2 | Кол3 |\n|------|------|------|\n| val  | val  | val  |\n'+ta.value.substring(s);ta.focus()}
 function parseMd(md){return md.replace(/^## (.+)$/gm,'<h2>$1</h2>').replace(/^### (.+)$/gm,'<h3>$1</h3>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/`(.+?)`/g,'<code>$1</code>').replace(/^---$/gm,'<hr>').replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>').replace(/^- (.+)$/gm,'<li>$1</li>').replace(/(<li>.*<\/li>\n?)+/g,s=>`<ul>${s}</ul>`).replace(/(\|[^\n]+\|\n?)+/g,t=>{const rows=t.trim().split('\n');if(rows.length<2)return t;const head=rows[0].split('|').filter(c=>c.trim()).map(c=>`<th>${c.trim()}</th>`).join('');const body=rows.slice(2).map(r=>'<tr>'+r.split('|').filter(c=>c.trim()).map(c=>`<td>${c.trim()}</td>`).join('')+'</tr>').join('');return`<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`}).replace(/\n/g,'<br>')}
-
-document.getElementById('btn-new-folder').addEventListener('click', newFolder)
-document.getElementById('btn-new-doc').addEventListener('click', newDoc)
 
 // Auto-login
 const _saved = localStorage.getItem('jdl_user')
