@@ -10,396 +10,229 @@
 <div id="root"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SB_URL  = 'https://dkhkowkgiricjxkcngbf.supabase.co'
-const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRraGtvd2tnaXJpY2p4a2NuZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MTY3NDEsImV4cCI6MjA5NjQ5Mjc0MX0.48HS8eJ6wLPfimRtiz6behWHG1G8xz5_zfrT0cxnGrE'
-const GARNO_URL = 'https://bnyjwjuejrfalbubdbcv.supabase.co'
-const GARNO_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJueWp3anVlanJmYWxidWJkYmN2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTcyNDQ2NSwiZXhwIjoyMDk1MzAwNDY1fQ.l9ka9b_PzKdu-gock8ZACqODicJDZYCc1laMw_HMBvA'
+const SB_URL='https://dkhkowkgiricjxkcngbf.supabase.co'
+const SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRraGtvd2tnaXJpY2p4a2NuZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MTY3NDEsImV4cCI6MjA5NjQ5Mjc0MX0.48HS8eJ6wLPfimRtiz6behWHG1G8xz5_zfrT0cxnGrE'
+const GARNO_URL='https://bnyjwjuejrfalbubdbcv.supabase.co'
+const GARNO_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJueWp3anVlanJmYWxidWJkYmN2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTcyNDQ2NSwiZXhwIjoyMDk1MzAwNDY1fQ.l9ka9b_PzKdu-gock8ZACqODicJDZYCc1laMw_HMBvA'
+const USERS={illia:{name:'Illia',role:'Junior Buyer',initials:'IB',color:'#b52240',bg:'rgba(181,34,64,.15)',border:'#8b1a2e'},danya:{name:'Danya',role:'Head of Marketing',initials:'DM',color:'#6090ff',bg:'rgba(64,128,255,.1)',border:'#1a3060'}}
+const AUTO_STATUS_LOCKED=['Proliw','Perezaliw']
+let db,CURRENT_USER=null
+let ZALIVS=[],DOMAINS=[],TASKS=[],METRICS=[],SALES_DATA=[],TEMPLATES=[]
+let expZ=null,dragId=null,moGeo='',moScore=0,domGeoSel=[],deGeoSel=[],deEditId=null
+let curDoc=null,chartData=null,jFolders=[],jLoose=[]
+let creoCurrentZaliv=null,creoCurrentId=null,srchSelIdx=-1
 
-const USERS = {
-  illia: {name:'Illia', role:'Junior Buyer', initials:'IB', color:'#b52240', bg:'rgba(181,34,64,.15)', border:'#8b1a2e'},
-  danya: {name:'Danya', role:'Head of Marketing', initials:'DM', color:'#6090ff', bg:'rgba(64,128,255,.1)', border:'#1a3060'}
-}
-
-// Статусы которые НЕ трогаем при авто-смене по score
-const AUTO_STATUS_LOCKED = ['Proliw','Perezaliw']
-
-let db, CURRENT_USER=null
-let ZALIVS=[], DOMAINS=[], TASKS=[], METRICS=[], SALES_DATA=[], TEMPLATES=[]
-let expZ=null, dragId=null, moGeo='', moScore=0, domGeoSel=[]
-let curDoc=null, chartData=null, jFolders=[], jLoose=[]
-
-// ── CSS ──
-document.head.insertAdjacentHTML('beforeend', `<style>
+document.head.insertAdjacentHTML('beforeend',`<style>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#0a0a0f;--bg2:#111118;--bg3:#18181f;--bg4:#1e1e28;--bg5:#252530;--border:#2a2a3a;--border2:#3a3a50;--border3:#4a4a65;--text:#f0f0f5;--text2:#9090a8;--text3:#5a5a70;--bord:#8b1a2e;--bord2:#b52240;--bord3:#d42a50;--bord-dim:#3a0d18;--green:#2ea043;--green-bg:#0d2818;--yellow:#d4a017;--yellow-bg:#2a1f08;--red:#e04050;--red-bg:#2a0d12;--blue:#4080ff;--blue-bg:#0d1a3a;--purple:#9060d0;--mono:'JetBrains Mono',monospace;--sans:'Manrope',system-ui,sans-serif}
 html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--bg);color:var(--text);font-size:13px}
-
-/* LOGIN */
-#login{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;z-index:999}
+#login{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999}
 .l-logo{font-size:28px;font-weight:800;letter-spacing:4px;color:#fff;margin-bottom:6px}.l-logo em{color:var(--bord2);font-style:normal}
 .l-sub{font-size:11px;color:var(--text3);margin-bottom:40px;letter-spacing:2px;text-transform:uppercase}
 .l-cards{display:flex;gap:16px}
-.l-card{background:var(--bg2);border:2px solid var(--border2);border-radius:14px;padding:28px 32px;cursor:pointer;text-align:center;min-width:180px;transition:all .2s}
-.l-card:hover{border-color:var(--bord2);transform:translateY(-3px)}
+.l-card{background:var(--bg2);border:2px solid var(--border2);border-radius:14px;padding:28px 32px;cursor:pointer;text-align:center;min-width:180px;transition:all .2s}.l-card:hover{border-color:var(--bord2);transform:translateY(-3px)}
 .l-ava{width:56px;height:56px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;font-family:var(--mono)}
-.l-name{font-size:15px;font-weight:700;color:#fff;margin-bottom:4px}
-.l-role{font-size:11px;color:var(--text3)}
-
-/* APP */
+.l-name{font-size:15px;font-weight:700;color:#fff;margin-bottom:4px}.l-role{font-size:11px;color:var(--text3)}
 #app{display:none;flex-direction:column;height:100vh}
 .topbar{display:flex;align-items:center;height:46px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;padding:0 20px}
 .logo{font-size:14px;font-weight:800;letter-spacing:3px;color:#fff;margin-right:24px}.logo em{color:var(--bord2);font-style:normal}
 .nav{display:flex;height:100%}
-.nb{display:flex;align-items:center;gap:7px;padding:0 14px;font-size:11px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;cursor:pointer;letter-spacing:.5px;text-transform:uppercase;transition:all .2s}
-.nb:hover{color:var(--text2)}.nb.active{color:#fff;border-bottom-color:var(--bord2);background:rgba(181,34,64,.05)}
+.nb{display:flex;align-items:center;gap:7px;padding:0 14px;font-size:11px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;cursor:pointer;letter-spacing:.5px;text-transform:uppercase;transition:all .2s}.nb:hover{color:var(--text2)}.nb.active{color:#fff;border-bottom-color:var(--bord2);background:rgba(181,34,64,.05)}
 .nb .dot{width:5px;height:5px;border-radius:50%;background:var(--text3)}.nb.active .dot{background:var(--bord2);box-shadow:0 0 8px var(--bord2)}
 .sync-area{margin-left:auto;display:flex;align-items:center;gap:8px}
 .sdot{width:6px;height:6px;border-radius:50%;background:var(--text3)}.sdot.ok{background:var(--green);box-shadow:0 0 6px var(--green)}.sdot.syncing{background:var(--yellow);animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .stxt{font-size:10px;color:var(--text3)}
-.sbtn{background:none;border:1px solid var(--border2);border-radius:4px;color:var(--text3);font-size:10px;padding:2px 8px;cursor:pointer}
-.sbtn:hover{border-color:var(--bord2);color:var(--bord2)}
-
-/* Cmd+K поиск кнопка */
-.search-btn{display:flex;align-items:center;gap:7px;padding:4px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;cursor:pointer;font-size:11px;color:var(--text3);margin-right:8px;transition:all .15s}
-.search-btn:hover{border-color:var(--bord);color:var(--text2)}
+.sbtn{background:none;border:1px solid var(--border2);border-radius:4px;color:var(--text3);font-size:10px;padding:2px 8px;cursor:pointer}.sbtn:hover{border-color:var(--bord2);color:var(--bord2)}
+.search-btn{display:flex;align-items:center;gap:7px;padding:4px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;cursor:pointer;font-size:11px;color:var(--text3);margin-right:8px;transition:all .15s}.search-btn:hover{border-color:var(--bord);color:var(--text2)}
 .search-btn kbd{background:var(--bg5);border:1px solid var(--border2);border-radius:3px;padding:1px 5px;font-size:10px;font-family:var(--mono)}
-
 .uchip{display:flex;align-items:center;gap:7px;margin-left:12px;padding:3px 10px 3px 3px;border-radius:20px;border:1px solid var(--border);background:var(--bg3);cursor:pointer}
-.uava{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-family:var(--mono)}
-.uname{font-size:11px;font-weight:600;color:var(--text2)}
-.content{flex:1;overflow:auto}
-.page{display:none;padding:20px}.page.active{display:block}
-
-/* TOAST */
+.uava{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-family:var(--mono)}.uname{font-size:11px;font-weight:600;color:var(--text2)}
+.content{flex:1;overflow:auto}.page{display:none;padding:20px}.page.active{display:block}
 #toast-wrap{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-.toast{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 16px;font-size:12px;color:var(--text);box-shadow:0 8px 24px rgba(0,0,0,.5);display:flex;align-items:center;gap:8px;min-width:220px;animation:toastIn .2s ease;pointer-events:auto}
+.toast{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 16px;font-size:12px;color:var(--text);box-shadow:0 8px 24px rgba(0,0,0,.5);display:flex;align-items:center;gap:8px;min-width:220px;animation:toastIn .2s ease}
 .toast.ok{border-left:3px solid var(--green)}.toast.err{border-left:3px solid var(--red)}.toast.info{border-left:3px solid var(--blue)}
 @keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-
-/* GLOBAL SEARCH MODAL */
-#mo-search{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:flex-start;justify-content:center;z-index:800;backdrop-filter:blur(2px);padding-top:80px}
-#mo-search.open{display:flex}
+#mo-search{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:flex-start;justify-content:center;z-index:800;backdrop-filter:blur(2px);padding-top:80px}#mo-search.open{display:flex}
 .srch-box{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;width:600px;max-height:70vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.6)}
 .srch-inp-wrap{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border)}
-.srch-ico{font-size:16px;color:var(--text3)}
-.srch-inp{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:15px;font-family:var(--sans)}
-.srch-inp::placeholder{color:var(--text3)}
+.srch-inp{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:15px;font-family:var(--sans)}.srch-inp::placeholder{color:var(--text3)}
 .srch-esc{font-size:10px;color:var(--text3);background:var(--bg4);border:1px solid var(--border2);border-radius:4px;padding:2px 7px;font-family:var(--mono)}
 .srch-results{overflow-y:auto;padding:8px 0;max-height:calc(70vh - 60px)}
 .srch-section{padding:4px 18px 2px;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-top:6px}
-.srch-item{display:flex;align-items:center;gap:10px;padding:8px 18px;cursor:pointer;transition:background .1s}
-.srch-item:hover,.srch-item.sel{background:rgba(181,34,64,.08)}
+.srch-item{display:flex;align-items:center;gap:10px;padding:8px 18px;cursor:pointer;transition:background .1s}.srch-item:hover,.srch-item.sel{background:rgba(181,34,64,.08)}
 .srch-item-ico{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
-.srch-item-body{flex:1;min-width:0}
-.srch-item-title{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.srch-item-sub{font-size:11px;color:var(--text3)}
+.srch-item-body{flex:1;min-width:0}.srch-item-title{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.srch-item-sub{font-size:11px;color:var(--text3)}
 .srch-item-badge{font-size:10px;padding:2px 8px;border-radius:4px;background:var(--bg4);color:var(--text3);flex-shrink:0}
 .srch-empty{text-align:center;padding:32px;color:var(--text3);font-size:13px}
-
-/* PERIOD */
 .pbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
 .pdates{display:flex;align-items:center;gap:6px}
 .pdw{display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 11px}
-.pdi{background:transparent;border:none;outline:none;color:var(--text2);font-size:11px;font-family:var(--mono);cursor:pointer;width:110px}
-.pdi::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:pointer}
-.pdash{color:var(--text3)}
-.pbtns{display:flex;gap:3px}
-.pb{padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;font-family:var(--sans);font-weight:500}
-.pb:hover{color:var(--text2)}.pb.active{background:var(--bord-dim);border-color:var(--bord2);color:var(--bord2)}
-
-/* KPI */
+.pdi{background:transparent;border:none;outline:none;color:var(--text2);font-size:11px;font-family:var(--mono);cursor:pointer;width:110px}.pdi::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:pointer}
+.pdash{color:var(--text3)}.pbtns{display:flex;gap:3px}
+.pb{padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;font-family:var(--sans);font-weight:500}.pb:hover{color:var(--text2)}.pb.active{background:var(--bord-dim);border-color:var(--bord2);color:var(--bord2)}
 .krow{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:18px}
 .kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:22px;position:relative;overflow:hidden}
 .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--bord),var(--bord2))}
-.klab{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:700}
-.kval{font-size:42px;font-weight:800;color:#fff;line-height:1;font-family:var(--mono)}
-
-/* DASH */
+.klab{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:700}.kval{font-size:42px;font-weight:800;color:#fff;line-height:1;font-family:var(--mono)}
 .dgrid{display:grid;grid-template-columns:1.5fr 1fr;gap:12px;margin-bottom:12px}
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
 .chdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.ctit{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px}
-.clnk{font-size:11px;color:var(--bord2);cursor:pointer}.clnk:hover{color:var(--bord3)}
-.zrow{display:grid;grid-template-columns:8px auto 1fr auto;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}
-.zrow:last-child{border:none}
-.zdot{width:7px;height:7px;border-radius:50%}
-.zgeo{font-size:10px;font-weight:700;padding:1px 7px;border-radius:3px;white-space:nowrap;font-family:var(--mono)}
+.ctit{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px}.clnk{font-size:11px;color:var(--bord2);cursor:pointer}.clnk:hover{color:var(--bord3)}
+.zrow{display:grid;grid-template-columns:8px auto 1fr auto;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}.zrow:last-child{border:none}
+.zdot{width:7px;height:7px;border-radius:50%}.zgeo{font-size:10px;font-weight:700;padding:1px 7px;border-radius:3px;white-space:nowrap;font-family:var(--mono)}
 .gpl{background:#0d1a2e;color:#5090e0;border:1px solid #1a3060}.gplua{background:#1a0d2e;color:#9070e0;border:1px solid #2a1a50}
-.zname{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.zbud{color:var(--yellow);font-size:11px;font-family:var(--mono)}
-.brow{margin-bottom:10px}
-.bhdr{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px}
-.btrk{height:5px;background:var(--bg4);border-radius:3px}
-.bfill{height:100%;border-radius:3px;transition:width .5s}
-.tmini{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
-.tmini:last-child{border:none}
-.tpb{width:3px;height:28px;border-radius:2px;flex-shrink:0}
-.tmt{flex:1;font-weight:500}
-.tms{font-size:10px;padding:2px 7px;border-radius:3px;font-weight:600}
-.ts-todo{background:var(--bg4);color:var(--text3)}.ts-proc{background:var(--yellow-bg);color:var(--yellow)}
-.tma{font-size:10px;color:var(--text3);background:var(--bg4);padding:2px 6px;border-radius:10px;border:1px solid var(--border)}
-
-/* CHART */
-.cwrap{position:relative}
-.ccanv{display:block;width:100%;cursor:crosshair}
+.zname{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.zbud{color:var(--yellow);font-size:11px;font-family:var(--mono)}
+.brow{margin-bottom:10px}.bhdr{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px}.btrk{height:5px;background:var(--bg4);border-radius:3px}.bfill{height:100%;border-radius:3px;transition:width .5s}
+.tmini{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}.tmini:last-child{border:none}
+.tpb{width:3px;height:28px;border-radius:2px;flex-shrink:0}.tmt{flex:1;font-weight:500}.tms{font-size:10px;padding:2px 7px;border-radius:3px;font-weight:600}
+.ts-todo{background:var(--bg4);color:var(--text3)}.ts-proc{background:var(--yellow-bg);color:var(--yellow)}.tma{font-size:10px;color:var(--text3);background:var(--bg4);padding:2px 6px;border-radius:10px;border:1px solid var(--border)}
+.cwrap{position:relative}.ccanv{display:block;width:100%;cursor:crosshair}
 .ctt{position:absolute;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:8px 12px;font-size:11px;pointer-events:none;display:none;z-index:10;min-width:150px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
-.ctt strong{color:#fff;display:block;margin-bottom:4px}
-.ctrow{display:flex;justify-content:space-between;gap:16px;margin-bottom:2px}
-.ctl{color:var(--text3)}.ctv{font-family:var(--mono);font-weight:600}
-
-/* ZALIVS */
-.fhdr{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
-.fhtit{font-size:18px;font-weight:800;color:#fff}
-.fhcnt{font-size:13px;color:var(--bord2);font-weight:700;font-family:var(--mono)}
+.ctt strong{color:#fff;display:block;margin-bottom:4px}.ctrow{display:flex;justify-content:space-between;gap:16px;margin-bottom:2px}.ctl{color:var(--text3)}.ctv{font-family:var(--mono);font-weight:600}
+.fhdr{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}.fhtit{font-size:18px;font-weight:800;color:#fff}.fhcnt{font-size:13px;color:var(--bord2);font-weight:700;font-family:var(--mono)}
 .fbar{display:flex;align-items:center;gap:7px;margin-bottom:16px;flex-wrap:wrap}
-.fsel{padding:5px 26px 5px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;cursor:pointer;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235a5a70' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;font-family:var(--sans)}
-.fsel option{background:var(--bg3)}
-.fsrch{padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:11px;outline:none;width:170px;font-family:var(--sans)}
-.fsrch:focus{border-color:var(--bord)}.fsrch::placeholder{color:var(--text3)}
-.badd{padding:6px 14px;border-radius:6px;border:1px solid var(--bord);background:var(--bord-dim);color:var(--bord2);font-size:11px;cursor:pointer;font-weight:700;margin-left:auto;font-family:var(--sans)}
-.badd:hover{background:var(--bord);color:#fff}
-
-/* Кнопка шаблонов */
-.btpl{padding:6px 14px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;cursor:pointer;font-weight:600;font-family:var(--sans)}
-.btpl:hover{border-color:var(--border3);color:var(--text)}
-
+.fsel{padding:5px 26px 5px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;cursor:pointer;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235a5a70' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;font-family:var(--sans)}.fsel option{background:var(--bg3)}
+.fsrch{padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:11px;outline:none;width:170px;font-family:var(--sans)}.fsrch:focus{border-color:var(--bord)}.fsrch::placeholder{color:var(--text3)}
+.badd{padding:6px 14px;border-radius:6px;border:1px solid var(--bord);background:var(--bord-dim);color:var(--bord2);font-size:11px;cursor:pointer;font-weight:700;margin-left:auto;font-family:var(--sans)}.badd:hover{background:var(--bord);color:#fff}
+.btpl{padding:6px 14px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;cursor:pointer;font-weight:600;font-family:var(--sans)}.btpl:hover{border-color:var(--border3);color:var(--text)}
 .ztwrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .zt{width:100%;border-collapse:collapse}
 .zt th{padding:9px 10px;text-align:left;font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--border2);background:var(--bg3);white-space:nowrap}
-.zt td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:12px}
-.zt tr:last-child td{border-bottom:none}
-.rp td{background:rgba(46,160,67,.07)!important}.rp:hover td{background:rgba(46,160,67,.13)!important}
-.rd td{background:rgba(212,160,23,.07)!important}.rd:hover td{background:rgba(212,160,23,.13)!important}
-.ro td{background:rgba(224,64,80,.07)!important}.ro:hover td{background:rgba(224,64,80,.13)!important}
+.zt td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:12px}.zt tr:last-child td{border-bottom:none}
+.rp td{background:rgba(46,160,67,.07)!important}.rp:hover td{background:rgba(46,160,67,.13)!important}.rd td{background:rgba(212,160,23,.07)!important}.rd:hover td{background:rgba(212,160,23,.13)!important}.ro td{background:rgba(224,64,80,.07)!important}.ro:hover td{background:rgba(224,64,80,.13)!important}
 .rex.rp td{background:rgba(46,160,67,.11)!important}.rex.rd td{background:rgba(212,160,23,.11)!important}.rex.ro td{background:rgba(224,64,80,.11)!important}
-.ind-t{display:inline-flex;border-radius:6px;overflow:hidden;border:1px solid var(--border2)}
-.itb{padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;border:none;background:var(--bg4);color:var(--text3);font-family:var(--sans)}
+.ind-t{display:inline-flex;border-radius:6px;overflow:hidden;border:1px solid var(--border2)}.itb{padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;border:none;background:var(--bg4);color:var(--text3);font-family:var(--sans)}
 .ap{background:var(--green);color:#000}.ad{background:var(--yellow);color:#000}.ao{background:var(--red);color:#fff}
 .gchip{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;font-family:var(--mono)}
 .rkn{font-weight:700;color:#fff;font-size:12px;line-height:1.4;max-width:220px}
 .spb{width:26px;height:26px;border-radius:5px;border:1px solid var(--border2);background:var(--bg5);color:var(--text3);font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono)}
 .s0{border-color:var(--red);background:var(--red-bg);color:var(--red)}.s1{border-color:#c03020;background:#2a0e08;color:#e06040}.s2{border-color:#c06020;background:#2a1808;color:#e08040}.s3{border-color:var(--yellow);background:var(--yellow-bg);color:var(--yellow)}.s4{border-color:#80c040;background:#182808;color:#90d050}.s5{border-color:var(--green);background:var(--green-bg);color:var(--green)}.s6{border-color:#00ffaa;background:#003322;color:#00ffaa}
 .ssel{padding:2px 22px 2px 8px;border-radius:4px;border:1px solid var(--border2);background:var(--bg4);color:var(--text2);font-size:11px;cursor:pointer;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' fill='none'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%235a5a70' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;font-family:var(--sans);font-weight:600}
-.sc{border-color:#4a3a10!important;color:var(--yellow)!important;background:var(--yellow-bg)!important}
-.ss{border-color:#1a3060!important;color:var(--blue)!important;background:var(--blue-bg)!important}
-.so{border-color:#4a1010!important;color:var(--red)!important;background:var(--red-bg)!important}
-.st{border-color:#1a4a22!important;color:var(--green)!important;background:var(--green-bg)!important}
-.sp{border-color:var(--bord)!important;color:var(--bord2)!important;background:var(--bord-dim)!important}
-.sz{border-color:#3a2a5a!important;color:var(--purple)!important;background:#1a0d2e!important}
-.budg{color:var(--yellow);font-weight:700;font-family:var(--mono)}
-.budg small{color:var(--text3);font-size:10px;font-weight:400}
-.dlnk{color:var(--blue);font-size:11px;text-decoration:none;font-family:var(--mono)}
-
-/* КРЕО-ТЕГИ — кликабельные */
+.sc{border-color:#4a3a10!important;color:var(--yellow)!important;background:var(--yellow-bg)!important}.ss{border-color:#1a3060!important;color:var(--blue)!important;background:var(--blue-bg)!important}.so{border-color:#4a1010!important;color:var(--red)!important;background:var(--red-bg)!important}.st{border-color:#1a4a22!important;color:var(--green)!important;background:var(--green-bg)!important}.sp{border-color:var(--bord)!important;color:var(--bord2)!important;background:var(--bord-dim)!important}.sz{border-color:#3a2a5a!important;color:var(--purple)!important;background:#1a0d2e!important}
+.budg{color:var(--yellow);font-weight:700;font-family:var(--mono)}.budg small{color:var(--text3);font-size:10px;font-weight:400}
+.dlnk{color:var(--blue);font-size:11px;text-decoration:none;font-family:var(--mono);cursor:pointer}.dlnk:hover{text-decoration:underline}
 .cwrp{display:flex;flex-direction:column;gap:2px;min-width:80px}
-.ctag{font-size:10px;font-family:var(--mono);color:var(--purple);cursor:pointer;padding:1px 4px;border-radius:3px;transition:background .1s}
-.ctag:hover{background:rgba(144,96,208,.15)}
-.cadd{font-size:10px;color:var(--text3);cursor:pointer;border:none;background:none;font-family:var(--sans);text-align:left}
-.cadd:hover{color:var(--bord2)}
-
+.ctag{font-size:10px;font-family:var(--mono);color:var(--purple);cursor:pointer;padding:1px 4px;border-radius:3px;transition:background .1s}.ctag:hover{background:rgba(144,96,208,.15)}
+.cadd{font-size:10px;color:var(--text3);cursor:pointer;border:none;background:none;font-family:var(--sans);text-align:left}.cadd:hover{color:var(--bord2)}
 .exrow td{padding:0!important;background:transparent!important}
 .exin{padding:14px 16px;display:grid;grid-template-columns:1.2fr 1fr;gap:12px;border-top:1px solid var(--bord-dim)}
-.exbl{background:var(--bg4);border-radius:7px;padding:12px}
-.exlb{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;font-weight:700}
+.exbl{background:var(--bg4);border-radius:7px;padding:12px}.exlb{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;font-weight:700}
 .gtag{display:inline-block;background:var(--bord-dim);border:1px solid var(--bord);color:var(--bord2);border-radius:3px;padding:2px 7px;font-size:11px;margin:2px 2px 2px 0}
-.insta{width:100%;background:var(--bg5);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-size:12px;padding:7px 9px;resize:none;outline:none;font-family:var(--sans);min-height:60px}
-.insta:focus{border-color:var(--bord)}
-.efi{width:100%;padding:5px 8px;border-radius:4px;border:1px solid var(--border2);background:var(--bg5);color:var(--text);font-size:12px;outline:none;font-family:var(--sans)}
-.efi:focus{border-color:var(--bord)}
-.erow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
-.elb{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px;font-weight:700}
+.insta{width:100%;background:var(--bg5);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-size:12px;padding:7px 9px;resize:none;outline:none;font-family:var(--sans);min-height:60px}.insta:focus{border-color:var(--bord)}
+.efi{width:100%;padding:5px 8px;border-radius:4px;border:1px solid var(--border2);background:var(--bg5);color:var(--text);font-size:12px;outline:none;font-family:var(--sans)}.efi:focus{border-color:var(--bord)}
+.erow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}.elb{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px;font-weight:700}
 .srow{display:flex;justify-content:space-between;margin-top:8px}
-.sbsv{padding:5px 14px;border-radius:5px;border:1px solid var(--bord2);background:var(--bord-dim);color:var(--bord2);font-size:11px;cursor:pointer;font-weight:700;font-family:var(--sans)}
-.sbsv:hover{background:var(--bord);color:#fff}
-.sbdl{padding:5px 12px;border-radius:5px;border:1px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11px;cursor:pointer;font-family:var(--sans)}
-.sbdl:hover{background:var(--red);color:#fff}
+.sbsv{padding:5px 14px;border-radius:5px;border:1px solid var(--bord2);background:var(--bord-dim);color:var(--bord2);font-size:11px;cursor:pointer;font-weight:700;font-family:var(--sans)}.sbsv:hover{background:var(--bord);color:#fff}
+.sbdl{padding:5px 12px;border-radius:5px;border:1px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11px;cursor:pointer;font-family:var(--sans)}.sbdl:hover{background:var(--red);color:#fff}
 .rkm{font-family:var(--mono);font-size:11px;color:var(--text3);background:var(--bg5);padding:5px 8px;border-radius:4px;margin-top:8px}
-
-/* SALES */
 .skrow{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
 .skc{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px 28px;position:relative;overflow:hidden}
 .skc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--bord),var(--bord2))}
-.sklb{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700}
-.skvl{font-size:52px;font-weight:800;color:#fff;line-height:1;font-family:var(--mono)}
-.sksb{font-size:12px;color:var(--text3);margin-top:6px}
+.sklb{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700}.skvl{font-size:52px;font-weight:800;color:#fff;line-height:1;font-family:var(--mono)}.sksb{font-size:12px;color:var(--text3);margin-top:6px}
 .ssrcs{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:20px}
-.ssrc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
-.ssrc:hover{border-color:var(--border2)}
-.sstop{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-.ssn{font-size:12px;font-weight:700;color:var(--text)}
-.sscnt{font-size:10px;color:var(--text3);background:var(--bg4);padding:2px 8px;border-radius:10px;font-family:var(--mono)}
-.ssamt{font-size:24px;font-weight:800;color:var(--yellow);font-family:var(--mono)}
-.sssub{font-size:11px;color:var(--text3);margin-top:3px}
+.ssrc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}.ssrc:hover{border-color:var(--border2)}
+.sstop{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}.ssn{font-size:12px;font-weight:700;color:var(--text)}.sscnt{font-size:10px;color:var(--text3);background:var(--bg4);padding:2px 8px;border-radius:10px;font-family:var(--mono)}
+.ssamt{font-size:24px;font-weight:800;color:var(--yellow);font-family:var(--mono)}.sssub{font-size:11px;color:var(--text3);margin-top:3px}
 .slst{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.slrow{display:grid;grid-template-columns:40px 1fr auto auto auto;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px}
-.slrow:last-child{border:none}.slrow:hover{background:var(--bg3)}
+.slrow{display:grid;grid-template-columns:40px 1fr auto auto auto;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px}.slrow:last-child{border:none}.slrow:hover{background:var(--bg3)}
 .slava{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:var(--mono);background:var(--bord-dim);color:var(--bord2);border:1px solid var(--bord);flex-shrink:0}
-.slnm{font-weight:600;color:#fff}
-.sldt{font-size:11px;color:var(--text3);font-family:var(--mono)}
-.slsr{font-size:10px;padding:2px 8px;border-radius:4px;background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
-.slam{font-weight:700;color:var(--yellow);font-family:var(--mono)}
-
-/* DOMAINS */
+.slnm{font-weight:600;color:#fff}.sldt{font-size:11px;color:var(--text3);font-family:var(--mono)}.slsr{font-size:10px;padding:2px 8px;border-radius:4px;background:var(--bg4);color:var(--text3);border:1px solid var(--border)}.slam{font-weight:700;color:var(--yellow);font-family:var(--mono)}
 .dgr{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.dc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:7px}
-.dc:hover{border-color:var(--border2)}
+.dc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:7px;cursor:pointer;transition:border-color .15s}.dc:hover{border-color:var(--border2)}
 .dctop{display:flex;align-items:center;gap:8px}
-.dcurl{color:var(--blue);font-size:12px;font-weight:600;text-decoration:none;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono)}
-.dled{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.lon{background:var(--green);box-shadow:0 0 5px var(--green)}.loff{background:var(--text3)}
-.ddsc{font-size:12px;color:var(--text2)}
-.dftr{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dcurl{color:var(--blue);font-size:12px;font-weight:600;text-decoration:none;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono)}.dcurl:hover{text-decoration:underline}
+.dled{width:7px;height:7px;border-radius:50%;flex-shrink:0}.lon{background:var(--green);box-shadow:0 0 5px var(--green)}.loff{background:var(--text3)}
+.ddsc{font-size:12px;color:var(--text2)}.dftr{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .fchip{font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
-
-/* TASKS */
 .kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-items:start}
-.kcol{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;min-height:200px}
+.kcol{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;min-height:200px;transition:background .15s,border-color .15s}.kcol.dov{background:rgba(181,34,64,.04);border-color:var(--bord)}
 .kchdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
-.kctit{font-size:11px;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:7px;text-transform:uppercase;letter-spacing:.5px}
-.kcind{width:8px;height:8px;border-radius:50%}
-.kccnt{background:var(--bg4);border:1px solid var(--border);border-radius:8px;padding:0 7px;font-size:11px;color:var(--text3);font-family:var(--mono)}
-.tcard{background:var(--bg3);border:1px solid var(--border);border-left:3px solid transparent;border-radius:7px;padding:10px 12px;margin-bottom:7px;cursor:grab;user-select:none}
-.tcard:hover{border-color:var(--border2)}.tcard.dragging{opacity:.4}
-.tcard.dov{border-top:2px solid var(--bord2)!important;background:rgba(181,34,64,.06)}
-.kcol.dov{background:rgba(181,34,64,.04)!important;border-color:var(--bord)!important}
+.kctit{font-size:11px;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:7px;text-transform:uppercase;letter-spacing:.5px}.kcind{width:8px;height:8px;border-radius:50%}.kccnt{background:var(--bg4);border:1px solid var(--border);border-radius:8px;padding:0 7px;font-size:11px;color:var(--text3);font-family:var(--mono)}
+.tcard{background:var(--bg3);border:1px solid var(--border);border-left:3px solid transparent;border-radius:7px;padding:10px 12px;margin-bottom:7px;cursor:grab;user-select:none;transition:transform .15s,opacity .15s,margin-top .15s,margin-bottom .15s}
+.tcard:hover{border-color:var(--border2)}.tcard.dragging{opacity:.35;transform:scale(.97)}
+.tcard.push-down{margin-top:38px}.tcard.push-up{margin-bottom:38px}
 .th{border-left-color:var(--red)!important}.tm{border-left-color:var(--yellow)!important}.tl{border-left-color:var(--green)!important}
 .tnm{font-size:12px;font-weight:600;color:#fff;margin-bottom:8px;line-height:1.4}
 .tft{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .tpr{font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 7px;border-radius:12px;text-transform:uppercase;cursor:pointer;border:1px solid}
 .ph{background:var(--red-bg);color:var(--red);border-color:var(--red)}.pm{background:var(--yellow-bg);color:var(--yellow);border-color:var(--yellow)}.pl{background:var(--green-bg);color:var(--green);border-color:var(--green)}
-.two{font-size:10px;color:var(--text3);background:var(--bg5);padding:2px 7px;border-radius:10px;border:1px solid var(--border)}
-.tdl{font-size:10px;color:var(--text3);font-family:var(--mono)}.tdl.ov{color:var(--red)}
-.tdel{background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:0;margin-left:auto;opacity:0}
-.tcard:hover .tdel{opacity:1}.tdel:hover{color:var(--red)}
-.kadd{width:100%;background:none;border:1px dashed var(--border2);border-radius:6px;color:var(--text3);padding:6px;font-size:11px;cursor:pointer;font-family:var(--sans);margin-top:4px}
-.kadd:hover{border-color:var(--bord);color:var(--bord2)}
-.kqwrap{display:none;margin-top:6px}.kqwrap.open{display:block}
-.kqinp{width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--bord);background:var(--bg3);color:var(--text);font-size:12px;outline:none;font-family:var(--sans);margin-bottom:6px}
-.kqfoot{display:flex;gap:6px}
-.kqsv{flex:1;padding:5px;border-radius:5px;border:1px solid var(--bord2);background:var(--bord-dim);color:var(--bord2);font-size:11px;cursor:pointer;font-weight:700;font-family:var(--sans)}
-.kqsv:hover{background:var(--bord);color:#fff}
+.two{font-size:10px;color:var(--text3);background:var(--bg5);padding:2px 7px;border-radius:10px;border:1px solid var(--border)}.tdl{font-size:10px;color:var(--text3);font-family:var(--mono)}.tdl.ov{color:var(--red)}
+.tdel{background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:0;margin-left:auto;opacity:0}.tcard:hover .tdel{opacity:1}.tdel:hover{color:var(--red)}
+.kadd{width:100%;background:none;border:1px dashed var(--border2);border-radius:6px;color:var(--text3);padding:6px;font-size:11px;cursor:pointer;font-family:var(--sans);margin-top:4px}.kadd:hover{border-color:var(--bord);color:var(--bord2)}
+.kqwrap{display:none;margin-top:6px}.kqwrap.open{display:block}.kqinp{width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--bord);background:var(--bg3);color:var(--text);font-size:12px;outline:none;font-family:var(--sans);margin-bottom:6px}
+.kqfoot{display:flex;gap:6px}.kqsv{flex:1;padding:5px;border-radius:5px;border:1px solid var(--bord2);background:var(--bord-dim);color:var(--bord2);font-size:11px;cursor:pointer;font-weight:700;font-family:var(--sans)}.kqsv:hover{background:var(--bord);color:#fff}
 .kqcn{padding:5px 10px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;font-family:var(--sans)}
-
-/* JOURNAL */
 .jlay{display:grid;grid-template-columns:240px 1fr;height:calc(100vh - 46px);overflow:hidden;margin:-20px}
 .jsb{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
 .jsbtop{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;gap:6px}
-.jsbbtn{flex:1;padding:5px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;cursor:pointer;font-family:var(--sans);font-weight:600}
-.jsbbtn:hover{border-color:var(--bord);color:var(--bord2)}
+.jsbbtn{flex:1;padding:5px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;cursor:pointer;font-family:var(--sans);font-weight:600}.jsbbtn:hover{border-color:var(--bord);color:var(--bord2)}
 .jtree{flex:1;overflow-y:auto;padding:8px 0}
 .jgrp{padding:7px 14px 3px;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:8px;display:flex;align-items:center;justify-content:space-between;font-weight:700}
-.jgbtns{display:flex;gap:3px}
-.jgbtn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:0 3px}.jgbtn:hover{color:var(--bord2)}
-.jitem{display:flex;align-items:center;gap:6px;padding:5px 12px 5px 14px;font-size:12px;cursor:pointer;color:var(--text2);border-left:2px solid transparent;white-space:nowrap;overflow:hidden;font-weight:500}
-.jitem:hover{background:var(--bg3);color:var(--text)}.jitem.active{background:rgba(181,34,64,.08);color:#fff;border-left-color:var(--bord2)}
-.jich{padding-left:26px}
-.jiact{margin-left:auto;display:flex;gap:2px;opacity:0}.jitem:hover .jiact{opacity:1}
-.jiab{background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:2px 4px}.jiab:hover{color:var(--red)}
-.jmain{display:flex;flex-direction:column;overflow:hidden}
-.jtb{display:flex;gap:3px;padding:8px 14px;border-bottom:1px solid var(--border);background:var(--bg2);flex-wrap:wrap;align-items:center}
-.jtbtn{padding:3px 9px;border-radius:4px;border:1px solid transparent;background:transparent;color:var(--text2);font-size:11px;cursor:pointer;font-family:var(--mono);font-weight:600}
-.jtbtn:hover{background:var(--bg4);color:var(--text);border-color:var(--border)}
-.jtabs{display:flex;padding:0 16px;border-bottom:1px solid var(--border);background:var(--bg2)}
-.jtab{padding:7px 14px;font-size:11px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-1px;font-weight:600}
-.jtab.active{color:var(--text);border-bottom-color:var(--bord2)}
-.jea{flex:1;padding:20px 26px;overflow-y:auto;display:flex;flex-direction:column}
-.jdtit{font-size:22px;font-weight:800;color:#fff;border:none;background:none;outline:none;width:100%;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);font-family:var(--sans)}
-.jdtit::placeholder{color:var(--text3)}
-.jta{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:13px;line-height:1.85;resize:none;font-family:var(--sans);min-height:300px}
-.jpa{flex:1;overflow-y:auto;padding:20px 26px}
-.jprev h2{font-size:17px;font-weight:700;color:#e8e8f0;margin:16px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--border)}
-.jprev h3{font-size:14px;font-weight:700;color:var(--text2);margin:12px 0 6px}
-.jprev table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px}
-.jprev th{background:var(--bg4);border:1px solid var(--border2);padding:6px 10px;text-align:left;font-weight:700;color:var(--text2);font-size:11px}
-.jprev td{border:1px solid var(--border);padding:6px 10px}
-.jprev ul,.jprev ol{padding-left:20px;margin:6px 0}.jprev li{margin-bottom:4px}
-.jprev strong{color:#fff}.jprev em{color:var(--text2)}
-.jprev code{background:var(--bg4);border-radius:3px;padding:1px 6px;font-family:var(--mono);font-size:11px;color:var(--bord2)}
-.jprev hr{border:none;border-top:1px solid var(--border);margin:14px 0}
-.jprev blockquote{border-left:3px solid var(--bord);padding-left:14px;color:var(--text2);margin:8px 0;font-style:italic}
-
-/* MODAL */
-.mo{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:400;backdrop-filter:blur(2px)}
-.mo.open{display:flex}
+.jgbtns{display:flex;gap:3px}.jgbtn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:0 3px}.jgbtn:hover{color:var(--bord2)}
+.jitem{display:flex;align-items:center;gap:6px;padding:5px 12px 5px 14px;font-size:12px;cursor:pointer;color:var(--text2);border-left:2px solid transparent;white-space:nowrap;overflow:hidden;font-weight:500}.jitem:hover{background:var(--bg3);color:var(--text)}.jitem.active{background:rgba(181,34,64,.08);color:#fff;border-left-color:var(--bord2)}
+.jich{padding-left:26px}.jiact{margin-left:auto;display:flex;gap:2px;opacity:0}.jitem:hover .jiact{opacity:1}.jiab{background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:2px 4px}.jiab:hover{color:var(--red)}
+.j-new-inline{display:flex;align-items:center;gap:6px;padding:4px 10px 4px 14px;margin:2px 0}
+.j-new-inp{flex:1;background:var(--bg4);border:1px solid var(--bord);border-radius:4px;color:var(--text);font-size:12px;padding:4px 8px;outline:none;font-family:var(--sans)}
+.j-new-ok{background:var(--bord-dim);border:1px solid var(--bord2);color:var(--bord2);border-radius:4px;padding:3px 9px;font-size:11px;cursor:pointer;font-family:var(--sans)}.j-new-ok:hover{background:var(--bord);color:#fff}
+.j-new-x{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:0 3px}.j-new-x:hover{color:var(--red)}
+.jmain{display:flex;flex-direction:column;overflow:hidden;position:relative}
+.jtb{display:flex;gap:3px;padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center;position:absolute;top:0;left:0;right:0;z-index:10;opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .25s,transform .25s}
+.jtb.visible{opacity:1;transform:none;pointer-events:all}
+.jtbtn{padding:4px 11px;border-radius:4px;border:1px solid transparent;background:transparent;color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--mono);font-weight:600;height:30px}.jtbtn:hover{background:var(--bg4);color:var(--text);border-color:var(--border)}
+.jtb-sep{width:1px;height:20px;background:var(--border2);margin:0 4px;flex-shrink:0}
+.jeditor-wrap{flex:1;overflow-y:auto;padding:60px 28px 40px;display:flex;flex-direction:column}
+.j-title-inp{font-size:22px;font-weight:800;color:#fff;border:none;background:none;outline:none;width:100%;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border);font-family:var(--sans)}.j-title-inp::placeholder{color:var(--text3)}
+.jeditor{flex:1;outline:none;min-height:300px;font-size:13px;line-height:1.85;color:var(--text);font-family:var(--sans);caret-color:var(--bord2)}
+.jeditor:empty::before{content:attr(data-placeholder);color:var(--text3);pointer-events:none}
+.jeditor h1{font-size:24px;font-weight:800;color:#fff;margin:16px 0 8px;line-height:1.3}
+.jeditor h2{font-size:18px;font-weight:700;color:#e8e8f0;margin:14px 0 6px;padding-bottom:5px;border-bottom:1px solid var(--border);line-height:1.3}
+.jeditor h3{font-size:14px;font-weight:700;color:var(--text2);margin:12px 0 4px}
+.jeditor strong{color:#fff;font-weight:700}.jeditor em{color:var(--text2);font-style:italic}
+.jeditor code{background:var(--bg4);border-radius:3px;padding:1px 6px;font-family:var(--mono);font-size:11px;color:var(--bord2)}
+.jeditor hr{border:none;border-top:1px solid var(--border);margin:14px 0}
+.jeditor blockquote{border-left:3px solid var(--bord);padding-left:14px;color:var(--text2);margin:8px 0;font-style:italic}
+.jeditor ul,.jeditor ol{padding-left:22px;margin:6px 0}.jeditor li{margin-bottom:3px}
+.jeditor table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px}
+.jeditor th{background:var(--bg4);border:1px solid var(--border2);padding:6px 10px;text-align:left;font-weight:700;color:var(--text2);font-size:11px}
+.jeditor td{border:1px solid var(--border);padding:6px 10px}.jeditor p{margin:3px 0}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:400;backdrop-filter:blur(2px)}.mo.open{display:flex}
 .mob{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:24px;width:520px;max-height:88vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.5)}
-.motit{font-size:15px;font-weight:800;color:var(--bord2);margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
-.mox{background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer}.mox:hover{color:#fff}
-.fl{margin-bottom:12px}
-.fl label{display:block;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;font-weight:700}
-.fi{width:100%;padding:7px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;outline:none;font-family:var(--sans)}
-.fi:focus{border-color:var(--bord)}
+.motit{font-size:15px;font-weight:800;color:var(--bord2);margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}.mox{background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer}.mox:hover{color:#fff}
+.fl{margin-bottom:12px}.fl label{display:block;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;font-weight:700}
+.fi{width:100%;padding:7px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;outline:none;font-family:var(--sans)}.fi:focus{border-color:var(--bord)}
 .fl2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-.gowrap{display:flex;gap:7px}
-.go{padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;font-size:12px;display:flex;align-items:center;gap:6px;color:var(--text2);font-weight:500}
-.go:hover{border-color:var(--border2);color:var(--text)}.go.sel{border-color:var(--bord2);background:var(--bord-dim);color:var(--bord2)}
-.gr{display:flex;gap:5px;margin-bottom:5px}.gr .fi{flex:1}
-.rmbtn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:17px;padding:0 5px}.rmbtn:hover{color:var(--red)}
-.addg{width:100%;background:none;border:1px dashed var(--border2);border-radius:5px;color:var(--text3);cursor:pointer;padding:6px;font-size:11px;font-family:var(--sans)}
-.addg:hover{border-color:var(--bord);color:var(--bord2)}
+.gowrap{display:flex;gap:7px}.go{padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;font-size:12px;display:flex;align-items:center;gap:6px;color:var(--text2);font-weight:500}.go:hover{border-color:var(--border2);color:var(--text)}.go.sel{border-color:var(--bord2);background:var(--bord-dim);color:var(--bord2)}
+.gr{display:flex;gap:5px;margin-bottom:5px}.gr .fi{flex:1}.rmbtn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:17px;padding:0 5px}.rmbtn:hover{color:var(--red)}
+.addg{width:100%;background:none;border:1px dashed var(--border2);border-radius:5px;color:var(--text3);cursor:pointer;padding:6px;font-size:11px;font-family:var(--sans)}.addg:hover{border-color:var(--bord);color:var(--bord2)}
 .rkpv{font-family:var(--mono);font-size:11px;color:var(--text3);background:var(--bg4);padding:7px 10px;border-radius:4px;margin-top:6px;border-left:2px solid var(--bord)}
 .mofoot{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
-.bcn{padding:7px 16px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--sans);font-weight:600}
-.bcn:hover{color:var(--text)}
-.bsv{padding:7px 16px;border-radius:6px;border:1px solid var(--bord2);background:var(--bord-dim);color:var(--bord2);font-size:12px;cursor:pointer;font-weight:700;font-family:var(--sans)}
-.bsv:hover{background:var(--bord);color:#fff}
+.bcn{padding:7px 16px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--sans);font-weight:600}.bcn:hover{color:var(--text)}
+.bsv{padding:7px 16px;border-radius:6px;border:1px solid var(--bord2);background:var(--bord-dim);color:var(--bord2);font-size:12px;cursor:pointer;font-weight:700;font-family:var(--sans)}.bsv:hover{background:var(--bord);color:#fff}
 .empty{text-align:center;padding:30px;color:var(--text3);font-size:13px}
-
-/* TEMPLATES MODAL */
 .tpl-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;max-height:260px;overflow-y:auto}
-.tpl-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;cursor:pointer;transition:border-color .15s}
-.tpl-item:hover{border-color:var(--bord)}
-.tpl-name{flex:1;font-size:13px;font-weight:600;color:var(--text)}
-.tpl-meta{font-size:11px;color:var(--text3)}
-.tpl-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px 5px}
-.tpl-del:hover{color:var(--red)}
-.tpl-geo{font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;font-family:var(--mono)}
-
-/* CREO GALLERY MODAL */
-.creo-gallery-wrap{display:flex;flex-direction:column;gap:12px}
-.creo-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
-.creo-id{font-size:14px;font-weight:700;color:var(--purple);font-family:var(--mono)}
-.creo-zaliv{font-size:11px;color:var(--text3)}
-.creo-img-area{background:var(--bg4);border:2px dashed var(--border2);border-radius:10px;min-height:180px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;cursor:pointer;transition:border-color .15s;position:relative;overflow:hidden}
-.creo-img-area:hover{border-color:var(--bord)}
+.tpl-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;cursor:pointer;transition:border-color .15s}.tpl-item:hover{border-color:var(--bord)}
+.tpl-name{flex:1;font-size:13px;font-weight:600;color:var(--text)}.tpl-meta{font-size:11px;color:var(--text3)}.tpl-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px 5px}.tpl-del:hover{color:var(--red)}
+.creo-gallery-wrap{display:flex;flex-direction:column;gap:12px}.creo-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.creo-id{font-size:14px;font-weight:700;color:var(--purple);font-family:var(--mono)}.creo-zaliv{font-size:11px;color:var(--text3)}
+.creo-img-area{background:var(--bg4);border:2px dashed var(--border2);border-radius:10px;min-height:180px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;cursor:pointer;transition:border-color .15s;position:relative;overflow:hidden}.creo-img-area:hover{border-color:var(--bord)}
 .creo-img-area img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border-radius:8px}
-.creo-upload-hint{font-size:12px;color:var(--text3);text-align:center;pointer-events:none}
-.creo-upload-hint strong{display:block;font-size:14px;color:var(--text2);margin-bottom:4px}
-#creo-file-inp{display:none}
-.creo-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
-.creo-stat{background:var(--bg4);border-radius:7px;padding:10px 12px;text-align:center}
-.creo-stat-val{font-size:20px;font-weight:800;color:#fff;font-family:var(--mono)}
-.creo-stat-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
-.creo-actions{display:flex;gap:8px;margin-top:8px}
-.creo-dl{padding:6px 14px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;cursor:pointer;font-family:var(--sans)}
-.creo-dl:hover{border-color:var(--border3);color:var(--text)}
-
-/* Авто-статус бейдж */
+.creo-upload-hint{font-size:12px;color:var(--text3);text-align:center;pointer-events:none}.creo-upload-hint strong{display:block;font-size:14px;color:var(--text2);margin-bottom:4px}
+.creo-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}.creo-stat{background:var(--bg4);border-radius:7px;padding:10px 12px;text-align:center}.creo-stat-val{font-size:20px;font-weight:800;color:#fff;font-family:var(--mono)}.creo-stat-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+.creo-actions{display:flex;gap:8px;margin-top:8px}.creo-dl{padding:6px 14px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;cursor:pointer;font-family:var(--sans)}.creo-dl:hover{border-color:var(--border3);color:var(--text)}
 .auto-badge{font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(144,96,208,.15);color:var(--purple);border:1px solid rgba(144,96,208,.3);margin-left:6px;font-weight:700;letter-spacing:.3px}
 </style>`)
-
-// ── APP HTML ──
-document.getElementById('root').innerHTML = `
+document.getElementById('root').innerHTML=`
 <div id="toast-wrap"></div>
-
 <div id="login">
   <div class="l-logo">JDL <em>·</em> CRM</div>
   <div class="l-sub">Traffic Team Dashboard</div>
   <div class="l-cards">
-    <div class="l-card" id="btn-illia">
-      <div class="l-ava" style="background:rgba(181,34,64,.15);color:#b52240;border:2px solid #8b1a2e">IB</div>
-      <div class="l-name">Illia</div>
-      <div class="l-role">Junior Buyer</div>
-    </div>
-    <div class="l-card" id="btn-danya">
-      <div class="l-ava" style="background:rgba(64,128,255,.1);color:#6090ff;border:2px solid #1a3060">DM</div>
-      <div class="l-name">Danya</div>
-      <div class="l-role">Head of Marketing</div>
-    </div>
+    <div class="l-card" id="btn-illia"><div class="l-ava" style="background:rgba(181,34,64,.15);color:#b52240;border:2px solid #8b1a2e">IB</div><div class="l-name">Illia</div><div class="l-role">Junior Buyer</div></div>
+    <div class="l-card" id="btn-danya"><div class="l-ava" style="background:rgba(64,128,255,.1);color:#6090ff;border:2px solid #1a3060">DM</div><div class="l-name">Danya</div><div class="l-role">Head of Marketing</div></div>
   </div>
 </div>
-
 <div id="app">
   <div class="topbar">
     <div class="logo">JDL <em>·</em> CRM</div>
@@ -411,35 +244,15 @@ document.getElementById('root').innerHTML = `
       <div class="nb" id="nb-tasks"><span class="dot"></span>Tasks</div>
       <div class="nb" id="nb-journal"><span class="dot"></span>Журнал</div>
     </nav>
-    <div class="sync-area">
-      <div class="sdot" id="sdot"></div>
-      <span class="stxt" id="stxt">—</span>
-      <button class="sbtn" id="sync-btn">↻ Sync</button>
-    </div>
+    <div class="sync-area"><div class="sdot" id="sdot"></div><span class="stxt" id="stxt">—</span><button class="sbtn" id="sync-btn">↻ Sync</button></div>
     <button class="search-btn" id="topbar-search">🔍 Поиск <kbd>⌘K</kbd></button>
-    <div class="uchip" id="uchip">
-      <div class="uava" id="uava"></div>
-      <span class="uname" id="uname"></span>
-    </div>
+    <div class="uchip" id="uchip"><div class="uava" id="uava"></div><span class="uname" id="uname"></span></div>
   </div>
   <div class="content">
     <div class="page active" id="page-dash">
       <div class="pbar">
-        <div class="pdates">
-          <div class="pdw">📅<input type="date" class="pdi" id="pd-from"></div>
-          <span class="pdash">—</span>
-          <div class="pdw">📅<input type="date" class="pdi" id="pd-to"></div>
-        </div>
-        <div class="pbtns">
-          <button class="pb active" data-days="1">1 день</button>
-          <button class="pb" data-days="3">3 дня</button>
-          <button class="pb" data-days="7">Неделя</button>
-          <button class="pb" data-days="14">2 нед.</button>
-          <button class="pb" data-days="30">Месяц</button>
-          <button class="pb" data-days="90">Квартал</button>
-          <button class="pb" data-days="365">Год</button>
-          <button class="pb" data-days="0">Всё</button>
-        </div>
+        <div class="pdates"><div class="pdw">📅<input type="date" class="pdi" id="pd-from"></div><span class="pdash">—</span><div class="pdw">📅<input type="date" class="pdi" id="pd-to"></div></div>
+        <div class="pbtns"><button class="pb active" data-days="1">1 день</button><button class="pb" data-days="3">3 дня</button><button class="pb" data-days="7">Неделя</button><button class="pb" data-days="14">2 нед.</button><button class="pb" data-days="30">Месяц</button><button class="pb" data-days="90">Квартал</button><button class="pb" data-days="365">Год</button><button class="pb" data-days="0">Всё</button></div>
       </div>
       <div class="krow">
         <div class="kpi"><div class="klab">SPEND</div><div class="kval" id="d-spend">—</div></div>
@@ -450,36 +263,16 @@ document.getElementById('root').innerHTML = `
         <div class="kpi"><div class="klab">CTR AVG</div><div class="kval" id="d-ctr">—</div></div>
       </div>
       <div class="dgrid">
-        <div class="card">
-          <div class="chdr"><span class="ctit">Последние заливы</span><span class="clnk" id="lnk-zalivs">Все →</span></div>
-          <div id="d-zalivs"><div class="empty">Загрузка...</div></div>
-        </div>
-        <div class="card">
-          <div class="chdr"><span class="ctit">Spend in Audience</span></div>
-          <div id="d-geo"></div>
-        </div>
+        <div class="card"><div class="chdr"><span class="ctit">Последние заливы</span><span class="clnk" id="lnk-zalivs">Все →</span></div><div id="d-zalivs"><div class="empty">Загрузка...</div></div></div>
+        <div class="card"><div class="chdr"><span class="ctit">Spend in Audience</span></div><div id="d-geo"></div></div>
       </div>
-      <div class="card" style="margin-bottom:12px">
-        <div class="chdr"><span class="ctit">Sales</span><span class="clnk" id="lnk-sales">Все →</span></div>
-        <div id="d-sales-kpi" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"></div>
-      </div>
-      <div class="card" style="margin-bottom:12px">
-        <div class="chdr"><span class="ctit">Активные задачи</span><span class="clnk" id="lnk-tasks">Все →</span></div>
-        <div id="d-tasks"></div>
-      </div>
+      <div class="card" style="margin-bottom:12px"><div class="chdr"><span class="ctit">Sales</span><span class="clnk" id="lnk-sales">Все →</span></div><div id="d-sales-kpi" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"></div></div>
+      <div class="card" style="margin-bottom:12px"><div class="chdr"><span class="ctit">Активные задачи</span><span class="clnk" id="lnk-tasks">Все →</span></div><div id="d-tasks"></div></div>
       <div class="card">
-        <div class="chdr">
-          <span class="ctit">Динамика CPL / CQL / CTR</span>
-          <div style="display:flex;gap:10px">
-            <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:14px;height:2px;background:#4080ff;display:inline-block;border-radius:2px"></span>CPL</span>
-            <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:14px;height:2px;background:#d4a017;display:inline-block;border-radius:2px"></span>CQL</span>
-            <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:14px;height:2px;background:#2ea043;display:inline-block;border-radius:2px"></span>CTR</span>
-          </div>
-        </div>
+        <div class="chdr"><span class="ctit">Динамика CPL / CQL / CTR</span><div style="display:flex;gap:10px"><span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:14px;height:2px;background:#4080ff;display:inline-block;border-radius:2px"></span>CPL</span><span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:14px;height:2px;background:#d4a017;display:inline-block;border-radius:2px"></span>CQL</span><span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:14px;height:2px;background:#2ea043;display:inline-block;border-radius:2px"></span>CTR</span></div></div>
         <div class="cwrap"><canvas id="dyn-chart" class="ccanv" height="130"></canvas><div class="ctt" id="chart-tt"></div></div>
       </div>
     </div>
-
     <div class="page" id="page-zalivs">
       <div class="fhdr"><span class="fhtit">Все РК</span><span class="fhcnt" id="z-count">(0)</span></div>
       <div class="fbar">
@@ -489,36 +282,17 @@ document.getElementById('root').innerHTML = `
         <button class="btpl" id="btn-open-templates">📋 Шаблоны</button>
         <button class="badd" id="btn-new-zaliv">+ Новый залив</button>
       </div>
-      <div class="ztwrap"><table class="zt"><thead><tr>
-        <th>IND</th><th>ДАТА</th><th>GEO</th><th>НАЗВАНИЕ РК</th><th>SCORE</th><th>СТАТУС</th><th>AD/RK $</th><th>ДОМЕН</th><th>КРЕО</th><th>БАЕР</th>
-      </tr></thead><tbody id="zt-body"></tbody></table></div>
+      <div class="ztwrap"><table class="zt"><thead><tr><th>IND</th><th>ДАТА</th><th>GEO</th><th>НАЗВАНИЕ РК</th><th>SCORE</th><th>СТАТУС</th><th>AD/RK $</th><th>ДОМЕН</th><th>КРЕО</th><th>БАЕР</th></tr></thead><tbody id="zt-body"></tbody></table></div>
     </div>
-
     <div class="page" id="page-domains">
       <div class="fhdr"><span class="fhtit">Домены</span><span class="fhcnt" id="d-count">(0)</span></div>
-      <div class="fbar">
-        <select class="fsel" id="df-geo"><option value="">🌐 GEO</option><option value="PL">PL</option><option value="PLUA">PLUA</option></select>
-        <input class="fsrch" id="df-q" placeholder="🔍 Поиск...">
-        <button class="badd" id="btn-new-domain">+ Добавить домен</button>
-      </div>
+      <div class="fbar"><select class="fsel" id="df-geo"><option value="">🌐 GEO</option><option value="PL">PL</option><option value="PLUA">PLUA</option></select><input class="fsrch" id="df-q" placeholder="🔍 Поиск..."><button class="badd" id="btn-new-domain">+ Добавить домен</button></div>
       <div class="dgr" id="dom-grid"><div class="empty">Загрузка...</div></div>
     </div>
-
     <div class="page" id="page-sales">
       <div class="pbar">
-        <div class="pdates">
-          <div class="pdw">📅<input type="date" class="pdi" id="sp-from"></div>
-          <span class="pdash">—</span>
-          <div class="pdw">📅<input type="date" class="pdi" id="sp-to"></div>
-        </div>
-        <div class="pbtns" id="sp-btns">
-          <button class="pb active" data-sdays="1">1 день</button>
-          <button class="pb" data-sdays="3">3 дня</button>
-          <button class="pb" data-sdays="7">Неделя</button>
-          <button class="pb" data-sdays="14">2 нед.</button>
-          <button class="pb" data-sdays="30">Месяц</button>
-          <button class="pb" data-sdays="0">Всё</button>
-        </div>
+        <div class="pdates"><div class="pdw">📅<input type="date" class="pdi" id="sp-from"></div><span class="pdash">—</span><div class="pdw">📅<input type="date" class="pdi" id="sp-to"></div></div>
+        <div class="pbtns" id="sp-btns"><button class="pb active" data-sdays="1">1 день</button><button class="pb" data-sdays="3">3 дня</button><button class="pb" data-sdays="7">Неделя</button><button class="pb" data-sdays="14">2 нед.</button><button class="pb" data-sdays="30">Месяц</button><button class="pb" data-sdays="0">Всё</button></div>
       </div>
       <div class="skrow" id="sales-kpi"></div>
       <div class="fhdr" style="margin-bottom:12px"><span class="fhtit">По источникам</span></div>
@@ -526,525 +300,226 @@ document.getElementById('root').innerHTML = `
       <div class="fhdr" style="margin-bottom:12px"><span class="fhtit">Список продаж</span><span class="fhcnt" id="sales-count">(0)</span></div>
       <div class="slst" id="sales-list"></div>
     </div>
-
     <div class="page" id="page-tasks">
       <div class="fhdr" style="margin-bottom:12px"><span class="fhtit">Tasks</span></div>
-      <div class="fbar" style="margin-bottom:14px">
-        <select class="fsel" id="tf-u"><option value="">👤 Все</option><option value="Illia">Illia</option><option value="Danya">Danya</option></select>
-      </div>
+      <div class="fbar" style="margin-bottom:14px"><select class="fsel" id="tf-u"><option value="">👤 Все</option><option value="Illia">Illia</option><option value="Danya">Danya</option></select></div>
       <div class="kanban" id="kanban"></div>
     </div>
-
     <div class="page" id="page-journal" style="padding:0">
       <div class="jlay">
         <div class="jsb">
-          <div class="jsbtop">
-            <button class="jsbbtn" id="btn-new-folder">+ Папка</button>
-            <button class="jsbbtn" id="btn-new-doc">+ Документ</button>
-          </div>
+          <div class="jsbtop"><button class="jsbbtn" id="btn-new-folder">+ Папка</button><button class="jsbbtn" id="btn-new-doc">+ Документ</button></div>
           <div class="jtree" id="j-tree"></div>
         </div>
-        <div class="jmain">
-          <div class="jtb">
-            <button class="jtbtn" data-ji="# ">H1</button>
-            <button class="jtbtn" data-ji="## ">H2</button>
-            <button class="jtbtn" data-ji="### ">H3</button>
-            <button class="jtbtn" data-jw="**">B</button>
-            <button class="jtbtn" data-jw="*"><em>I</em></button>
-            <button class="jtbtn" data-jw="\`">code</button>
-            <button class="jtbtn" data-ji="- ">list</button>
-            <button class="jtbtn" id="btn-jtable">⊞ table</button>
-            <button class="jtbtn" data-ji="> ">quote</button>
-            <button class="jtbtn" data-ji="\n---\n">hr</button>
-            <button class="jtbtn" id="btn-jsave" style="margin-left:auto;color:var(--bord2)">💾 Save</button>
+        <div class="jmain" id="jmain">
+          <div class="jtb" id="jtb">
+            <button class="jtbtn" data-cmd="bold"><b>B</b></button>
+            <button class="jtbtn" data-cmd="italic"><em>I</em></button>
+            <div class="jtb-sep"></div>
+            <button class="jtbtn" data-block="h1">H1</button>
+            <button class="jtbtn" data-block="h2">H2</button>
+            <button class="jtbtn" data-block="h3">H3</button>
+            <div class="jtb-sep"></div>
+            <button class="jtbtn" data-block="ul">• Список</button>
+            <button class="jtbtn" data-block="ol">1. Список</button>
+            <button class="jtbtn" data-block="blockquote">❝</button>
+            <div class="jtb-sep"></div>
+            <button class="jtbtn" id="btn-ins-table">⊞ Таблица</button>
+            <button class="jtbtn" data-cmd="insertHorizontalRule">—</button>
+            <div class="jtb-sep"></div>
+            <button class="jtbtn" id="btn-jsave" style="color:var(--bord2);margin-left:auto">💾 Сохранить</button>
           </div>
-          <div class="jtabs">
-            <div class="jtab active" data-jtab="edit">Редактор</div>
-            <div class="jtab" data-jtab="prev">Превью</div>
+          <div class="jeditor-wrap" id="jeditor-wrap">
+            <input class="j-title-inp" id="j-title" placeholder="Заголовок...">
+            <div class="jeditor" id="jeditor" contenteditable="true" data-placeholder="Начни писать..."></div>
           </div>
-          <div class="jea" id="j-edit">
-            <input class="jdtit" id="j-title" placeholder="Заголовок...">
-            <textarea class="jta" id="j-ta" spellcheck="false" placeholder="Markdown..."></textarea>
-          </div>
-          <div class="jpa" id="j-prev" style="display:none"><div class="jprev" id="j-preview"></div></div>
         </div>
       </div>
     </div>
   </div>
 </div>
-
-<!-- GLOBAL SEARCH -->
-<div id="mo-search">
-  <div class="srch-box">
-    <div class="srch-inp-wrap">
-      <span class="srch-ico">🔍</span>
-      <input class="srch-inp" id="srch-inp" placeholder="Поиск по заливам, доменам, задачам, журналу...">
-      <span class="srch-esc">ESC</span>
-    </div>
-    <div class="srch-results" id="srch-results"><div class="srch-empty">Начни вводить для поиска</div></div>
-  </div>
-</div>
-
-<!-- MODAL ZALIV -->
-<div class="mo" id="mo-zaliv">
-  <div class="mob">
-    <div class="motit">+ Новый залив <button class="mox" data-close="mo-zaliv">×</button></div>
-    <div class="fl"><label>GEO</label><div class="gowrap">
-      <div class="go" data-geo="PL">🇵🇱 PL</div>
-      <div class="go" data-geo="PLUA">🇵🇱🇺🇦 PLUA</div>
-    </div></div>
-    <div class="fl"><label>Название РК</label><input class="fi" id="mn" placeholder="D{дата}PL/PH1./garno/kalk"></div>
-    <div class="fl2">
-      <div class="fl" style="margin-bottom:0"><label>AD Budget $</label><input class="fi" id="ma" type="number" placeholder="10"></div>
-      <div class="fl" style="margin-bottom:0"><label>RK Budget $</label><input class="fi" id="mr" type="number" placeholder="10"></div>
-    </div>
-    <div class="fl2">
-      <div class="fl" style="margin-bottom:0"><label>Баер</label><select class="fi" id="mb"><option value="Illia">Illia</option><option value="Danya">Danya</option></select></div>
-      <div class="fl" style="margin-bottom:0"><label>Воронка</label><select class="fi" id="mf"><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div>
-    </div>
-    <div class="fl"><label>Score (0–6)</label>
-      <div style="display:flex;gap:4px" id="mo-score">
-        <button class="spb s0" data-score="0">0</button><button class="spb" data-score="1">1</button><button class="spb" data-score="2">2</button><button class="spb" data-score="3">3</button><button class="spb" data-score="4">4</button><button class="spb" data-score="5">5</button><button class="spb" data-score="6">6</button>
-      </div>
-    </div>
-    <div class="fl"><label>Домен</label><select class="fi" id="md"><option value="">— выбрать —</option></select></div>
-    <div class="fl"><label>Крео (до 5)</label><div id="mcreo-list"></div><button class="addg" id="btn-add-creo">+ Крео</button></div>
-    <div class="fl"><label>Цели</label><div id="mg-list"></div><button class="addg" id="btn-add-goal">+ Цель</button></div>
-    <div class="rkpv" id="mo-prev">D{дата}GEO/PH1./garno/kalk\LEADS/budget$</div>
-    <div class="mofoot">
-      <button class="bcn" id="btn-save-as-tpl" style="border-color:var(--border3);color:var(--text2)">💾 Сохранить шаблон</button>
-      <button class="bcn" data-close="mo-zaliv">Отмена</button>
-      <button class="bsv" id="btn-create-zaliv">Создать</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL TEMPLATES -->
-<div class="mo" id="mo-templates">
-  <div class="mob" style="width:480px">
-    <div class="motit">📋 Шаблоны заливов <button class="mox" data-close="mo-templates">×</button></div>
-    <div class="tpl-list" id="tpl-list"><div class="empty">Нет шаблонов</div></div>
-    <div style="font-size:11px;color:var(--text3);text-align:center">Выбери шаблон чтобы создать залив на его основе</div>
-    <div class="mofoot"><button class="bcn" data-close="mo-templates">Закрыть</button></div>
-  </div>
-</div>
-
-<!-- MODAL CREO GALLERY -->
-<div class="mo" id="mo-creo">
-  <div class="mob" style="width:480px">
-    <div class="motit" id="creo-modal-title">🎨 Крео <button class="mox" data-close="mo-creo">×</button></div>
-    <div class="creo-gallery-wrap" id="creo-gallery-content"></div>
-    <div class="mofoot"><button class="bcn" data-close="mo-creo">Закрыть</button><button class="bsv" id="btn-upload-creo">⬆ Загрузить скрин</button></div>
-  </div>
-</div>
-
-<!-- MODAL DOMAIN -->
-<div class="mo" id="mo-domain">
-  <div class="mob">
-    <div class="motit">+ Добавить домен <button class="mox" data-close="mo-domain">×</button></div>
-    <div class="fl"><label>URL домена</label><input class="fi" id="dm-url" placeholder="garnofurniture.com/kalkulator"></div>
-    <div class="fl"><label>Описание</label><input class="fi" id="dm-desc" placeholder="PL калькулятор кухни"></div>
-    <div class="fl"><label>GEO</label><div class="gowrap" id="dm-geos">
-      <div class="go" data-dgeo="PL">🇵🇱 PL</div>
-      <div class="go" data-dgeo="PLUA">🇵🇱🇺🇦 PLUA</div>
-    </div></div>
-    <div class="fl"><label>Воронка</label><select class="fi" id="dm-funnel"><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div>
-    <div class="mofoot"><button class="bcn" data-close="mo-domain">Отмена</button><button class="bsv" id="btn-create-domain">Добавить</button></div>
-  </div>
-</div>
+<div id="mo-search"><div class="srch-box"><div class="srch-inp-wrap"><span style="font-size:16px;color:var(--text3)">🔍</span><input class="srch-inp" id="srch-inp" placeholder="Поиск по заливам, доменам, задачам, журналу..."><span class="srch-esc">ESC</span></div><div class="srch-results" id="srch-results"><div class="srch-empty">Начни вводить для поиска</div></div></div></div>
+<div class="mo" id="mo-zaliv"><div class="mob">
+  <div class="motit">+ Новый залив <button class="mox" data-close="mo-zaliv">×</button></div>
+  <div class="fl"><label>GEO</label><div class="gowrap"><div class="go" data-geo="PL">🇵🇱 PL</div><div class="go" data-geo="PLUA">🇵🇱🇺🇦 PLUA</div></div></div>
+  <div class="fl"><label>Название РК</label><input class="fi" id="mn" placeholder="D{дата}PL/PH1./garno/kalk"></div>
+  <div class="fl2"><div class="fl" style="margin-bottom:0"><label>AD Budget $</label><input class="fi" id="ma" type="number" placeholder="10"></div><div class="fl" style="margin-bottom:0"><label>RK Budget $</label><input class="fi" id="mr" type="number" placeholder="10"></div></div>
+  <div class="fl2"><div class="fl" style="margin-bottom:0"><label>Баер</label><select class="fi" id="mb"><option value="Illia">Illia</option><option value="Danya">Danya</option></select></div><div class="fl" style="margin-bottom:0"><label>Воронка</label><select class="fi" id="mf"><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div></div>
+  <div class="fl"><label>Score (0–6)</label><div style="display:flex;gap:4px" id="mo-score"><button class="spb s0" data-score="0">0</button><button class="spb" data-score="1">1</button><button class="spb" data-score="2">2</button><button class="spb" data-score="3">3</button><button class="spb" data-score="4">4</button><button class="spb" data-score="5">5</button><button class="spb" data-score="6">6</button></div></div>
+  <div class="fl"><label>Домен</label><select class="fi" id="md"><option value="">— выбрать —</option></select></div>
+  <div class="fl"><label>Крео (до 5)</label><div id="mcreo-list"></div><button class="addg" id="btn-add-creo">+ Крео</button></div>
+  <div class="fl"><label>Цели</label><div id="mg-list"></div><button class="addg" id="btn-add-goal">+ Цель</button></div>
+  <div class="rkpv" id="mo-prev">D{дата}GEO/PH1./garno/kalk\LEADS/budget$</div>
+  <div class="mofoot"><button class="bcn" id="btn-save-as-tpl" style="border-color:var(--border3)">💾 Шаблон</button><button class="bcn" data-close="mo-zaliv">Отмена</button><button class="bsv" id="btn-create-zaliv">Создать</button></div>
+</div></div>
+<div class="mo" id="mo-templates"><div class="mob" style="width:480px">
+  <div class="motit">📋 Шаблоны заливов <button class="mox" data-close="mo-templates">×</button></div>
+  <div class="tpl-list" id="tpl-list"><div class="empty">Нет шаблонов</div></div>
+  <div style="font-size:11px;color:var(--text3);text-align:center">Выбери шаблон чтобы создать залив на его основе</div>
+  <div class="mofoot"><button class="bcn" data-close="mo-templates">Закрыть</button></div>
+</div></div>
+<div class="mo" id="mo-creo"><div class="mob" style="width:480px">
+  <div class="motit" id="creo-modal-title">🎨 Крео <button class="mox" data-close="mo-creo">×</button></div>
+  <div class="creo-gallery-wrap" id="creo-gallery-content"></div>
+  <div class="mofoot"><button class="bcn" data-close="mo-creo">Закрыть</button><button class="bsv" id="btn-upload-creo">⬆ Загрузить скрин</button></div>
+</div></div>
+<div class="mo" id="mo-domain-edit"><div class="mob" style="width:460px">
+  <div class="motit">✏️ Редактировать домен <button class="mox" data-close="mo-domain-edit">×</button></div>
+  <div class="fl"><label>URL</label><input class="fi" id="de-url"></div>
+  <div class="fl"><label>Описание</label><input class="fi" id="de-desc"></div>
+  <div class="fl"><label>GEO</label><div class="gowrap" id="de-geos"><div class="go" data-degeo="PL">🇵🇱 PL</div><div class="go" data-degeo="PLUA">🇵🇱🇺🇦 PLUA</div></div></div>
+  <div class="fl"><label>Воронка</label><select class="fi" id="de-funnel"><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div>
+  <div class="fl"><label>Статус</label><div style="display:flex;gap:16px;margin-top:4px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)"><input type="radio" name="de-active" value="true" id="de-active-y"> Активный</label><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)"><input type="radio" name="de-active" value="false" id="de-active-n"> Неактивный</label></div></div>
+  <div class="mofoot"><button class="sbdl" id="de-del-btn">🗑 Удалить</button><button class="bcn" data-close="mo-domain-edit">Отмена</button><button class="bsv" id="de-save-btn">Сохранить</button></div>
+</div></div>
+<div class="mo" id="mo-domain"><div class="mob">
+  <div class="motit">+ Добавить домен <button class="mox" data-close="mo-domain">×</button></div>
+  <div class="fl"><label>URL домена</label><input class="fi" id="dm-url" placeholder="garnofurniture.com/kalkulator"></div>
+  <div class="fl"><label>Описание</label><input class="fi" id="dm-desc" placeholder="PL калькулятор кухни"></div>
+  <div class="fl"><label>GEO</label><div class="gowrap" id="dm-geos"><div class="go" data-dgeo="PL">🇵🇱 PL</div><div class="go" data-dgeo="PLUA">🇵🇱🇺🇦 PLUA</div></div></div>
+  <div class="fl"><label>Воронка</label><select class="fi" id="dm-funnel"><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div>
+  <div class="mofoot"><button class="bcn" data-close="mo-domain">Отмена</button><button class="bsv" id="btn-create-domain">Добавить</button></div>
+</div></div>
 `
+// ── TOAST ──
+function toast(msg,type='ok'){const w=document.getElementById('toast-wrap');const t=document.createElement('div');t.className=`toast ${type}`;t.innerHTML=`<span>${type==='ok'?'✓':type==='err'?'✗':'ℹ'}</span><span>${msg}</span>`;w.appendChild(t);setTimeout(()=>t.remove(),3000)}
 
-// ══════════════════════════════════════════
-// TOAST
-// ══════════════════════════════════════════
-function toast(msg, type='ok') {
-  const w = document.getElementById('toast-wrap')
-  const t = document.createElement('div')
-  t.className = `toast ${type}`
-  t.innerHTML = `<span>${type==='ok'?'✓':type==='err'?'✗':'ℹ'}</span><span>${msg}</span>`
-  w.appendChild(t)
-  setTimeout(() => t.remove(), 3000)
-}
-
-// ══════════════════════════════════════════
-// EVENT LISTENERS
-// ══════════════════════════════════════════
-document.getElementById('btn-illia').addEventListener('click', () => doLogin('illia'))
-document.getElementById('btn-danya').addEventListener('click', () => doLogin('danya'))
-
-document.getElementById('nb-dash').addEventListener('click', function(){ gp('dash', this) })
-document.getElementById('nb-zalivs').addEventListener('click', function(){ gp('zalivs', this) })
-document.getElementById('nb-domains').addEventListener('click', function(){ gp('domains', this) })
-document.getElementById('nb-sales').addEventListener('click', function(){ gp('sales', this) })
-document.getElementById('nb-tasks').addEventListener('click', function(){ gp('tasks', this) })
-document.getElementById('nb-journal').addEventListener('click', function(){ gp('journal', this) })
-
-document.getElementById('sync-btn').addEventListener('click', manualSync)
-document.getElementById('uchip').addEventListener('click', doLogout)
-document.getElementById('lnk-zalivs').addEventListener('click', function(){ gp('zalivs', document.getElementById('nb-zalivs')) })
-document.getElementById('lnk-sales').addEventListener('click', function(){ gp('sales', document.getElementById('nb-sales')) })
-document.getElementById('lnk-tasks').addEventListener('click', function(){ gp('tasks', document.getElementById('nb-tasks')) })
-
-// Period buttons
-document.querySelectorAll('.pbtns .pb').forEach(btn => {
-  btn.addEventListener('click', function(){
-    document.querySelectorAll('.pbtns .pb').forEach(b=>b.classList.remove('active'))
-    this.classList.add('active')
-    const days = parseInt(this.dataset.days)
-    const today = new Date().toISOString().split('T')[0]
-    const from = days > 0 ? new Date(Date.now()-days*86400000).toISOString().split('T')[0] : '2026-01-01'
-    document.getElementById('pd-from').value = from
-    document.getElementById('pd-to').value = today
-    rdash()
-  })
-})
-document.getElementById('pd-from').addEventListener('change', () => { document.querySelectorAll('.pbtns .pb').forEach(b=>b.classList.remove('active')); rdash() })
-document.getElementById('pd-to').addEventListener('change', () => { document.querySelectorAll('.pbtns .pb').forEach(b=>b.classList.remove('active')); rdash() })
-
-// Sales period
-document.querySelectorAll('#sp-btns .pb').forEach(btn => {
-  btn.addEventListener('click', function(){
-    document.querySelectorAll('#sp-btns .pb').forEach(b=>b.classList.remove('active'))
-    this.classList.add('active')
-    const days = parseInt(this.dataset.sdays)
-    const today = new Date().toISOString().split('T')[0]
-    const from = days > 0 ? new Date(Date.now()-days*86400000).toISOString().split('T')[0] : '2026-01-01'
-    document.getElementById('sp-from').value = from
-    document.getElementById('sp-to').value = today
-    rsales()
-  })
-})
-document.getElementById('sp-from').addEventListener('change', rsales)
-document.getElementById('sp-to').addEventListener('change', rsales)
-
-// Zalivs
-document.getElementById('zf-geo').addEventListener('change', rzalivs)
-document.getElementById('zf-status').addEventListener('change', rzalivs)
-document.getElementById('zf-q').addEventListener('input', rzalivs)
-document.getElementById('btn-new-zaliv').addEventListener('click', openMoZaliv)
-document.getElementById('btn-open-templates').addEventListener('click', openTemplates)
-
-// Domains
-document.getElementById('df-geo').addEventListener('change', rdomains)
-document.getElementById('df-q').addEventListener('input', rdomains)
-document.getElementById('btn-new-domain').addEventListener('click', () => document.getElementById('mo-domain').classList.add('open'))
-
-// Tasks
-document.getElementById('tf-u').addEventListener('change', rtasks)
-
-// Modal closes
-document.querySelectorAll('[data-close]').forEach(btn => {
-  btn.addEventListener('click', function(){ document.getElementById(this.dataset.close).classList.remove('open') })
-})
-document.querySelectorAll('.mo').forEach(mo => {
-  mo.addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open') })
-})
-
-// Zaliv modal geo
-document.querySelectorAll('[data-geo]').forEach(btn => {
-  btn.addEventListener('click', function(){
-    document.querySelectorAll('[data-geo]').forEach(b=>b.classList.remove('sel'))
-    this.classList.add('sel')
-    moGeo = this.dataset.geo
-    updDomains()
-    updPrev()
-  })
-})
-
-// Score picker
-document.querySelectorAll('#mo-score .spb').forEach(btn => {
-  btn.addEventListener('click', function(){
-    moScore = parseInt(this.dataset.score)
-    document.querySelectorAll('#mo-score .spb').forEach(b=>b.className='spb')
-    this.className = 'spb s'+moScore
-  })
-})
-
-document.getElementById('mr').addEventListener('input', updPrev)
-document.getElementById('btn-add-creo').addEventListener('click', addCreoField)
-document.getElementById('btn-add-goal').addEventListener('click', addGoalField)
-document.getElementById('btn-create-zaliv').addEventListener('click', svz)
-document.getElementById('btn-save-as-tpl').addEventListener('click', saveAsTemplate)
-
-// Domain modal geo
-document.querySelectorAll('[data-dgeo]').forEach(btn => {
-  btn.addEventListener('click', function(){
-    if(domGeoSel.includes(this.dataset.dgeo)){
-      domGeoSel = domGeoSel.filter(x=>x!==this.dataset.dgeo)
-      this.classList.remove('sel')
-    } else {
-      domGeoSel.push(this.dataset.dgeo)
-      this.classList.add('sel')
-    }
-  })
-})
-document.getElementById('btn-create-domain').addEventListener('click', saveDomain)
-
-// Journal toolbar
-document.querySelectorAll('[data-ji]').forEach(btn => {
-  btn.addEventListener('click', function(){ ji(this.dataset.ji) })
-})
-document.querySelectorAll('[data-jw]').forEach(btn => {
-  btn.addEventListener('click', function(){ jw(this.dataset.jw, this.dataset.jw) })
-})
-document.getElementById('btn-jtable').addEventListener('click', jtable)
-document.getElementById('btn-jsave').addEventListener('click', saveDoc)
-document.querySelectorAll('[data-jtab]').forEach(btn => {
-  btn.addEventListener('click', function(){
-    document.querySelectorAll('[data-jtab]').forEach(b=>b.classList.remove('active'))
-    this.classList.add('active')
-    const tab = this.dataset.jtab
-    document.getElementById('j-edit').style.display = tab==='edit'?'flex':'none'
-    document.getElementById('j-prev').style.display = tab==='prev'?'block':'none'
-    if(tab==='prev') document.getElementById('j-preview').innerHTML = parseMd(document.getElementById('j-ta').value)
-  })
-})
-document.getElementById('btn-new-folder').addEventListener('click', newFolder)
-document.getElementById('btn-new-doc').addEventListener('click', newDoc)
-
-// Chart
-const dc = document.getElementById('dyn-chart')
-dc.addEventListener('mousemove', chartMouseMove)
-dc.addEventListener('mouseleave', () => document.getElementById('chart-tt').style.display='none')
-window.addEventListener('resize', () => { if(chartData) drawChart(chartData) })
-
-// Creo upload
-document.getElementById('btn-upload-creo').addEventListener('click', () => document.getElementById('creo-file-inp')?.click())
-
-// ══════════════════════════════════════════
-// GLOBAL SEARCH (Cmd+K)
-// ══════════════════════════════════════════
-let srchSelIdx = -1
-
-document.getElementById('topbar-search').addEventListener('click', openSearch)
-
-document.addEventListener('keydown', e => {
-  // Cmd+K / Ctrl+K
-  if((e.metaKey || e.ctrlKey) && e.key === 'k') {
-    e.preventDefault()
-    openSearch()
-    return
-  }
-  // Ctrl+S — сохранить документ в журнале
-  if((e.metaKey || e.ctrlKey) && e.key === 's') {
-    e.preventDefault()
-    if(document.querySelector('.nb.active')?.id === 'nb-journal') saveDoc()
-    return
-  }
-  const mo = document.getElementById('mo-search')
-  if(!mo.classList.contains('open')) return
-  if(e.key === 'Escape') { mo.classList.remove('open'); return }
-  if(e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-    e.preventDefault()
-    const items = document.querySelectorAll('.srch-item')
-    items.forEach(i=>i.classList.remove('sel'))
-    srchSelIdx = e.key === 'ArrowDown'
-      ? Math.min(srchSelIdx+1, items.length-1)
-      : Math.max(srchSelIdx-1, 0)
-    items[srchSelIdx]?.classList.add('sel')
-    items[srchSelIdx]?.scrollIntoView({block:'nearest'})
-    return
-  }
-  if(e.key === 'Enter') {
-    const sel = document.querySelector('.srch-item.sel')
-    if(sel) sel.click()
-  }
-})
-
-function openSearch() {
-  const mo = document.getElementById('mo-search')
-  mo.classList.add('open')
-  const inp = document.getElementById('srch-inp')
-  inp.value = ''
-  srchSelIdx = -1
-  document.getElementById('srch-results').innerHTML = '<div class="srch-empty">Начни вводить для поиска</div>'
-  setTimeout(() => inp.focus(), 50)
-}
-
-document.getElementById('srch-inp').addEventListener('input', function() {
-  const q = this.value.trim().toLowerCase()
-  srchSelIdx = -1
-  if(!q) {
-    document.getElementById('srch-results').innerHTML = '<div class="srch-empty">Начни вводить для поиска</div>'
-    return
-  }
+// ── EVENTS ──
+document.getElementById('btn-illia').addEventListener('click',()=>doLogin('illia'))
+document.getElementById('btn-danya').addEventListener('click',()=>doLogin('danya'))
+;['dash','zalivs','domains','sales','tasks','journal'].forEach(id=>document.getElementById('nb-'+id).addEventListener('click',function(){gp(id,this)}))
+document.getElementById('sync-btn').addEventListener('click',manualSync)
+document.getElementById('uchip').addEventListener('click',doLogout)
+document.getElementById('lnk-zalivs').addEventListener('click',()=>gp('zalivs',document.getElementById('nb-zalivs')))
+document.getElementById('lnk-sales').addEventListener('click',()=>gp('sales',document.getElementById('nb-sales')))
+document.getElementById('lnk-tasks').addEventListener('click',()=>gp('tasks',document.getElementById('nb-tasks')))
+document.querySelectorAll('.pbtns .pb').forEach(btn=>btn.addEventListener('click',function(){
+  document.querySelectorAll('.pbtns .pb').forEach(b=>b.classList.remove('active'));this.classList.add('active')
+  const days=parseInt(this.dataset.days),today=new Date().toISOString().split('T')[0]
+  const from=days>0?new Date(Date.now()-days*86400000).toISOString().split('T')[0]:'2026-01-01'
+  document.getElementById('pd-from').value=from;document.getElementById('pd-to').value=today;rdash()
+}))
+document.getElementById('pd-from').addEventListener('change',()=>{document.querySelectorAll('.pbtns .pb').forEach(b=>b.classList.remove('active'));rdash()})
+document.getElementById('pd-to').addEventListener('change',()=>{document.querySelectorAll('.pbtns .pb').forEach(b=>b.classList.remove('active'));rdash()})
+document.querySelectorAll('#sp-btns .pb').forEach(btn=>btn.addEventListener('click',function(){
+  document.querySelectorAll('#sp-btns .pb').forEach(b=>b.classList.remove('active'));this.classList.add('active')
+  const days=parseInt(this.dataset.sdays),today=new Date().toISOString().split('T')[0]
+  const from=days>0?new Date(Date.now()-days*86400000).toISOString().split('T')[0]:'2026-01-01'
+  document.getElementById('sp-from').value=from;document.getElementById('sp-to').value=today;rsales()
+}))
+document.getElementById('sp-from').addEventListener('change',rsales)
+document.getElementById('sp-to').addEventListener('change',rsales)
+document.getElementById('zf-geo').addEventListener('change',rzalivs)
+document.getElementById('zf-status').addEventListener('change',rzalivs)
+document.getElementById('zf-q').addEventListener('input',rzalivs)
+document.getElementById('btn-new-zaliv').addEventListener('click',()=>openMoZaliv())
+document.getElementById('btn-open-templates').addEventListener('click',openTemplates)
+document.getElementById('df-geo').addEventListener('change',rdomains)
+document.getElementById('df-q').addEventListener('input',rdomains)
+document.getElementById('btn-new-domain').addEventListener('click',()=>document.getElementById('mo-domain').classList.add('open'))
+document.getElementById('tf-u').addEventListener('change',rtasks)
+document.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',function(){document.getElementById(this.dataset.close).classList.remove('open')}))
+document.querySelectorAll('.mo').forEach(mo=>mo.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open')}))
+document.querySelectorAll('[data-geo]').forEach(btn=>btn.addEventListener('click',function(){
+  document.querySelectorAll('[data-geo]').forEach(b=>b.classList.remove('sel'));this.classList.add('sel');moGeo=this.dataset.geo;updDomains();updPrev()
+}))
+document.querySelectorAll('#mo-score .spb').forEach(btn=>btn.addEventListener('click',function(){
+  moScore=parseInt(this.dataset.score);document.querySelectorAll('#mo-score .spb').forEach(b=>b.className='spb');this.className='spb s'+moScore
+}))
+document.getElementById('mr').addEventListener('input',updPrev)
+document.getElementById('btn-add-creo').addEventListener('click',()=>addCreoField())
+document.getElementById('btn-add-goal').addEventListener('click',()=>addGoalField())
+document.getElementById('btn-create-zaliv').addEventListener('click',svz)
+document.getElementById('btn-save-as-tpl').addEventListener('click',saveAsTemplate)
+document.querySelectorAll('[data-dgeo]').forEach(btn=>btn.addEventListener('click',function(){
+  if(domGeoSel.includes(this.dataset.dgeo)){domGeoSel=domGeoSel.filter(x=>x!==this.dataset.dgeo);this.classList.remove('sel')}
+  else{domGeoSel.push(this.dataset.dgeo);this.classList.add('sel')}
+}))
+document.getElementById('btn-create-domain').addEventListener('click',saveDomain)
+document.querySelectorAll('[data-degeo]').forEach(btn=>btn.addEventListener('click',function(){
+  if(deGeoSel.includes(this.dataset.degeo)){deGeoSel=deGeoSel.filter(x=>x!==this.dataset.degeo);this.classList.remove('sel')}
+  else{deGeoSel.push(this.dataset.degeo);this.classList.add('sel')}
+}))
+document.getElementById('de-save-btn').addEventListener('click',saveDomainEdit)
+document.getElementById('de-del-btn').addEventListener('click',()=>{if(deEditId)delDomain(deEditId)})
+document.getElementById('topbar-search').addEventListener('click',openSearch)
+document.getElementById('srch-inp').addEventListener('input',function(){
+  const q=this.value.trim().toLowerCase();srchSelIdx=-1
+  if(!q){document.getElementById('srch-results').innerHTML='<div class="srch-empty">Начни вводить для поиска</div>';return}
   doSearch(q)
 })
-
-function doSearch(q) {
-  let html = ''
-
-  // Заливы
-  const zRes = ZALIVS.filter(z =>
-    z.name?.toLowerCase().includes(q) ||
-    z.geo?.toLowerCase().includes(q) ||
-    z.status?.toLowerCase().includes(q) ||
-    (z.creos||[]).some(c=>c.toLowerCase().includes(q)) ||
-    z.domain?.toLowerCase().includes(q)
-  ).slice(0, 5)
-  if(zRes.length) {
-    html += `<div class="srch-section">Заливы</div>`
-    zRes.forEach(z => {
-      const col = z.ind==='profit'?'var(--green)':z.ind==='drop'?'var(--yellow)':'var(--red)'
-      html += `<div class="srch-item" data-type="zaliv" data-id="${z.id}">
-        <div class="srch-item-ico" style="background:rgba(181,34,64,.1)">🏹</div>
-        <div class="srch-item-body">
-          <div class="srch-item-title">${z.name}</div>
-          <div class="srch-item-sub">${z.geo} · ${z.status} · $${z.rk_budget}/d</div>
-        </div>
-        <div class="srch-item-badge">${z.score}/6</div>
-        <div style="width:7px;height:7px;border-radius:50%;background:${col};flex-shrink:0"></div>
-      </div>`
-    })
+document.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();openSearch();return}
+  if((e.metaKey||e.ctrlKey)&&e.key==='s'){e.preventDefault();saveDoc();return}
+  const mo=document.getElementById('mo-search')
+  if(!mo.classList.contains('open'))return
+  if(e.key==='Escape'){mo.classList.remove('open');return}
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    e.preventDefault();const items=document.querySelectorAll('.srch-item');items.forEach(i=>i.classList.remove('sel'))
+    srchSelIdx=e.key==='ArrowDown'?Math.min(srchSelIdx+1,items.length-1):Math.max(srchSelIdx-1,0)
+    items[srchSelIdx]?.classList.add('sel');items[srchSelIdx]?.scrollIntoView({block:'nearest'});return
   }
+  if(e.key==='Enter'){const sel=document.querySelector('.srch-item.sel');if(sel)sel.click()}
+})
+const dcc=document.getElementById('dyn-chart')
+dcc.addEventListener('mousemove',chartMouseMove)
+dcc.addEventListener('mouseleave',()=>document.getElementById('chart-tt').style.display='none')
+window.addEventListener('resize',()=>{if(chartData)drawChart(chartData)})
 
-  // Домены
-  const dRes = DOMAINS.filter(d =>
-    d.url?.toLowerCase().includes(q) ||
-    d.description?.toLowerCase().includes(q) ||
-    d.funnel?.toLowerCase().includes(q)
-  ).slice(0, 4)
-  if(dRes.length) {
-    html += `<div class="srch-section">Домены</div>`
-    dRes.forEach(d => {
-      html += `<div class="srch-item" data-type="domain">
-        <div class="srch-item-ico" style="background:rgba(64,128,255,.1)">🌐</div>
-        <div class="srch-item-body">
-          <div class="srch-item-title">${d.url}</div>
-          <div class="srch-item-sub">${d.description||''} · ${(d.geos||[]).join('/')}</div>
-        </div>
-        <div class="srch-item-badge">${d.funnel}</div>
-      </div>`
-    })
-  }
+// ── ПЛАВАЮЩИЙ ТУЛБАР ──
+let tbTimeout=null
+const jmainEl=document.getElementById('jmain'),jtbEl=document.getElementById('jtb')
+jmainEl.addEventListener('mousemove',()=>{jtbEl.classList.add('visible');clearTimeout(tbTimeout);tbTimeout=setTimeout(()=>jtbEl.classList.remove('visible'),2500)})
+jmainEl.addEventListener('mouseleave',()=>{clearTimeout(tbTimeout);setTimeout(()=>jtbEl.classList.remove('visible'),500)})
+jtbEl.addEventListener('mouseenter',()=>{clearTimeout(tbTimeout);jtbEl.classList.add('visible')})
 
-  // Задачи
-  const tRes = TASKS.filter(t =>
-    t.title?.toLowerCase().includes(q) ||
-    t.assignee?.toLowerCase().includes(q)
-  ).slice(0, 4)
-  if(tRes.length) {
-    html += `<div class="srch-section">Задачи</div>`
-    tRes.forEach(t => {
-      const prColor = t.priority==='high'?'var(--red)':t.priority==='mid'?'var(--yellow)':'var(--green)'
-      html += `<div class="srch-item" data-type="task" data-id="${t.id}">
-        <div class="srch-item-ico" style="background:rgba(212,160,23,.1)">📋</div>
-        <div class="srch-item-body">
-          <div class="srch-item-title">${t.title}</div>
-          <div class="srch-item-sub">${t.col} · ${t.assignee||'—'}</div>
-        </div>
-        <div style="width:8px;height:8px;border-radius:50%;background:${prColor};flex-shrink:0"></div>
-      </div>`
-    })
-  }
+// ── WYSIWYG toolbar ──
+document.querySelectorAll('.jtbtn[data-cmd]').forEach(btn=>btn.addEventListener('mousedown',e=>{e.preventDefault();document.execCommand(btn.dataset.cmd,false,null)}))
+document.querySelectorAll('.jtbtn[data-block]').forEach(btn=>btn.addEventListener('mousedown',e=>{
+  e.preventDefault();const ed=document.getElementById('jeditor');ed.focus()
+  const tag=btn.dataset.block
+  if(tag==='ul')document.execCommand('insertUnorderedList',false,null)
+  else if(tag==='ol')document.execCommand('insertOrderedList',false,null)
+  else if(tag==='blockquote')document.execCommand('formatBlock',false,'blockquote')
+  else document.execCommand('formatBlock',false,tag)
+}))
+document.getElementById('btn-ins-table').addEventListener('mousedown',e=>{
+  e.preventDefault();document.getElementById('jeditor').focus()
+  document.execCommand('insertHTML',false,`<table><thead><tr><th>Колонка 1</th><th>Колонка 2</th><th>Колонка 3</th></tr></thead><tbody><tr><td>—</td><td>—</td><td>—</td></tr></tbody></table><p><br></p>`)
+})
+document.getElementById('btn-jsave').addEventListener('click',saveDoc)
+document.getElementById('btn-new-folder').addEventListener('click',startNewFolder)
+document.getElementById('btn-new-doc').addEventListener('click',startNewDoc)
 
-  // Журнал
-  const allDocs = [...jLoose, ...jFolders.flatMap(f=>f.docs)]
-  const jRes = allDocs.filter(d =>
-    d.title?.toLowerCase().includes(q) ||
-    d.body?.toLowerCase().includes(q)
-  ).slice(0, 4)
-  if(jRes.length) {
-    html += `<div class="srch-section">Журнал</div>`
-    jRes.forEach(d => {
-      html += `<div class="srch-item" data-type="doc" data-id="${d.id}">
-        <div class="srch-item-ico" style="background:rgba(144,96,208,.1)">📄</div>
-        <div class="srch-item-body">
-          <div class="srch-item-title">${d.title}</div>
-          <div class="srch-item-sub">${d.folder_name||'Документы'}</div>
-        </div>
-      </div>`
-    })
-  }
-
-  if(!html) html = `<div class="srch-empty">Ничего не найдено по «${q}»</div>`
-
-  const res = document.getElementById('srch-results')
-  res.innerHTML = html
-
-  // Навигация из поиска
-  res.querySelectorAll('.srch-item').forEach(item => {
-    item.addEventListener('click', () => {
-      document.getElementById('mo-search').classList.remove('open')
-      const type = item.dataset.type
-      const id = item.dataset.id
-      if(type === 'zaliv') {
-        gp('zalivs', document.getElementById('nb-zalivs'))
-        expZ = parseInt(id)
-        rzalivs()
-        // scroll to row
-        setTimeout(() => {
-          const row = document.querySelector(`tr[data-zid="${id}"]`)
-          row?.scrollIntoView({behavior:'smooth', block:'center'})
-        }, 100)
-      } else if(type === 'domain') {
-        gp('domains', document.getElementById('nb-domains'))
-      } else if(type === 'task') {
-        gp('tasks', document.getElementById('nb-tasks'))
-      } else if(type === 'doc') {
-        gp('journal', document.getElementById('nb-journal'))
-        loadDocById(id)
-      }
-    })
-  })
+// ── LOGIN / LOGOUT ──
+function doLogin(userId){
+  CURRENT_USER=USERS[userId];localStorage.setItem('jdl_user',userId)
+  document.getElementById('login').style.display='none';document.getElementById('app').style.display='flex'
+  const ava=document.getElementById('uava');ava.textContent=CURRENT_USER.initials;ava.style.background=CURRENT_USER.bg;ava.style.color=CURRENT_USER.color;ava.style.borderColor=CURRENT_USER.border
+  document.getElementById('uname').textContent=CURRENT_USER.name;init()
 }
+function doLogout(){localStorage.removeItem('jdl_user');CURRENT_USER=null;document.getElementById('login').style.display='flex';document.getElementById('app').style.display='none'}
 
-// ══════════════════════════════════════════
-// LOGIN / LOGOUT
-// ══════════════════════════════════════════
-function doLogin(userId) {
-  CURRENT_USER = USERS[userId]
-  localStorage.setItem('jdl_user', userId)
-  document.getElementById('login').style.display = 'none'
-  document.getElementById('app').style.display = 'flex'
-  const ava = document.getElementById('uava')
-  ava.textContent = CURRENT_USER.initials
-  ava.style.background = CURRENT_USER.bg
-  ava.style.color = CURRENT_USER.color
-  ava.style.borderColor = CURRENT_USER.border
-  document.getElementById('uname').textContent = CURRENT_USER.name
-  init()
-}
-function doLogout() {
-  localStorage.removeItem('jdl_user')
-  CURRENT_USER = null
-  document.getElementById('login').style.display = 'flex'
-  document.getElementById('app').style.display = 'none'
-}
-
-// ══════════════════════════════════════════
-// INIT
-// ══════════════════════════════════════════
-async function init() {
+// ── INIT ──
+async function init(){
   setSS('syncing','Загрузка...')
-  const today = new Date().toISOString().split('T')[0]
-  document.getElementById('pd-from').value = today
-  document.getElementById('pd-to').value = today
-  document.getElementById('sp-from').value = today
-  document.getElementById('sp-to').value = today
-  try {
-    db = supabase.createClient(SB_URL, SB_ANON)
-  } catch(e) { console.error('Supabase init:', e) }
-  await Promise.all([loadZ(), loadD(), loadT(), loadJ(), loadM(), loadSales(), loadTemplates()])
-  rdash()
-  setupRT()
-  setSS('ok','Данные загружены')
+  const today=new Date().toISOString().split('T')[0]
+  ;['pd-from','pd-to','sp-from','sp-to'].forEach(id=>document.getElementById(id).value=today)
+  try{db=supabase.createClient(SB_URL,SB_ANON)}catch(e){console.error(e)}
+  await Promise.all([loadZ(),loadD(),loadT(),loadJ(),loadM(),loadSales(),loadTemplates()])
+  rdash();setupRT();setSS('ok','Данные загружены')
 }
-
-function setSS(s,t){ document.getElementById('sdot').className='sdot '+s; document.getElementById('stxt').textContent=t }
-
-async function manualSync() {
+function setSS(s,t){document.getElementById('sdot').className='sdot '+s;document.getElementById('stxt').textContent=t}
+async function manualSync(){
   setSS('syncing','Синхронизация...')
-  try {
-    const r = await fetch(SB_URL+'/functions/v1/sync', {method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:'{}'})
-    const d = await r.json()
-    if(d.ok){ await loadM(); await loadSales(); rdash(); setSS('ok','Обновлено · '+d.days+' дней') }
-    else setSS('','Ошибка')
-  } catch(e){ setSS('','Ошибка соединения') }
+  try{
+    const r=await fetch(SB_URL+'/functions/v1/sync',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:'{}'})
+    const d=await r.json()
+    if(d.ok){await loadM();await loadSales();rdash();setSS('ok','Обновлено · '+d.days+' дней')}else setSS('','Ошибка')
+  }catch(e){setSS('','Ошибка соединения')}
 }
-
-function setupRT() {
-  if(!db) return
+function setupRT(){
+  if(!db)return
   db.channel('jdl-rt')
     .on('postgres_changes',{event:'*',schema:'public',table:'zalivs'},()=>loadZ().then(rzalivs))
     .on('postgres_changes',{event:'*',schema:'public',table:'tasks'},()=>loadT().then(rtasks))
@@ -1054,166 +529,91 @@ function setupRT() {
     .subscribe()
 }
 
-// ══════════════════════════════════════════
-// LOAD
-// ══════════════════════════════════════════
+// ── LOAD ──
 async function loadZ(){if(!db)return;const{data}=await db.from('zalivs').select('*').order('created_at',{ascending:false});ZALIVS=data||[]}
 async function loadD(){if(!db)return;const{data}=await db.from('domains').select('*').order('created_at',{ascending:false});DOMAINS=data||[]}
 async function loadT(){if(!db)return;const{data}=await db.from('tasks').select('*').order('created_at',{ascending:true});TASKS=data||[]}
 async function loadM(){
-  if(!db)return
-  const{data}=await db.from('metrics_daily').select('*').order('day',{ascending:true})
-  METRICS=data||[]
+  if(!db)return;const{data}=await db.from('metrics_daily').select('*').order('day',{ascending:true});METRICS=data||[]
   if(METRICS.length>0){const l=METRICS[METRICS.length-1];const m=Math.round((Date.now()-new Date(l.synced_at))/60000);setSS('ok','Синк '+m+'м назад')}
 }
 async function loadJ(){
   if(!db)return
   const{data}=await db.from('journal_docs').select('*').order('sort_order',{ascending:true})
-  const docs=data||[];jFolders=[];jLoose=[]
-  const fm={}
+  const docs=data||[];jFolders=[];jLoose=[];const fm={}
   docs.forEach(d=>{if(d.folder_id){if(!fm[d.folder_id])fm[d.folder_id]={id:d.folder_id,name:d.folder_name,docs:[]};fm[d.folder_id].docs.push(d)}else jLoose.push(d)})
   jFolders=Object.values(fm)
   if(!curDoc&&docs.length>0)curDoc=docs[0].id
 }
 async function loadSales(){
-  try {
-    const r = await fetch(GARNO_URL+'/rest/v1/garnocrm?select=data&id=eq.1',{headers:{'apikey':GARNO_KEY,'Authorization':'Bearer '+GARNO_KEY}})
-    if(!r.ok)return
-    const arr = await r.json()
+  try{
+    const r=await fetch(GARNO_URL+'/rest/v1/garnocrm?select=data&id=eq.1',{headers:{'apikey':GARNO_KEY,'Authorization':'Bearer '+GARNO_KEY}})
+    if(!r.ok)return;const arr=await r.json()
     if(arr&&arr[0]&&arr[0].data&&arr[0].data.sales){
-      SALES_DATA = arr[0].data.sales.filter(s=>{
-        const src=(s.source||'').toLowerCase()
-        return !src.includes('шоу') && !src.includes('showroom') && !src.includes('salon') && !src.includes('show')
-      })
+      SALES_DATA=arr[0].data.sales.filter(s=>{const src=(s.source||'').toLowerCase();return!src.includes('шоу')&&!src.includes('showroom')&&!src.includes('salon')&&!src.includes('show')})
     }
-  } catch(e){console.log('Sales error:',e)}
+  }catch(e){console.log('Sales:',e)}
 }
-
-// ── Загрузка шаблонов ──
 async function loadTemplates(){
   if(!db)return
-  try {
-    // Пробуем загрузить из таблицы zaliv_templates
-    // Если таблица ещё не создана — падаем тихо
-    const{data,error}=await db.from('zaliv_templates').select('*').order('created_at',{ascending:false})
-    if(!error) TEMPLATES=data||[]
-    else {
-      // Таблица не создана — читаем из localStorage как fallback
-      TEMPLATES = JSON.parse(localStorage.getItem('jdl_templates')||'[]')
-    }
-  } catch(e){
-    TEMPLATES = JSON.parse(localStorage.getItem('jdl_templates')||'[]')
-  }
+  try{const{data,error}=await db.from('zaliv_templates').select('*').order('created_at',{ascending:false});if(!error)TEMPLATES=data||[];else TEMPLATES=JSON.parse(localStorage.getItem('jdl_templates')||'[]')}
+  catch(e){TEMPLATES=JSON.parse(localStorage.getItem('jdl_templates')||'[]')}
 }
 
-// ══════════════════════════════════════════
-// NAV
-// ══════════════════════════════════════════
-function gp(id, el) {
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
-  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'))
-  document.getElementById('page-'+id).classList.add('active')
-  el.classList.add('active')
-  if(id==='zalivs') rzalivs()
-  if(id==='domains') rdomains()
-  if(id==='tasks') rtasks()
-  if(id==='sales') rsales()
-  if(id==='journal'){rtree();if(curDoc)loadDocById(curDoc)}
-  if(id==='dash') rdash()
+// ── NAV ──
+function gp(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'))
+  document.getElementById('page-'+id).classList.add('active');el.classList.add('active')
+  if(id==='zalivs')rzalivs();if(id==='domains')rdomains();if(id==='tasks')rtasks();if(id==='sales')rsales()
+  if(id==='journal'){rtree();if(curDoc)loadDocById(curDoc)};if(id==='dash')rdash()
 }
 
-// ══════════════════════════════════════════
-// COUNT UP
-// ══════════════════════════════════════════
-function countUp(el, target, pre='', suf='', dur=800) {
-  const n = parseFloat(target)
-  if(isNaN(n)){el.textContent=target;return}
-  const start = Date.now()
-  const timer = setInterval(()=>{
-    const p = Math.min((Date.now()-start)/dur,1)
-    const e = 1-Math.pow(1-p,3)
-    const cur = n*e
-    el.textContent = pre+(Number.isInteger(n)?Math.round(cur):cur.toFixed(1))+suf
+function countUp(el,target,pre='',suf='',dur=800){
+  const n=parseFloat(target);if(isNaN(n)){el.textContent=target;return}
+  const start=Date.now();const timer=setInterval(()=>{
+    const p=Math.min((Date.now()-start)/dur,1),e=1-Math.pow(1-p,3),cur=n*e
+    el.textContent=pre+(Number.isInteger(n)?Math.round(cur):cur.toFixed(1))+suf
     if(p>=1){clearInterval(timer);el.textContent=pre+target+suf}
   },16)
 }
-
-// ══════════════════════════════════════════
-// DASHBOARD
-// ══════════════════════════════════════════
-function rdash() {
-  const from = document.getElementById('pd-from').value
-  const to = document.getElementById('pd-to').value
-  const rows = METRICS.filter(m=>m.day>=from&&m.day<=to)
+// ── DASHBOARD ──
+function rdash(){
+  const from=document.getElementById('pd-from').value,to=document.getElementById('pd-to').value
+  const rows=METRICS.filter(m=>m.day>=from&&m.day<=to)
   let tS=0,tPL=0,tPLUA=0,tL=0,tQ=0,tSzl=0
   rows.forEach(r=>{tS+=parseFloat(r.spend_pl||0)+parseFloat(r.spend_plua||0);tPL+=parseFloat(r.spend_pl||0);tPLUA+=parseFloat(r.spend_plua||0);tL+=(r.leads_pl||0)+(r.leads_plua||0);tQ+=r.quals||0;tSzl+=parseFloat(r.sales_amount_zl||0)})
-  const days=rows.length||1
-  const cpl=tL>0?(tS/tL).toFixed(1):0, cql=tQ>0?(tS/tQ).toFixed(1):0
-  const spD=(tS/days).toFixed(0), profit=tSzl*0.3*0.25
-  const roi=tS>0?Math.round((profit-tS)/tS*100):0
+  const days=rows.length||1,cpl=tL>0?(tS/tL).toFixed(1):0,cql=tQ>0?(tS/tQ).toFixed(1):0
+  const spD=(tS/days).toFixed(0),profit=tSzl*0.3*0.25,roi=tS>0?Math.round((profit-tS)/tS*100):0
   const avgCtr=rows.length>0?(rows.reduce((s,r)=>s+parseFloat(r.ctr||0),0)/rows.length).toFixed(2):0
-
-  countUp(document.getElementById('d-spend'), Math.round(tS), '$')
-  countUp(document.getElementById('d-daily'), spD, '$')
-
-  const cplEl=document.getElementById('d-cpl'), cplN=parseFloat(cpl)
-  if(cplN>0&&cplN<10){cplEl.style.color='var(--green)';cplEl.style.textShadow='0 0 12px rgba(46,160,67,.7)'}
-  else if(cplN<=13){cplEl.style.color='var(--yellow)';cplEl.style.textShadow='0 0 12px rgba(212,160,23,.7)'}
-  else if(cplN>0){cplEl.style.color='var(--red)';cplEl.style.textShadow='0 0 12px rgba(224,64,80,.6)'}
-  else{cplEl.style.color='var(--text)';cplEl.style.textShadow=''}
-  countUp(cplEl, cpl, '$')
-
-  const cqlEl=document.getElementById('d-cql'), cqlN=parseFloat(cql)
-  if(cqlN>0&&cqlN<25){cqlEl.style.color='var(--green)';cqlEl.style.textShadow='0 0 12px rgba(46,160,67,.7)'}
-  else if(cqlN<=35){cqlEl.style.color='var(--yellow)';cqlEl.style.textShadow='0 0 12px rgba(212,160,23,.7)'}
-  else if(cqlN>0){cqlEl.style.color='var(--red)';cqlEl.style.textShadow='0 0 12px rgba(224,64,80,.6)'}
-  else{cqlEl.style.color='var(--text)';cqlEl.style.textShadow=''}
-  countUp(cqlEl, cql, '$')
-
+  countUp(document.getElementById('d-spend'),Math.round(tS),'$')
+  countUp(document.getElementById('d-daily'),spD,'$')
+  const cplEl=document.getElementById('d-cpl'),cplN=parseFloat(cpl)
+  cplEl.style.color=cplN>0&&cplN<10?'var(--green)':cplN<=13?'var(--yellow)':cplN>0?'var(--red)':'var(--text)'
+  cplEl.style.textShadow=cplN>0&&cplN<10?'0 0 12px rgba(46,160,67,.7)':cplN<=13&&cplN>0?'0 0 12px rgba(212,160,23,.7)':cplN>0?'0 0 12px rgba(224,64,80,.6)':''
+  countUp(cplEl,cpl,'$')
+  const cqlEl=document.getElementById('d-cql'),cqlN=parseFloat(cql)
+  cqlEl.style.color=cqlN>0&&cqlN<25?'var(--green)':cqlN<=35?'var(--yellow)':cqlN>0?'var(--red)':'var(--text)'
+  cqlEl.style.textShadow=cqlN>0&&cqlN<25?'0 0 12px rgba(46,160,67,.7)':cqlN<=35&&cqlN>0?'0 0 12px rgba(212,160,23,.7)':cqlN>0?'0 0 12px rgba(224,64,80,.6)':''
+  countUp(cqlEl,cql,'$')
   const roiEl=document.getElementById('d-roi')
   roiEl.style.color=roi>=100?'var(--green)':roi>0?'var(--yellow)':roi<0?'var(--red)':'var(--text)'
   roiEl.style.textShadow=roi>=100?'0 0 12px rgba(46,160,67,.7)':''
-  countUp(roiEl, roi, roi>0?'+':'', '%')
-  countUp(document.getElementById('d-ctr'), avgCtr, '', '%')
-
-  document.getElementById('d-zalivs').innerHTML = ZALIVS.slice(0,5).map(z=>`<div class="zrow"><div class="zdot" style="background:${z.ind==='profit'?'var(--green)':z.ind==='drop'?'var(--yellow)':'var(--red)'}"></div><span class="zgeo ${z.geo==='PL'?'gpl':'gplua'}">${z.geo}</span><div class="zname">${z.name}</div><div class="zbud">$${z.rk_budget}/d</div></div>`).join('') || '<div class="empty">Нет заливов</div>'
-
+  countUp(roiEl,roi,roi>0?'+':'','%')
+  countUp(document.getElementById('d-ctr'),avgCtr,'','%')
+  document.getElementById('d-zalivs').innerHTML=ZALIVS.slice(0,5).map(z=>`<div class="zrow"><div class="zdot" style="background:${z.ind==='profit'?'var(--green)':z.ind==='drop'?'var(--yellow)':'var(--red)'}"></div><span class="zgeo ${z.geo==='PL'?'gpl':'gplua'}">${z.geo}</span><div class="zname">${z.name}</div><div class="zbud">$${z.rk_budget}/d</div></div>`).join('')||'<div class="empty">Нет заливов</div>'
   const mx=Math.max(tPL,tPLUA,1)
   document.getElementById('d-geo').innerHTML=`<div class="brow"><div class="bhdr"><span class="zgeo gpl">PL</span><span style="font-weight:700;color:var(--yellow);font-family:var(--mono)">$${Math.round(tPL)}</span></div><div class="btrk"><div class="bfill" style="width:${Math.round(tPL/mx*100)}%;background:#4080ff"></div></div></div><div class="brow"><div class="bhdr"><span class="zgeo gplua">PLUA</span><span style="font-weight:700;color:var(--yellow);font-family:var(--mono)">$${Math.round(tPLUA)}</span></div><div class="btrk"><div class="bfill" style="width:${Math.round(tPLUA/mx*100)}%;background:#9060d0"></div></div></div>`
-
-  document.getElementById('d-tasks').innerHTML = TASKS.filter(t=>t.col!=='done').slice(0,4).map(t=>`<div class="tmini"><div class="tpb" style="background:${t.priority==='high'?'var(--red)':t.priority==='mid'?'var(--yellow)':'var(--green)'}"></div><div class="tmt">${t.title}</div><span class="tms ${t.col==='process'?'ts-proc':'ts-todo'}">${t.col==='process'?'In Progress':'TO DO'}</span>${t.assignee?`<span class="tma">${t.assignee}</span>`:''}</div>`).join('') || '<div class="empty">Нет задач</div>'
-
-  const spFrom = document.getElementById('pd-from').value
-  const spTo = document.getElementById('pd-to').value
-  const sf = SALES_DATA.filter(s=>{const d=parseDt(s.createdAt);if(!d)return false;const day=d.toISOString().split('T')[0];return day>=spFrom&&day<=spTo})
-  const stotal = sf.reduce((s,r)=>s+(r.saleAmount||0),0)
-  const savg = sf.length ? Math.round(stotal/sf.length) : 0
-  document.getElementById('d-sales-kpi').innerHTML = `
-    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden">
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#2ea043,#40c060)"></div>
-      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">TOTAL REVENUE</div>
-      <div style="font-size:28px;font-weight:800;color:var(--yellow);font-family:var(--mono)">${stotal.toLocaleString('ru')} zł</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:4px">${sf.length} продаж</div>
-    </div>
-    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden">
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#4080ff,#60a0ff)"></div>
-      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">AVG DEAL</div>
-      <div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--mono)">${savg.toLocaleString('ru')} zł</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:4px">средний чек</div>
-    </div>
-    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden">
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--bord),var(--bord2))"></div>
-      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">КОЛ-ВО ПРОДАЖ</div>
-      <div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--mono)">${sf.length}</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:4px">за период</div>
-    </div>`
-
+  document.getElementById('d-tasks').innerHTML=TASKS.filter(t=>t.col!=='done').slice(0,4).map(t=>`<div class="tmini"><div class="tpb" style="background:${t.priority==='high'?'var(--red)':t.priority==='mid'?'var(--yellow)':'var(--green)'}"></div><div class="tmt">${t.title}</div><span class="tms ${t.col==='process'?'ts-proc':'ts-todo'}">${t.col==='process'?'In Progress':'TO DO'}</span>${t.assignee?`<span class="tma">${t.assignee}</span>`:''}</div>`).join('')||'<div class="empty">Нет задач</div>'
+  const sf=SALES_DATA.filter(s=>{const d=parseDt(s.createdAt);if(!d)return false;const day=d.toISOString().split('T')[0];return day>=from&&day<=to})
+  const stotal=sf.reduce((s,r)=>s+(r.saleAmount||0),0),savg=sf.length?Math.round(stotal/sf.length):0
+  document.getElementById('d-sales-kpi').innerHTML=`
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#2ea043,#40c060)"></div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">TOTAL REVENUE</div><div style="font-size:28px;font-weight:800;color:var(--yellow);font-family:var(--mono)">${stotal.toLocaleString('ru')} zł</div><div style="font-size:11px;color:var(--text3);margin-top:4px">${sf.length} продаж</div></div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#4080ff,#60a0ff)"></div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">AVG DEAL</div><div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--mono)">${savg.toLocaleString('ru')} zł</div><div style="font-size:11px;color:var(--text3);margin-top:4px">средний чек</div></div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--bord),var(--bord2))"></div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">КОЛ-ВО ПРОДАЖ</div><div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--mono)">${sf.length}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">за период</div></div>`
   drawChart(rows)
 }
 
-// ══════════════════════════════════════════
-// CHART
-// ══════════════════════════════════════════
+// ── CHART ──
 function drawChart(rows){chartData=rows;const c=document.getElementById('dyn-chart');if(!c)return;c.width=c.parentElement.offsetWidth||600;c.height=130;renderChart()}
 function renderChart(){
   if(!chartData||!chartData.length)return
@@ -1222,13 +622,11 @@ function renderChart(){
   ctx.clearRect(0,0,W,H)
   const S=[{d:rows.map(r=>parseFloat(r.cpl)||0),c:'#4080ff',l:'CPL'},{d:rows.map(r=>parseFloat(r.cql)||0),c:'#d4a017',l:'CQL'},{d:rows.map(r=>parseFloat(r.ctr)||0),c:'#2ea043',l:'CTR'}]
   S.forEach(s=>{s.mn=Math.min(...s.d);s.mx=Math.max(...s.d);if(s.mx===s.mn)s.mx=s.mn+1})
-  const n=rows.length,xs=n>1?cw/(n-1):0
-  const px=i=>P.l+i*xs,py=(v,s)=>P.t+ch*(1-(v-s.mn)/(s.mx-s.mn))
+  const n=rows.length,xs=n>1?cw/(n-1):0,px=i=>P.l+i*xs,py=(v,s)=>P.t+ch*(1-(v-s.mn)/(s.mx-s.mn))
   ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1
   for(let i=0;i<=4;i++){const y=P.t+ch*i/4;ctx.beginPath();ctx.moveTo(P.l,y);ctx.lineTo(P.l+cw,y);ctx.stroke()}
   S.forEach(s=>{
-    ctx.save()
-    ctx.beginPath();ctx.moveTo(px(0),H-P.b);ctx.lineTo(px(0),py(s.d[0],s))
+    ctx.save();ctx.beginPath();ctx.moveTo(px(0),H-P.b);ctx.lineTo(px(0),py(s.d[0],s))
     for(let i=1;i<n;i++){const x0=px(i-1),y0=py(s.d[i-1],s),x1=px(i),y1=py(s.d[i],s),cx=(x0+x1)/2;ctx.bezierCurveTo(cx,y0,cx,y1,x1,y1)}
     ctx.lineTo(px(n-1),H-P.b);ctx.closePath()
     const g=ctx.createLinearGradient(0,P.t,0,H-P.b);g.addColorStop(0,s.c+'33');g.addColorStop(1,s.c+'00');ctx.fillStyle=g;ctx.fill()
@@ -1246,8 +644,7 @@ function renderChart(){
 function chartMouseMove(e){
   const c=this;if(!c._rows)return
   const rect=c.getBoundingClientRect(),mx=(e.clientX-rect.left)*(c.width/rect.width)
-  const n=c._rows.length,xs=n>1?c._cw/(n-1):0
-  let ci=0,md=9999
+  const n=c._rows.length,xs=n>1?c._cw/(n-1):0;let ci=0,md=9999
   for(let i=0;i<n;i++){const x=c._P.l+i*xs,d=Math.abs(mx-x);if(d<md){md=d;ci=i}}
   if(md>40){document.getElementById('chart-tt').style.display='none';return}
   const tt=document.getElementById('chart-tt');tt.style.display='block'
@@ -1257,23 +654,9 @@ function chartMouseMove(e){
   const r=c._rows[ci]
   tt.innerHTML=`<strong>${r.day}</strong>`+c._S.map(s=>`<div class="ctrow"><span class="ctl" style="color:${s.c}">${s.l}</span><span class="ctv" style="color:${s.c}">${s.d[ci]}</span></div>`).join('')+`<div class="ctrow" style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px"><span class="ctl">Spend</span><span class="ctv">$${Math.round((parseFloat(r.spend_pl)||0)+(parseFloat(r.spend_plua)||0))}</span></div>`
 }
-
-// ══════════════════════════════════════════
-// ZALIVS
-// ══════════════════════════════════════════
+// ── ZALIVS ──
 const SCLS={Check:'sc',Scale:'ss',OFF:'so',Test:'st',Proliw:'sp',Perezaliw:'sz'}
-
-// ── АВТО-СТАТУС ПО SCORE ──
-// Правило: 0-2 → OFF, 3-4 → Check, 5-6 → Scale
-// НЕ трогаем Proliw и Perezaliw
-function scoreToAutoStatus(score) {
-  if(score <= 2) return 'OFF'
-  if(score <= 4) return 'Check'
-  return 'Scale'
-}
-
-function s2st(s){ return scoreToAutoStatus(s) }
-
+function scoreToAutoStatus(s){return s<=2?'OFF':s<=4?'Check':'Scale'}
 function gchip(g){return`<span class="zgeo gchip ${g==='PL'?'gpl':'gplua'}">${g}</span>`}
 function spbs(z){return Array.from({length:7},(_,i)=>`<button class="spb${z.score===i?' s'+i:''}" data-zid="${z.id}" data-sc="${i}">${i}</button>`).join('')}
 
@@ -1284,84 +667,51 @@ function rzalivs(){
   let html=''
   f.forEach(z=>{
     const rc=`${z.ind==='profit'?'rp':z.ind==='drop'?'rd':'ro'}${expZ===z.id?' rex':''}`
-    // Показываем бейдж auto если статус выставлен автоматически
-    const isAutoStatus = !AUTO_STATUS_LOCKED.includes(z.status)
-    const statusBadge = isAutoStatus ? `<span class="auto-badge">auto</span>` : ''
+    const isAuto=!AUTO_STATUS_LOCKED.includes(z.status)
+    const domHtml=z.domain?`<a class="dlnk" href="https://${z.domain}" target="_blank" rel="noopener">${z.domain.split('/')[0]}</a>`:'—'
     html+=`<tr class="${rc}" data-zid="${z.id}" style="cursor:pointer">
-      <td><div class="ind-t">
-        <button class="itb${z.ind==='profit'?' ap':''}" data-zid="${z.id}" data-ind="profit">P</button>
-        <button class="itb${z.ind==='drop'?' ad':''}" data-zid="${z.id}" data-ind="drop">D</button>
-        <button class="itb${z.ind==='off'?' ao':''}" data-zid="${z.id}" data-ind="off">O</button>
-      </div></td>
+      <td><div class="ind-t"><button class="itb${z.ind==='profit'?' ap':''}" data-zid="${z.id}" data-ind="profit">P</button><button class="itb${z.ind==='drop'?' ad':''}" data-zid="${z.id}" data-ind="drop">D</button><button class="itb${z.ind==='off'?' ao':''}" data-zid="${z.id}" data-ind="off">O</button></div></td>
       <td style="color:var(--text3);font-size:11px;font-family:var(--mono)">${z.date||'—'}</td>
       <td>${gchip(z.geo)}</td>
       <td><div class="rkn">${z.name}</div></td>
       <td><div style="display:flex;gap:3px">${spbs(z)}</div></td>
-      <td>
-        <select class="ssel ${SCLS[z.status]||''}" data-zid="${z.id}">${['Check','Scale','OFF','Test','Proliw','Perezaliw'].map(o=>`<option${z.status===o?' selected':''}>${o}</option>`).join('')}</select>
-        ${statusBadge}
-      </td>
+      <td><select class="ssel ${SCLS[z.status]||''}" data-zid="${z.id}">${['Check','Scale','OFF','Test','Proliw','Perezaliw'].map(o=>`<option${z.status===o?' selected':''}>${o}</option>`).join('')}</select>${isAuto?'<span class="auto-badge">auto</span>':''}</td>
       <td class="budg">$${z.ad_budget}<small>/$${z.rk_budget}</small></td>
-      <td><a class="dlnk" href="#">${(z.domain||'—').split('/')[0]}</a></td>
+      <td>${domHtml}</td>
       <td><div class="cwrp">${(z.creos||[]).map(c=>`<span class="ctag" data-zid="${z.id}" data-creo="${c}">${c}</span>`).join('')}${(z.creos||[]).length<5?`<button class="cadd" data-zid="${z.id}">+ крео</button>`:''}</div></td>
       <td>${z.buyer||'—'}</td>
     </tr>`
-    if(expZ===z.id) html+=exRow(z)
+    if(expZ===z.id)html+=exRow(z)
   })
-  document.getElementById('zt-body').innerHTML = html||`<tr><td colspan="10" class="empty">Нет заливов</td></tr>`
-
-  // Bind events
+  document.getElementById('zt-body').innerHTML=html||`<tr><td colspan="10" class="empty">Нет заливов</td></tr>`
   document.querySelectorAll('#zt-body tr[data-zid]').forEach(tr=>{
-    tr.addEventListener('click', e=>{if(!e.target.closest('button,select,a,span.ctag'))togZ(parseInt(tr.dataset.zid))})
+    tr.addEventListener('click',e=>{if(!e.target.closest('button,select,a,.ctag'))togZ(parseInt(tr.dataset.zid))})
   })
-  document.querySelectorAll('.itb[data-ind]').forEach(btn=>{
-    btn.addEventListener('click', e=>{e.stopPropagation();setInd(parseInt(btn.dataset.zid),btn.dataset.ind)})
-  })
-  document.querySelectorAll('.spb[data-sc]').forEach(btn=>{
-    btn.addEventListener('click', e=>{e.stopPropagation();setScore(parseInt(btn.dataset.zid),parseInt(btn.dataset.sc))})
-  })
-  document.querySelectorAll('.ssel[data-zid]').forEach(sel=>{
-    sel.addEventListener('click', e=>e.stopPropagation())
-    sel.addEventListener('change', ()=>setStatus(parseInt(sel.dataset.zid),sel))
-  })
-  document.querySelectorAll('.cadd[data-zid]').forEach(btn=>{
-    btn.addEventListener('click', e=>{e.stopPropagation();addCreoInline(parseInt(btn.dataset.zid))})
-  })
-  // Крео-тег → открываем галерею
-  document.querySelectorAll('.ctag[data-creo]').forEach(tag=>{
-    tag.addEventListener('click', e=>{e.stopPropagation();openCreoGallery(parseInt(tag.dataset.zid), tag.dataset.creo)})
-  })
-  document.querySelectorAll('.dlnk').forEach(a=>a.addEventListener('click',e=>e.preventDefault()))
+  // stopPropagation на textarea и inputs в expand чтобы выделение не закрывало строку
+  document.querySelectorAll('.exin').forEach(ex=>ex.addEventListener('mousedown',e=>e.stopPropagation()))
+  document.querySelectorAll('.insta,.efi').forEach(inp=>inp.addEventListener('mousedown',e=>e.stopPropagation()))
+  document.querySelectorAll('.itb[data-ind]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();setInd(parseInt(btn.dataset.zid),btn.dataset.ind)}))
+  document.querySelectorAll('.spb[data-sc]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();setScore(parseInt(btn.dataset.zid),parseInt(btn.dataset.sc))}))
+  document.querySelectorAll('.ssel[data-zid]').forEach(sel=>{sel.addEventListener('click',e=>e.stopPropagation());sel.addEventListener('change',()=>setStatus(parseInt(sel.dataset.zid),sel))})
+  document.querySelectorAll('.cadd[data-zid]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();addCreoInline(parseInt(btn.dataset.zid))}))
+  document.querySelectorAll('.ctag[data-creo]').forEach(tag=>tag.addEventListener('click',e=>{e.stopPropagation();openCreoGallery(parseInt(tag.dataset.zid),tag.dataset.creo)}))
   document.querySelectorAll('.sbsv[data-zid]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();saveEdit(parseInt(btn.dataset.zid))}))
   document.querySelectorAll('.sbdl[data-zid]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();delZaliv(parseInt(btn.dataset.zid))}))
-  document.querySelectorAll('.spb-e[data-sc]').forEach(btn=>{
-    btn.addEventListener('click', e=>{e.stopPropagation();setScore(parseInt(btn.dataset.zid),parseInt(btn.dataset.sc))})
-  })
+  document.querySelectorAll('.spb-e[data-sc]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();setScore(parseInt(btn.dataset.zid),parseInt(btn.dataset.sc))}))
 }
 
 function exRow(z){
   return`<tr class="exrow ${z.ind==='profit'?'rp':z.ind==='drop'?'rd':'ro'} rex"><td colspan="10"><div class="exin">
-    <div class="exbl">
-      <div class="exlb">Редактировать</div>
+    <div class="exbl"><div class="exlb">Редактировать</div>
       <div style="margin-bottom:8px"><div class="elb">Название</div><input class="efi" id="ef-name-${z.id}" value="${(z.name||'').replace(/"/g,'&quot;')}"></div>
-      <div class="erow">
-        <div><div class="elb">AD $</div><input class="efi" id="ef-ad-${z.id}" type="number" value="${z.ad_budget}"></div>
-        <div><div class="elb">RK $</div><input class="efi" id="ef-rk-${z.id}" type="number" value="${z.rk_budget}"></div>
-      </div>
+      <div class="erow"><div><div class="elb">AD $</div><input class="efi" id="ef-ad-${z.id}" type="number" value="${z.ad_budget}"></div><div><div class="elb">RK $</div><input class="efi" id="ef-rk-${z.id}" type="number" value="${z.rk_budget}"></div></div>
       <div style="margin-bottom:8px"><div class="elb">Домен</div><input class="efi" id="ef-dom-${z.id}" value="${z.domain||''}"></div>
-      <div style="margin-bottom:8px"><div class="elb">Score (0–6)</div>
-        <div style="display:flex;gap:3px">${Array.from({length:7},(_,i)=>`<button class="spb spb-e${z.score===i?' s'+i:''}" data-zid="${z.id}" data-sc="${i}">${i}</button>`).join('')}</div>
-      </div>
-      <div class="srow">
-        <button class="sbdl" data-zid="${z.id}">🗑 Удалить</button>
-        <button class="sbsv" data-zid="${z.id}">💾 Сохранить</button>
-      </div>
+      <div style="margin-bottom:8px"><div class="elb">Score (0–6)</div><div style="display:flex;gap:3px">${Array.from({length:7},(_,i)=>`<button class="spb spb-e${z.score===i?' s'+i:''}" data-zid="${z.id}" data-sc="${i}">${i}</button>`).join('')}</div></div>
+      <div class="srow"><button class="sbdl" data-zid="${z.id}">🗑 Удалить</button><button class="sbsv" data-zid="${z.id}">💾 Сохранить</button></div>
     </div>
-    <div class="exbl">
-      <div class="exlb">Инсайты</div>
+    <div class="exbl"><div class="exlb">Инсайты</div>
       <textarea class="insta" id="ef-ins-${z.id}">${z.insights||''}</textarea>
-      <div class="exlb" style="margin-top:10px">Цели</div>
-      ${(z.goals||[]).map(g=>`<span class="gtag">— ${g}</span>`).join('')}
+      <div class="exlb" style="margin-top:10px">Цели</div>${(z.goals||[]).map(g=>`<span class="gtag">— ${g}</span>`).join('')}
       <div class="rkm">D{${z.date||''}}${z.geo}/PH1./${z.funnel}\\LEADS/${z.rk_budget}$</div>
     </div>
   </div></td></tr>`
@@ -1369,36 +719,15 @@ function exRow(z){
 
 function togZ(id){expZ=(expZ===id?null:id);rzalivs()}
 async function setInd(id,ind){await db.from('zalivs').update({ind,updated_at:new Date().toISOString()}).eq('id',id);const z=ZALIVS.find(x=>x.id===id);if(z)z.ind=ind;rzalivs()}
-
-// ── АВТО-СТАТУС при изменении score ──
-async function setScore(id, score) {
-  const z = ZALIVS.find(x=>x.id===id)
-  if(!z) return
-
-  // Определяем новый статус
-  let newStatus = z.status
-  const isLocked = AUTO_STATUS_LOCKED.includes(z.status)
-
-  if(!isLocked) {
-    // Только для Check/Scale/OFF — меняем автоматически
-    newStatus = scoreToAutoStatus(score)
-  }
-
-  await db.from('zalivs').update({score, status: newStatus, updated_at: new Date().toISOString()}).eq('id', id)
-  z.score = score
-
-  if(!isLocked && newStatus !== z.status) {
-    const prev = z.status
-    z.status = newStatus
-    toast(`Score ${score} → статус ${prev} → ${newStatus}`, 'info')
-  } else {
-    z.score = score
-    if(isLocked) toast(`Score обновлён. Статус ${z.status} сохранён (locked)`, 'info')
-  }
-
+async function setScore(id,score){
+  const z=ZALIVS.find(x=>x.id===id);if(!z)return
+  const isLocked=AUTO_STATUS_LOCKED.includes(z.status)
+  let newStatus=z.status;if(!isLocked)newStatus=scoreToAutoStatus(score)
+  await db.from('zalivs').update({score,status:newStatus,updated_at:new Date().toISOString()}).eq('id',id)
+  const prev=z.status;z.score=score
+  if(!isLocked&&newStatus!==prev){z.status=newStatus;toast(`Score ${score} → ${prev} → ${newStatus}`,'info')}
   rzalivs()
 }
-
 async function setStatus(id,sel){
   const z=ZALIVS.find(x=>x.id===id);if(!z)return
   z.status=sel.value;sel.className='ssel '+(SCLS[sel.value]||'')
@@ -1407,379 +736,180 @@ async function setStatus(id,sel){
 async function saveEdit(id){
   const z=ZALIVS.find(x=>x.id===id);if(!z)return
   const u={name:document.getElementById('ef-name-'+id).value.trim()||z.name,ad_budget:parseFloat(document.getElementById('ef-ad-'+id).value)||z.ad_budget,rk_budget:parseFloat(document.getElementById('ef-rk-'+id).value)||z.rk_budget,domain:document.getElementById('ef-dom-'+id).value.trim(),insights:document.getElementById('ef-ins-'+id).value,updated_at:new Date().toISOString()}
-  await db.from('zalivs').update(u).eq('id',id);Object.assign(z,u);toast('Залив сохранён','ok');rzalivs()
+  await db.from('zalivs').update(u).eq('id',id);Object.assign(z,u);toast('Сохранено','ok');rzalivs()
 }
-async function delZaliv(id){
-  if(!confirm('Удалить?'))return
-  await db.from('zalivs').delete().eq('id',id)
-  ZALIVS=ZALIVS.filter(z=>z.id!==id);expZ=null
-  toast('Залив удалён','ok');rzalivs()
-}
-async function addCreoInline(id){
-  const v=prompt('Крео ID:')
-  if(!v?.trim())return
-  const z=ZALIVS.find(x=>x.id===id)
-  if(!z||(z.creos||[]).length>=5)return
-  z.creos=[...(z.creos||[]),v.trim()]
-  await db.from('zalivs').update({creos:z.creos}).eq('id',id)
-  rzalivs()
-}
+async function delZaliv(id){if(!confirm('Удалить?'))return;await db.from('zalivs').delete().eq('id',id);ZALIVS=ZALIVS.filter(z=>z.id!==id);expZ=null;toast('Удалено','ok');rzalivs()}
+async function addCreoInline(id){const v=prompt('Крео ID:');if(!v?.trim())return;const z=ZALIVS.find(x=>x.id===id);if(!z||(z.creos||[]).length>=5)return;z.creos=[...(z.creos||[]),v.trim()];await db.from('zalivs').update({creos:z.creos}).eq('id',id);rzalivs()}
 
-// ══════════════════════════════════════════
-// MODAL ZALIV
-// ══════════════════════════════════════════
 function openMoZaliv(tpl=null){
   moGeo='';moScore=0
   document.querySelectorAll('[data-geo]').forEach(b=>b.classList.remove('sel'))
   document.querySelectorAll('#mo-score .spb').forEach((b,i)=>b.className='spb'+(i===0?' s0':''))
-  document.getElementById('mn').value=''
-  document.getElementById('ma').value=''
-  document.getElementById('mr').value=''
-  document.getElementById('mcreo-list').innerHTML=''
-  document.getElementById('mg-list').innerHTML=''
-
-  if(tpl) {
-    // Заполняем из шаблона
-    moGeo = tpl.geo || ''
-    moScore = tpl.score || 0
-    document.getElementById('mn').value = tpl.name_template || ''
-    document.getElementById('ma').value = tpl.ad_budget || ''
-    document.getElementById('mr').value = tpl.rk_budget || ''
-    if(tpl.buyer) document.getElementById('mb').value = tpl.buyer
-    if(tpl.funnel) document.getElementById('mf').value = tpl.funnel
-
-    // GEO кнопка
-    if(moGeo) {
-      document.querySelectorAll('[data-geo]').forEach(b=>{
-        if(b.dataset.geo===moGeo) b.classList.add('sel')
-      })
-    }
-    // Score
-    document.querySelectorAll('#mo-score .spb').forEach(b=>{
-      b.className = 'spb' + (parseInt(b.dataset.score)===moScore?' s'+moScore:'')
-    })
-    // Крео
-    ;(tpl.creos||[]).forEach(c=>{addCreoField(c)})
-    ;(tpl.goals||[]).forEach(g=>{addGoalField(g)})
-  } else {
-    addCreoField()
-    addGoalField()
-  }
-
-  updDomains()
-  updPrev()
-  document.getElementById('mo-zaliv').classList.add('open')
+  document.getElementById('mn').value='';document.getElementById('ma').value='';document.getElementById('mr').value=''
+  document.getElementById('mcreo-list').innerHTML='';document.getElementById('mg-list').innerHTML=''
+  if(tpl){
+    moGeo=tpl.geo||'';moScore=tpl.score||0
+    document.getElementById('mn').value=tpl.name_template||''
+    document.getElementById('ma').value=tpl.ad_budget||''
+    document.getElementById('mr').value=tpl.rk_budget||''
+    if(tpl.buyer)document.getElementById('mb').value=tpl.buyer
+    if(tpl.funnel)document.getElementById('mf').value=tpl.funnel
+    if(moGeo)document.querySelectorAll('[data-geo]').forEach(b=>{if(b.dataset.geo===moGeo)b.classList.add('sel')})
+    document.querySelectorAll('#mo-score .spb').forEach(b=>{b.className='spb'+(parseInt(b.dataset.score)===moScore?' s'+moScore:'')})
+    ;(tpl.creos||[]).forEach(c=>addCreoField(c));(tpl.goals||[]).forEach(g=>addGoalField(g))
+  }else{addCreoField();addGoalField()}
+  updDomains();updPrev();document.getElementById('mo-zaliv').classList.add('open')
 }
-
-function updDomains(){
-  const sel=document.getElementById('md')
-  const f=moGeo?DOMAINS.filter(d=>(d.geos||[]).includes(moGeo)&&d.active):DOMAINS.filter(d=>d.active)
-  sel.innerHTML='<option value="">— выбрать —</option>'+f.map(d=>`<option value="${d.url}">${d.url}</option>`).join('')
-}
-
-function updPrev(){
-  const g=moGeo||'GEO',b=document.getElementById('mr').value||'budget'
-  document.getElementById('mo-prev').textContent=`D{${new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})}}${g}/PH1./garno/kalk\\LEADS/${b}$`
-}
-
-function addCreoField(val=''){
-  const l=document.getElementById('mcreo-list')
-  if(l.children.length>=5)return
-  const d=document.createElement('div');d.className='gr'
-  const i=document.createElement('input');i.className='fi mcreo-input';i.placeholder='Крео #'+(l.children.length+1);i.value=val
-  const b=document.createElement('button');b.type='button';b.className='rmbtn';b.textContent='×'
-  b.onclick=()=>{if(l.children.length>1)d.remove()}
-  d.appendChild(i);d.appendChild(b);l.appendChild(d)
-}
-
-function addGoalField(val=''){
-  const l=document.getElementById('mg-list')
-  const d=document.createElement('div');d.className='gr'
-  const i=document.createElement('input');i.className='fi mgoal-input';i.placeholder='Цель '+(l.children.length+1);i.value=val
-  const b=document.createElement('button');b.type='button';b.className='rmbtn';b.textContent='×'
-  b.onclick=()=>{if(l.children.length>1)d.remove()}
-  d.appendChild(i);d.appendChild(b);l.appendChild(d)
-}
-
+function updDomains(){const sel=document.getElementById('md');const f=moGeo?DOMAINS.filter(d=>(d.geos||[]).includes(moGeo)&&d.active):DOMAINS.filter(d=>d.active);sel.innerHTML='<option value="">— выбрать —</option>'+f.map(d=>`<option value="${d.url}">${d.url}</option>`).join('')}
+function updPrev(){const g=moGeo||'GEO',b=document.getElementById('mr').value||'budget';document.getElementById('mo-prev').textContent=`D{${new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})}}${g}/PH1./garno/kalk\\LEADS/${b}$`}
+function addCreoField(val=''){const l=document.getElementById('mcreo-list');if(l.children.length>=5)return;const d=document.createElement('div');d.className='gr';const i=document.createElement('input');i.className='fi mcreo-input';i.placeholder='Крео #'+(l.children.length+1);i.value=val;const b=document.createElement('button');b.type='button';b.className='rmbtn';b.textContent='×';b.onclick=()=>{if(l.children.length>1)d.remove()};d.appendChild(i);d.appendChild(b);l.appendChild(d)}
+function addGoalField(val=''){const l=document.getElementById('mg-list');const d=document.createElement('div');d.className='gr';const i=document.createElement('input');i.className='fi mgoal-input';i.placeholder='Цель '+(l.children.length+1);i.value=val;const b=document.createElement('button');b.type='button';b.className='rmbtn';b.textContent='×';b.onclick=()=>{if(l.children.length>1)d.remove()};d.appendChild(i);d.appendChild(b);l.appendChild(d)}
 async function svz(){
   const name=document.getElementById('mn').value.trim()
   if(!name||!moGeo){toast('Укажи GEO и название','err');return}
   const creos=[...document.querySelectorAll('.mcreo-input')].map(i=>i.value.trim()).filter(Boolean)
   const goals=[...document.querySelectorAll('.mgoal-input')].map(i=>i.value.trim()).filter(Boolean)
   const today=new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
-  const{data,error}=await db.from('zalivs').insert({
-    geo:moGeo,name,
-    ad_budget:parseFloat(document.getElementById('ma').value)||0,
-    rk_budget:parseFloat(document.getElementById('mr').value)||0,
-    domain:document.getElementById('md').value,
-    creos,goals,ind:'profit',
-    status:scoreToAutoStatus(moScore),
-    insights:'',
-    buyer:document.getElementById('mb').value,
-    funnel:document.getElementById('mf').value,
-    score:moScore,date:today
-  }).select().single()
-  if(!error&&data){
-    ZALIVS.unshift(data)
-    document.getElementById('mo-zaliv').classList.remove('open')
-    toast('Залив создан','ok')
-    rzalivs()
-  } else {
-    toast('Ошибка: '+JSON.stringify(error),'err')
-  }
+  const{data,error}=await db.from('zalivs').insert({geo:moGeo,name,ad_budget:parseFloat(document.getElementById('ma').value)||0,rk_budget:parseFloat(document.getElementById('mr').value)||0,domain:document.getElementById('md').value,creos,goals,ind:'profit',status:scoreToAutoStatus(moScore),insights:'',buyer:document.getElementById('mb').value,funnel:document.getElementById('mf').value,score:moScore,date:today}).select().single()
+  if(!error&&data){ZALIVS.unshift(data);document.getElementById('mo-zaliv').classList.remove('open');toast('Залив создан','ok');rzalivs()}
+  else toast('Ошибка: '+JSON.stringify(error),'err')
 }
 
-// ══════════════════════════════════════════
-// TEMPLATES — Шаблоны заливов
-// ══════════════════════════════════════════
+// ── TEMPLATES ──
 async function saveAsTemplate(){
-  const name = prompt('Название шаблона:')
-  if(!name?.trim()) return
-  if(!moGeo) { toast('Выбери GEO','err'); return }
-
+  const name=prompt('Название шаблона:');if(!name?.trim())return
+  if(!moGeo){toast('Выбери GEO','err');return}
   const creos=[...document.querySelectorAll('.mcreo-input')].map(i=>i.value.trim()).filter(Boolean)
   const goals=[...document.querySelectorAll('.mgoal-input')].map(i=>i.value.trim()).filter(Boolean)
-
-  const tpl = {
-    id: 'tpl_'+Date.now(),
-    name,
-    geo: moGeo,
-    name_template: document.getElementById('mn').value.trim(),
-    ad_budget: parseFloat(document.getElementById('ma').value)||0,
-    rk_budget: parseFloat(document.getElementById('mr').value)||0,
-    buyer: document.getElementById('mb').value,
-    funnel: document.getElementById('mf').value,
-    score: moScore,
-    creos,
-    goals,
-    created_at: new Date().toISOString()
-  }
-
-  // Сохраняем в Supabase (если таблица есть) или localStorage
-  try {
-    const{error} = await db.from('zaliv_templates').insert(tpl)
-    if(!error) {
-      TEMPLATES.unshift(tpl)
-      toast(`Шаблон «${name}» сохранён`, 'ok')
-      return
-    }
-  } catch(e){}
-
-  // Fallback: localStorage
-  TEMPLATES.unshift(tpl)
-  localStorage.setItem('jdl_templates', JSON.stringify(TEMPLATES))
-  toast(`Шаблон «${name}» сохранён (local)`, 'ok')
+  const tpl={id:'tpl_'+Date.now(),name,geo:moGeo,name_template:document.getElementById('mn').value.trim(),ad_budget:parseFloat(document.getElementById('ma').value)||0,rk_budget:parseFloat(document.getElementById('mr').value)||0,buyer:document.getElementById('mb').value,funnel:document.getElementById('mf').value,score:moScore,creos,goals,created_at:new Date().toISOString()}
+  try{const{error}=await db.from('zaliv_templates').insert(tpl);if(!error){TEMPLATES.unshift(tpl);toast(`Шаблон «${name}» сохранён`,'ok');return}}catch(e){}
+  TEMPLATES.unshift(tpl);localStorage.setItem('jdl_templates',JSON.stringify(TEMPLATES));toast(`Шаблон «${name}» сохранён`,'ok')
 }
-
-function openTemplates(){
-  renderTemplateList()
-  document.getElementById('mo-templates').classList.add('open')
-}
-
+function openTemplates(){renderTemplateList();document.getElementById('mo-templates').classList.add('open')}
 function renderTemplateList(){
-  const list = document.getElementById('tpl-list')
-  if(!TEMPLATES.length){
-    list.innerHTML='<div class="empty">Нет шаблонов. Создай залив и нажми «Сохранить шаблон»</div>'
-    return
-  }
-  list.innerHTML = TEMPLATES.map(t=>`
-    <div class="tpl-item" data-tplid="${t.id}">
-      <div>
-        <span class="tpl-geo ${t.geo==='PL'?'gpl':'gplua'} zgeo">${t.geo}</span>
-      </div>
-      <div style="flex:1;min-width:0">
-        <div class="tpl-name">${t.name}</div>
-        <div class="tpl-meta">${t.funnel} · $${t.ad_budget}/$${t.rk_budget} · score ${t.score}</div>
-      </div>
-      <button class="tpl-del" data-tplid="${t.id}" title="Удалить шаблон">✕</button>
-    </div>
-  `).join('')
-
-  list.querySelectorAll('.tpl-item').forEach(item=>{
-    item.addEventListener('click', e=>{
-      if(e.target.closest('.tpl-del')) return
-      const tpl = TEMPLATES.find(t=>t.id===item.dataset.tplid)
-      if(!tpl) return
-      document.getElementById('mo-templates').classList.remove('open')
-      openMoZaliv(tpl)
-    })
-  })
-  list.querySelectorAll('.tpl-del').forEach(btn=>{
-    btn.addEventListener('click', async e=>{
-      e.stopPropagation()
-      const id = btn.dataset.tplid
-      TEMPLATES = TEMPLATES.filter(t=>t.id!==id)
-      try { await db.from('zaliv_templates').delete().eq('id',id) } catch(e){}
-      localStorage.setItem('jdl_templates', JSON.stringify(TEMPLATES))
-      toast('Шаблон удалён','ok')
-      renderTemplateList()
-    })
-  })
+  const list=document.getElementById('tpl-list')
+  if(!TEMPLATES.length){list.innerHTML='<div class="empty">Нет шаблонов</div>';return}
+  list.innerHTML=TEMPLATES.map(t=>`<div class="tpl-item" data-tplid="${t.id}"><span class="zgeo gchip ${t.geo==='PL'?'gpl':'gplua'}">${t.geo}</span><div style="flex:1;min-width:0"><div class="tpl-name">${t.name}</div><div class="tpl-meta">${t.funnel} · $${t.ad_budget}/$${t.rk_budget}</div></div><button class="tpl-del" data-tplid="${t.id}">✕</button></div>`).join('')
+  list.querySelectorAll('.tpl-item').forEach(item=>{item.addEventListener('click',e=>{if(e.target.closest('.tpl-del'))return;const tpl=TEMPLATES.find(t=>t.id===item.dataset.tplid);if(!tpl)return;document.getElementById('mo-templates').classList.remove('open');openMoZaliv(tpl)})})
+  list.querySelectorAll('.tpl-del').forEach(btn=>{btn.addEventListener('click',async e=>{e.stopPropagation();const id=btn.dataset.tplid;TEMPLATES=TEMPLATES.filter(t=>t.id!==id);try{await db.from('zaliv_templates').delete().eq('id',id)}catch(e){}localStorage.setItem('jdl_templates',JSON.stringify(TEMPLATES));toast('Шаблон удалён','ok');renderTemplateList()})})
 }
 
-// ══════════════════════════════════════════
-// CREO GALLERY — Галерея крео
-// ══════════════════════════════════════════
-let creoCurrentZaliv = null
-let creoCurrentId = null
-
-async function openCreoGallery(zalivId, creoId) {
-  creoCurrentZaliv = zalivId
-  creoCurrentId = creoId
-  const z = ZALIVS.find(x=>x.id===zalivId)
-
-  document.getElementById('creo-modal-title').innerHTML =
-    `🎨 Крео <span style="color:var(--purple);font-family:var(--mono)">${creoId}</span> <button class="mox" data-close="mo-creo">×</button>`
-
-  // Заново вешаем close
-  document.querySelector('#creo-modal-title .mox').addEventListener('click', ()=>document.getElementById('mo-creo').classList.remove('open'))
-
-  // Ищем скрин в Supabase Storage
-  let imgUrl = null
-  try {
-    const path = `${zalivId}/${creoId}.png`
-    const { data } = db.storage.from('creo-screenshots').getPublicUrl(path)
-    // Проверяем существование
-    const check = await fetch(data.publicUrl, {method:'HEAD'})
-    if(check.ok) imgUrl = data.publicUrl
-  } catch(e){}
-
-  // Находим метрики крео из заливов (если есть creo_metrics)
-  // Пока показываем заглушку с данными залива
-  const cplVal = '—', ctrVal = '—', leadsVal = '—'
-
-  document.getElementById('creo-gallery-content').innerHTML = `
-    <div class="creo-header">
-      <div>
-        <div class="creo-id">${creoId}</div>
-        <div class="creo-zaliv">${z?.name||'—'}</div>
-      </div>
-      <span class="zgeo gchip ${z?.geo==='PL'?'gpl':'gplua'}">${z?.geo||''}</span>
-    </div>
-    <div class="creo-img-area" id="creo-drop-area">
-      ${imgUrl
-        ? `<img src="${imgUrl}?t=${Date.now()}" alt="Скрин крео">`
-        : `<div class="creo-upload-hint"><strong>Нет скриншота</strong>Нажми «Загрузить скрин» или перетащи файл</div>`
-      }
-    </div>
-    <input type="file" id="creo-file-inp" accept="image/*">
-    <div class="creo-stats">
-      <div class="creo-stat"><div class="creo-stat-val">${cplVal}</div><div class="creo-stat-lbl">CPL</div></div>
-      <div class="creo-stat"><div class="creo-stat-val">${ctrVal}</div><div class="creo-stat-lbl">CTR</div></div>
-      <div class="creo-stat"><div class="creo-stat-val">${leadsVal}</div><div class="creo-stat-lbl">Leads</div></div>
-    </div>
-    ${imgUrl ? `<div class="creo-actions"><a class="creo-dl" href="${imgUrl}" download="${creoId}.png" target="_blank">⬇ Скачать</a></div>` : ''}
+// ── CREO GALLERY — FIX upload ──
+async function openCreoGallery(zalivId,creoId){
+  creoCurrentZaliv=zalivId;creoCurrentId=creoId
+  const z=ZALIVS.find(x=>x.id===zalivId)
+  document.getElementById('creo-modal-title').innerHTML=`🎨 Крео <span style="color:var(--purple);font-family:var(--mono)">${creoId}</span> <button class="mox" data-close="mo-creo">×</button>`
+  document.querySelector('#creo-modal-title .mox').addEventListener('click',()=>document.getElementById('mo-creo').classList.remove('open'))
+  let imgUrl=null
+  try{const{data}=db.storage.from('creo-screenshots').getPublicUrl(`${zalivId}/${creoId}.png`);const ch=await fetch(data.publicUrl,{method:'HEAD'});if(ch.ok)imgUrl=data.publicUrl}catch(e){}
+  document.getElementById('creo-gallery-content').innerHTML=`
+    <div class="creo-header"><div><div class="creo-id">${creoId}</div><div class="creo-zaliv">${z?.name||'—'}</div></div><span class="zgeo gchip ${z?.geo==='PL'?'gpl':'gplua'}">${z?.geo||''}</span></div>
+    <div class="creo-img-area" id="creo-drop-area">${imgUrl?`<img src="${imgUrl}?t=${Date.now()}" alt="Скрин крео">`:`<div class="creo-upload-hint"><strong>Нет скриншота</strong>Нажми «Загрузить скрин» или перетащи файл</div>`}</div>
+    <input type="file" id="creo-file-inp" accept="image/*" style="display:none">
+    <div class="creo-stats"><div class="creo-stat"><div class="creo-stat-val">—</div><div class="creo-stat-lbl">CPL</div></div><div class="creo-stat"><div class="creo-stat-val">—</div><div class="creo-stat-lbl">CTR</div></div><div class="creo-stat"><div class="creo-stat-val">—</div><div class="creo-stat-lbl">Leads</div></div></div>
+    ${imgUrl?`<div class="creo-actions"><a class="creo-dl" href="${imgUrl}" download="${creoId}.png" target="_blank">⬇ Скачать</a></div>`:''}
   `
-
-  // Upload обработчик
-  document.getElementById('creo-file-inp').addEventListener('change', handleCreoUpload)
-
-  // Drag & drop на область
-  const dropArea = document.getElementById('creo-drop-area')
-  dropArea.addEventListener('click', ()=>document.getElementById('creo-file-inp').click())
-  dropArea.addEventListener('dragover', e=>{e.preventDefault();dropArea.style.borderColor='var(--bord2)'})
-  dropArea.addEventListener('dragleave', ()=>dropArea.style.borderColor='')
-  dropArea.addEventListener('drop', e=>{
-    e.preventDefault()
-    dropArea.style.borderColor=''
-    const file = e.dataTransfer.files[0]
-    if(file && file.type.startsWith('image/')) uploadCreoFile(file)
-  })
-
-  document.getElementById('btn-upload-creo').onclick = ()=>document.getElementById('creo-file-inp').click()
+  // FIX: получаем file из this.files, не из event
+  document.getElementById('creo-file-inp').addEventListener('change',function(){if(this.files&&this.files[0])uploadCreoFile(this.files[0])})
+  const da=document.getElementById('creo-drop-area')
+  da.addEventListener('click',()=>document.getElementById('creo-file-inp').click())
+  da.addEventListener('dragover',e=>{e.preventDefault();da.style.borderColor='var(--bord2)'})
+  da.addEventListener('dragleave',()=>da.style.borderColor='')
+  da.addEventListener('drop',e=>{e.preventDefault();da.style.borderColor='';const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))uploadCreoFile(f)})
+  document.getElementById('btn-upload-creo').onclick=()=>document.getElementById('creo-file-inp').click()
   document.getElementById('mo-creo').classList.add('open')
 }
-
-function handleCreoUpload(e){
-  const file = e.target.files[0]
-  if(!file) return
-  uploadCreoFile(file)
-}
-
 async function uploadCreoFile(file){
-  if(!creoCurrentZaliv || !creoCurrentId) return
-  toast('Загружаю скрин...', 'info')
-
-  try {
-    const path = `${creoCurrentZaliv}/${creoCurrentId}.png`
-    const { error } = await db.storage
-      .from('creo-screenshots')
-      .upload(path, file, {upsert: true, contentType: file.type})
-
-    if(error) {
-      if(error.message?.includes('Bucket not found')) {
-        toast('Создай bucket "creo-screenshots" в Supabase Storage', 'err')
-      } else {
-        toast('Ошибка: ' + error.message, 'err')
-      }
-      return
-    }
-
-    toast('Скрин загружен!', 'ok')
-    // Обновляем галерею
-    await openCreoGallery(creoCurrentZaliv, creoCurrentId)
-  } catch(e) {
-    toast('Ошибка загрузки: '+e.message, 'err')
-  }
+  if(!creoCurrentZaliv||!creoCurrentId)return
+  toast('Загружаю...','info')
+  try{
+    const{error}=await db.storage.from('creo-screenshots').upload(`${creoCurrentZaliv}/${creoCurrentId}.png`,file,{upsert:true,contentType:file.type})
+    if(error){toast(error.message?.includes('Bucket')?'Создай bucket "creo-screenshots"':'Ошибка: '+error.message,'err');return}
+    toast('Скрин загружен!','ok');await openCreoGallery(creoCurrentZaliv,creoCurrentId)
+  }catch(e){toast('Ошибка: '+e.message,'err')}
 }
-
-// ══════════════════════════════════════════
-// SALES
-// ══════════════════════════════════════════
+// ── SALES ──
 function parseDt(ds){if(!ds)return null;if(ds.includes('-'))return new Date(ds);const p=ds.split('.');if(p.length===3)return new Date(p[2]+'-'+p[1]+'-'+p[0]);return null}
 function rsales(){
   const from=document.getElementById('sp-from').value,to=document.getElementById('sp-to').value
   const f=SALES_DATA.filter(s=>{const d=parseDt(s.createdAt);if(!d)return false;const day=d.toISOString().split('T')[0];return day>=from&&day<=to})
   document.getElementById('sales-count').textContent='('+f.length+')'
   const total=f.reduce((s,r)=>s+(r.saleAmount||0),0),avg=f.length?Math.round(total/f.length):0
-  document.getElementById('sales-kpi').innerHTML=`
-    <div class="skc"><div class="sklb">Total Revenue</div><div class="skvl" id="sk-total">0 zł</div><div class="sksb">${f.length} продаж</div></div>
-    <div class="skc"><div class="sklb">Avg Deal</div><div class="skvl" id="sk-avg">0 zł</div><div class="sksb">средний чек</div></div>
-    <div class="skc"><div class="sklb">Кол-во продаж</div><div class="skvl" id="sk-cnt">0</div><div class="sksb">за период</div></div>`
-  setTimeout(()=>{
-    countUp(document.getElementById('sk-total'),total.toLocaleString('ru'),'','  zł',1000)
-    countUp(document.getElementById('sk-avg'),avg.toLocaleString('ru'),'','  zł',800)
-    countUp(document.getElementById('sk-cnt'),f.length,'','',600)
-  },50)
-  const sm={}
-  f.forEach(s=>{const src=s.source||'Неизвестно';if(!sm[src])sm[src]={count:0,amount:0};sm[src].count++;sm[src].amount+=s.saleAmount||0})
-  const srcs=Object.entries(sm).sort((a,b)=>b[1].amount-a[1].amount)
-  document.getElementById('sales-sources').innerHTML=srcs.map(([src,v])=>`<div class="ssrc"><div class="sstop"><span class="ssn">${src}</span><span class="sscnt">${v.count} пр.</span></div><div class="ssamt">${v.amount.toLocaleString('ru')} zł</div><div class="sssub">avg ${Math.round(v.amount/v.count).toLocaleString('ru')} zł</div></div>`).join('')||'<div class="empty">Нет продаж за период</div>'
-  document.getElementById('sales-list').innerHTML=[...f].sort((a,b)=>{const da=parseDt(a.createdAt)||new Date(0),db2=parseDt(b.createdAt)||new Date(0);return db2-da}).map(s=>`<div class="slrow"><div class="slava">${(s.name||'?').substring(0,2).toUpperCase()}</div><div><div class="slnm">${s.name||'—'}</div><div style="font-size:10px;color:var(--text3)">${s.phone||''}</div></div><span class="slsr">${s.source||'—'}</span><span class="sldt">${s.createdAt||'—'}</span><span class="slam">${(s.saleAmount||0).toLocaleString('ru')} zł</span></div>`).join('')||'<div class="empty">Нет продаж за период</div>'
+  document.getElementById('sales-kpi').innerHTML=`<div class="skc"><div class="sklb">Total Revenue</div><div class="skvl" id="sk-total">0 zł</div><div class="sksb">${f.length} продаж</div></div><div class="skc"><div class="sklb">Avg Deal</div><div class="skvl" id="sk-avg">0 zł</div><div class="sksb">средний чек</div></div><div class="skc"><div class="sklb">Кол-во продаж</div><div class="skvl" id="sk-cnt">0</div><div class="sksb">за период</div></div>`
+  setTimeout(()=>{countUp(document.getElementById('sk-total'),total.toLocaleString('ru'),'','  zł',1000);countUp(document.getElementById('sk-avg'),avg.toLocaleString('ru'),'','  zł',800);countUp(document.getElementById('sk-cnt'),f.length,'','',600)},50)
+  const sm={};f.forEach(s=>{const src=s.source||'Неизвестно';if(!sm[src])sm[src]={count:0,amount:0};sm[src].count++;sm[src].amount+=s.saleAmount||0})
+  document.getElementById('sales-sources').innerHTML=Object.entries(sm).sort((a,b)=>b[1].amount-a[1].amount).map(([src,v])=>`<div class="ssrc"><div class="sstop"><span class="ssn">${src}</span><span class="sscnt">${v.count} пр.</span></div><div class="ssamt">${v.amount.toLocaleString('ru')} zł</div><div class="sssub">avg ${Math.round(v.amount/v.count).toLocaleString('ru')} zł</div></div>`).join('')||'<div class="empty">Нет продаж</div>'
+  document.getElementById('sales-list').innerHTML=[...f].sort((a,b)=>{const da=parseDt(a.createdAt)||new Date(0),db2=parseDt(b.createdAt)||new Date(0);return db2-da}).map(s=>`<div class="slrow"><div class="slava">${(s.name||'?').substring(0,2).toUpperCase()}</div><div><div class="slnm">${s.name||'—'}</div><div style="font-size:10px;color:var(--text3)">${s.phone||''}</div></div><span class="slsr">${s.source||'—'}</span><span class="sldt">${s.createdAt||'—'}</span><span class="slam">${(s.saleAmount||0).toLocaleString('ru')} zł</span></div>`).join('')||'<div class="empty">Нет продаж</div>'
 }
 
-// ══════════════════════════════════════════
-// DOMAINS
-// ══════════════════════════════════════════
+// ── DOMAINS — с редактированием и кликом по URL ──
 async function saveDomain(){
   const url=document.getElementById('dm-url').value.trim().replace(/^https?:\/\//,'')
   if(!url){toast('Введи URL','err');return}
   if(!domGeoSel.length){toast('Выбери GEO','err');return}
   const{data,error}=await db.from('domains').insert({url,description:document.getElementById('dm-desc').value.trim(),geos:[...domGeoSel],funnel:document.getElementById('dm-funnel').value,active:true}).select().single()
   if(!error&&data){DOMAINS.push(data);document.getElementById('mo-domain').classList.remove('open');domGeoSel=[];document.querySelectorAll('[data-dgeo]').forEach(b=>b.classList.remove('sel'));toast('Домен добавлен','ok');rdomains()}
-  else toast('Ошибка: '+JSON.stringify(error),'err')
+  else toast('Ошибка','err')
 }
-async function delDomain(id){if(!confirm('Удалить?'))return;await db.from('domains').delete().eq('id',id);DOMAINS=DOMAINS.filter(d=>d.id!==id);toast('Домен удалён','ok');rdomains()}
+function openDomainEdit(id){
+  const d=DOMAINS.find(x=>x.id===id);if(!d)return
+  deEditId=id;deGeoSel=[...(d.geos||[])]
+  document.getElementById('de-url').value=d.url
+  document.getElementById('de-desc').value=d.description||''
+  document.getElementById('de-funnel').value=d.funnel||'Калькулятор'
+  document.getElementById('de-active-y').checked=d.active!==false
+  document.getElementById('de-active-n').checked=d.active===false
+  document.querySelectorAll('[data-degeo]').forEach(b=>b.classList.toggle('sel',deGeoSel.includes(b.dataset.degeo)))
+  document.getElementById('mo-domain-edit').classList.add('open')
+}
+async function saveDomainEdit(){
+  if(!deEditId)return
+  const url=document.getElementById('de-url').value.trim().replace(/^https?:\/\//,'')
+  if(!url){toast('Введи URL','err');return}
+  const active=document.getElementById('de-active-y').checked
+  const u={url,description:document.getElementById('de-desc').value.trim(),geos:[...deGeoSel],funnel:document.getElementById('de-funnel').value,active,updated_at:new Date().toISOString()}
+  const{error}=await db.from('domains').update(u).eq('id',deEditId)
+  if(!error){const d=DOMAINS.find(x=>x.id===deEditId);if(d)Object.assign(d,u);document.getElementById('mo-domain-edit').classList.remove('open');toast('Домен сохранён','ok');rdomains()}
+  else toast('Ошибка','err')
+}
+async function delDomain(id){
+  if(!confirm('Удалить?'))return
+  await db.from('domains').delete().eq('id',id);DOMAINS=DOMAINS.filter(d=>d.id!==id)
+  document.getElementById('mo-domain-edit').classList.remove('open');toast('Удалён','ok');rdomains()
+}
 function rdomains(){
   const geo=document.getElementById('df-geo').value,q=document.getElementById('df-q').value.toLowerCase()
   const f=DOMAINS.filter(d=>(!geo||(d.geos||[]).includes(geo))&&(!q||d.url.toLowerCase().includes(q)))
   document.getElementById('d-count').textContent='('+f.length+')'
-  document.getElementById('dom-grid').innerHTML=f.map(d=>`<div class="dc"><div class="dctop"><span style="font-size:16px">${(d.geos||[]).map(g=>({PL:'🇵🇱',PLUA:'🇵🇱🇺🇦'}[g]||'')).filter((v,i,a)=>a.indexOf(v)===i).join('')}</span><a class="dcurl" href="#" onclick="return false">${d.url}</a><div class="dled ${d.active?'lon':'loff'}"></div></div><div class="ddsc">${d.description||''}</div><div class="dftr">${(d.geos||[]).map(g=>`<span class="zgeo gchip ${g==='PL'?'gpl':'gplua'}">${g}</span>`).join('')}<span class="fchip">${d.funnel}</span><span style="margin-left:auto;font-size:11px;font-weight:600;color:${d.active?'var(--green)':'var(--text3)'}">${d.active?'● Активный':'○ Неактивный'}</span><button onclick="delDomain(${d.id})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:0 4px">✕</button></div></div>`).join('')||'<div class="empty">Нет доменов</div>'
+  document.getElementById('dom-grid').innerHTML=f.map(d=>`
+    <div class="dc" data-did="${d.id}">
+      <div class="dctop">
+        <span style="font-size:16px">${(d.geos||[]).map(g=>({PL:'🇵🇱',PLUA:'🇵🇱🇺🇦'}[g]||'')).filter((v,i,a)=>a.indexOf(v)===i).join('')}</span>
+        <a class="dcurl" href="https://${d.url}" target="_blank" rel="noopener">${d.url}</a>
+        <div class="dled ${d.active?'lon':'loff'}"></div>
+      </div>
+      <div class="ddsc">${d.description||''}</div>
+      <div class="dftr">
+        ${(d.geos||[]).map(g=>`<span class="zgeo gchip ${g==='PL'?'gpl':'gplua'}">${g}</span>`).join('')}
+        <span class="fchip">${d.funnel}</span>
+        <span style="margin-left:auto;font-size:11px;font-weight:600;color:${d.active?'var(--green)':'var(--red)'}">${d.active?'● Активный':'○ Неактивный'}</span>
+        <button style="background:none;border:1px solid var(--border);border-radius:4px;color:var(--text3);cursor:pointer;font-size:11px;padding:2px 7px" onclick="event.stopPropagation();openDomainEdit(${d.id})">✏️ Ред.</button>
+      </div>
+    </div>`).join('')||'<div class="empty">Нет доменов</div>'
+  document.querySelectorAll('.dc[data-did]').forEach(card=>{
+    card.addEventListener('click',e=>{if(!e.target.closest('a,button'))openDomainEdit(parseInt(card.dataset.did))})
+  })
 }
 
-// ══════════════════════════════════════════
-// TASKS
-// ══════════════════════════════════════════
+// ── TASKS — анимация раздвигания ──
 async function saveTk(title,col,who){if(!title.trim())return;const{data,error}=await db.from('tasks').insert({title:title.trim(),col,assignee:who||'',priority:'mid',deadline:null}).select().single();if(!error&&data){TASKS.push(data);rtasks()}}
 async function delTk(id){if(!confirm('Удалить?'))return;await db.from('tasks').delete().eq('id',id);TASKS=TASKS.filter(t=>t.id!==id);rtasks()}
 async function cyclePr(id,cur){const o=['low','mid','high'],n=o[(o.indexOf(cur)+1)%3];await db.from('tasks').update({priority:n,updated_at:new Date().toISOString()}).eq('id',id);const t=TASKS.find(x=>x.id===id);if(t)t.priority=n;rtasks()}
-
 function showQA(col){document.querySelectorAll('.kqwrap').forEach(q=>q.classList.remove('open'));const q=document.getElementById('kq-'+col);if(q){q.classList.add('open');q.querySelector('input').focus()}}
 function hideQA(col){const q=document.getElementById('kq-'+col);if(q)q.classList.remove('open')}
 
 function rtasks(){
-  const uf=document.getElementById('tf-u').value
-  const who=CURRENT_USER?CURRENT_USER.name:''
+  const uf=document.getElementById('tf-u').value,who=CURRENT_USER?CURRENT_USER.name:''
   const cols=[{id:'all',t:'All Tasks',c:'var(--text2)'},{id:'todo',t:'TO DO',c:'var(--blue)'},{id:'process',t:'Process',c:'var(--yellow)'},{id:'done',t:'Done',c:'var(--green)'}]
   const filt=uf?TASKS.filter(t=>t.assignee===uf):TASKS
   document.getElementById('kanban').innerHTML=cols.map(c=>{
@@ -1790,23 +920,18 @@ function rtasks(){
       <button class="kadd" data-col="${c.id}">+ Add a card</button>
       <div class="kqwrap" id="kq-${c.id}">
         <input class="kqinp" placeholder="Название задачи..." data-col="${c.id}" data-who="${who}">
-        <div class="kqfoot">
-          <button class="kqsv" data-col="${c.id}" data-who="${who}">Создать</button>
-          <button class="kqcn" data-col="${c.id}">✕</button>
-        </div>
+        <div class="kqfoot"><button class="kqsv" data-col="${c.id}" data-who="${who}">Создать</button><button class="kqcn" data-col="${c.id}">✕</button></div>
       </div>
     </div>`
   }).join('')
   document.querySelectorAll('.kadd[data-col]').forEach(b=>b.addEventListener('click',()=>showQA(b.dataset.col)))
   document.querySelectorAll('.kqinp').forEach(inp=>{
-    inp.addEventListener('keydown', e=>{
+    inp.addEventListener('keydown',e=>{
       if(e.key==='Enter'){const v=inp.value;if(v){saveTk(v,inp.dataset.col,inp.dataset.who);hideQA(inp.dataset.col)}}
       if(e.key==='Escape')hideQA(inp.dataset.col)
     })
   })
-  document.querySelectorAll('.kqsv').forEach(b=>{
-    b.addEventListener('click',()=>{const inp=document.querySelector(`#kq-${b.dataset.col} .kqinp`);if(inp?.value){saveTk(inp.value,b.dataset.col,b.dataset.who);hideQA(b.dataset.col)}})
-  })
+  document.querySelectorAll('.kqsv').forEach(b=>b.addEventListener('click',()=>{const inp=document.querySelector(`#kq-${b.dataset.col} .kqinp`);if(inp?.value){saveTk(inp.value,b.dataset.col,b.dataset.who);hideQA(b.dataset.col)}}))
   document.querySelectorAll('.kqcn').forEach(b=>b.addEventListener('click',()=>hideQA(b.dataset.col)))
 }
 
@@ -1823,107 +948,192 @@ function tcard(t){
   </div>`
 }
 
-document.addEventListener('click', e=>{
+document.addEventListener('click',e=>{
   const pr=e.target.closest('.tpr[data-id]')
   if(pr){e.stopPropagation();cyclePr(parseInt(pr.dataset.id),pr.dataset.pr);return}
   const del=e.target.closest('.tdel[data-id]')
   if(del){e.stopPropagation();delTk(parseInt(del.dataset.id));return}
 })
 
-// Drag & Drop Tasks
-document.addEventListener('dragstart', e=>{
-  const tc = e.target.closest('.tcard[data-id]')
-  if(!tc) return
-  dragId = parseInt(tc.dataset.id)
-  e.dataTransfer.effectAllowed = 'move'
-  e.dataTransfer.setData('text/plain', dragId)
-  setTimeout(()=>tc.classList.add('dragging'), 0)
+// drag & drop с анимацией раздвигания
+document.addEventListener('dragstart',e=>{
+  const tc=e.target.closest('.tcard[data-id]');if(!tc)return
+  dragId=parseInt(tc.dataset.id);e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',dragId)
+  setTimeout(()=>tc.classList.add('dragging'),0)
 })
-document.addEventListener('dragend', ()=>{
-  document.querySelectorAll('.tcard.dragging').forEach(t=>t.classList.remove('dragging'))
-  document.querySelectorAll('.tcard.dov, .kcol.dov').forEach(t=>t.classList.remove('dov'))
-  dragId = null
+document.addEventListener('dragend',()=>{
+  document.querySelectorAll('.tcard').forEach(t=>t.classList.remove('dragging','push-down','push-up'))
+  document.querySelectorAll('.kcol').forEach(c=>c.classList.remove('dov'))
+  dragId=null
 })
-document.addEventListener('dragover', e=>{
+document.addEventListener('dragover',e=>{
+  e.preventDefault();e.dataTransfer.dropEffect='move'
+  document.querySelectorAll('.tcard.push-down,.tcard.push-up').forEach(t=>t.classList.remove('push-down','push-up'))
+  document.querySelectorAll('.kcol').forEach(c=>c.classList.remove('dov'))
+  const tc=e.target.closest('.tcard[data-id]')
+  if(tc&&dragId&&parseInt(tc.dataset.id)!==dragId){
+    const rect=tc.getBoundingClientRect(),mid=rect.top+rect.height/2
+    tc.classList.add(e.clientY<mid?'push-down':'push-up')
+  }else{const col=e.target.closest('.kcol');if(col)col.classList.add('dov')}
+})
+document.addEventListener('drop',e=>{
   e.preventDefault()
-  e.dataTransfer.dropEffect = 'move'
-  document.querySelectorAll('.tcard.dov, .kcol.dov').forEach(t=>t.classList.remove('dov'))
-  const tc = e.target.closest('.tcard[data-id]')
-  if(tc && dragId && parseInt(tc.dataset.id) !== dragId) {
-    tc.classList.add('dov')
-  } else {
-    const col = e.target.closest('.kcol')
-    if(col) col.classList.add('dov')
+  document.querySelectorAll('.tcard').forEach(t=>t.classList.remove('push-down','push-up'))
+  document.querySelectorAll('.kcol').forEach(c=>c.classList.remove('dov'))
+  if(!dragId)return
+  const tc=e.target.closest('.tcard[data-id]'),col=e.target.closest('.kcol')
+  const dragTask=TASKS.find(t=>t.id===dragId);if(!dragTask)return
+  if(tc&&parseInt(tc.dataset.id)!==dragId){
+    const targetTask=TASKS.find(t=>t.id===parseInt(tc.dataset.id));if(!targetTask)return
+    const newCol=targetTask.col;dragTask.col=newCol
+    const rect=tc.getBoundingClientRect(),mid=rect.top+rect.height/2,before=e.clientY<mid
+    TASKS.splice(TASKS.indexOf(dragTask),1)
+    const tIdx=TASKS.indexOf(targetTask)
+    TASKS.splice(before?tIdx:tIdx+1,0,dragTask)
+    db.from('tasks').update({col:newCol,updated_at:new Date().toISOString()}).eq('id',dragId)
+  }else if(col){
+    const newCol=col.id.replace('kc-','')
+    if(dragTask.col!==newCol){dragTask.col=newCol;db.from('tasks').update({col:newCol,updated_at:new Date().toISOString()}).eq('id',dragId)}
   }
+  rtasks();dragId=null
 })
-document.addEventListener('drop', e=>{
-  e.preventDefault()
-  document.querySelectorAll('.tcard.dov, .kcol.dov').forEach(t=>t.classList.remove('dov'))
-  if(!dragId) return
-  const tc = e.target.closest('.tcard[data-id]')
-  const col = e.target.closest('.kcol')
-  const dragTask = TASKS.find(t=>t.id===dragId)
-  if(!dragTask) return
-  if(tc && parseInt(tc.dataset.id) !== dragId) {
-    const targetTask = TASKS.find(t=>t.id===parseInt(tc.dataset.id))
-    if(!targetTask) return
-    const newCol = targetTask.col
-    dragTask.col = newCol
-    TASKS.splice(TASKS.indexOf(dragTask), 1)
-    TASKS.splice(TASKS.indexOf(targetTask), 0, dragTask)
-    db.from('tasks').update({col: newCol, updated_at: new Date().toISOString()}).eq('id', dragId)
-  } else if(col) {
-    const newCol = col.id.replace('kc-', '')
-    if(dragTask.col !== newCol) {
-      dragTask.col = newCol
-      db.from('tasks').update({col: newCol, updated_at: new Date().toISOString()}).eq('id', dragId)
-    }
-  }
-  rtasks()
-  dragId = null
-})
-
-// ══════════════════════════════════════════
-// JOURNAL
-// ══════════════════════════════════════════
+// ── JOURNAL — WYSIWYG + инлайн создание ──
 function rtree(){
   let h=''
-  jLoose.forEach(d=>{h+=ji2(d,false)})
+  jLoose.forEach(d=>{h+=jitem2(d,false)})
   jFolders.forEach(f=>{
-    h+=`<div class="jgrp"><span>📁 ${f.name}</span><div class="jgbtns"><button class="jgbtn" data-fid="${f.id}" data-fname="${f.name}">+</button><button class="jgbtn" style="color:var(--red)" data-delfid="${f.id}">✕</button></div></div>`
-    f.docs.forEach(d=>{h+=ji2(d,true)})
+    h+=`<div class="jgrp"><span>📁 ${f.name}</span><div class="jgbtns"><button class="jgbtn" data-fid="${f.id}" data-fname="${f.name}" title="Добавить документ">+</button><button class="jgbtn" style="color:var(--red)" data-delfid="${f.id}">✕</button></div></div>`
+    f.docs.forEach(d=>{h+=jitem2(d,true)})
   })
   document.getElementById('j-tree').innerHTML=h||'<div class="empty" style="padding:12px">Нет документов</div>'
   document.querySelectorAll('[data-docid]').forEach(el=>el.addEventListener('click',()=>loadDocById(el.dataset.docid)))
   document.querySelectorAll('[data-deldoc]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();deleteDoc(btn.dataset.deldoc)}))
-  document.querySelectorAll('[data-fid]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();newDocInFolder(btn.dataset.fid,btn.dataset.fname)}))
+  document.querySelectorAll('[data-fid]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();startNewDocInFolder(btn.dataset.fid,btn.dataset.fname)}))
   document.querySelectorAll('[data-delfid]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();deleteFolder(btn.dataset.delfid)}))
 }
-function ji2(d,child){return`<div class="jitem${child?' jich':''}${curDoc===d.id?' active':''}" data-docid="${d.id}"><span>📄</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">${d.title}</span><div class="jiact"><button class="jiab" data-deldoc="${d.id}">✕</button></div></div>`}
-function loadDocById(id){curDoc=id;const all=[...jLoose,...jFolders.flatMap(f=>f.docs)];const d=all.find(x=>x.id===id);if(d){document.getElementById('j-title').value=d.title;document.getElementById('j-ta').value=d.body}rtree()}
-async function saveDoc(){
-  if(!curDoc)return
-  const title=document.getElementById('j-title').value,body=document.getElementById('j-ta').value
-  await db.from('journal_docs').update({title,body,updated_at:new Date().toISOString()}).eq('id',curDoc)
-  const all=[...jLoose,...jFolders.flatMap(f=>f.docs)];const d=all.find(x=>x.id===curDoc)
-  if(d){d.title=title;d.body=body}
-  toast('Документ сохранён','ok')
-  const btn=document.getElementById('btn-jsave');btn.textContent='✅ Saved';setTimeout(()=>btn.textContent='💾 Save',1500)
+function jitem2(d,child){return`<div class="jitem${child?' jich':''}${curDoc===d.id?' active':''}" data-docid="${d.id}"><span>📄</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">${d.title}</span><div class="jiact"><button class="jiab" data-deldoc="${d.id}">✕</button></div></div>`}
+
+// Инлайн создание без prompt()
+function showInlineNew(afterEl,onConfirm,placeholder='Название...'){
+  document.querySelectorAll('.j-new-inline').forEach(el=>el.remove())
+  const wrap=document.createElement('div');wrap.className='j-new-inline'
+  const inp=document.createElement('input');inp.className='j-new-inp';inp.placeholder=placeholder
+  const ok=document.createElement('button');ok.className='j-new-ok';ok.textContent='✓'
+  const x=document.createElement('button');x.className='j-new-x';x.textContent='✕'
+  const confirm=()=>{const v=inp.value.trim();if(v)onConfirm(v);wrap.remove()}
+  const cancel=()=>wrap.remove()
+  ok.addEventListener('click',confirm);x.addEventListener('click',cancel)
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')confirm();if(e.key==='Escape')cancel()})
+  wrap.appendChild(inp);wrap.appendChild(ok);wrap.appendChild(x)
+  const tree=document.getElementById('j-tree')
+  if(afterEl)afterEl.after(wrap);else tree.appendChild(wrap)
+  inp.focus()
+}
+
+function startNewFolder(){
+  showInlineNew(null,async name=>{
+    const fid='folder_'+Date.now(),docId='doc_'+Date.now()
+    const{data}=await db.from('journal_docs').insert({id:docId,title:'Новый документ',body:'',folder_id:fid,folder_name:name,sort_order:Date.now()}).select().single()
+    if(data){jFolders.push({id:fid,name,docs:[data]});curDoc=docId;rtree();loadDocById(docId)}
+  },'Название папки...')
+}
+function startNewDoc(){
+  showInlineNew(null,async title=>{
+    const id='doc_'+Date.now()
+    const{data}=await db.from('journal_docs').insert({id,title,body:'',folder_id:'',folder_name:'',sort_order:Date.now()}).select().single()
+    if(data){jLoose.push(data);curDoc=id;rtree();loadDocById(id)}
+  },'Название документа...')
+}
+function startNewDocInFolder(fid,fname){
+  const grp=document.querySelector(`[data-fid="${fid}"]`)?.closest('.jgrp')
+  showInlineNew(grp,async title=>{
+    const id='doc_'+Date.now()
+    const{data}=await db.from('journal_docs').insert({id,title,body:'',folder_id:fid,folder_name:fname,sort_order:Date.now()}).select().single()
+    if(data){const f=jFolders.find(x=>x.id===fid);if(f)f.docs.push(data);curDoc=id;rtree();loadDocById(id)}
+  },'Название документа...')
+}
+
+function loadDocById(id){
+  curDoc=id
+  const all=[...jLoose,...jFolders.flatMap(f=>f.docs)],d=all.find(x=>x.id===id)
+  if(d){
+    document.getElementById('j-title').value=d.title
+    const ed=document.getElementById('jeditor')
+    // Если хранится как HTML — ставим напрямую; если старый markdown — конвертим
+    if(d.body&&(d.body.trim().startsWith('<')||d.body.trim()===''))ed.innerHTML=d.body||''
+    else ed.innerHTML=d.body?mdToHtml(d.body):''
+  }
   rtree()
 }
-async function newDoc(){const title=prompt('Название:');if(!title)return;const id='doc_'+Date.now();const{data}=await db.from('journal_docs').insert({id,title,body:'## '+title+'\n\n',folder_id:'',folder_name:'',sort_order:Date.now()}).select().single();if(data){jLoose.push(data);curDoc=id;rtree();loadDocById(id)}}
-async function newFolder(){const name=prompt('Папка:');if(!name)return;const fid='folder_'+Date.now(),docId='doc_'+Date.now();const{data}=await db.from('journal_docs').insert({id:docId,title:'Новый документ',body:'',folder_id:fid,folder_name:name,sort_order:Date.now()}).select().single();if(data){jFolders.push({id:fid,name,docs:[data]});curDoc=docId;rtree();loadDocById(docId)}}
-async function newDocInFolder(fid,fname){const title=prompt('Название:');if(!title)return;const id='doc_'+Date.now();const{data}=await db.from('journal_docs').insert({id,title,body:'',folder_id:fid,folder_name:fname,sort_order:Date.now()}).select().single();if(data){const f=jFolders.find(x=>x.id===fid);if(f)f.docs.push(data);curDoc=id;rtree();loadDocById(id)}}
-async function deleteDoc(id){if(!confirm('Удалить документ?'))return;await db.from('journal_docs').delete().eq('id',id);jLoose=jLoose.filter(d=>d.id!==id);jFolders.forEach(f=>{f.docs=f.docs.filter(d=>d.id!==id)});const all=[...jLoose,...jFolders.flatMap(f=>f.docs)];curDoc=all[0]?.id||null;rtree();if(curDoc)loadDocById(curDoc)}
-async function deleteFolder(fid){if(!confirm('Удалить папку?'))return;const f=jFolders.find(x=>x.id===fid);if(f)for(const d of f.docs)await db.from('journal_docs').delete().eq('id',d.id);jFolders=jFolders.filter(x=>x.id!==fid);curDoc=jLoose[0]?.id||null;rtree();if(curDoc)loadDocById(curDoc)}
-function ji(p){const ta=document.getElementById('j-ta'),s=ta.selectionStart;ta.value=ta.value.substring(0,s)+p+ta.value.substring(s);ta.focus();ta.selectionStart=ta.selectionEnd=s+p.length}
-function jw(b,a){const ta=document.getElementById('j-ta'),s=ta.selectionStart,e=ta.selectionEnd,sel=ta.value.substring(s,e);ta.value=ta.value.substring(0,s)+b+sel+a+ta.value.substring(e);ta.focus();ta.selectionStart=s+b.length;ta.selectionEnd=e+b.length}
-function jtable(){const ta=document.getElementById('j-ta'),s=ta.selectionStart;ta.value=ta.value.substring(0,s)+'\n| Кол1 | Кол2 | Кол3 |\n|------|------|------|\n| val  | val  | val  |\n'+ta.value.substring(s);ta.focus()}
-function parseMd(md){return md.replace(/^## (.+)$/gm,'<h2>$1</h2>').replace(/^### (.+)$/gm,'<h3>$1</h3>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/`(.+?)`/g,'<code>$1</code>').replace(/^---$/gm,'<hr>').replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>').replace(/^- (.+)$/gm,'<li>$1</li>').replace(/(<li>.*<\/li>\n?)+/g,s=>`<ul>${s}</ul>`).replace(/(\|[^\n]+\|\n?)+/g,t=>{const rows=t.trim().split('\n');if(rows.length<2)return t;const head=rows[0].split('|').filter(c=>c.trim()).map(c=>`<th>${c.trim()}</th>`).join('');const body=rows.slice(2).map(r=>'<tr>'+r.split('|').filter(c=>c.trim()).map(c=>`<td>${c.trim()}</td>`).join('')+'</tr>').join('');return`<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`}).replace(/\n/g,'<br>')}
 
-// Auto-login
-const _saved = localStorage.getItem('jdl_user')
-if(_saved && USERS[_saved]) doLogin(_saved)
-</script>
-</body>
-</html>
+function mdToHtml(md){
+  return md
+    .replace(/^# (.+)$/gm,'<h1>$1</h1>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/`(.+?)`/g,'<code>$1</code>')
+    .replace(/^---$/gm,'<hr>')
+    .replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>')
+    .replace(/^- (.+)$/gm,'<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g,s=>`<ul>${s}</ul>`)
+    .replace(/(\|[^\n]+\|\n?)+/g,t=>{
+      const rows=t.trim().split('\n');if(rows.length<2)return t
+      const head=rows[0].split('|').filter(c=>c.trim()).map(c=>`<th>${c.trim()}</th>`).join('')
+      const body=rows.slice(2).map(r=>'<tr>'+r.split('|').filter(c=>c.trim()).map(c=>`<td>${c.trim()}</td>`).join('')+'</tr>').join('')
+      return`<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`
+    })
+    .replace(/\n/g,'<br>')
+}
+
+async function saveDoc(){
+  if(!curDoc)return
+  const title=document.getElementById('j-title').value
+  const body=document.getElementById('jeditor').innerHTML
+  await db.from('journal_docs').update({title,body,updated_at:new Date().toISOString()}).eq('id',curDoc)
+  const all=[...jLoose,...jFolders.flatMap(f=>f.docs)],d=all.find(x=>x.id===curDoc)
+  if(d){d.title=title;d.body=body}
+  toast('Сохранено','ok')
+  const btn=document.getElementById('btn-jsave');btn.textContent='✅ Сохранено';setTimeout(()=>btn.textContent='💾 Сохранить',1500)
+  rtree()
+}
+async function deleteDoc(id){if(!confirm('Удалить?'))return;await db.from('journal_docs').delete().eq('id',id);jLoose=jLoose.filter(d=>d.id!==id);jFolders.forEach(f=>{f.docs=f.docs.filter(d=>d.id!==id)});const all=[...jLoose,...jFolders.flatMap(f=>f.docs)];curDoc=all[0]?.id||null;rtree();if(curDoc)loadDocById(curDoc)}
+async function deleteFolder(fid){if(!confirm('Удалить папку?'))return;const f=jFolders.find(x=>x.id===fid);if(f)for(const d of f.docs)await db.from('journal_docs').delete().eq('id',d.id);jFolders=jFolders.filter(x=>x.id!==fid);curDoc=jLoose[0]?.id||null;rtree();if(curDoc)loadDocById(curDoc)}
+
+// ── GLOBAL SEARCH ──
+function openSearch(){
+  const mo=document.getElementById('mo-search');mo.classList.add('open')
+  const inp=document.getElementById('srch-inp');inp.value='';srchSelIdx=-1
+  document.getElementById('srch-results').innerHTML='<div class="srch-empty">Начни вводить для поиска</div>'
+  setTimeout(()=>inp.focus(),50)
+}
+function doSearch(q){
+  let html=''
+  const zRes=ZALIVS.filter(z=>z.name?.toLowerCase().includes(q)||z.geo?.toLowerCase().includes(q)||z.status?.toLowerCase().includes(q)||(z.creos||[]).some(c=>c.toLowerCase().includes(q))||z.domain?.toLowerCase().includes(q)).slice(0,5)
+  if(zRes.length){html+=`<div class="srch-section">Заливы</div>`;zRes.forEach(z=>{const col=z.ind==='profit'?'var(--green)':z.ind==='drop'?'var(--yellow)':'var(--red)';html+=`<div class="srch-item" data-type="zaliv" data-id="${z.id}"><div class="srch-item-ico" style="background:rgba(181,34,64,.1)">🏹</div><div class="srch-item-body"><div class="srch-item-title">${z.name}</div><div class="srch-item-sub">${z.geo} · ${z.status} · $${z.rk_budget}/d</div></div><div class="srch-item-badge">${z.score}/6</div><div style="width:7px;height:7px;border-radius:50%;background:${col};flex-shrink:0"></div></div>`})}
+  const dRes=DOMAINS.filter(d=>d.url?.toLowerCase().includes(q)||d.description?.toLowerCase().includes(q)).slice(0,4)
+  if(dRes.length){html+=`<div class="srch-section">Домены</div>`;dRes.forEach(d=>{html+=`<div class="srch-item" data-type="domain" data-id="${d.id}"><div class="srch-item-ico" style="background:rgba(64,128,255,.1)">🌐</div><div class="srch-item-body"><div class="srch-item-title">${d.url}</div><div class="srch-item-sub">${d.description||''} · ${(d.geos||[]).join('/')}</div></div><div class="srch-item-badge">${d.funnel}</div></div>`})}
+  const tRes=TASKS.filter(t=>t.title?.toLowerCase().includes(q)||t.assignee?.toLowerCase().includes(q)).slice(0,4)
+  if(tRes.length){html+=`<div class="srch-section">Задачи</div>`;tRes.forEach(t=>{const pc=t.priority==='high'?'var(--red)':t.priority==='mid'?'var(--yellow)':'var(--green)';html+=`<div class="srch-item" data-type="task" data-id="${t.id}"><div class="srch-item-ico" style="background:rgba(212,160,23,.1)">📋</div><div class="srch-item-body"><div class="srch-item-title">${t.title}</div><div class="srch-item-sub">${t.col} · ${t.assignee||'—'}</div></div><div style="width:8px;height:8px;border-radius:50%;background:${pc};flex-shrink:0"></div></div>`})}
+  const allDocs=[...jLoose,...jFolders.flatMap(f=>f.docs)]
+  const jRes=allDocs.filter(d=>d.title?.toLowerCase().includes(q)||d.body?.toLowerCase().includes(q)).slice(0,4)
+  if(jRes.length){html+=`<div class="srch-section">Журнал</div>`;jRes.forEach(d=>{html+=`<div class="srch-item" data-type="doc" data-id="${d.id}"><div class="srch-item-ico" style="background:rgba(144,96,208,.1)">📄</div><div class="srch-item-body"><div class="srch-item-title">${d.title}</div><div class="srch-item-sub">${d.folder_name||'Документы'}</div></div></div>`})}
+  if(!html)html=`<div class="srch-empty">Ничего не найдено по «${q}»</div>`
+  const res=document.getElementById('srch-results');res.innerHTML=html
+  res.querySelectorAll('.srch-item').forEach(item=>{
+    item.addEventListener('click',()=>{
+      document.getElementById('mo-search').classList.remove('open')
+      const type=item.dataset.type,id=item.dataset.id
+      if(type==='zaliv'){gp('zalivs',document.getElementById('nb-zalivs'));expZ=parseInt(id);rzalivs();setTimeout(()=>document.querySelector(`tr[data-zid="${id}"]`)?.scrollIntoView({behavior:'smooth',block:'center'}),100)}
+      else if(type==='domain'){gp('domains',document.getElementById('nb-domains'));setTimeout(()=>openDomainEdit(parseInt(id)),200)}
+      else if(type==='task')gp('tasks',document.getElementById('nb-tasks'))
+      else if(type==='doc'){gp('journal',document.getElementById('nb-journal'));loadDocById(id)}
+    })
+  })
+}
+
+// ── AUTO LOGIN ──
+const _saved=localStorage.getItem('jdl_user')
+if(_saved&&USERS[_saved])doLogin(_saved)
+</script></body></html>
