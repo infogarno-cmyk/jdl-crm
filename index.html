@@ -146,24 +146,39 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .dled{width:7px;height:7px;border-radius:50%;flex-shrink:0}.lon{background:var(--green);box-shadow:0 0 5px var(--green)}.loff{background:var(--text3)}
 .ddsc{font-size:12px;color:var(--text2)}.dftr{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .fchip{font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
-.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-items:start}
-.kcol{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;min-height:200px;transition:background .15s,border-color .15s}.kcol.dov{background:rgba(181,34,64,.04);border-color:var(--bord)}
+.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start}
+.kcol{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;min-height:200px;transition:background .15s,border-color .15s}.kcol.dov{background:rgba(181,34,64,.06);border-color:var(--bord)}
 .kchdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
 .kctit{font-size:11px;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:7px;text-transform:uppercase;letter-spacing:.5px}.kcind{width:8px;height:8px;border-radius:50%}.kccnt{background:var(--bg4);border:1px solid var(--border);border-radius:8px;padding:0 7px;font-size:11px;color:var(--text3);font-family:var(--mono)}
-.tcard{background:var(--bg3);border:1px solid var(--border);border-left:3px solid transparent;border-radius:7px;padding:10px 12px;margin-bottom:7px;cursor:grab;user-select:none;transition:transform .15s,opacity .15s,margin-top .15s,margin-bottom .15s}
-.tcard:hover{border-color:var(--border2)}.tcard.dragging{opacity:.35;transform:scale(.97)}
-.tcard.push-down{margin-top:38px}.tcard.push-up{margin-bottom:38px}
+.kclear-done{padding:3px 10px;border-radius:5px;border:1px solid var(--green);background:var(--green-bg);color:var(--green);font-size:10px;cursor:pointer;font-weight:700;font-family:var(--sans)}.kclear-done:hover{background:var(--green);color:#000}
+.kcards{display:flex;flex-direction:column;gap:7px;min-height:40px}
+.tcard{background:var(--bg3);border:1px solid var(--border);border-left:3px solid transparent;border-radius:7px;padding:11px 13px;cursor:pointer;user-select:none;transition:transform .12s,opacity .12s,box-shadow .12s;position:relative}
+.tcard:hover{border-color:var(--border2);box-shadow:0 2px 8px rgba(0,0,0,.3)}.tcard.dragging{opacity:.3;transform:scale(.96);cursor:grabbing}
+.tcard.drag-over-top::before{content:'';position:absolute;top:-4px;left:0;right:0;height:3px;background:var(--bord2);border-radius:2px;pointer-events:none}
+.tcard.drag-over-bot::after{content:'';position:absolute;bottom:-4px;left:0;right:0;height:3px;background:var(--bord2);border-radius:2px;pointer-events:none}
 .th{border-left-color:var(--red)!important}.tm{border-left-color:var(--yellow)!important}.tl{border-left-color:var(--green)!important}
 .tnm{font-size:12px;font-weight:600;color:#fff;margin-bottom:8px;line-height:1.4}
 .tft{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
-.tpr{font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 7px;border-radius:12px;text-transform:uppercase;cursor:pointer;border:1px solid}
+.tpr{font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 7px;border-radius:12px;text-transform:uppercase;border:1px solid}
 .ph{background:var(--red-bg);color:var(--red);border-color:var(--red)}.pm{background:var(--yellow-bg);color:var(--yellow);border-color:var(--yellow)}.pl{background:var(--green-bg);color:var(--green);border-color:var(--green)}
 .two{font-size:10px;color:var(--text3);background:var(--bg5);padding:2px 7px;border-radius:10px;border:1px solid var(--border)}.tdl{font-size:10px;color:var(--text3);font-family:var(--mono)}.tdl.ov{color:var(--red)}
-.tdel{background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:0;margin-left:auto;opacity:0}.tcard:hover .tdel{opacity:1}.tdel:hover{color:var(--red)}
-.kadd{width:100%;background:none;border:1px dashed var(--border2);border-radius:6px;color:var(--text3);padding:6px;font-size:11px;cursor:pointer;font-family:var(--sans);margin-top:4px}.kadd:hover{border-color:var(--bord);color:var(--bord2)}
+.tdel-wrap{margin-left:auto;position:relative;display:flex;align-items:center;flex-shrink:0}
+.tdel{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px 5px;opacity:0;transition:opacity .15s;line-height:1}.tcard:hover .tdel{opacity:1}.tdel:hover{color:var(--red)}
+.tdel-confirm{position:absolute;right:0;top:50%;transform:translateY(-50%);background:var(--bg2);border:1px solid var(--red);border-radius:7px;padding:4px 8px;display:none;align-items:center;gap:6px;white-space:nowrap;z-index:20;box-shadow:0 4px 16px rgba(0,0,0,.6)}
+.tdel-confirm.show{display:flex}
+.tdel-yes{background:var(--red);border:none;color:#fff;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:11px;font-family:var(--sans);font-weight:700}.tdel-yes:hover{opacity:.85}
+.tdel-no{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:0 2px;line-height:1}.tdel-no:hover{color:var(--text)}
+.kadd{width:100%;background:none;border:1px dashed var(--border2);border-radius:6px;color:var(--text3);padding:7px;font-size:11px;cursor:pointer;font-family:var(--sans);margin-top:6px}.kadd:hover{border-color:var(--bord);color:var(--bord2)}
 .kqwrap{display:none;margin-top:6px}.kqwrap.open{display:block}.kqinp{width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--bord);background:var(--bg3);color:var(--text);font-size:12px;outline:none;font-family:var(--sans);margin-bottom:6px}
 .kqfoot{display:flex;gap:6px}.kqsv{flex:1;padding:5px;border-radius:5px;border:1px solid var(--bord2);background:var(--bord-dim);color:var(--bord2);font-size:11px;cursor:pointer;font-weight:700;font-family:var(--sans)}.kqsv:hover{background:var(--bord);color:#fff}
 .kqcn{padding:5px 10px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;font-family:var(--sans)}
+.temo .mob{width:430px}
+.tass-wrap{display:flex;gap:8px;margin-top:4px}
+.tass-btn{flex:1;padding:9px;border-radius:7px;border:2px solid var(--border2);background:var(--bg3);cursor:pointer;text-align:center;font-size:12px;font-weight:600;color:var(--text2);transition:all .15s}.tass-btn:hover{border-color:var(--border3)}.tass-btn.sel{border-color:var(--bord2);background:var(--bord-dim);color:var(--bord2)}
+.tpri-wrap{display:flex;gap:6px;margin-top:4px}
+.tpri-btn{flex:1;padding:7px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;text-align:center;font-size:11px;font-weight:700;color:var(--text2);transition:all .15s}
+.tpri-high.sel{border-color:var(--red);background:var(--red-bg);color:var(--red)}.tpri-mid.sel{border-color:var(--yellow);background:var(--yellow-bg);color:var(--yellow)}.tpri-low.sel{border-color:var(--green);background:var(--green-bg);color:var(--green)}
+#confetti-canvas{position:fixed;inset:0;pointer-events:none;z-index:9998;display:none}
 .jlay{display:grid;grid-template-columns:240px 1fr;height:calc(100vh - 46px);overflow:hidden;margin:-20px}
 .jsb{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
 .jsbtop{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;gap:6px}
@@ -372,6 +387,29 @@ document.getElementById('root').innerHTML=`
   <div class="fl"><label>Статус</label><div style="display:flex;gap:16px;margin-top:4px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)"><input type="radio" name="de-active" value="true" id="de-active-y"> Активный</label><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)"><input type="radio" name="de-active" value="false" id="de-active-n"> Неактивный</label></div></div>
   <div class="mofoot"><button class="sbdl" id="de-del-btn">🗑 Удалить</button><button class="bcn" data-close="mo-domain-edit">Отмена</button><button class="bsv" id="de-save-btn">Сохранить</button></div>
 </div></div>
+<canvas id="confetti-canvas"></canvas>
+
+<div class="mo temo" id="mo-task-edit"><div class="mob">
+  <div class="motit">✏️ Задача <button class="mox" data-close="mo-task-edit">×</button></div>
+  <div class="fl"><label>Название</label><input class="fi" id="te-title" placeholder="Название задачи..."></div>
+  <div class="fl"><label>Исполнитель</label>
+    <div class="tass-wrap">
+      <button class="tass-btn" data-tass="Illia">👤 Illia</button>
+      <button class="tass-btn" data-tass="Danya">👤 Danya</button>
+      <button class="tass-btn" data-tass="">— Никто</button>
+    </div>
+  </div>
+  <div class="fl"><label>Приоритет</label>
+    <div class="tpri-wrap">
+      <button class="tpri-btn tpri-high" data-tpri="high">🔴 HIGH</button>
+      <button class="tpri-btn tpri-mid" data-tpri="mid">🟡 MID</button>
+      <button class="tpri-btn tpri-low" data-tpri="low">🟢 LOW</button>
+    </div>
+  </div>
+  <div class="fl"><label>Дедлайн</label><input class="fi" id="te-deadline" type="date"></div>
+  <div class="mofoot"><button class="bcn" data-close="mo-task-edit">Отмена</button><button class="bsv" id="te-save-btn">Сохранить</button></div>
+</div></div>
+
 <div class="mo" id="mo-domain"><div class="mob">
   <div class="motit">+ Добавить домен <button class="mox" data-close="mo-domain">×</button></div>
   <div class="fl"><label>URL домена</label><input class="fi" id="dm-url" placeholder="garnofurniture.com/kalkulator"></div>
@@ -532,7 +570,7 @@ function setupRT(){
 // ── LOAD ──
 async function loadZ(){if(!db)return;const{data}=await db.from('zalivs').select('*').order('created_at',{ascending:false});ZALIVS=data||[]}
 async function loadD(){if(!db)return;const{data}=await db.from('domains').select('*').order('created_at',{ascending:false});DOMAINS=data||[]}
-async function loadT(){if(!db)return;const{data}=await db.from('tasks').select('*').order('created_at',{ascending:true});TASKS=data||[]}
+async function loadT(){if(!db)return;const{data}=await db.from('tasks').select('*').order('sort_order',{ascending:true});TASKS=data||[]}
 async function loadM(){
   if(!db)return;const{data}=await db.from('metrics_daily').select('*').order('day',{ascending:true});METRICS=data||[]
   if(METRICS.length>0){const l=METRICS[METRICS.length-1];const m=Math.round((Date.now()-new Date(l.synced_at))/60000);setSS('ok','Синк '+m+'м назад')}
@@ -901,12 +939,104 @@ function rdomains(){
   })
 }
 
-// ── TASKS — анимация раздвигания ──
-async function saveTk(title,col,who){if(!title.trim())return;const{data,error}=await db.from('tasks').insert({title:title.trim(),col,assignee:who||'',priority:'mid',deadline:null}).select().single();if(!error&&data){TASKS.push(data);rtasks()}}
-async function delTk(id){if(!confirm('Удалить?'))return;await db.from('tasks').delete().eq('id',id);TASKS=TASKS.filter(t=>t.id!==id);rtasks()}
-async function cyclePr(id,cur){const o=['low','mid','high'],n=o[(o.indexOf(cur)+1)%3];await db.from('tasks').update({priority:n,updated_at:new Date().toISOString()}).eq('id',id);const t=TASKS.find(x=>x.id===id);if(t)t.priority=n;rtasks()}
+// ══════════════════════════════════════════
+// TASKS v7
+// ══════════════════════════════════════════
+let teEditId = null
+
+async function saveTk(title,col,who){
+  if(!title.trim())return
+  const so = TASKS.filter(t=>t.col===col).length
+  const{data,error}=await db.from('tasks').insert({title:title.trim(),col,assignee:who||'',priority:'mid',deadline:null,sort_order:so*10+10}).select().single()
+  if(!error&&data){TASKS.push(data);rtasks()}
+}
+
+async function delTkConfirmed(id){
+  await db.from('tasks').delete().eq('id',id)
+  TASKS=TASKS.filter(t=>t.id!==id);rtasks()
+}
+
+async function saveTaskOrder(){
+  // Save sort_order for all tasks based on current TASKS array order
+  const updates = TASKS.map((t,i)=>db.from('tasks').update({sort_order:i*10}).eq('id',t.id))
+  await Promise.all(updates)
+}
+
 function showQA(col){document.querySelectorAll('.kqwrap').forEach(q=>q.classList.remove('open'));const q=document.getElementById('kq-'+col);if(q){q.classList.add('open');q.querySelector('input').focus()}}
 function hideQA(col){const q=document.getElementById('kq-'+col);if(q)q.classList.remove('open')}
+
+function openTaskEdit(id){
+  const t=TASKS.find(x=>x.id===id);if(!t)return
+  teEditId=id
+  document.getElementById('te-title').value=t.title
+  document.getElementById('te-deadline').value=t.deadline||''
+  // assignee buttons
+  document.querySelectorAll('[data-tass]').forEach(b=>b.classList.toggle('sel',b.dataset.tass===t.assignee))
+  // priority buttons
+  document.querySelectorAll('[data-tpri]').forEach(b=>b.classList.toggle('sel',b.dataset.tpri===t.priority))
+  document.getElementById('mo-task-edit').classList.add('open')
+}
+
+async function saveTaskEdit(){
+  if(!teEditId)return
+  const t=TASKS.find(x=>x.id===teEditId);if(!t)return
+  const title=document.getElementById('te-title').value.trim()||t.title
+  const assignee=document.querySelector('[data-tass].sel')?.dataset.tass??t.assignee
+  const priority=document.querySelector('[data-tpri].sel')?.dataset.tpri??t.priority
+  const deadline=document.getElementById('te-deadline').value||null
+  await db.from('tasks').update({title,assignee,priority,deadline,updated_at:new Date().toISOString()}).eq('id',teEditId)
+  Object.assign(t,{title,assignee,priority,deadline})
+  document.getElementById('mo-task-edit').classList.remove('open')
+  toast('Задача обновлена','ok')
+  rtasks()
+}
+
+// Assignee / priority buttons in edit modal
+document.querySelectorAll('[data-tass]').forEach(btn=>btn.addEventListener('click',function(){
+  document.querySelectorAll('[data-tass]').forEach(b=>b.classList.remove('sel'));this.classList.add('sel')
+}))
+document.querySelectorAll('[data-tpri]').forEach(btn=>btn.addEventListener('click',function(){
+  document.querySelectorAll('[data-tpri]').forEach(b=>b.classList.remove('sel'));this.classList.add('sel')
+}))
+document.getElementById('te-save-btn').addEventListener('click',saveTaskEdit)
+
+// Clear done + confetti
+async function clearDone(){
+  const doneTasks=TASKS.filter(t=>t.col==='done')
+  if(!doneTasks.length)return
+  for(const t of doneTasks)await db.from('tasks').delete().eq('id',t.id)
+  TASKS=TASKS.filter(t=>t.col!=='done')
+  rtasks()
+  launchConfetti()
+  toast('Все задачи выполнены! 🎉','ok')
+}
+
+function launchConfetti(){
+  const canvas=document.getElementById('confetti-canvas')
+  canvas.style.display='block'
+  canvas.width=window.innerWidth;canvas.height=window.innerHeight
+  const ctx=canvas.getContext('2d')
+  const pieces=Array.from({length:150},()=>({
+    x:Math.random()*canvas.width,y:Math.random()*canvas.height-canvas.height,
+    r:Math.random()*6+4,c:`hsl(${Math.random()*360},90%,60%)`,
+    vx:(Math.random()-0.5)*4,vy:Math.random()*4+2,
+    rot:Math.random()*360,vr:(Math.random()-0.5)*8
+  }))
+  let frame=0
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height)
+    pieces.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;p.vy+=0.08
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180)
+      ctx.fillStyle=p.c;ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r)
+      ctx.restore()
+    })
+    frame++
+    if(frame<180)requestAnimationFrame(draw)
+    else{ctx.clearRect(0,0,canvas.width,canvas.height);canvas.style.display='none'}
+  }
+  draw()
+}
 
 function rtasks(){
   const uf=document.getElementById('tf-u').value,who=CURRENT_USER?CURRENT_USER.name:''
@@ -914,9 +1044,16 @@ function rtasks(){
   const filt=uf?TASKS.filter(t=>t.assignee===uf):TASKS
   document.getElementById('kanban').innerHTML=cols.map(c=>{
     const tasks=filt.filter(t=>t.col===c.id)
+    const isDone=c.id==='done'
     return`<div class="kcol" id="kc-${c.id}">
-      <div class="kchdr"><div class="kctit"><div class="kcind" style="background:${c.c}"></div>${c.t}</div><span class="kccnt">${tasks.length}</span></div>
-      <div id="kl-${c.id}">${tasks.map(t=>tcard(t)).join('')}</div>
+      <div class="kchdr">
+        <div class="kctit"><div class="kcind" style="background:${c.c}"></div>${c.t}</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="kccnt">${tasks.length}</span>
+          ${isDone&&tasks.length?`<button class="kclear-done" id="btn-clear-done">✓ Готово</button>`:''}
+        </div>
+      </div>
+      <div class="kcards" id="kl-${c.id}">${tasks.map(t=>tcard(t)).join('')}</div>
       <button class="kadd" data-col="${c.id}">+ Add a card</button>
       <div class="kqwrap" id="kq-${c.id}">
         <input class="kqinp" placeholder="Название задачи..." data-col="${c.id}" data-who="${who}">
@@ -924,6 +1061,8 @@ function rtasks(){
       </div>
     </div>`
   }).join('')
+
+  document.getElementById('btn-clear-done')?.addEventListener('click',clearDone)
   document.querySelectorAll('.kadd[data-col]').forEach(b=>b.addEventListener('click',()=>showQA(b.dataset.col)))
   document.querySelectorAll('.kqinp').forEach(inp=>{
     inp.addEventListener('keydown',e=>{
@@ -933,6 +1072,30 @@ function rtasks(){
   })
   document.querySelectorAll('.kqsv').forEach(b=>b.addEventListener('click',()=>{const inp=document.querySelector(`#kq-${b.dataset.col} .kqinp`);if(inp?.value){saveTk(inp.value,b.dataset.col,b.dataset.who);hideQA(b.dataset.col)}}))
   document.querySelectorAll('.kqcn').forEach(b=>b.addEventListener('click',()=>hideQA(b.dataset.col)))
+
+  // Delete confirm buttons
+  document.querySelectorAll('.tdel[data-id]').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation()
+      // hide all other confirms
+      document.querySelectorAll('.tdel-confirm.show').forEach(c=>c.classList.remove('show'))
+      btn.nextElementSibling?.classList.add('show')
+    })
+  })
+  document.querySelectorAll('.tdel-yes').forEach(btn=>{
+    btn.addEventListener('click',e=>{e.stopPropagation();delTkConfirmed(parseInt(btn.dataset.id))})
+  })
+  document.querySelectorAll('.tdel-no').forEach(btn=>{
+    btn.addEventListener('click',e=>{e.stopPropagation();btn.closest('.tdel-confirm')?.classList.remove('show')})
+  })
+
+  // Click on card → edit modal
+  document.querySelectorAll('.tcard[data-id]').forEach(card=>{
+    card.addEventListener('click',e=>{
+      if(e.target.closest('.tdel-wrap,.tpr'))return
+      openTaskEdit(parseInt(card.dataset.id))
+    })
+  })
 }
 
 function tcard(t){
@@ -943,59 +1106,93 @@ function tcard(t){
       <span class="tpr ${t.priority==='high'?'ph':t.priority==='mid'?'pm':'pl'}" data-id="${t.id}" data-pr="${t.priority}">${t.priority.toUpperCase()}</span>
       ${t.assignee?`<span class="two">${t.assignee}</span>`:''}
       ${t.deadline?`<span class="tdl${ov?' ov':''}">${ov?'⚠ ':''} ${t.deadline}</span>`:''}
-      <button class="tdel" data-id="${t.id}">✕</button>
+      <div class="tdel-wrap">
+        <button class="tdel" data-id="${t.id}">✕</button>
+        <div class="tdel-confirm"><span style="font-size:11px;color:var(--text3)">🗑</span><button class="tdel-yes" data-id="${t.id}">Удалить</button><button class="tdel-no">×</button></div>
+      </div>
     </div>
   </div>`
 }
 
+// Close delete confirm on outside click
 document.addEventListener('click',e=>{
+  if(!e.target.closest('.tdel-wrap'))document.querySelectorAll('.tdel-confirm.show').forEach(c=>c.classList.remove('show'))
   const pr=e.target.closest('.tpr[data-id]')
-  if(pr){e.stopPropagation();cyclePr(parseInt(pr.dataset.id),pr.dataset.pr);return}
-  const del=e.target.closest('.tdel[data-id]')
-  if(del){e.stopPropagation();delTk(parseInt(del.dataset.id));return}
+  if(pr){e.stopPropagation();cyclePr(parseInt(pr.dataset.id),pr.dataset.pr)}
 })
 
-// drag & drop с анимацией раздвигания
+async function cyclePr(id,cur){
+  const o=['low','mid','high'],n=o[(o.indexOf(cur)+1)%3]
+  await db.from('tasks').update({priority:n,updated_at:new Date().toISOString()}).eq('id',id)
+  const t=TASKS.find(x=>x.id===id);if(t)t.priority=n;rtasks()
+}
+
+// ── DRAG & DROP v7 — чёткие зоны, сохранение порядка ──
+let dragOverEl=null,dragOverPos=null
+
 document.addEventListener('dragstart',e=>{
   const tc=e.target.closest('.tcard[data-id]');if(!tc)return
-  dragId=parseInt(tc.dataset.id);e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',dragId)
+  dragId=parseInt(tc.dataset.id)
+  e.dataTransfer.effectAllowed='move'
+  e.dataTransfer.setData('text/plain',String(dragId))
   setTimeout(()=>tc.classList.add('dragging'),0)
 })
+
 document.addEventListener('dragend',()=>{
-  document.querySelectorAll('.tcard').forEach(t=>t.classList.remove('dragging','push-down','push-up'))
-  document.querySelectorAll('.kcol').forEach(c=>c.classList.remove('dov'))
-  dragId=null
+  document.querySelectorAll('.tcard.dragging,.tcard.drag-over-top,.tcard.drag-over-bot').forEach(t=>t.classList.remove('dragging','drag-over-top','drag-over-bot'))
+  document.querySelectorAll('.kcol.dov').forEach(c=>c.classList.remove('dov'))
+  dragId=null;dragOverEl=null;dragOverPos=null
 })
+
 document.addEventListener('dragover',e=>{
   e.preventDefault();e.dataTransfer.dropEffect='move'
-  document.querySelectorAll('.tcard.push-down,.tcard.push-up').forEach(t=>t.classList.remove('push-down','push-up'))
-  document.querySelectorAll('.kcol').forEach(c=>c.classList.remove('dov'))
+  document.querySelectorAll('.tcard.drag-over-top,.tcard.drag-over-bot').forEach(t=>t.classList.remove('drag-over-top','drag-over-bot'))
+  document.querySelectorAll('.kcol.dov').forEach(c=>c.classList.remove('dov'))
   const tc=e.target.closest('.tcard[data-id]')
   if(tc&&dragId&&parseInt(tc.dataset.id)!==dragId){
-    const rect=tc.getBoundingClientRect(),mid=rect.top+rect.height/2
-    tc.classList.add(e.clientY<mid?'push-down':'push-up')
-  }else{const col=e.target.closest('.kcol');if(col)col.classList.add('dov')}
+    const rect=tc.getBoundingClientRect()
+    // Зона захвата — верхние 50% = вставить до, нижние 50% = вставить после
+    dragOverPos=e.clientY<rect.top+rect.height*0.5?'top':'bot'
+    dragOverEl=parseInt(tc.dataset.id)
+    tc.classList.add(dragOverPos==='top'?'drag-over-top':'drag-over-bot')
+  }else{
+    dragOverEl=null;dragOverPos=null
+    const col=e.target.closest('.kcol');if(col)col.classList.add('dov')
+  }
 })
+
 document.addEventListener('drop',e=>{
   e.preventDefault()
-  document.querySelectorAll('.tcard').forEach(t=>t.classList.remove('push-down','push-up'))
-  document.querySelectorAll('.kcol').forEach(c=>c.classList.remove('dov'))
+  document.querySelectorAll('.tcard.drag-over-top,.tcard.drag-over-bot').forEach(t=>t.classList.remove('drag-over-top','drag-over-bot'))
+  document.querySelectorAll('.kcol.dov').forEach(c=>c.classList.remove('dov'))
   if(!dragId)return
-  const tc=e.target.closest('.tcard[data-id]'),col=e.target.closest('.kcol')
+
   const dragTask=TASKS.find(t=>t.id===dragId);if(!dragTask)return
-  if(tc&&parseInt(tc.dataset.id)!==dragId){
-    const targetTask=TASKS.find(t=>t.id===parseInt(tc.dataset.id));if(!targetTask)return
-    const newCol=targetTask.col;dragTask.col=newCol
-    const rect=tc.getBoundingClientRect(),mid=rect.top+rect.height/2,before=e.clientY<mid
+
+  if(dragOverEl){
+    const targetTask=TASKS.find(t=>t.id===dragOverEl);if(!targetTask)return
+    const newCol=targetTask.col
+    dragTask.col=newCol
     TASKS.splice(TASKS.indexOf(dragTask),1)
     const tIdx=TASKS.indexOf(targetTask)
-    TASKS.splice(before?tIdx:tIdx+1,0,dragTask)
+    TASKS.splice(dragOverPos==='top'?tIdx:tIdx+1,0,dragTask)
+    // Update col + sort_order for all affected tasks
     db.from('tasks').update({col:newCol,updated_at:new Date().toISOString()}).eq('id',dragId)
-  }else if(col){
-    const newCol=col.id.replace('kc-','')
-    if(dragTask.col!==newCol){dragTask.col=newCol;db.from('tasks').update({col:newCol,updated_at:new Date().toISOString()}).eq('id',dragId)}
+  }else{
+    const col=e.target.closest('.kcol')
+    if(col){
+      const newCol=col.id.replace('kc-','')
+      if(dragTask.col!==newCol){
+        dragTask.col=newCol
+        db.from('tasks').update({col:newCol,updated_at:new Date().toISOString()}).eq('id',dragId)
+      }
+    }
   }
-  rtasks();dragId=null
+
+  // Save sort_order to Supabase
+  saveTaskOrder()
+  rtasks()
+  dragId=null;dragOverEl=null;dragOverPos=null
 })
 // ── JOURNAL — WYSIWYG + инлайн создание ──
 function rtree(){
