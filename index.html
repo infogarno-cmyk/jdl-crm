@@ -226,7 +226,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .cbtn-save{background:var(--bord-dim);border:1px solid var(--bord2);color:var(--bord2);border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;font-weight:700;font-family:var(--sans)}.cbtn-save:hover{background:var(--bord);color:#fff}
 .cbtn-del{background:var(--red-bg);border:1px solid var(--red);color:var(--red);border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:var(--sans)}.cbtn-del:hover{background:var(--red);color:#fff}
 /* OFF confirm modal */
-.off-mo .mob{width:460px}
+.off-mo{z-index:500!important}.off-mo .mob{width:460px}
 .mo{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:400;backdrop-filter:blur(2px)}.mo.open{display:flex}
 .mob{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:24px;width:520px;max-height:88vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.5)}
 .motit{font-size:15px;font-weight:800;color:var(--bord2);margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}.mox{background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer}.mox:hover{color:#fff}
@@ -1392,36 +1392,35 @@ function doSearch(q){
 // ══════════════════════════════════════════
 async function importCampaignsFromMeta(){
   if(!db)return
-  setSS('syncing','Импорт РК...')
+  setSS('syncing','Импорт РК из Meta...')
   try{
     // Получаем уже импортированные кампании
     const{data:imported}=await db.from('imported_campaigns').select('campaign_id')
     const importedIds=new Set((imported||[]).map(x=>x.campaign_id))
 
-    // Берём данные из metrics — там есть campaign_name из FB
-    // Альтернативно — вызываем sync и берём новые РК
-    // Читаем прямо из FB через тот же токен что в Edge Function env
-    // Т.к. токен в env — делаем через Edge Function с параметром action=campaigns
-    const r=await fetch(SB_URL+'/functions/v1/sync',{
+    // Читаем кампании напрямую из FB API
+    // Токен берём из Edge Function через специальный endpoint
+    const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
       method:'POST',
       headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
-      body:JSON.stringify({action:'get_campaigns'})
+      body:'{}'
     })
+    if(!r.ok){
+      // Edge Function не задеплоена — показываем инструкцию
+      toast('Нужно задеплоить get-campaigns функцию. Пока добавь РК вручную.','info')
+      setSS('ok','—')
+      return
+    }
     const d=await r.json()
-    if(!d.campaigns||!d.campaigns.length){setSS('ok','Нет новых РК');return}
+    if(!d.campaigns||!d.campaigns.length){setSS('ok','Нет новых РК');toast('Нет новых кампаний в Meta','info');return}
 
     let added=0
     for(const camp of d.campaigns){
-      if(importedIds.has(camp.id))continue
-      // Парсим баера из первой буквы
-      const buyer=camp.name.trim().startsWith('I')?'Illia':'Danya'
-      // Парсим GEO из названия кампании
+      if(importedIds.has(String(camp.id)))continue
+      const buyer=camp.name.trim()[0]==='I'?'Illia':'Danya'
       const geo=parseGeoFromName(camp.name)
-      // Парсим воронку
       const funnel=parseFunnelFromName(camp.name)
-      // Парсим дату
       const date=parseDateFromCampName(camp.name)
-      // Создаём залив
       const{data:zData,error}=await db.from('zalivs').insert({
         geo,name:camp.name,
         ad_budget:parseFloat(camp.daily_budget||0)/100||0,
@@ -1433,13 +1432,18 @@ async function importCampaignsFromMeta(){
       }).select().single()
       if(!error&&zData){
         ZALIVS.unshift(zData)
-        await db.from('imported_campaigns').insert({campaign_id:camp.id,zaliv_id:zData.id})
+        await db.from('imported_campaigns').insert({campaign_id:String(camp.id),zaliv_id:zData.id})
         added++
       }
     }
     setSS('ok',added>0?`Импортировано ${added} РК`:'Нет новых РК')
     if(added>0){toast(`Импортировано ${added} новых РК из Meta`,'ok');rzalivs()}
-  }catch(e){setSS('','Ошибка импорта');console.log('Import error:',e)}
+    else toast('Все кампании уже импортированы','info')
+  }catch(e){
+    setSS('','Ошибка импорта')
+    toast('Нужно задеплоить функцию get-campaigns в Supabase','err')
+    console.log('Import error:',e)
+  }
 }
 
 function parseGeoFromName(name){
