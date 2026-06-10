@@ -99,6 +99,12 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .badd{padding:6px 14px;border-radius:6px;border:1px solid var(--bord);background:var(--bord-dim);color:var(--bord2);font-size:11px;cursor:pointer;font-weight:700;margin-left:auto;font-family:var(--sans)}.badd:hover{background:var(--bord);color:#fff}
 .btpl{padding:6px 14px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;cursor:pointer;font-weight:600;font-family:var(--sans)}.btpl:hover{border-color:var(--border3);color:var(--text)}
 .ztwrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.zcheck{width:16px;height:16px;cursor:pointer;accent-color:var(--bord2)}
+.zbulk-bar{display:none;align-items:center;gap:10px;padding:8px 14px;background:rgba(181,34,64,.08);border:1px solid var(--bord-dim);border-radius:8px;margin-bottom:10px}
+.zbulk-bar.show{display:flex}
+.zbulk-cnt{font-size:12px;color:var(--text2)}
+.zbulk-del{padding:5px 14px;border-radius:6px;border:1px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11px;cursor:pointer;font-weight:700;font-family:var(--sans)}.zbulk-del:hover{background:var(--red);color:#fff}
+.zbulk-clr{padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;font-family:var(--sans)}
 .zt{width:100%;border-collapse:collapse}
 .zt th{padding:9px 10px;text-align:left;font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--border2);background:var(--bg3);white-space:nowrap}
 .zt td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:12px}.zt tr:last-child td{border-bottom:none}
@@ -315,7 +321,12 @@ document.getElementById('root').innerHTML=`
         <button class="btpl" id="btn-import-meta" style="border-color:var(--blue-bg);color:var(--blue)">⬇ Импорт из Meta</button>
         <button class="badd" id="btn-new-zaliv">+ Новый залив</button>
       </div>
-      <div class="ztwrap"><table class="zt"><thead><tr><th>IND</th><th>ДАТА</th><th>GEO</th><th>НАЗВАНИЕ РК</th><th>SCORE</th><th>СТАТУС</th><th>AD/RK $</th><th>ДОМЕН</th><th>КРЕО</th><th>БАЕР</th></tr></thead><tbody id="zt-body"></tbody></table></div>
+      <div class="zbulk-bar" id="zbulk-bar">
+      <span class="zbulk-cnt" id="zbulk-cnt">0 выбрано</span>
+      <button class="zbulk-del" id="zbulk-del-btn">🗑 Удалить выбранные</button>
+      <button class="zbulk-clr" id="zbulk-clr-btn">✕ Снять выделение</button>
+    </div>
+    <div class="ztwrap"><table class="zt"><thead><tr><th style="width:30px"><input type="checkbox" class="zcheck" id="zcheck-all"></th><th>IND</th><th>ДАТА</th><th>GEO</th><th>НАЗВАНИЕ РК</th><th>SCORE</th><th>СТАТУС</th><th>AD/RK $</th><th>ДОМЕН</th><th>КРЕО</th><th>БАЕР</th></tr></thead><tbody id="zt-body"></tbody></table></div>
     </div>
     <div class="page" id="page-domains">
       <div class="fhdr"><span class="fhtit">Домены</span><span class="fhcnt" id="d-count">(0)</span></div>
@@ -757,6 +768,7 @@ function rzalivs(){
     const isAuto=!AUTO_STATUS_LOCKED.includes(z.status)
     const domHtml=z.domain?`<a class="dlnk" href="https://${z.domain}" target="_blank" rel="noopener">${z.domain.split('/')[0]}</a>`:'—'
     html+=`<tr class="${rc}" data-zid="${z.id}" style="cursor:pointer">
+      <td style="width:30px"><input type="checkbox" class="zcheck zrow-check" data-zid="${z.id}" onclick="event.stopPropagation()"></td>
       <td><div class="ind-t"><button class="itb${z.ind==='profit'?' ap':''}" data-zid="${z.id}" data-ind="profit">P</button><button class="itb${z.ind==='drop'?' ad':''}" data-zid="${z.id}" data-ind="drop">D</button><button class="itb${z.ind==='off'?' ao':''}" data-zid="${z.id}" data-ind="off">O</button></div></td>
       <td style="color:var(--text3);font-size:11px;font-family:var(--mono)">${z.date||'—'}</td>
       <td>${gchip(z.geo)}</td>
@@ -785,6 +797,41 @@ function rzalivs(){
   document.querySelectorAll('.sbsv[data-zid]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();saveEdit(parseInt(btn.dataset.zid))}))
   document.querySelectorAll('.sbdl[data-zid]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();delZaliv(parseInt(btn.dataset.zid))}))
   document.querySelectorAll('.spb-e[data-sc]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();setScore(parseInt(btn.dataset.zid),parseInt(btn.dataset.sc))}))
+  // Checkbox logic
+  document.querySelectorAll('.zrow-check').forEach(cb=>{
+    cb.addEventListener('change',updateBulkBar)
+  })
+  const checkAll=document.getElementById('zcheck-all')
+  if(checkAll){
+    checkAll.addEventListener('click',e=>{
+      e.stopPropagation()
+      const checked=checkAll.checked
+      document.querySelectorAll('.zrow-check').forEach(cb=>{cb.checked=checked})
+      updateBulkBar()
+    })
+  }
+}
+
+function updateBulkBar(){
+  const sel=[...document.querySelectorAll('.zrow-check:checked')]
+  const bar=document.getElementById('zbulk-bar')
+  const cnt=document.getElementById('zbulk-cnt')
+  if(!bar||!cnt)return
+  if(sel.length>0){bar.classList.add('show');cnt.textContent=sel.length+' выбрано'}
+  else{bar.classList.remove('show')}
+}
+
+async function bulkDeleteZalivs(){
+  const sel=[...document.querySelectorAll('.zrow-check:checked')].map(cb=>parseInt(cb.dataset.zid))
+  if(!sel.length)return
+  if(!confirm(`Удалить ${sel.length} заливов?`))return
+  for(const id of sel){
+    await db.from('zalivs').delete().eq('id',id)
+    ZALIVS=ZALIVS.filter(z=>z.id!==id)
+  }
+  document.getElementById('zbulk-bar').classList.remove('show')
+  toast(`Удалено ${sel.length} заливов`,'ok')
+  rzalivs()
 }
 
 function exRow(z){
@@ -1010,8 +1057,8 @@ let teEditId = null
 
 async function saveTk(title,col,who){
   if(!title.trim())return
-  const so = TASKS.filter(t=>t.col===col).length
-  const{data,error}=await db.from('tasks').insert({title:title.trim(),col,assignee:who||'',priority:'mid',deadline:null,sort_order:so*10+10}).select().single()
+  const maxSo=TASKS.filter(t=>t.col===col).reduce((mx,t)=>Math.max(mx,t.sort_order||0),0)
+  const{data,error}=await db.from('tasks').insert({title:title.trim(),col,assignee:who||'',priority:'mid',deadline:null,sort_order:maxSo+10}).select().single()
   if(!error&&data){TASKS.push(data);rtasks()}
 }
 
@@ -1021,9 +1068,15 @@ async function delTkConfirmed(id){
 }
 
 async function saveTaskOrder(){
-  // Save sort_order for all tasks based on current TASKS array order
-  const updates = TASKS.map((t,i)=>db.from('tasks').update({sort_order:i*10}).eq('id',t.id))
-  await Promise.all(updates)
+  // Save sort_order for all tasks — batch upsert by updating each
+  // Use sequential updates to avoid race conditions
+  for(let i=0;i<TASKS.length;i++){
+    const t=TASKS[i]
+    if(t.sort_order!==i*10){
+      t.sort_order=i*10
+      await db.from('tasks').update({sort_order:i*10}).eq('id',t.id)
+    }
+  }
 }
 
 function showQA(col){document.querySelectorAll('.kqwrap').forEach(q=>q.classList.remove('open'));const q=document.getElementById('kq-'+col);if(q){q.classList.add('open');q.querySelector('input').focus()}}
@@ -1610,6 +1663,14 @@ function interceptOFF(zalivId){
 
 // Off modal — используем делегирование через document т.к. кнопки рендерятся после скрипта
 document.addEventListener('click',function(e){
+  // Bulk delete zalivs
+  if(e.target.closest('#zbulk-del-btn')){bulkDeleteZalivs();return}
+  if(e.target.closest('#zbulk-clr-btn')){
+    document.querySelectorAll('.zrow-check').forEach(cb=>{cb.checked=false})
+    const ca=document.getElementById('zcheck-all');if(ca)ca.checked=false
+    document.getElementById('zbulk-bar')?.classList.remove('show')
+    return
+  }
   const skip=e.target.closest('#off-skip-btn')
   if(skip){
     if(!offPendingZalivId)return
@@ -1714,38 +1775,40 @@ function openCreoAddModal(z){
   document.getElementById('mo-creo-add').classList.add('open')
 }
 
-document.addEventListener('click',function(e){if(!e.target.closest('#creo-add-save'))return;(async()=>{
-  const zalivId=parseInt(document.getElementById('ca-zaliv-id').value)
-  const creos=JSON.parse(document.getElementById('ca-creos').value||'[]')
-  const geo=document.getElementById('ca-geo').value
-  const creator=document.getElementById('ca-creator').value
-  const funnel=document.getElementById('ca-funnel').value
-  const dateStart=document.getElementById('ca-date-start').value
-  const dateEnd=document.getElementById('ca-date-end').value
-  const spend=parseFloat(document.getElementById('ca-spend').value)||0
-
-  const rows=creos.map((cr,i)=>({
-    zaliv_id:zalivId,creo_id:cr,geo,creator,funnel,
-    date_start:dateStart,date_end:dateEnd,
-    spend:spend/Math.max(creos.length,1),
-    ctr:parseFloat(document.getElementById('ca-ctr-'+i)?.value)||0,
-    cr:parseFloat(document.getElementById('ca-cr-'+i)?.value)||0,
-    cpl:parseFloat(document.getElementById('ca-cpl-'+i)?.value)||0,
-    cql:parseFloat(document.getElementById('ca-cql-'+i)?.value)||0,
-    notes:document.getElementById('ca-notes-'+i)?.value||''
-  }))
-
-  const{error}=await db.from('creo_reports').insert(rows)
-  if(!error){
-    toast(`${rows.length} крео добавлено в отчёт`,'ok')
-    document.getElementById('mo-creo-add').classList.remove('open')
-    await loadCreoReports()
-    // Выключаем РК
-    await applyOFFStatus(zalivId)
-  }else{
-    toast('Ошибка сохранения: '+error.message,'err')
+document.addEventListener('click',function(e){
+  // Creo add save
+  if(e.target.closest('#creo-add-save')){
+    const zalivId=parseInt(document.getElementById('ca-zaliv-id').value)
+    const creos=JSON.parse(document.getElementById('ca-creos').value||'[]')
+    const geo=document.getElementById('ca-geo').value
+    const creator=document.getElementById('ca-creator').value
+    const funnel=document.getElementById('ca-funnel').value
+    const dateStart=document.getElementById('ca-date-start').value
+    const dateEnd=document.getElementById('ca-date-end').value
+    const spend=parseFloat(document.getElementById('ca-spend').value)||0
+    const rows=creos.map((cr,i)=>({
+      zaliv_id:zalivId,creo_id:cr,geo,creator,funnel,
+      date_start:dateStart,date_end:dateEnd,
+      spend:Math.round(spend/Math.max(creos.length,1)*100)/100,
+      ctr:parseFloat(document.getElementById('ca-ctr-'+i)?.value)||0,
+      cr:parseFloat(document.getElementById('ca-cr-'+i)?.value)||0,
+      cpl:parseFloat(document.getElementById('ca-cpl-'+i)?.value)||0,
+      cql:parseFloat(document.getElementById('ca-cql-'+i)?.value)||0,
+      notes:document.getElementById('ca-notes-'+i)?.value||''
+    }))
+    db.from('creo_reports').insert(rows).then(({error})=>{
+      if(!error){
+        toast(rows.length+' крео добавлено в отчёт','ok')
+        document.getElementById('mo-creo-add').classList.remove('open')
+        loadCreoReports()
+        applyOFFStatus(zalivId)
+      }else{
+        toast('Ошибка: '+error.message,'err')
+      }
+    })
+    return
   }
-})();})
+})
 
 // Фильтры крео
 document.getElementById('crf-geo').addEventListener('change',rcreo)
