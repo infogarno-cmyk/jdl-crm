@@ -69,14 +69,19 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .srch-empty{text-align:center;padding:32px;color:var(--text3);font-size:13px}
 .pbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
 .pdates{display:flex;align-items:center;gap:6px}
-.pdw{display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 11px}
-.pdi{background:transparent;border:none;outline:none;color:var(--text2);font-size:11px;font-family:var(--mono);cursor:pointer;width:110px}.pdi::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:pointer}
+.pdw{display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 11px;cursor:pointer}.pdw:hover{border-color:var(--border3)}
+.pdi{background:transparent;border:none;outline:none;color:var(--text2);font-size:11px;font-family:var(--mono);cursor:pointer;width:110px}.pdi::-webkit-calendar-picker-indicator{opacity:0;position:absolute;width:100%;height:100%;top:0;left:0;cursor:pointer}
 .pdash{color:var(--text3)}.pbtns{display:flex;gap:3px}
 .pb{padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;font-family:var(--sans);font-weight:500}.pb:hover{color:var(--text2)}.pb.active{background:var(--bord-dim);border-color:var(--bord2);color:var(--bord2)}
 .krow{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:18px}
 .kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:22px;position:relative;overflow:hidden}
 .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--bord),var(--bord2))}
 .klab{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:700}.kval{font-size:42px;font-weight:800;color:#fff;line-height:1;font-family:var(--mono)}
+.kpi-compare{display:flex;align-items:center;gap:5px;margin-top:6px;min-height:16px}
+.kpi-prev{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.karr{font-size:13px;font-weight:700;display:inline-flex;align-items:center;animation:arrPulse 1.5s ease infinite}
+.karr.up-good{color:var(--green)}.karr.up-bad{color:var(--red)}.karr.dn-good{color:var(--green)}.karr.dn-bad{color:var(--red)}.karr.flat{color:var(--text3)}
+@keyframes arrPulse{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
 .dgrid{display:grid;grid-template-columns:1.5fr 1fr;gap:12px;margin-bottom:12px}
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
 .chdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
@@ -293,12 +298,12 @@ document.getElementById('root').innerHTML=`
         <div class="pbtns"><button class="pb active" data-days="1">1 день</button><button class="pb" data-days="3">3 дня</button><button class="pb" data-days="7">Неделя</button><button class="pb" data-days="14">2 нед.</button><button class="pb" data-days="30">Месяц</button><button class="pb" data-days="90">Квартал</button><button class="pb" data-days="365">Год</button><button class="pb" data-days="0">Всё</button></div>
       </div>
       <div class="krow">
-        <div class="kpi"><div class="klab">SPEND</div><div class="kval" id="d-spend">—</div></div>
-        <div class="kpi"><div class="klab">SPEND DAILY</div><div class="kval" id="d-daily">—</div></div>
-        <div class="kpi"><div class="klab">CPL</div><div class="kval" id="d-cpl">—</div></div>
-        <div class="kpi"><div class="klab">CQL</div><div class="kval" id="d-cql">—</div></div>
-        <div class="kpi"><div class="klab">ROI</div><div class="kval" id="d-roi">—</div></div>
-        <div class="kpi"><div class="klab">CTR AVG</div><div class="kval" id="d-ctr">—</div></div>
+        <div class="kpi"><div class="klab">SPEND</div><div class="kval" id="d-spend">—</div><div class="kpi-compare"><span class="kpi-prev" id="d-spend-prev"></span><span class="karr" id="d-spend-arr"></span></div></div>
+        <div class="kpi"><div class="klab">SPEND DAILY</div><div class="kval" id="d-daily">—</div><div class="kpi-compare"><span class="kpi-prev" id="d-daily-prev"></span><span class="karr" id="d-daily-arr"></span></div></div>
+        <div class="kpi"><div class="klab">CPL</div><div class="kval" id="d-cpl">—</div><div class="kpi-compare"><span class="kpi-prev" id="d-cpl-prev"></span><span class="karr" id="d-cpl-arr"></span></div></div>
+        <div class="kpi"><div class="klab">CQL</div><div class="kval" id="d-cql">—</div><div class="kpi-compare"><span class="kpi-prev" id="d-cql-prev"></span><span class="karr" id="d-cql-arr"></span></div></div>
+        <div class="kpi"><div class="klab">ROI</div><div class="kval" id="d-roi">—</div><div class="kpi-compare"><span class="kpi-prev" id="d-roi-prev"></span><span class="karr" id="d-roi-arr"></span></div></div>
+        <div class="kpi"><div class="klab">CTR AVG</div><div class="kval" id="d-ctr">—</div><div class="kpi-compare"><span class="kpi-prev" id="d-ctr-prev"></span><span class="karr" id="d-ctr-arr"></span></div></div>
       </div>
       <div class="dgrid">
         <div class="card"><div class="chdr"><span class="ctit">Последние заливы</span><span class="clnk" id="lnk-zalivs">Все →</span></div><div id="d-zalivs"><div class="empty">Загрузка...</div></div></div>
@@ -701,21 +706,62 @@ function rdash(){
   const days=rows.length||1,cpl=tL>0?(tS/tL).toFixed(1):0,cql=tQ>0?(tS/tQ).toFixed(1):0
   const spD=(tS/days).toFixed(0),profit=tSzl*0.3*0.25,roi=tS>0?Math.round((profit-tS)/tS*100):0
   const avgCtr=rows.length>0?(rows.reduce((s,r)=>s+parseFloat(r.ctr||0),0)/rows.length).toFixed(2):0
+  // ── COMPARISON PERIOD ──
+  // Calculate previous period of same length
+  const fromDate = new Date(from + 'T00:00:00')
+  const toDate = new Date(to + 'T00:00:00')
+  const periodDays = Math.max(1, Math.round((toDate - fromDate) / 86400000) + 1)
+  const prevTo = new Date(fromDate - 86400000).toISOString().split('T')[0]
+  const prevFrom = new Date(fromDate - periodDays * 86400000).toISOString().split('T')[0]
+  const prevRows = METRICS.filter(m => m.day >= prevFrom && m.day <= prevTo)
+  let pS=0, pL=0, pQ=0, pSzl=0
+  prevRows.forEach(r=>{pS+=parseFloat(r.spend_pl||0)+parseFloat(r.spend_plua||0);pL+=(r.leads_pl||0)+(r.leads_plua||0);pQ+=r.quals||0;pSzl+=parseFloat(r.sales_amount_zl||0)})
+  const pDays = prevRows.length || 1
+  const pCpl = pL>0 ? pS/pL : 0
+  const pCql = pQ>0 ? pS/pQ : 0
+  const pSpD = pS/pDays
+  const pProfit = pSzl*0.3*0.25
+  const pRoi = pS>0 ? Math.round((pProfit-pS)/pS*100) : 0
+  const pCtr = prevRows.length>0 ? prevRows.reduce((s,r)=>s+parseFloat(r.ctr||0),0)/prevRows.length : 0
+
+  function setCompare(id, cur, prev, higherIsBetter) {
+    const arrEl = document.getElementById(id+'-arr')
+    const prevEl = document.getElementById(id+'-prev')
+    if(!arrEl||!prevEl||!prev) return
+    const diff = cur - prev
+    const pct = prev !== 0 ? Math.round(Math.abs(diff)/Math.abs(prev)*100) : 0
+    const isUp = diff > 0
+    const isGood = higherIsBetter ? isUp : !isUp
+    const flat = Math.abs(diff) < 0.01 * Math.abs(prev || 1)
+    if(flat){arrEl.textContent='→';arrEl.className='karr flat'}
+    else{
+      arrEl.textContent = isUp ? '↑' : '↓'
+      arrEl.className = 'karr ' + (isGood ? (isUp?'up-good':'dn-good') : (isUp?'up-bad':'dn-bad'))
+    }
+    prevEl.textContent = typeof prev === 'number' && prev > 0 ? (id.includes('roi')?prev+'%':'$'+Math.round(prev)) + (pct&&!flat?' ('+pct+'%)':'') : ''
+  }
+
   countUp(document.getElementById('d-spend'),Math.round(tS),'$')
   countUp(document.getElementById('d-daily'),spD,'$')
+  setCompare('d-spend', tS, pS, true)
+  setCompare('d-daily', parseFloat(spD), pSpD, true)
   const cplEl=document.getElementById('d-cpl'),cplN=parseFloat(cpl)
   cplEl.style.color=cplN>0&&cplN<10?'var(--green)':cplN<=13?'var(--yellow)':cplN>0?'var(--red)':'var(--text)'
   cplEl.style.textShadow=cplN>0&&cplN<10?'0 0 12px rgba(46,160,67,.7)':cplN<=13&&cplN>0?'0 0 12px rgba(212,160,23,.7)':cplN>0?'0 0 12px rgba(224,64,80,.6)':''
   countUp(cplEl,cpl,'$')
+  setCompare('d-cpl', parseFloat(cpl), pCpl, false)
   const cqlEl=document.getElementById('d-cql'),cqlN=parseFloat(cql)
   cqlEl.style.color=cqlN>0&&cqlN<25?'var(--green)':cqlN<=35?'var(--yellow)':cqlN>0?'var(--red)':'var(--text)'
   cqlEl.style.textShadow=cqlN>0&&cqlN<25?'0 0 12px rgba(46,160,67,.7)':cqlN<=35&&cqlN>0?'0 0 12px rgba(212,160,23,.7)':cqlN>0?'0 0 12px rgba(224,64,80,.6)':''
   countUp(cqlEl,cql,'$')
+  setCompare('d-cql', parseFloat(cql), pCql, false)
   const roiEl=document.getElementById('d-roi')
   roiEl.style.color=roi>=100?'var(--green)':roi>0?'var(--yellow)':roi<0?'var(--red)':'var(--text)'
   roiEl.style.textShadow=roi>=100?'0 0 12px rgba(46,160,67,.7)':''
   countUp(roiEl,roi,roi>0?'+':'','%')
+  setCompare('d-roi', roi, pRoi, true)
   countUp(document.getElementById('d-ctr'),avgCtr,'','%')
+  setCompare('d-ctr', parseFloat(avgCtr), pCtr, true)
   document.getElementById('d-zalivs').innerHTML=ZALIVS.slice(0,5).map(z=>`<div class="zrow"><div class="zdot" style="background:${z.ind==='profit'?'var(--green)':z.ind==='drop'?'var(--yellow)':'var(--red)'}"></div><span class="zgeo ${z.geo==='PL'?'gpl':'gplua'}">${z.geo}</span><div class="zname">${z.name}</div><div class="zbud">$${z.rk_budget}/d</div></div>`).join('')||'<div class="empty">Нет заливов</div>'
   const mx=Math.max(tPL,tPLUA,1)
   document.getElementById('d-geo').innerHTML=`<div class="brow"><div class="bhdr"><span class="zgeo gpl">PL</span><span style="font-weight:700;color:var(--yellow);font-family:var(--mono)">$${Math.round(tPL)}</span></div><div class="btrk"><div class="bfill" style="width:${Math.round(tPL/mx*100)}%;background:#4080ff"></div></div></div><div class="brow"><div class="bhdr"><span class="zgeo gplua">PLUA</span><span style="font-weight:700;color:var(--yellow);font-family:var(--mono)">$${Math.round(tPLUA)}</span></div><div class="btrk"><div class="bfill" style="width:${Math.round(tPLUA/mx*100)}%;background:#9060d0"></div></div></div>`
@@ -842,8 +888,22 @@ function rzalivs(){
     tr.addEventListener('click',e=>{if(!e.target.closest('button,select,a,.ctag'))togZ(parseInt(tr.dataset.zid))})
   })
   // stopPropagation на textarea и inputs в expand чтобы выделение не закрывало строку
-  document.querySelectorAll('.exin').forEach(ex=>ex.addEventListener('mousedown',e=>e.stopPropagation()))
-  document.querySelectorAll('.insta,.efi').forEach(inp=>inp.addEventListener('mousedown',e=>e.stopPropagation()))
+  document.querySelectorAll('.exin').forEach(ex=>{
+    ex.addEventListener('mousedown',e=>e.stopPropagation())
+    ex.addEventListener('mousemove',e=>e.stopPropagation())
+    ex.addEventListener('mouseup',e=>e.stopPropagation())
+  })
+  document.querySelectorAll('.insta,.efi').forEach(inp=>{
+    inp.addEventListener('mousedown',e=>e.stopPropagation())
+    inp.addEventListener('mousemove',e=>e.stopPropagation())
+    inp.addEventListener('mouseup',e=>e.stopPropagation())
+    inp.addEventListener('selectstart',e=>e.stopPropagation())
+  })
+  // Prevent row collapse when selecting text in expand
+  document.querySelectorAll('.exrow').forEach(row=>{
+    row.addEventListener('mousedown',e=>e.stopPropagation())
+    row.addEventListener('click',e=>e.stopPropagation())
+  })
   document.querySelectorAll('.itb[data-ind]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();setInd(parseInt(btn.dataset.zid),btn.dataset.ind)}))
   document.querySelectorAll('.spb[data-sc]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();setScore(parseInt(btn.dataset.zid),parseInt(btn.dataset.sc))}))
   document.querySelectorAll('.ssel[data-zid]').forEach(sel=>{sel.addEventListener('click',e=>e.stopPropagation());sel.addEventListener('change',()=>setStatus(parseInt(sel.dataset.zid),sel))})
