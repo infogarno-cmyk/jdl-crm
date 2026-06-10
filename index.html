@@ -1809,7 +1809,7 @@ function openCreoAddModal(z){
       </div>
     `).join('')}
     <input type="hidden" id="ca-zaliv-id" value="${z.id}">
-    <input type="hidden" id="ca-creos" value="${JSON.stringify(z.creos||[])}">
+    <input type="hidden" id="ca-creos" value="${(z.creos||[]).join(',')}">
     <input type="hidden" id="ca-geo" value="${z.geo||''}">
     <input type="hidden" id="ca-creator" value="${z.buyer||''}">
     <input type="hidden" id="ca-funnel" value="${z.funnel||''}">
@@ -1822,7 +1822,9 @@ function openCreoAddModal(z){
 
 function creoAddSave(){
   const zalivId=parseInt(document.getElementById('ca-zaliv-id').value)
-  const creos=JSON.parse(document.getElementById('ca-creos').value||'[]')
+  const creosRaw=document.getElementById('ca-creos')?.value||''
+  const creos=creosRaw?creosRaw.split(',').map(s=>s.trim()).filter(Boolean):[]
+  if(!creos.length){toast('Нет крео для сохранения','err');return}
   const geo=document.getElementById('ca-geo').value
   const creator=document.getElementById('ca-creator').value
   const funnel=document.getElementById('ca-funnel').value
