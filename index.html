@@ -309,6 +309,7 @@ document.getElementById('root').innerHTML=`
       <div class="fbar">
         <select class="fsel" id="zf-geo"><option value="">🌐 GEO</option><option value="PL">🇵🇱 PL</option><option value="PLUA">🇵🇱🇺🇦 PLUA</option></select>
         <select class="fsel" id="zf-status"><option value="">🏷 Статус</option><option value="Check">Check</option><option value="Scale">Scale</option><option value="OFF">OFF</option><option value="Test">Test</option><option value="Proliw">Proliw</option><option value="Perezaliw">Perezaliw</option></select>
+        <select class="fsel" id="zf-sort"><option value="new">📅 Новые сначала</option><option value="old">📅 Старые сначала</option><option value="score">⭐ По score</option><option value="budget">💰 По бюджету</option></select>
         <input class="fsrch" id="zf-q" placeholder="🔍 Поиск...">
         <button class="btpl" id="btn-open-templates">📋 Шаблоны</button>
         <button class="btpl" id="btn-import-meta" style="border-color:var(--blue-bg);color:var(--blue)">⬇ Импорт из Meta</button>
@@ -488,6 +489,7 @@ document.getElementById('sp-to').addEventListener('change',rsales)
 document.getElementById('zf-geo').addEventListener('change',rzalivs)
 document.getElementById('zf-status').addEventListener('change',rzalivs)
 document.getElementById('zf-q').addEventListener('input',rzalivs)
+document.getElementById('zf-sort').addEventListener('change',rzalivs)
 document.getElementById('btn-new-zaliv').addEventListener('click',()=>openMoZaliv())
 document.getElementById('btn-open-templates').addEventListener('click',openTemplates)
 document.getElementById('btn-import-meta').addEventListener('click',importCampaignsFromMeta)
@@ -741,7 +743,13 @@ function spbs(z){return Array.from({length:7},(_,i)=>`<button class="spb${z.scor
 
 function rzalivs(){
   const geo=document.getElementById('zf-geo').value,st=document.getElementById('zf-status').value,q=document.getElementById('zf-q').value.toLowerCase()
-  const f=ZALIVS.filter(z=>(!geo||z.geo===geo)&&(!st||z.status===st)&&(!q||z.name.toLowerCase().includes(q)))
+  const sort=document.getElementById('zf-sort')?.value||'new'
+  let f=ZALIVS.filter(z=>(!geo||z.geo===geo)&&(!st||z.status===st)&&(!q||z.name.toLowerCase().includes(q)))
+  // Sort
+  if(sort==='old')f=[...f].sort((a,b)=>a.id-b.id)
+  else if(sort==='score')f=[...f].sort((a,b)=>(b.score||0)-(a.score||0))
+  else if(sort==='budget')f=[...f].sort((a,b)=>(b.rk_budget||0)-(a.rk_budget||0))
+  // 'new' = default order (by created_at desc, already sorted from loadZ)
   document.getElementById('z-count').textContent='('+f.length+')'
   let html=''
   f.forEach(z=>{
@@ -1600,23 +1608,25 @@ function interceptOFF(zalivId){
   return true // intercepted
 }
 
-document.getElementById('off-skip-btn').addEventListener('click',async()=>{
-  if(!offPendingZalivId)return
-  document.getElementById('mo-off-confirm').classList.remove('open')
-  // просто выключаем статус
-  await applyOFFStatus(offPendingZalivId)
-  offPendingZalivId=null
-})
-
-document.getElementById('off-archive-btn').addEventListener('click',async()=>{
-  if(!offPendingZalivId)return
-  document.getElementById('mo-off-confirm').classList.remove('open')
-  const z=ZALIVS.find(x=>x.id===offPendingZalivId)
-  if(z){
-    // Открываем модал для ввода CPL/CQL по каждому крео
-    openCreoAddModal(z)
+// Off modal — используем делегирование через document т.к. кнопки рендерятся после скрипта
+document.addEventListener('click',function(e){
+  const skip=e.target.closest('#off-skip-btn')
+  if(skip){
+    if(!offPendingZalivId)return
+    document.getElementById('mo-off-confirm').classList.remove('open')
+    applyOFFStatus(offPendingZalivId)
+    offPendingZalivId=null
+    return
   }
-  offPendingZalivId=null
+  const arch=e.target.closest('#off-archive-btn')
+  if(arch){
+    if(!offPendingZalivId)return
+    document.getElementById('mo-off-confirm').classList.remove('open')
+    const z=ZALIVS.find(x=>x.id===offPendingZalivId)
+    if(z)openCreoAddModal(z)
+    offPendingZalivId=null
+    return
+  }
 })
 
 async function applyOFFStatus(zalivId){
@@ -1628,19 +1638,53 @@ async function applyOFFStatus(zalivId){
 }
 
 function openCreoAddModal(z){
-  // Считаем период из метрик для залива
-  // Берём дату создания залива как date_start
+  // Считаем реальные метрики из METRICS за период открута залива
+  // Дата старта из названия или created_at залива
+  let dateStartRaw=z.date||null
+  // Парсим дату из формата DD.MM
+  let dateStartISO=null
+  if(dateStartRaw){
+    const p=dateStartRaw.split('.')
+    if(p.length===2){
+      const yr=new Date().getFullYear()
+      dateStartISO=`${yr}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`
+    }
+  }
+  if(!dateStartISO&&z.created_at)dateStartISO=z.created_at.split('T')[0]
+  const dateEnd=new Date().toISOString().split('T')[0]
+  // Считаем суммарный spend из metrics_daily за период
+  const metrics=METRICS.filter(m=>(!dateStartISO||m.day>=dateStartISO)&&m.day<=dateEnd)
+  // Для geo PL берём spend_pl, для PLUA берём spend_plua
+  let spend=0
+  let totalLeads=0,totalQuals=0,avgCtr=0
+  if(metrics.length){
+    if(z.geo==='PL'){spend=metrics.reduce((s,m)=>s+parseFloat(m.spend_pl||0),0);totalLeads=metrics.reduce((s,m)=>s+(m.leads_pl||0),0)}
+    else if(z.geo==='PLUA'){spend=metrics.reduce((s,m)=>s+parseFloat(m.spend_plua||0),0);totalLeads=metrics.reduce((s,m)=>s+(m.leads_plua||0),0)}
+    else{spend=metrics.reduce((s,m)=>s+parseFloat(m.spend_pl||0)+parseFloat(m.spend_plua||0),0);totalLeads=metrics.reduce((s,m)=>s+(m.leads_pl||0)+(m.leads_plua||0),0)}
+    totalQuals=metrics.reduce((s,m)=>s+(m.quals||0),0)
+    avgCtr=metrics.length?Math.round(metrics.reduce((s,m)=>s+parseFloat(m.ctr||0),0)/metrics.length*100)/100:0
+  }
+  spend=Math.round(spend*100)/100
+  const autoCpl=totalLeads>0?Math.round(spend/totalLeads*100)/100:0
+  const autoCql=totalQuals>0?Math.round(spend/totalQuals*100)/100:0
   const dateStart=z.date||new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
-  const dateEnd=new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
-  const spend=z.ad_budget||0
+  const dateEndFmt=new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
 
   document.getElementById('creo-add-fields').innerHTML=`
     <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:12px;margin-bottom:14px">
-      <div style="display:flex;gap:16px;font-size:12px;flex-wrap:wrap">
+      <div style="display:flex;gap:16px;font-size:12px;flex-wrap:wrap;margin-bottom:8px">
         <span>${z.geo?`<span class="zgeo gchip ${z.geo==='PL'?'gpl':'gplua'}">${z.geo}</span>`:''}</span>
         <span style="color:var(--text2)">👤 ${z.buyer||'—'}</span>
         <span style="color:var(--text2)">🎯 ${z.funnel||'—'}</span>
-        <span style="color:var(--text3);font-family:var(--mono)">📅 ${dateStart} → ${dateEnd}</span>
+        <span style="color:var(--text3);font-family:var(--mono)">📅 ${dateStart} → ${dateEndFmt}</span>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:8px">
+        <span style="font-size:11px;color:var(--text3)">Spend: <strong style="color:var(--yellow);font-family:var(--mono)">$${spend}</strong></span>
+        <span style="font-size:11px;color:var(--text3)">Leads: <strong style="color:var(--text);font-family:var(--mono)">${totalLeads}</strong></span>
+        <span style="font-size:11px;color:var(--text3)">Quals: <strong style="color:var(--text);font-family:var(--mono)">${totalQuals}</strong></span>
+        <span style="font-size:11px;color:var(--text3)">CPL: <strong style="color:var(--blue);font-family:var(--mono)">${autoCpl>0?'$'+autoCpl:'—'}</strong></span>
+        <span style="font-size:11px;color:var(--text3)">CQL: <strong style="color:var(--purple);font-family:var(--mono)">${autoCql>0?'$'+autoCql:'—'}</strong></span>
+        <span style="font-size:11px;color:var(--text3)">CTR: <strong style="color:var(--green);font-family:var(--mono)">${avgCtr}%</strong></span>
       </div>
     </div>
     ${(z.creos||[]).map((cr,i)=>`
@@ -1650,10 +1694,10 @@ function openCreoAddModal(z){
           <span style="font-size:11px;color:var(--text3)">Крео ${i+1}</span>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">
-          <div><div class="elb">CTR %</div><input class="efi" id="ca-ctr-${i}" type="number" step="0.1" placeholder="1.5" value="0"></div>
+          <div><div class="elb">CTR %</div><input class="efi" id="ca-ctr-${i}" type="number" step="0.1" placeholder="1.5" value="${avgCtr}"></div>
           <div><div class="elb">CR %</div><input class="efi" id="ca-cr-${i}" type="number" step="0.1" placeholder="5.0" value="0"></div>
-          <div><div class="elb">CPL $</div><input class="efi" id="ca-cpl-${i}" type="number" step="0.1" placeholder="12.5" value="0"></div>
-          <div><div class="elb">CQL $</div><input class="efi" id="ca-cql-${i}" type="number" step="1" placeholder="60" value="0"></div>
+          <div><div class="elb">CPL $</div><input class="efi" id="ca-cpl-${i}" type="number" step="0.1" placeholder="12.5" value="${autoCpl}"></div>
+          <div><div class="elb">CQL $</div><input class="efi" id="ca-cql-${i}" type="number" step="1" placeholder="60" value="${autoCql}"></div>
         </div>
         <div style="margin-top:8px"><div class="elb">Инсайты</div><input class="efi" id="ca-notes-${i}" placeholder="CTA слишком общий, низкий конверт..." style="font-size:11px"></div>
       </div>
@@ -1664,13 +1708,13 @@ function openCreoAddModal(z){
     <input type="hidden" id="ca-creator" value="${z.buyer||''}">
     <input type="hidden" id="ca-funnel" value="${z.funnel||''}">
     <input type="hidden" id="ca-date-start" value="${dateStart}">
-    <input type="hidden" id="ca-date-end" value="${dateEnd}">
+    <input type="hidden" id="ca-date-end" value="${dateEndFmt}">
     <input type="hidden" id="ca-spend" value="${spend}">
   `
   document.getElementById('mo-creo-add').classList.add('open')
 }
 
-document.getElementById('creo-add-save').addEventListener('click',async()=>{
+document.addEventListener('click',function(e){if(!e.target.closest('#creo-add-save'))return;(async()=>{
   const zalivId=parseInt(document.getElementById('ca-zaliv-id').value)
   const creos=JSON.parse(document.getElementById('ca-creos').value||'[]')
   const geo=document.getElementById('ca-geo').value
@@ -1701,7 +1745,7 @@ document.getElementById('creo-add-save').addEventListener('click',async()=>{
   }else{
     toast('Ошибка сохранения: '+error.message,'err')
   }
-})
+})();})
 
 // Фильтры крео
 document.getElementById('crf-geo').addEventListener('change',rcreo)
