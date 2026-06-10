@@ -233,6 +233,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .cbtn-del{background:var(--red-bg);border:1px solid var(--red);color:var(--red);border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:var(--sans)}.cbtn-del:hover{background:var(--red);color:#fff}
 /* OFF confirm modal */
 .off-mo{z-index:500!important}.off-mo .mob{width:460px}
+.mo-creo-add-wrap{z-index:600!important}
 .mo{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:400;backdrop-filter:blur(2px)}.mo.open{display:flex}
 .mob{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:24px;width:520px;max-height:88vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.5)}
 .motit{font-size:15px;font-weight:800;color:var(--bord2);margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}.mox{background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer}.mox:hover{color:#fff}
@@ -757,10 +758,10 @@ function rzalivs(){
   const sort=document.getElementById('zf-sort')?.value||'new'
   let f=ZALIVS.filter(z=>(!geo||z.geo===geo)&&(!st||z.status===st)&&(!q||z.name.toLowerCase().includes(q)))
   // Sort
-  if(sort==='old')f=[...f].sort((a,b)=>a.id-b.id)
+  if(sort==='new')f=[...f].sort((a,b)=>b.id-a.id)
+  else if(sort==='old')f=[...f].sort((a,b)=>a.id-b.id)
   else if(sort==='score')f=[...f].sort((a,b)=>(b.score||0)-(a.score||0))
   else if(sort==='budget')f=[...f].sort((a,b)=>(b.rk_budget||0)-(a.rk_budget||0))
-  // 'new' = default order (by created_at desc, already sorted from loadZ)
   document.getElementById('z-count').textContent='('+f.length+')'
   let html=''
   f.forEach(z=>{
@@ -1834,11 +1835,14 @@ if(_saved&&USERS[_saved])doLogin(_saved)
   </div>
 </div>
 
-<div class="mo" id="mo-creo-add">
-  <div class="mob" style="width:500px;max-height:90vh">
-    <div class="motit">📊 Добавить в отчёт <button class="mox" data-close="mo-creo-add">×</button></div>
-    <div id="creo-add-fields"></div>
-    <div class="mofoot"><button class="bcn" data-close="mo-creo-add">Отмена</button><button class="bsv" id="creo-add-save">Сохранить отчёт</button></div>
+<div class="mo" id="mo-creo-add" style="z-index:600">
+  <div class="mob" style="width:500px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden">
+    <div class="motit" style="flex-shrink:0">📊 Добавить в отчёт <button class="mox" data-close="mo-creo-add">×</button></div>
+    <div id="creo-add-fields" style="flex:1;overflow-y:auto;padding-right:4px"></div>
+    <div class="mofoot" style="flex-shrink:0;border-top:1px solid var(--border);padding-top:14px;margin-top:8px">
+      <button class="bcn" data-close="mo-creo-add">Отмена</button>
+      <button class="bsv" id="creo-add-save">Сохранить отчёт</button>
+    </div>
   </div>
 </div>
 </body></html>
