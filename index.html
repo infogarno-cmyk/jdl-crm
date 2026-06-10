@@ -641,7 +641,7 @@ function setupRT(){
   if(!db)return
   db.channel('jdl-rt')
     .on('postgres_changes',{event:'*',schema:'public',table:'zalivs'},()=>loadZ().then(rzalivs))
-    .on('postgres_changes',{event:'*',schema:'public',table:'tasks'},()=>loadT().then(rtasks))
+    .on('postgres_changes',{event:'*',schema:'public',table:'tasks'},()=>{if(!_saveOrderTimer)loadT().then(rtasks)})
     .on('postgres_changes',{event:'*',schema:'public',table:'domains'},()=>loadD().then(rdomains))
     .on('postgres_changes',{event:'*',schema:'public',table:'journal_docs'},()=>loadJ().then(rtree))
     .on('postgres_changes',{event:'*',schema:'public',table:'metrics_daily'},()=>loadM().then(rdash))
@@ -802,34 +802,55 @@ function renderChart(animate=false){
   const li=[0,Math.floor((n-1)/2),n-1].filter((v,i,a)=>a.indexOf(v)===i)
   li.forEach(i=>ctx.fillText(rows[i]?.day?.slice(5)||'',px(i),H-4))
   c._S=S;c._rows=rows;c._P=P;c._cw=cw;c._ch=ch
-  // Draw-in animation
+  // Draw-in animation — each line draws one after another
   if(animate&&n>1){
-    let prog=0
-    const totalFrames=50
+    const totalFrames=60  // frames per line
+    const stagger=20      // delay between lines starting
+    let frame=0
+
     function animFrame(){
-      prog=Math.min(prog+1,totalFrames)
-      const p=1-Math.pow(1-prog/totalFrames,3) // ease out cubic
-      const visibleN=Math.max(2,Math.round(p*n))
+      frame++
       ctx.clearRect(0,0,W,H)
+      // Grid
       ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1
       for(let i=0;i<=4;i++){const y=P.t+ch*i/4;ctx.beginPath();ctx.moveTo(P.l,y);ctx.lineTo(P.l+cw,y);ctx.stroke()}
-      S.forEach(s=>{
-        const vd=s.d.slice(0,visibleN)
-        if(vd.length<2)return
+
+      S.forEach((s,si)=>{
+        const lineStart=si*stagger
+        const lineFrame=frame-lineStart
+        if(lineFrame<=0)return
+        const p=Math.min(1, 1-Math.pow(1-lineFrame/totalFrames,3))
+        const visibleN=Math.max(2,Math.round(p*(n-1))+1)
+
         ctx.save()
+        // Fill gradient
         ctx.beginPath();ctx.moveTo(px(0),H-P.b);ctx.lineTo(px(0),py(s.d[0],s))
         for(let i=1;i<visibleN;i++){const x0=px(i-1),y0=py(s.d[i-1],s),x1=px(i),y1=py(s.d[i],s),cxm=(x0+x1)/2;ctx.bezierCurveTo(cxm,y0,cxm,y1,x1,y1)}
         ctx.lineTo(px(visibleN-1),H-P.b);ctx.closePath()
-        const g=ctx.createLinearGradient(0,P.t,0,H-P.b);g.addColorStop(0,s.c+'33');g.addColorStop(1,s.c+'00');ctx.fillStyle=g;ctx.fill()
+        const g=ctx.createLinearGradient(0,P.t,0,H-P.b)
+        g.addColorStop(0,s.c+'40');g.addColorStop(1,s.c+'00')
+        ctx.fillStyle=g;ctx.fill()
+        // Line
         ctx.beginPath();ctx.moveTo(px(0),py(s.d[0],s))
         for(let i=1;i<visibleN;i++){const x0=px(i-1),y0=py(s.d[i-1],s),x1=px(i),y1=py(s.d[i],s),cxm=(x0+x1)/2;ctx.bezierCurveTo(cxm,y0,cxm,y1,x1,y1)}
-        ctx.strokeStyle=s.c;ctx.lineWidth=2;ctx.stroke()
-        for(let i=0;i<visibleN;i++){ctx.beginPath();ctx.arc(px(i),py(s.d[i],s),3,0,Math.PI*2);ctx.fillStyle=s.c;ctx.fill()}
+        ctx.strokeStyle=s.c;ctx.lineWidth=2.5;ctx.stroke()
+        // Dots — only on completed part
+        for(let i=0;i<visibleN;i++){
+          const dotP=Math.min(1,(lineFrame-(i/n*totalFrames*0.5))/8)
+          if(dotP<=0)continue
+          const r=Math.min(3,dotP*3)
+          ctx.beginPath();ctx.arc(px(i),py(s.d[i],s),r,0,Math.PI*2)
+          ctx.fillStyle=s.c;ctx.fill()
+        }
         ctx.restore()
       })
+
+      // Labels
       ctx.fillStyle='rgba(144,144,168,.6)';ctx.font='10px Manrope,sans-serif';ctx.textAlign='center'
-      li.forEach(i=>{if(i<visibleN)ctx.fillText(rows[i]?.day?.slice(5)||'',px(i),H-4)})
-      if(prog<totalFrames)requestAnimationFrame(animFrame)
+      li.forEach(i=>ctx.fillText(rows[i]?.day?.slice(5)||'',px(i),H-4))
+
+      const maxFrames=totalFrames+S.length*stagger
+      if(frame<maxFrames)requestAnimationFrame(animFrame)
     }
     requestAnimationFrame(animFrame)
   }
@@ -885,7 +906,11 @@ function rzalivs(){
   })
   document.getElementById('zt-body').innerHTML=html||`<tr><td colspan="10" class="empty">Нет заливов</td></tr>`
   document.querySelectorAll('#zt-body tr[data-zid]').forEach(tr=>{
-    tr.addEventListener('click',e=>{if(!e.target.closest('button,select,a,.ctag'))togZ(parseInt(tr.dataset.zid))})
+    tr.addEventListener('click',e=>{
+      // Never toggle if click came from inside expand row or its inputs
+      if(e.target.closest('.exrow,.exin,.exbl,.insta,.efi,.sbsv,.sbdl,.spb-e'))return
+      if(!e.target.closest('button,select,a,.ctag'))togZ(parseInt(tr.dataset.zid))
+    })
   })
   // stopPropagation на textarea и inputs в expand чтобы выделение не закрывало строку
   document.querySelectorAll('.exin').forEach(ex=>{
@@ -900,9 +925,10 @@ function rzalivs(){
     inp.addEventListener('selectstart',e=>e.stopPropagation())
   })
   // Prevent row collapse when selecting text in expand
-  document.querySelectorAll('.exrow').forEach(row=>{
+  document.querySelectorAll('.exrow,.exin,.exbl').forEach(row=>{
     row.addEventListener('mousedown',e=>e.stopPropagation())
     row.addEventListener('click',e=>e.stopPropagation())
+    row.addEventListener('mouseup',e=>e.stopPropagation())
   })
   document.querySelectorAll('.itb[data-ind]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();setInd(parseInt(btn.dataset.zid),btn.dataset.ind)}))
   document.querySelectorAll('.spb[data-sc]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();setScore(parseInt(btn.dataset.zid),parseInt(btn.dataset.sc))}))
@@ -1182,16 +1208,20 @@ async function delTkConfirmed(id){
   TASKS=TASKS.filter(t=>t.id!==id);rtasks()
 }
 
-async function saveTaskOrder(){
-  // Save sort_order for all tasks — batch upsert by updating each
-  // Use sequential updates to avoid race conditions
-  for(let i=0;i<TASKS.length;i++){
-    const t=TASKS[i]
-    if(t.sort_order!==i*10){
-      t.sort_order=i*10
-      await db.from('tasks').update({sort_order:i*10}).eq('id',t.id)
+let _saveOrderTimer=null
+function saveTaskOrder(){
+  // Debounce — wait 300ms after last drag before saving
+  clearTimeout(_saveOrderTimer)
+  _saveOrderTimer=setTimeout(async()=>{
+    // Update sort_order for all tasks in current order
+    const updates=TASKS.map((t,i)=>({id:t.id,sort_order:i*10}))
+    // Single upsert instead of N updates
+    for(const u of updates){
+      if(TASKS.find(t=>t.id===u.id)?.sort_order!==u.sort_order){
+        await db.from('tasks').update({sort_order:u.sort_order,col:TASKS.find(t=>t.id===u.id)?.col}).eq('id',u.id)
+      }
     }
-  }
+  },300)
 }
 
 function showQA(col){document.querySelectorAll('.kqwrap').forEach(q=>q.classList.remove('open'));const q=document.getElementById('kq-'+col);if(q){q.classList.add('open');q.querySelector('input').focus()}}
