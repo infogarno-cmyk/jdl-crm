@@ -19,6 +19,7 @@ const AUTO_STATUS_LOCKED=['Proliw','Perezaliw']
 let db,CURRENT_USER=null
 let ZALIVS=[],DOMAINS=[],TASKS=[],METRICS=[],SALES_DATA=[],TEMPLATES=[]
 let expZ=null,dragId=null,moGeo='',moScore=0,domGeoSel=[],deGeoSel=[],deEditId=null
+let CREO_REPORTS=[]
 let curDoc=null,chartData=null,jFolders=[],jLoose=[]
 let creoCurrentZaliv=null,creoCurrentId=null,srchSelIdx=-1
 
@@ -212,6 +213,20 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .jeditor table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px}
 .jeditor th{background:var(--bg4);border:1px solid var(--border2);padding:6px 10px;text-align:left;font-weight:700;color:var(--text2);font-size:11px}
 .jeditor td{border:1px solid var(--border);padding:6px 10px}.jeditor p{margin:3px 0}
+/* CREO TABLE */
+.creo-stat-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden}
+.creo-stat-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--bord),var(--bord2))}
+.creo-stat-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:700}
+.creo-stat-val{font-size:24px;font-weight:800;color:#fff;font-family:var(--mono)}
+.creo-id-tag{font-size:11px;font-family:var(--mono);color:var(--purple);font-weight:700;background:rgba(144,96,208,.1);padding:2px 8px;border-radius:4px;border:1px solid rgba(144,96,208,.2)}
+.creo-edit-inp{width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-size:12px;padding:4px 7px;outline:none;font-family:var(--mono);font-weight:600;text-align:right}
+.creo-edit-inp:focus{border-color:var(--bord)}
+.creo-notes-inp{width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:4px;color:var(--text2);font-size:11px;padding:4px 7px;outline:none;font-family:var(--sans);min-width:120px}
+.creo-notes-inp:focus{border-color:var(--bord)}
+.cbtn-save{background:var(--bord-dim);border:1px solid var(--bord2);color:var(--bord2);border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;font-weight:700;font-family:var(--sans)}.cbtn-save:hover{background:var(--bord);color:#fff}
+.cbtn-del{background:var(--red-bg);border:1px solid var(--red);color:var(--red);border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:var(--sans)}.cbtn-del:hover{background:var(--red);color:#fff}
+/* OFF confirm modal */
+.off-mo .mob{width:460px}
 .mo{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:400;backdrop-filter:blur(2px)}.mo.open{display:flex}
 .mob{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:24px;width:520px;max-height:88vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.5)}
 .motit{font-size:15px;font-weight:800;color:var(--bord2);margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}.mox{background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer}.mox:hover{color:#fff}
@@ -258,6 +273,7 @@ document.getElementById('root').innerHTML=`
       <div class="nb" id="nb-sales"><span class="dot"></span>Sales</div>
       <div class="nb" id="nb-tasks"><span class="dot"></span>Tasks</div>
       <div class="nb" id="nb-journal"><span class="dot"></span>Журнал</div>
+      <div class="nb" id="nb-creo"><span class="dot"></span>Крео</div>
     </nav>
     <div class="sync-area"><div class="sdot" id="sdot"></div><span class="stxt" id="stxt">—</span><button class="sbtn" id="sync-btn">↻ Sync</button></div>
     <button class="search-btn" id="topbar-search">🔍 Поиск <kbd>⌘K</kbd></button>
@@ -295,6 +311,7 @@ document.getElementById('root').innerHTML=`
         <select class="fsel" id="zf-status"><option value="">🏷 Статус</option><option value="Check">Check</option><option value="Scale">Scale</option><option value="OFF">OFF</option><option value="Test">Test</option><option value="Proliw">Proliw</option><option value="Perezaliw">Perezaliw</option></select>
         <input class="fsrch" id="zf-q" placeholder="🔍 Поиск...">
         <button class="btpl" id="btn-open-templates">📋 Шаблоны</button>
+        <button class="btpl" id="btn-import-meta" style="border-color:var(--blue-bg);color:var(--blue)">⬇ Импорт из Meta</button>
         <button class="badd" id="btn-new-zaliv">+ Новый залив</button>
       </div>
       <div class="ztwrap"><table class="zt"><thead><tr><th>IND</th><th>ДАТА</th><th>GEO</th><th>НАЗВАНИЕ РК</th><th>SCORE</th><th>СТАТУС</th><th>AD/RK $</th><th>ДОМЕН</th><th>КРЕО</th><th>БАЕР</th></tr></thead><tbody id="zt-body"></tbody></table></div>
@@ -319,6 +336,27 @@ document.getElementById('root').innerHTML=`
       <div class="fhdr" style="margin-bottom:12px"><span class="fhtit">Tasks</span></div>
       <div class="fbar" style="margin-bottom:14px"><select class="fsel" id="tf-u"><option value="">👤 Все</option><option value="Illia">Illia</option><option value="Danya">Danya</option></select></div>
       <div class="kanban" id="kanban"></div>
+    </div>
+    <div class="page" id="page-creo">
+      <div class="fhdr"><span class="fhtit">A/B Отчёт по Крео</span><span class="fhcnt" id="creo-count">(0)</span></div>
+      <div class="fbar">
+        <select class="fsel" id="crf-geo"><option value="">🌐 GEO</option><option value="PL">🇵🇱 PL</option><option value="PLUA">🇵🇱🇺🇦 PLUA</option></select>
+        <select class="fsel" id="crf-creator"><option value="">👤 Все</option><option value="Illia">Illia</option><option value="Danya">Danya</option></select>
+        <select class="fsel" id="crf-funnel"><option value="">🎯 Воронка</option><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select>
+        <input class="fsrch" id="crf-q" placeholder="🔍 Поиск по крео...">
+      </div>
+      <!-- Stats row -->
+      <div id="creo-stats-row" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px"></div>
+      <!-- Table -->
+      <div class="ztwrap">
+        <table class="zt" id="creo-table">
+          <thead><tr>
+            <th>КРЕО</th><th>GEO</th><th>CREATOR</th><th>ВОРОНКА</th><th>ПЕРИОД</th>
+            <th>CTR %</th><th>CR %</th><th>CPL $</th><th>CQL $</th><th>TOTAL zł</th><th>NOTES</th><th></th>
+          </tr></thead>
+          <tbody id="creo-tbody"></tbody>
+        </table>
+      </div>
     </div>
     <div class="page" id="page-journal" style="padding:0">
       <div class="jlay">
@@ -425,7 +463,7 @@ function toast(msg,type='ok'){const w=document.getElementById('toast-wrap');cons
 // ── EVENTS ──
 document.getElementById('btn-illia').addEventListener('click',()=>doLogin('illia'))
 document.getElementById('btn-danya').addEventListener('click',()=>doLogin('danya'))
-;['dash','zalivs','domains','sales','tasks','journal'].forEach(id=>document.getElementById('nb-'+id).addEventListener('click',function(){gp(id,this)}))
+;['dash','zalivs','domains','sales','tasks','journal','creo'].forEach(id=>document.getElementById('nb-'+id).addEventListener('click',function(){gp(id,this)}))
 document.getElementById('sync-btn').addEventListener('click',manualSync)
 document.getElementById('uchip').addEventListener('click',doLogout)
 document.getElementById('lnk-zalivs').addEventListener('click',()=>gp('zalivs',document.getElementById('nb-zalivs')))
@@ -452,6 +490,7 @@ document.getElementById('zf-status').addEventListener('change',rzalivs)
 document.getElementById('zf-q').addEventListener('input',rzalivs)
 document.getElementById('btn-new-zaliv').addEventListener('click',()=>openMoZaliv())
 document.getElementById('btn-open-templates').addEventListener('click',openTemplates)
+document.getElementById('btn-import-meta').addEventListener('click',importCampaignsFromMeta)
 document.getElementById('df-geo').addEventListener('change',rdomains)
 document.getElementById('df-q').addEventListener('input',rdomains)
 document.getElementById('btn-new-domain').addEventListener('click',()=>document.getElementById('mo-domain').classList.add('open'))
@@ -544,7 +583,7 @@ async function init(){
   const today=new Date().toISOString().split('T')[0]
   ;['pd-from','pd-to','sp-from','sp-to'].forEach(id=>document.getElementById(id).value=today)
   try{db=supabase.createClient(SB_URL,SB_ANON)}catch(e){console.error(e)}
-  await Promise.all([loadZ(),loadD(),loadT(),loadJ(),loadM(),loadSales(),loadTemplates()])
+  await Promise.all([loadZ(),loadD(),loadT(),loadJ(),loadM(),loadSales(),loadTemplates(),loadCreoReports()])
   rdash();setupRT();setSS('ok','Данные загружены')
 }
 function setSS(s,t){document.getElementById('sdot').className='sdot '+s;document.getElementById('stxt').textContent=t}
@@ -564,6 +603,7 @@ function setupRT(){
     .on('postgres_changes',{event:'*',schema:'public',table:'domains'},()=>loadD().then(rdomains))
     .on('postgres_changes',{event:'*',schema:'public',table:'journal_docs'},()=>loadJ().then(rtree))
     .on('postgres_changes',{event:'*',schema:'public',table:'metrics_daily'},()=>loadM().then(rdash))
+    .on('postgres_changes',{event:'*',schema:'public',table:'creo_reports'},()=>loadCreoReports().then(rcreo))
     .subscribe()
 }
 
@@ -604,6 +644,7 @@ function gp(id,el){
   document.getElementById('page-'+id).classList.add('active');el.classList.add('active')
   if(id==='zalivs')rzalivs();if(id==='domains')rdomains();if(id==='tasks')rtasks();if(id==='sales')rsales()
   if(id==='journal'){rtree();if(curDoc)loadDocById(curDoc)};if(id==='dash')rdash()
+  if(id==='creo'){rcreo()}
 }
 
 function countUp(el,target,pre='',suf='',dur=800){
@@ -761,6 +802,13 @@ async function setScore(id,score){
   const z=ZALIVS.find(x=>x.id===id);if(!z)return
   const isLocked=AUTO_STATUS_LOCKED.includes(z.status)
   let newStatus=z.status;if(!isLocked)newStatus=scoreToAutoStatus(score)
+  // Intercept OFF transition — предлагаем архивировать крео
+  if(!isLocked&&newStatus==='OFF'&&z.status!=='OFF'&&(z.creos||[]).length>0){
+    // Сначала сохраняем score, потом интерсептим
+    await db.from('zalivs').update({score,updated_at:new Date().toISOString()}).eq('id',id)
+    z.score=score
+    if(interceptOFF(id))return // модал открыт, статус применится позже
+  }
   await db.from('zalivs').update({score,status:newStatus,updated_at:new Date().toISOString()}).eq('id',id)
   const prev=z.status;z.score=score
   if(!isLocked&&newStatus!==prev){z.status=newStatus;toast(`Score ${score} → ${prev} → ${newStatus}`,'info')}
@@ -768,6 +816,14 @@ async function setScore(id,score){
 }
 async function setStatus(id,sel){
   const z=ZALIVS.find(x=>x.id===id);if(!z)return
+  // Intercept manual OFF
+  if(sel.value==='OFF'&&z.status!=='OFF'&&(z.creos||[]).length>0){
+    if(interceptOFF(id)){
+      // Reset select visually until user confirms
+      sel.value=z.status;sel.className='ssel '+(SCLS[z.status]||'')
+      return
+    }
+  }
   z.status=sel.value;sel.className='ssel '+(SCLS[sel.value]||'')
   await db.from('zalivs').update({status:sel.value,updated_at:new Date().toISOString()}).eq('id',id)
 }
@@ -1330,7 +1386,348 @@ function doSearch(q){
   })
 }
 
+
+// ══════════════════════════════════════════
+// MODULE 1: AUTO-IMPORT РК ИЗ META
+// ══════════════════════════════════════════
+async function importCampaignsFromMeta(){
+  if(!db)return
+  setSS('syncing','Импорт РК...')
+  try{
+    // Получаем уже импортированные кампании
+    const{data:imported}=await db.from('imported_campaigns').select('campaign_id')
+    const importedIds=new Set((imported||[]).map(x=>x.campaign_id))
+
+    // Берём данные из metrics — там есть campaign_name из FB
+    // Альтернативно — вызываем sync и берём новые РК
+    // Читаем прямо из FB через тот же токен что в Edge Function env
+    // Т.к. токен в env — делаем через Edge Function с параметром action=campaigns
+    const r=await fetch(SB_URL+'/functions/v1/sync',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
+      body:JSON.stringify({action:'get_campaigns'})
+    })
+    const d=await r.json()
+    if(!d.campaigns||!d.campaigns.length){setSS('ok','Нет новых РК');return}
+
+    let added=0
+    for(const camp of d.campaigns){
+      if(importedIds.has(camp.id))continue
+      // Парсим баера из первой буквы
+      const buyer=camp.name.trim().startsWith('I')?'Illia':'Danya'
+      // Парсим GEO из названия кампании
+      const geo=parseGeoFromName(camp.name)
+      // Парсим воронку
+      const funnel=parseFunnelFromName(camp.name)
+      // Парсим дату
+      const date=parseDateFromCampName(camp.name)
+      // Создаём залив
+      const{data:zData,error}=await db.from('zalivs').insert({
+        geo,name:camp.name,
+        ad_budget:parseFloat(camp.daily_budget||0)/100||0,
+        rk_budget:parseFloat(camp.daily_budget||0)/100||0,
+        domain:'',creos:[],goals:[],
+        ind:'profit',status:'Check',insights:'',
+        buyer,funnel,score:3,
+        date:date||new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
+      }).select().single()
+      if(!error&&zData){
+        ZALIVS.unshift(zData)
+        await db.from('imported_campaigns').insert({campaign_id:camp.id,zaliv_id:zData.id})
+        added++
+      }
+    }
+    setSS('ok',added>0?`Импортировано ${added} РК`:'Нет новых РК')
+    if(added>0){toast(`Импортировано ${added} новых РК из Meta`,'ok');rzalivs()}
+  }catch(e){setSS('','Ошибка импорта');console.log('Import error:',e)}
+}
+
+function parseGeoFromName(name){
+  const n=name.toUpperCase()
+  const brIdx=n.indexOf('}')
+  if(brIdx>=0){
+    const after=n.substring(brIdx+1,brIdx+6)
+    if(after.startsWith('PLUA'))return'PLUA'
+    if(after.startsWith('UA'))return'PLUA'
+    if(after.startsWith('PL'))return'PL'
+  }
+  if(n.includes('UA'))return'PLUA'
+  return'PL'
+}
+
+function parseFunnelFromName(name){
+  const n=name.toLowerCase()
+  if(n.includes('kalk')||n.includes('калькул'))return'Калькулятор'
+  if(n.includes('vizit')||n.includes('визит'))return'Визита'
+  if(n.includes('proj')||n.includes('проект'))return'Проект'
+  if(n.includes('lead')||n.includes('лид'))return'Лид-магнит'
+  return'Калькулятор'
+}
+
+function parseDateFromCampName(name){
+  // D[09.06] or D{09.06} → 09.06
+  const m=name.match(/[DId\[{](\d{2}[.,]\d{2})/)
+  if(m)return m[1].replace(',','.')
+  return null
+}
+
+// ══════════════════════════════════════════
+// MODULE 2: CREO REPORTS (A/B Отчёт)
+// ══════════════════════════════════════════
+async function loadCreoReports(){
+  if(!db)return
+  const{data}=await db.from('creo_reports').select('*').order('archived_at',{ascending:false})
+  CREO_REPORTS=data||[]
+}
+
+function rcreo(){
+  const geo=document.getElementById('crf-geo').value
+  const creator=document.getElementById('crf-creator').value
+  const funnel=document.getElementById('crf-funnel').value
+  const q=document.getElementById('crf-q').value.toLowerCase()
+  const f=CREO_REPORTS.filter(r=>
+    (!geo||r.geo===geo)&&
+    (!creator||r.creator===creator)&&
+    (!funnel||r.funnel===funnel)&&
+    (!q||r.creo_id?.toLowerCase().includes(q)||r.notes?.toLowerCase().includes(q))
+  )
+  document.getElementById('creo-count').textContent='('+f.length+')'
+
+  // Stats row
+  const avgCtr=f.length?Math.round(f.reduce((s,r)=>s+(r.ctr||0),0)/f.length*100)/100:0
+  const avgCpl=f.length?Math.round(f.reduce((s,r)=>s+(r.cpl||0),0)/f.length*100)/100:0
+  const avgCql=f.length?Math.round(f.reduce((s,r)=>s+(r.cql||0),0)/f.length*100)/100:0
+  const avgCr=f.length?Math.round(f.reduce((s,r)=>s+(r.cr||0),0)/f.length*100)/100:0
+  const totalSpend=Math.round(f.reduce((s,r)=>s+(r.spend||0),0))
+  document.getElementById('creo-stats-row').innerHTML=`
+    <div class="creo-stat-box"><div class="creo-stat-lbl">Крео</div><div class="creo-stat-val">${f.length}</div></div>
+    <div class="creo-stat-box"><div class="creo-stat-lbl">AVG CTR</div><div class="creo-stat-val" style="color:${avgCtr>2?'var(--green)':avgCtr>1?'var(--yellow)':'var(--red)'}">${avgCtr}%</div></div>
+    <div class="creo-stat-box"><div class="creo-stat-lbl">AVG CPL</div><div class="creo-stat-val" style="color:${avgCpl>0&&avgCpl<10?'var(--green)':avgCpl<15?'var(--yellow)':'var(--red)'}">${avgCpl>0?'$'+avgCpl:'—'}</div></div>
+    <div class="creo-stat-box"><div class="creo-stat-lbl">AVG CQL</div><div class="creo-stat-val">${avgCql>0?'$'+avgCql:'—'}</div></div>
+    <div class="creo-stat-box"><div class="creo-stat-lbl">TOTAL SPEND</div><div class="creo-stat-val" style="color:var(--yellow)">${totalSpend>0?'$'+totalSpend:'—'}</div></div>
+  `
+
+  // Sort by CTR desc
+  const sorted=[...f].sort((a,b)=>(b.ctr||0)-(a.ctr||0))
+
+  if(!sorted.length){
+    document.getElementById('creo-tbody').innerHTML=`<tr><td colspan="12" class="empty">Нет отчётов по крео. Добавятся автоматически при выключении РК.</td></tr>`
+    return
+  }
+
+  document.getElementById('creo-tbody').innerHTML=sorted.map(r=>{
+    const ctrColor=r.ctr>2?'var(--green)':r.ctr>1?'var(--yellow)':'var(--red)'
+    const cplColor=r.cpl>0&&r.cpl<10?'var(--green)':r.cpl<15?'var(--yellow)':r.cpl>0?'var(--red)':'var(--text3)'
+    return`<tr>
+      <td><span class="creo-id-tag">${r.creo_id}</span></td>
+      <td>${r.geo?`<span class="zgeo gchip ${r.geo==='PL'?'gpl':'gplua'}">${r.geo}</span>`:'—'}</td>
+      <td><span style="font-size:11px;color:var(--text2)">${r.creator||'—'}</span></td>
+      <td><span class="fchip">${r.funnel||'—'}</span></td>
+      <td style="font-size:10px;color:var(--text3);font-family:var(--mono)">${r.date_start||'—'}${r.date_end?'→'+r.date_end:''}</td>
+      <td><input class="creo-edit-inp" style="color:${ctrColor};width:60px" data-rid="${r.id}" data-field="ctr" value="${r.ctr||0}"></td>
+      <td><input class="creo-edit-inp" style="width:60px" data-rid="${r.id}" data-field="cr" value="${r.cr||0}"></td>
+      <td><input class="creo-edit-inp" style="color:${cplColor};width:65px" data-rid="${r.id}" data-field="cpl" value="${r.cpl||0}"></td>
+      <td><input class="creo-edit-inp" style="width:65px" data-rid="${r.id}" data-field="cql" value="${r.cql||0}"></td>
+      <td style="color:var(--yellow);font-family:var(--mono);font-weight:700">${r.total_zl>0?r.total_zl+' zł':'—'}</td>
+      <td><input class="creo-notes-inp" data-rid="${r.id}" data-field="notes" value="${(r.notes||'').replace(/"/g,'&quot;')}" placeholder="Инсайты..."></td>
+      <td style="display:flex;gap:4px;align-items:center">
+        <button class="cbtn-save" data-rid="${r.id}">💾</button>
+        <button class="cbtn-del" data-rid="${r.id}">✕</button>
+      </td>
+    </tr>`
+  }).join('')
+
+  // Bind save/delete
+  document.querySelectorAll('.cbtn-save[data-rid]').forEach(btn=>btn.addEventListener('click',()=>saveCreoReport(parseInt(btn.dataset.rid))))
+  document.querySelectorAll('.cbtn-del[data-rid]').forEach(btn=>btn.addEventListener('click',()=>delCreoReport(parseInt(btn.dataset.rid))))
+  // Enter to save
+  document.querySelectorAll('.creo-edit-inp,.creo-notes-inp').forEach(inp=>{
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter')saveCreoReport(parseInt(inp.dataset.rid))})
+  })
+}
+
+async function saveCreoReport(id){
+  const r=CREO_REPORTS.find(x=>x.id===id);if(!r)return
+  // Collect all inputs for this report
+  const fields=['ctr','cr','cpl','cql','notes']
+  const upd={}
+  fields.forEach(f=>{
+    const inp=document.querySelector(`[data-rid="${id}"][data-field="${f}"]`)
+    if(inp)upd[f]=f==='notes'?inp.value:parseFloat(inp.value)||0
+  })
+  await db.from('creo_reports').update(upd).eq('id',id)
+  Object.assign(r,upd)
+  toast('Сохранено','ok')
+}
+
+async function delCreoReport(id){
+  if(!confirm('Удалить отчёт?'))return
+  await db.from('creo_reports').delete().eq('id',id)
+  CREO_REPORTS=CREO_REPORTS.filter(x=>x.id!==id)
+  rcreo();toast('Удалено','ok')
+}
+
+// ══════════════════════════════════════════
+// MODULE 3: АВТО-АРХИВ ПРИ OFF
+// ══════════════════════════════════════════
+let offPendingZalivId=null
+
+function interceptOFF(zalivId){
+  const z=ZALIVS.find(x=>x.id===zalivId);if(!z)return false
+  // Только если переходим В OFF (т.е. текущий статус не OFF)
+  if(z.status==='OFF')return false
+  if(!z.creos||!z.creos.length)return false
+  offPendingZalivId=zalivId
+  document.getElementById('off-zname').textContent=z.name
+  // Показываем крео
+  const geo=z.geo,creator=z.buyer,funnel=z.funnel
+  document.getElementById('off-creo-preview').innerHTML=`
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px;display:flex;gap:16px">
+      <span>${geo?`<span class="zgeo gchip ${geo==='PL'?'gpl':'gplua'}">${geo}</span>`:''}</span>
+      <span>👤 ${creator||'—'}</span>
+      <span>🎯 ${funnel||'—'}</span>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      ${(z.creos||[]).map(cr=>`<span class="creo-id-tag">${cr}</span>`).join('')}
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-top:10px">Баер должен будет ввести CPL и CQL вручную</div>
+  `
+  document.getElementById('mo-off-confirm').classList.add('open')
+  return true // intercepted
+}
+
+document.getElementById('off-skip-btn').addEventListener('click',async()=>{
+  if(!offPendingZalivId)return
+  document.getElementById('mo-off-confirm').classList.remove('open')
+  // просто выключаем статус
+  await applyOFFStatus(offPendingZalivId)
+  offPendingZalivId=null
+})
+
+document.getElementById('off-archive-btn').addEventListener('click',async()=>{
+  if(!offPendingZalivId)return
+  document.getElementById('mo-off-confirm').classList.remove('open')
+  const z=ZALIVS.find(x=>x.id===offPendingZalivId)
+  if(z){
+    // Открываем модал для ввода CPL/CQL по каждому крео
+    openCreoAddModal(z)
+  }
+  offPendingZalivId=null
+})
+
+async function applyOFFStatus(zalivId){
+  const z=ZALIVS.find(x=>x.id===zalivId);if(!z)return
+  z.status='OFF'
+  await db.from('zalivs').update({status:'OFF',updated_at:new Date().toISOString()}).eq('id',zalivId)
+  rzalivs()
+  toast('РК выключена','info')
+}
+
+function openCreoAddModal(z){
+  // Считаем период из метрик для залива
+  // Берём дату создания залива как date_start
+  const dateStart=z.date||new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
+  const dateEnd=new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
+  const spend=z.ad_budget||0
+
+  document.getElementById('creo-add-fields').innerHTML=`
+    <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:12px;margin-bottom:14px">
+      <div style="display:flex;gap:16px;font-size:12px;flex-wrap:wrap">
+        <span>${z.geo?`<span class="zgeo gchip ${z.geo==='PL'?'gpl':'gplua'}">${z.geo}</span>`:''}</span>
+        <span style="color:var(--text2)">👤 ${z.buyer||'—'}</span>
+        <span style="color:var(--text2)">🎯 ${z.funnel||'—'}</span>
+        <span style="color:var(--text3);font-family:var(--mono)">📅 ${dateStart} → ${dateEnd}</span>
+      </div>
+    </div>
+    ${(z.creos||[]).map((cr,i)=>`
+      <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:12px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span class="creo-id-tag">${cr}</span>
+          <span style="font-size:11px;color:var(--text3)">Крео ${i+1}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">
+          <div><div class="elb">CTR %</div><input class="efi" id="ca-ctr-${i}" type="number" step="0.1" placeholder="1.5" value="0"></div>
+          <div><div class="elb">CR %</div><input class="efi" id="ca-cr-${i}" type="number" step="0.1" placeholder="5.0" value="0"></div>
+          <div><div class="elb">CPL $</div><input class="efi" id="ca-cpl-${i}" type="number" step="0.1" placeholder="12.5" value="0"></div>
+          <div><div class="elb">CQL $</div><input class="efi" id="ca-cql-${i}" type="number" step="1" placeholder="60" value="0"></div>
+        </div>
+        <div style="margin-top:8px"><div class="elb">Инсайты</div><input class="efi" id="ca-notes-${i}" placeholder="CTA слишком общий, низкий конверт..." style="font-size:11px"></div>
+      </div>
+    `).join('')}
+    <input type="hidden" id="ca-zaliv-id" value="${z.id}">
+    <input type="hidden" id="ca-creos" value="${JSON.stringify(z.creos||[])}">
+    <input type="hidden" id="ca-geo" value="${z.geo||''}">
+    <input type="hidden" id="ca-creator" value="${z.buyer||''}">
+    <input type="hidden" id="ca-funnel" value="${z.funnel||''}">
+    <input type="hidden" id="ca-date-start" value="${dateStart}">
+    <input type="hidden" id="ca-date-end" value="${dateEnd}">
+    <input type="hidden" id="ca-spend" value="${spend}">
+  `
+  document.getElementById('mo-creo-add').classList.add('open')
+}
+
+document.getElementById('creo-add-save').addEventListener('click',async()=>{
+  const zalivId=parseInt(document.getElementById('ca-zaliv-id').value)
+  const creos=JSON.parse(document.getElementById('ca-creos').value||'[]')
+  const geo=document.getElementById('ca-geo').value
+  const creator=document.getElementById('ca-creator').value
+  const funnel=document.getElementById('ca-funnel').value
+  const dateStart=document.getElementById('ca-date-start').value
+  const dateEnd=document.getElementById('ca-date-end').value
+  const spend=parseFloat(document.getElementById('ca-spend').value)||0
+
+  const rows=creos.map((cr,i)=>({
+    zaliv_id:zalivId,creo_id:cr,geo,creator,funnel,
+    date_start:dateStart,date_end:dateEnd,
+    spend:spend/Math.max(creos.length,1),
+    ctr:parseFloat(document.getElementById('ca-ctr-'+i)?.value)||0,
+    cr:parseFloat(document.getElementById('ca-cr-'+i)?.value)||0,
+    cpl:parseFloat(document.getElementById('ca-cpl-'+i)?.value)||0,
+    cql:parseFloat(document.getElementById('ca-cql-'+i)?.value)||0,
+    notes:document.getElementById('ca-notes-'+i)?.value||''
+  }))
+
+  const{error}=await db.from('creo_reports').insert(rows)
+  if(!error){
+    toast(`${rows.length} крео добавлено в отчёт`,'ok')
+    document.getElementById('mo-creo-add').classList.remove('open')
+    await loadCreoReports()
+    // Выключаем РК
+    await applyOFFStatus(zalivId)
+  }else{
+    toast('Ошибка сохранения: '+error.message,'err')
+  }
+})
+
+// Фильтры крео
+document.getElementById('crf-geo').addEventListener('change',rcreo)
+document.getElementById('crf-creator').addEventListener('change',rcreo)
+document.getElementById('crf-funnel').addEventListener('change',rcreo)
+document.getElementById('crf-q').addEventListener('input',rcreo)
+
 // ── AUTO LOGIN ──
 const _saved=localStorage.getItem('jdl_user')
 if(_saved&&USERS[_saved])doLogin(_saved)
-</script></body></html>
+</script>
+
+<!-- MODAL OFF CONFIRM -->
+<div class="mo off-mo" id="mo-off-confirm">
+  <div class="mob">
+    <div class="motit">⛔ Выключить РК <button class="mox" data-close="mo-off-confirm">×</button></div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">Вы выключаете <strong id="off-zname" style="color:#fff"></strong>.<br>Отправить крео в A/B отчёт?</div>
+    <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:14px;margin-bottom:16px" id="off-creo-preview"></div>
+    <div class="mofoot">
+      <button class="bcn" id="off-skip-btn">Выключить без отчёта</button>
+      <button class="bsv" id="off-archive-btn">✓ Выключить + В отчёт</button>
+    </div>
+  </div>
+</div>
+
+<div class="mo" id="mo-creo-add">
+  <div class="mob" style="width:500px;max-height:90vh">
+    <div class="motit">📊 Добавить в отчёт <button class="mox" data-close="mo-creo-add">×</button></div>
+    <div id="creo-add-fields"></div>
+    <div class="mofoot"><button class="bcn" data-close="mo-creo-add">Отмена</button><button class="bsv" id="creo-add-save">Сохранить отчёт</button></div>
+  </div>
+</div>
+</body></html>
