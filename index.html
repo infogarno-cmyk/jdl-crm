@@ -469,6 +469,30 @@ document.getElementById('root').innerHTML=`
   <div class="fl"><label>Воронка</label><select class="fi" id="dm-funnel"><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div>
   <div class="mofoot"><button class="bcn" data-close="mo-domain">Отмена</button><button class="bsv" id="btn-create-domain">Добавить</button></div>
 </div></div>
+
+<!-- MODAL OFF CONFIRM -->
+<div class="mo off-mo" id="mo-off-confirm">
+  <div class="mob">
+    <div class="motit">⛔ Выключить РК <button class="mox" data-close="mo-off-confirm">×</button></div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">Вы выключаете <strong id="off-zname" style="color:#fff"></strong>.<br>Отправить крео в A/B отчёт?</div>
+    <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:14px;margin-bottom:16px" id="off-creo-preview"></div>
+    <div class="mofoot">
+      <button class="bcn" id="off-skip-btn">Выключить без отчёта</button>
+      <button class="bsv" id="off-archive-btn">✓ Выключить + В отчёт</button>
+    </div>
+  </div>
+</div>
+
+<div class="mo" id="mo-creo-add" style="z-index:600">
+  <div class="mob" style="width:500px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden">
+    <div class="motit" style="flex-shrink:0">📊 Добавить в отчёт <button class="mox" data-close="mo-creo-add">×</button></div>
+    <div id="creo-add-fields" style="flex:1;overflow-y:auto;padding-right:4px"></div>
+    <div class="mofoot" style="flex-shrink:0;border-top:1px solid var(--border);padding-top:14px;margin-top:8px">
+      <button class="bcn" data-close="mo-creo-add">Отмена</button>
+      <button class="bsv" id="creo-add-save">Сохранить отчёт</button>
+    </div>
+  </div>
+</div>
 `
 // ── TOAST ──
 function toast(msg,type='ok'){const w=document.getElementById('toast-wrap');const t=document.createElement('div');t.className=`toast ${type}`;t.innerHTML=`<span>${type==='ok'?'✓':type==='err'?'✗':'ℹ'}</span><span>${msg}</span>`;w.appendChild(t);setTimeout(()=>t.remove(),3000)}
@@ -707,8 +731,8 @@ function rdash(){
 }
 
 // ── CHART ──
-function drawChart(rows){chartData=rows;const c=document.getElementById('dyn-chart');if(!c)return;c.width=c.parentElement.offsetWidth||600;c.height=130;renderChart()}
-function renderChart(){
+function drawChart(rows){chartData=rows;const c=document.getElementById('dyn-chart');if(!c)return;c.width=c.parentElement.offsetWidth||600;c.height=130;renderChart(true)}
+function renderChart(animate=false){
   if(!chartData||!chartData.length)return
   const rows=chartData,c=document.getElementById('dyn-chart'),ctx=c.getContext('2d')
   const W=c.width,H=c.height,P={t:10,b:22,l:10,r:10},cw=W-P.l-P.r,ch=H-P.t-P.b
@@ -733,6 +757,37 @@ function renderChart(){
   const li=[0,Math.floor((n-1)/2),n-1].filter((v,i,a)=>a.indexOf(v)===i)
   li.forEach(i=>ctx.fillText(rows[i]?.day?.slice(5)||'',px(i),H-4))
   c._S=S;c._rows=rows;c._P=P;c._cw=cw;c._ch=ch
+  // Draw-in animation
+  if(animate&&n>1){
+    let prog=0
+    const totalFrames=50
+    function animFrame(){
+      prog=Math.min(prog+1,totalFrames)
+      const p=1-Math.pow(1-prog/totalFrames,3) // ease out cubic
+      const visibleN=Math.max(2,Math.round(p*n))
+      ctx.clearRect(0,0,W,H)
+      ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1
+      for(let i=0;i<=4;i++){const y=P.t+ch*i/4;ctx.beginPath();ctx.moveTo(P.l,y);ctx.lineTo(P.l+cw,y);ctx.stroke()}
+      S.forEach(s=>{
+        const vd=s.d.slice(0,visibleN)
+        if(vd.length<2)return
+        ctx.save()
+        ctx.beginPath();ctx.moveTo(px(0),H-P.b);ctx.lineTo(px(0),py(s.d[0],s))
+        for(let i=1;i<visibleN;i++){const x0=px(i-1),y0=py(s.d[i-1],s),x1=px(i),y1=py(s.d[i],s),cxm=(x0+x1)/2;ctx.bezierCurveTo(cxm,y0,cxm,y1,x1,y1)}
+        ctx.lineTo(px(visibleN-1),H-P.b);ctx.closePath()
+        const g=ctx.createLinearGradient(0,P.t,0,H-P.b);g.addColorStop(0,s.c+'33');g.addColorStop(1,s.c+'00');ctx.fillStyle=g;ctx.fill()
+        ctx.beginPath();ctx.moveTo(px(0),py(s.d[0],s))
+        for(let i=1;i<visibleN;i++){const x0=px(i-1),y0=py(s.d[i-1],s),x1=px(i),y1=py(s.d[i],s),cxm=(x0+x1)/2;ctx.bezierCurveTo(cxm,y0,cxm,y1,x1,y1)}
+        ctx.strokeStyle=s.c;ctx.lineWidth=2;ctx.stroke()
+        for(let i=0;i<visibleN;i++){ctx.beginPath();ctx.arc(px(i),py(s.d[i],s),3,0,Math.PI*2);ctx.fillStyle=s.c;ctx.fill()}
+        ctx.restore()
+      })
+      ctx.fillStyle='rgba(144,144,168,.6)';ctx.font='10px Manrope,sans-serif';ctx.textAlign='center'
+      li.forEach(i=>{if(i<visibleN)ctx.fillText(rows[i]?.day?.slice(5)||'',px(i),H-4)})
+      if(prog<totalFrames)requestAnimationFrame(animFrame)
+    }
+    requestAnimationFrame(animFrame)
+  }
 }
 function chartMouseMove(e){
   const c=this;if(!c._rows)return
@@ -1821,28 +1876,4 @@ document.getElementById('crf-q').addEventListener('input',rcreo)
 const _saved=localStorage.getItem('jdl_user')
 if(_saved&&USERS[_saved])doLogin(_saved)
 </script>
-
-<!-- MODAL OFF CONFIRM -->
-<div class="mo off-mo" id="mo-off-confirm">
-  <div class="mob">
-    <div class="motit">⛔ Выключить РК <button class="mox" data-close="mo-off-confirm">×</button></div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">Вы выключаете <strong id="off-zname" style="color:#fff"></strong>.<br>Отправить крео в A/B отчёт?</div>
-    <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:14px;margin-bottom:16px" id="off-creo-preview"></div>
-    <div class="mofoot">
-      <button class="bcn" id="off-skip-btn">Выключить без отчёта</button>
-      <button class="bsv" id="off-archive-btn">✓ Выключить + В отчёт</button>
-    </div>
-  </div>
-</div>
-
-<div class="mo" id="mo-creo-add" style="z-index:600">
-  <div class="mob" style="width:500px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden">
-    <div class="motit" style="flex-shrink:0">📊 Добавить в отчёт <button class="mox" data-close="mo-creo-add">×</button></div>
-    <div id="creo-add-fields" style="flex:1;overflow-y:auto;padding-right:4px"></div>
-    <div class="mofoot" style="flex-shrink:0;border-top:1px solid var(--border);padding-top:14px;margin-top:8px">
-      <button class="bcn" data-close="mo-creo-add">Отмена</button>
-      <button class="bsv" id="creo-add-save">Сохранить отчёт</button>
-    </div>
-  </div>
-</div>
 </body></html>
