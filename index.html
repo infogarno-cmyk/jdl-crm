@@ -280,12 +280,12 @@ document.getElementById('root').innerHTML=`
     <div class="logo">JDL <em>·</em> CRM</div>
     <nav class="nav">
       <div class="nb active" id="nb-dash"><span class="dot"></span>Dashboard</div>
-      <div class="nb" id="nb-zalivs"><span class="dot"></span>Заливы</div>
-      <div class="nb" id="nb-domains"><span class="dot"></span>Домены</div>
-      <div class="nb" id="nb-sales"><span class="dot"></span>Sales</div>
       <div class="nb" id="nb-tasks"><span class="dot"></span>Tasks</div>
+      <div class="nb" id="nb-zalivs"><span class="dot"></span>Заливы</div>
       <div class="nb" id="nb-journal"><span class="dot"></span>Журнал</div>
       <div class="nb" id="nb-creo"><span class="dot"></span>Крео</div>
+      <div class="nb" id="nb-sales"><span class="dot"></span>Sales</div>
+      <div class="nb" id="nb-domains"><span class="dot"></span>Домены</div>
     </nav>
     <div class="sync-area"><div class="sdot" id="sdot"></div><span class="stxt" id="stxt">—</span><button class="sbtn" id="sync-btn">↻ Sync</button></div>
     <button class="search-btn" id="topbar-search">🔍 Поиск <kbd>⌘K</kbd></button>
@@ -644,7 +644,7 @@ function setupRT(){
     .on('postgres_changes',{event:'*',schema:'public',table:'tasks'},()=>{if(!_saveOrderTimer)loadT().then(rtasks)})
     .on('postgres_changes',{event:'*',schema:'public',table:'domains'},()=>loadD().then(rdomains))
     .on('postgres_changes',{event:'*',schema:'public',table:'journal_docs'},()=>loadJ().then(rtree))
-    .on('postgres_changes',{event:'*',schema:'public',table:'metrics_daily'},()=>loadM().then(rdash))
+    .on('postgres_changes',{event:'*',schema:'public',table:'metrics_daily'},()=>loadM().then(()=>{rdash();if(expZ){const el=document.getElementById('ex-metrics-'+expZ);if(el){const z=ZALIVS.find(x=>x.id===expZ);if(z)el.innerHTML=getZalivMetrics(z)}}}))
     .on('postgres_changes',{event:'*',schema:'public',table:'creo_reports'},()=>loadCreoReports().then(rcreo))
     .subscribe()
 }
@@ -804,8 +804,8 @@ function renderChart(animate=false){
   c._S=S;c._rows=rows;c._P=P;c._cw=cw;c._ch=ch
   // Draw-in animation — each line draws one after another
   if(animate&&n>1){
-    const totalFrames=60  // frames per line
-    const stagger=20      // delay between lines starting
+    const totalFrames=90  // frames per line — slow & smooth
+    const stagger=35      // longer delay between lines
     let frame=0
 
     function animFrame(){
@@ -833,7 +833,10 @@ function renderChart(animate=false){
         // Line
         ctx.beginPath();ctx.moveTo(px(0),py(s.d[0],s))
         for(let i=1;i<visibleN;i++){const x0=px(i-1),y0=py(s.d[i-1],s),x1=px(i),y1=py(s.d[i],s),cxm=(x0+x1)/2;ctx.bezierCurveTo(cxm,y0,cxm,y1,x1,y1)}
-        ctx.strokeStyle=s.c;ctx.lineWidth=2.5;ctx.stroke()
+        ctx.strokeStyle=s.c;ctx.lineWidth=2.5
+        ctx.shadowColor=s.c;ctx.shadowBlur=6
+        ctx.stroke()
+        ctx.shadowBlur=0
         // Dots — only on completed part
         for(let i=0;i<visibleN;i++){
           const dotP=Math.min(1,(lineFrame-(i/n*totalFrames*0.5))/8)
@@ -907,9 +910,8 @@ function rzalivs(){
   document.getElementById('zt-body').innerHTML=html||`<tr><td colspan="10" class="empty">Нет заливов</td></tr>`
   document.querySelectorAll('#zt-body tr[data-zid]').forEach(tr=>{
     tr.addEventListener('click',e=>{
-      // Never toggle if click came from inside expand row or its inputs
-      if(e.target.closest('.exrow,.exin,.exbl,.insta,.efi,.sbsv,.sbdl,.spb-e'))return
-      if(!e.target.closest('button,select,a,.ctag'))togZ(parseInt(tr.dataset.zid))
+      if(e.target.closest('button,select,a,.ctag,.exrow,.exin,.exbl,.insta,.efi,.sbsv,.sbdl,.spb-e,.spb,.rmbtn'))return
+      togZ(parseInt(tr.dataset.zid))
     })
   })
   // stopPropagation на textarea и inputs в expand чтобы выделение не закрывало строку
@@ -975,6 +977,52 @@ async function bulkDeleteZalivs(){
   rzalivs()
 }
 
+function getZalivMetrics(z){
+  // Parse date from zaliv name e.g. D[09.06] or 09.06
+  let dateStartISO=null
+  const raw=z.date||''
+  if(raw){
+    const p=raw.split('.');
+    if(p.length===2){
+      const yr=new Date().getFullYear()
+      dateStartISO=yr+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0')
+    }
+  }
+  if(!dateStartISO&&z.created_at)dateStartISO=z.created_at.split('T')[0]
+  const today=new Date().toISOString().split('T')[0]
+  const rows=METRICS.filter(m=>(!dateStartISO||m.day>=dateStartISO)&&m.day<=today)
+  if(!rows.length)return '<div style="font-size:11px;color:var(--text3)">Нет данных за период</div>'
+  let spend=0,leads=0,quals=0
+  rows.forEach(r=>{
+    if(z.geo==='PL'){spend+=parseFloat(r.spend_pl||0);leads+=(r.leads_pl||0)}
+    else if(z.geo==='PLUA'){spend+=parseFloat(r.spend_plua||0);leads+=(r.leads_plua||0)}
+    else{spend+=parseFloat(r.spend_pl||0)+parseFloat(r.spend_plua||0);leads+=(r.leads_pl||0)+(r.leads_plua||0)}
+    quals+=r.quals||0
+  })
+  spend=Math.round(spend*100)/100
+  const cpl=leads>0?Math.round(spend/leads*100)/100:0
+  const cql=quals>0?Math.round(spend/quals*100)/100:0
+  const avgCtr=rows.length?Math.round(rows.reduce((s,r)=>s+parseFloat(r.ctr||0),0)/rows.length*100)/100:0
+  const days=rows.length
+  return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+    <div style="background:var(--bg5);border-radius:5px;padding:7px 9px;text-align:center">
+      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">SPEND</div>
+      <div style="font-size:16px;font-weight:800;color:var(--yellow);font-family:var(--mono)">$${spend}</div>
+      <div style="font-size:9px;color:var(--text3)">${days}д · $${Math.round(spend/days)}/д</div>
+    </div>
+    <div style="background:var(--bg5);border-radius:5px;padding:7px 9px;text-align:center">
+      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">CPL / CQL</div>
+      <div style="font-size:16px;font-weight:800;color:${cpl>0&&cpl<10?'var(--green)':cpl<15?'var(--yellow)':'var(--red)'};font-family:var(--mono)">$${cpl}</div>
+      <div style="font-size:9px;color:var(--text3)">CQL: $${cql}</div>
+    </div>
+    <div style="background:var(--bg5);border-radius:5px;padding:7px 9px;text-align:center">
+      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">LEADS / CTR</div>
+      <div style="font-size:16px;font-weight:800;color:#fff;font-family:var(--mono)">${leads}</div>
+      <div style="font-size:9px;color:var(--text3)">CTR: ${avgCtr}%</div>
+    </div>
+  </div>`
+}
+
 function exRow(z){
   return`<tr class="exrow ${z.ind==='profit'?'rp':z.ind==='drop'?'rd':'ro'} rex"><td colspan="10"><div class="exin">
     <div class="exbl"><div class="exlb">Редактировать</div>
@@ -984,7 +1032,9 @@ function exRow(z){
       <div style="margin-bottom:8px"><div class="elb">Score (0–6)</div><div style="display:flex;gap:3px">${Array.from({length:7},(_,i)=>`<button class="spb spb-e${z.score===i?' s'+i:''}" data-zid="${z.id}" data-sc="${i}">${i}</button>`).join('')}</div></div>
       <div class="srow"><button class="sbdl" data-zid="${z.id}">🗑 Удалить</button><button class="sbsv" data-zid="${z.id}">💾 Сохранить</button></div>
     </div>
-    <div class="exbl"><div class="exlb">Инсайты</div>
+    <div class="exbl"><div class="exlb">Статистика РК</div>
+      <div id="ex-metrics-${z.id}" style="margin-bottom:10px">${getZalivMetrics(z)}</div>
+      <div class="exlb">Инсайты</div>
       <textarea class="insta" id="ef-ins-${z.id}">${z.insights||''}</textarea>
       <div class="exlb" style="margin-top:10px">Цели</div>${(z.goals||[]).map(g=>`<span class="gtag">— ${g}</span>`).join('')}
       <div class="rkm">D{${z.date||''}}${z.geo}/PH1./${z.funnel}\\LEADS/${z.rk_budget}$</div>
