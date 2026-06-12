@@ -1283,7 +1283,7 @@ async function saveAsTemplate(){
   TEMPLATES.unshift(tpl);localStorage.setItem('jdl_templates',JSON.stringify(TEMPLATES));toast(`Шаблон «${name}» сохранён`,'ok')
 }
 function openTemplates(){renderTemplateList();document.getElementById('mo-templates').classList.add('open')}
-function renderTemplateList(){
+async function renderTemplateList(){
   const list=document.getElementById('tpl-list')
   if(!TEMPLATES.length){list.innerHTML='<div class="empty">Нет шаблонов</div>';return}
   list.innerHTML=TEMPLATES.map(t=>`<div class="tpl-item" data-tplid="${t.id}"><span class="zgeo gchip ${t.geo==='PL'?'gpl':'gplua'}">${t.geo}</span><div style="flex:1;min-width:0"><div class="tpl-name">${t.name}</div><div class="tpl-meta">${t.funnel} · $${t.ad_budget}/$${t.rk_budget}</div></div><button class="tpl-del" data-tplid="${t.id}">✕</button></div>`).join('')
@@ -1415,7 +1415,7 @@ async function delTkConfirmed(id){
 }
 
 var _saveOrderTimer=null
-function saveTaskOrder(){
+async function saveTaskOrder(){
   // Debounce — wait 300ms after last drag before saving
   clearTimeout(_saveOrderTimer)
   _saveOrderTimer=setTimeout(async()=>{
@@ -1696,21 +1696,21 @@ function showInlineNew(afterEl,onConfirm,placeholder='Название...'){
   inp.focus()
 }
 
-function startNewFolder(){
+async function startNewFolder(){
   showInlineNew(null,async name=>{
     const fid='folder_'+Date.now(),docId='doc_'+Date.now()
     const{data,error}=await db.from('journal_docs').insert({id:docId,title:'Новый документ',body:'',folder_id:fid,folder_name:name,sort_order:Math.floor(Date.now()/1000)%2147483647}).select().single();if(error){toast('Ошибка: '+error.message,'err');console.error(error);return}
     if(data){jFolders.push({id:fid,name,docs:[data]});curDoc=data.id;rtree();loadDocById(data.id)}
   },'Название папки...')
 }
-function startNewDoc(){
+async function startNewDoc(){
   showInlineNew(null,async title=>{
     const id='doc_'+Date.now()
     const{data,error}=await db.from('journal_docs').insert({id:'doc_'+Date.now(),title,body:'',folder_id:'',folder_name:'',sort_order:Math.floor(Date.now()/1000)%2147483647}).select().single();if(error){toast('Ошибка: '+error.message,'err');console.error(error);return}
     if(data){jLoose.push(data);curDoc=data.id;rtree();loadDocById(data.id)}
   },'Название документа...')
 }
-function startNewDocInFolder(fid,fname){
+async function startNewDocInFolder(fid,fname){
   const grp=document.querySelector(`[data-fid="${fid}"]`)?.closest('.jgrp')
   showInlineNew(grp,async title=>{
     const id='doc_'+Date.now()
