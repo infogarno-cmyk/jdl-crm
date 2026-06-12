@@ -391,7 +391,7 @@ document.getElementById('root').innerHTML=`
             <select class="fsel" id="clf-funnel"><option value="">🎯 Воронка</option><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select>
             <select class="fsel" id="clf-buyer"><option value="">👤 Все</option><option value="Illia">Illia</option><option value="Danya">Danya</option></select>
             <input class="fsrch" id="clf-q" placeholder="🔍 Поиск...">
-            <button class="badd" onclick="openAddCreoLib()" style="margin-left:auto">+ Крео</button>
+            <button onclick="openAddCreoLib()" style="margin-left:auto;padding:8px 20px;border-radius:8px;border:1px solid var(--bord2);background:linear-gradient(135deg,var(--bord),var(--bord2));color:#fff;font-size:12px;font-weight:800;cursor:pointer;font-family:var(--sans);letter-spacing:.5px;box-shadow:0 0 14px rgba(181,34,64,.35);transition:all .2s" onmouseover="this.style.boxShadow='0 0 22px rgba(181,34,64,.6)'" onmouseout="this.style.boxShadow='0 0 14px rgba(181,34,64,.35)'">+ Добавить крео</button>
           </div>
           <!-- Stats strip -->
           <div id="clf-stats" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"></div>
@@ -540,12 +540,12 @@ document.getElementById('root').innerHTML=`
 <!-- CREO LIBRARY ADD/EDIT MODAL -->
 <div class="mo" id="mo-creo-lib">
   <div class="mob" style="width:500px;max-height:90vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
-    <div class="motit" style="padding:20px 24px 0;flex-shrink:0">🎨 Крео <button class="mox" data-close="mo-creo-lib">×</button></div>
+    <div class="motit" style="padding:20px 24px 0;flex-shrink:0" id="mo-creo-lib-title">🎨 Добавить крео <button class="mox" data-close="mo-creo-lib">×</button></div>
     <div style="flex:1;overflow-y:auto;padding:0 24px 4px">
       <div class="fl" style="margin-top:12px"><label>Название / ID</label><input class="fi" id="cl-name" placeholder="Creo_PL_001 или ID из Meta"></div>
       <div class="fl2">
         <div class="fl" style="margin-bottom:0"><label>GEO</label>
-          <select class="fi" id="cl-geo"><option value="PL">🇵🇱 PL</option><option value="UAPL">🇵🇱🇺🇦 UAPL</option><option value="UACZ">UACZ</option></select>
+          <select class="fi" id="cl-geo"><option value="PL">🇵🇱 PL</option><option value="UAPL">🇵🇱🇺🇦 UAPL</option><option value="UACZ">UACZ</option><option value="CZ">🇨🇿 CZ</option></select>
         </div>
         <div class="fl" style="margin-bottom:0"><label>Воронка</label>
           <select class="fi" id="cl-funnel"><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select>
@@ -2227,15 +2227,17 @@ function renderCreoTable(){
 
 function openAddCreoLib(){
   try{
-    clEditId=null
+    clEditId=null;_pastedImageFile=null
     document.getElementById('cl-name').value=''
     document.getElementById('cl-geo').value='PL'
     document.getElementById('cl-funnel').value='Калькулятор'
     document.getElementById('cl-buyer').value=CURRENT_USER?.name||'Illia'
     document.getElementById('cl-status').value='ready'
     document.getElementById('cl-notes').value=''
-    document.getElementById('cl-img-preview').innerHTML='📷 Нажми или перетащи скрин'
+    document.getElementById('cl-img-preview').innerHTML='📷 Нажми, перетащи или Ctrl+V'
     const fi=document.getElementById('cl-img-inp');if(fi)fi.value=''
+    const t=document.getElementById('mo-creo-lib-title')
+    if(t)t.innerHTML='🎨 Добавить крео <button class="mox" data-close="mo-creo-lib">×</button>'
     document.getElementById('mo-creo-lib').classList.add('open')
   }catch(e){console.error('openAddCreoLib:',e)}
 }
@@ -2295,7 +2297,7 @@ function delInsight(i){
 // ── CRUD ──
 async function openEditCreoLib(id){
   const cr=CREO_LIB.find(x=>x.id===id);if(!cr)return
-  clEditId=id
+  clEditId=id;_pastedImageFile=null
   document.getElementById('cl-name').value=cr.name||''
   document.getElementById('cl-geo').value=cr.geo||'PL'
   document.getElementById('cl-funnel').value=cr.funnel||'Калькулятор'
@@ -2304,7 +2306,10 @@ async function openEditCreoLib(id){
   document.getElementById('cl-notes').value=cr.notes||''
   document.getElementById('cl-img-preview').innerHTML=cr.screenshot_url
     ?`<img src="${cr.screenshot_url}" style="max-height:80px;border-radius:6px;display:block;margin:0 auto">`
-    :'📷 Нажми или перетащи скрин'
+    :'📷 Нажми, перетащи или Ctrl+V'
+  const fi=document.getElementById('cl-img-inp');if(fi)fi.value=''
+  const t=document.getElementById('mo-creo-lib-title')
+  if(t)t.innerHTML=`✏️ Редактировать: ${cr.name} <button class="mox" data-close="mo-creo-lib">×</button>`
   document.getElementById('mo-creo-lib').classList.add('open')
 }
 
@@ -2332,12 +2337,13 @@ async function saveCreoLib(){
   let screenshot_url=clEditId?CREO_LIB.find(x=>x.id===clEditId)?.screenshot_url:null
   const fileInp=document.getElementById('cl-img-inp')
   const fileInp2=document.getElementById('cl-img-inp')
-  if(fileInp2?.files?.[0]){
-    const file=fileInp2.files[0]
+  const uploadFile=fileInp2?.files?.[0]||_pastedImageFile
+  if(uploadFile){
     const path=`creolib_${Date.now()}.png`
-    const{error:upErr}=await db.storage.from('creo-screenshots').upload(path,file,{upsert:true,contentType:file.type})
-    if(upErr){console.error('Upload error:',upErr)}
+    const{error:upErr}=await db.storage.from('creo-screenshots').upload(path,uploadFile,{upsert:true,contentType:uploadFile.type||'image/png'})
+    if(upErr){console.error('Upload error:',upErr);toast('Ошибка загрузки скрина: '+upErr.message,'err')}
     else{const{data:ud}=db.storage.from('creo-screenshots').getPublicUrl(path);screenshot_url=ud.publicUrl}
+    _pastedImageFile=null
   }
 
   const payload={name,geo,funnel,buyer,status,notes,screenshot_url,hall_geo}
@@ -2392,7 +2398,8 @@ document.getElementById('cl-img-drop')?.addEventListener('drop',e=>{
   }
 })
 
-// Ctrl+V paste from clipboard
+// Ctrl+V paste from clipboard - store file directly
+let _pastedImageFile = null
 document.addEventListener('paste',e=>{
   const mo=document.getElementById('mo-creo-lib')
   if(!mo?.classList.contains('open'))return
@@ -2402,16 +2409,15 @@ document.addEventListener('paste',e=>{
   e.preventDefault()
   const file=imgItem.getAsFile()
   if(!file)return
-  const dt=new DataTransfer();dt.items.add(file)
-  document.getElementById('cl-img-inp').files=dt.files
+  _pastedImageFile=file  // store for upload
   const r=new FileReader()
   r.onload=ev=>{
     document.getElementById('cl-img-preview').innerHTML=`<img src="${ev.target.result}" style="max-height:80px;border-radius:6px;display:block;margin:0 auto">`
-    toast('Скрин вставлен из буфера ✓','ok')
+    const drop=document.getElementById('cl-img-drop')
+    if(drop){drop.style.borderColor='var(--green)';setTimeout(()=>drop.style.borderColor='',1500)}
+    toast('Скрин вставлен ✓ — теперь нажми Сохранить','ok')
   }
   r.readAsDataURL(file)
-  document.getElementById('cl-img-drop').style.borderColor='var(--green)'
-  setTimeout(()=>document.getElementById('cl-img-drop').style.borderColor='',1500)
 })
 
 // Creo picker in zaliv modal — datalist autocomplete
