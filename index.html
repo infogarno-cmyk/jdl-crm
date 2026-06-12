@@ -2617,6 +2617,22 @@ function openCreoInfo(creoName){
   mo.classList.add('open')
 }
 
+function updDomains(){
+  const sel=document.getElementById('md')
+  if(!sel)return
+  const f=moGeo?DOMAINS.filter(d=>(d.geos||[]).includes(moGeo)&&d.active!==false):DOMAINS.filter(d=>d.active!==false)
+  sel.innerHTML='<option value="">— выбрать —</option>'+f.map(d=>`<option value="${d.url}">${d.url}</option>`).join('')
+}
+
+function updPrev(){
+  const el=document.getElementById('mo-prev')
+  if(!el)return
+  const g=moGeo||'GEO'
+  const b=document.getElementById('mr')?.value||'budget'
+  const today=new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
+  el.textContent=`D{${today}}${g}/PH1./garno/kalk\LEADS/${b}$`
+}
+
 // ── AUTO LOGIN ──
 // Auto-login
 const _saved=localStorage.getItem('jdl_user')
