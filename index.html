@@ -1160,7 +1160,7 @@ function exRow(z){
                 <option value="${cr}">${cr||'— выбрать —'}</option>
                 ${CREO_LIB.filter(lib=>lib.geo===(z.geo==='PLUA'?'UAPL':z.geo)).map(lib=>`<option value="${lib.name}"${lib.name===cr?' selected':''}>${lib.name}${lib.status==='hall'?' 🏆':lib.status==='used'?' ⚡':' ✨'}</option>`).join('')}
               </select>
-              <button class="rmbtn ef-creo-del" data-zid="${z.id}" data-ci="${ci}" title="Удалить крео" style="color:var(--red);font-size:16px;flex-shrink:0" onclick="event.stopPropagation()">×</button>
+              <button class="rmbtn" title="Удалить крео" style="color:var(--red);font-size:18px;flex-shrink:0;padding:0 6px" onclick="event.stopPropagation();delCreoFromExpand(${z.id},${ci});return false">×</button>
             </div>
           `).join('')}
           ${(z.creos||[]).length<5?`<button class="addg" onclick="addCreoToExpand('${z.id}')">+ Крео</button>`:''}
@@ -2537,6 +2537,15 @@ function addCreoToExpand(zid){
   const addBtn=list.querySelector('.addg')
   if(addBtn)list.insertBefore(div,addBtn)
   else list.appendChild(div)
+}
+
+function delCreoFromExpand(zid,ci){
+  console.log('delCreoFromExpand called',zid,ci)
+  const z=ZALIVS.find(x=>x.id===zid);if(!z){toast('zaliv not found','err');return}
+  z.creos=(z.creos||[]).filter((_,i)=>i!==ci)
+  db.from('zalivs').update({creos:z.creos,updated_at:new Date().toISOString()}).eq('id',zid)
+  expZ=zid;rzalivs()
+  toast('Крео удалено','ok')
 }
 
 // ── AUTO LOGIN ──
