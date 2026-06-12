@@ -540,6 +540,18 @@ document.getElementById('root').innerHTML=`
 </div>
 
 <!-- CREO LIBRARY ADD/EDIT MODAL -->
+<!-- CREO INFO POPUP -->
+<div class="mo" id="mo-creo-info" style="z-index:700">
+  <div class="mob" style="width:440px;padding:0;display:flex;flex-direction:column;max-height:88vh;overflow:hidden">
+    <div id="creo-info-img" style="width:100%;height:200px;background:var(--bg4);flex-shrink:0;position:relative;overflow:hidden;border-radius:12px 12px 0 0">
+      <button class="mox" data-close="mo-creo-info" style="position:absolute;top:10px;right:12px;z-index:2;background:rgba(0,0,0,.6);border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center">×</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:16px 20px 20px">
+      <div id="creo-info-body"></div>
+    </div>
+  </div>
+</div>
+
 <div class="mo" id="mo-creo-lib">
   <div class="mob" style="width:500px;max-height:90vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
     <div class="motit" style="padding:20px 24px 0;flex-shrink:0" id="mo-creo-lib-title">🎨 Добавить крео <button class="mox" data-close="mo-creo-lib">×</button></div>
@@ -1055,7 +1067,10 @@ function rzalivs(){
   document.querySelectorAll('.spb[data-sc]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();setScore(parseInt(btn.dataset.zid),parseInt(btn.dataset.sc))}))
   document.querySelectorAll('.ssel[data-zid]').forEach(sel=>{sel.addEventListener('click',e=>e.stopPropagation());sel.addEventListener('change',()=>setStatus(parseInt(sel.dataset.zid),sel))})
   document.querySelectorAll('.cadd[data-zid]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();addCreoInline(parseInt(btn.dataset.zid))}))
-  document.querySelectorAll('.ctag[data-creo]').forEach(tag=>tag.addEventListener('click',e=>{e.stopPropagation();openCreoGallery(parseInt(tag.dataset.zid),tag.dataset.creo)}))
+  document.querySelectorAll('.ctag[data-creo]').forEach(tag=>tag.addEventListener('click',e=>{
+    e.stopPropagation()
+    openCreoInfo(tag.dataset.creo)
+  }))
   document.querySelectorAll('.sbsv[data-zid]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();saveEdit(parseInt(btn.dataset.zid))}))
   document.querySelectorAll('.sbdl[data-zid]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();delZaliv(parseInt(btn.dataset.zid))}))
   document.querySelectorAll('.spb-e[data-sc]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();setScore(parseInt(btn.dataset.zid),parseInt(btn.dataset.sc))}))
@@ -2406,19 +2421,21 @@ async function saveCreoLib(){
 // Auto-update creo status when added to zaliv
 // Called from openCreoAddModal after archiving
 async function markCreosAsUsed(creoNames, stats){
-  // creoNames: array of creo ids/names, stats: {ctr, cpl, cql} averages
   for(const name of creoNames){
     const cr=CREO_LIB.find(x=>x.name===name||x.name===name.trim())
     if(!cr)continue
     const launches=(cr.launches||0)+1
-    const newCtr=stats.ctr||cr.avg_ctr||0
-    const newCpl=stats.cpl||cr.avg_cpl||0
-    const newCql=stats.cql||cr.avg_cql||0
+    // Weighted average: blend old stats with new
+    const w=1/launches
+    const newCtr=cr.avg_ctr?Math.round((cr.avg_ctr*(1-w)+(stats.ctr||0)*w)*100)/100:(stats.ctr||0)
+    const newCpl=cr.avg_cpl?Math.round((cr.avg_cpl*(1-w)+(stats.cpl||0)*w)*100)/100:(stats.cpl||0)
+    const newCql=cr.avg_cql?Math.round((cr.avg_cql*(1-w)+(stats.cql||0)*w)*100)/100:(stats.cql||0)
     const upd={status:'used',launches,avg_ctr:newCtr,avg_cpl:newCpl,avg_cql:newCql}
-    await db.from('creo_library').update(upd).eq('id',cr.id)
-    Object.assign(cr,upd)
+    const{error}=await db.from('creo_library').update(upd).eq('id',cr.id)
+    if(!error)Object.assign(cr,upd)
   }
   renderCreoTable()
+  toast('Статка по крео обновлена','ok')
 }
 
 // Wire image upload
@@ -2546,6 +2563,58 @@ function delCreoFromExpand(zid,ci){
   db.from('zalivs').update({creos:z.creos,updated_at:new Date().toISOString()}).eq('id',zid)
   expZ=zid;rzalivs()
   toast('Крео удалено','ok')
+}
+
+function openCreoInfo(creoName){
+  const cr=CREO_LIB.find(x=>x.name===creoName)
+  const mo=document.getElementById('mo-creo-info')
+  const imgEl=document.getElementById('creo-info-img')
+  const bodyEl=document.getElementById('creo-info-body')
+  if(!mo||!imgEl||!bodyEl)return
+
+  // Image
+  if(cr?.screenshot_url){
+    imgEl.style.background='var(--bg4)'
+    imgEl.innerHTML=`<button class="mox" data-close="mo-creo-info" style="position:absolute;top:10px;right:12px;z-index:2;background:rgba(0,0,0,.6);border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center">×</button>
+      <img src="${cr.screenshot_url}" style="width:100%;height:100%;object-fit:contain">`
+  }else{
+    imgEl.innerHTML=`<button class="mox" data-close="mo-creo-info" style="position:absolute;top:10px;right:12px;z-index:2;background:rgba(0,0,0,.6);border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center">×</button>
+      <div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:48px">${cr?.status==='hall'?'🏆':cr?.status==='used'?'⚡':'🎨'}</div>`
+  }
+
+  const statusColor=cr?.status==='hall'?'#ffd700':cr?.status==='used'?'var(--yellow)':'var(--blue)'
+  const statusLabel=cr?.status==='hall'?'🏆 MWP':cr?.status==='used'?'⚡ Use':'✨ Clean'
+  const geoClass=cr?.geo==='PL'?'gpl':'gplua'
+
+  bodyEl.innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <div style="font-size:16px;font-weight:800;color:#fff;flex:1">${creoName}</div>
+      ${cr?`<span style="font-size:11px;font-weight:700;color:${statusColor}">${statusLabel}</span>`:'<span style="color:var(--text3);font-size:11px">Не в библиотеке</span>'}
+    </div>
+    ${cr?`
+    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+      <span class="zgeo gchip ${geoClass}">${cr.geo}</span>
+      <span class="fchip">${cr.funnel||'—'}</span>
+      <span class="tma">${cr.buyer||'—'}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+      <div style="background:var(--bg4);border-radius:7px;padding:10px;text-align:center">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-bottom:4px">CTR</div>
+        <div style="font-size:20px;font-weight:800;color:${cr.avg_ctr>2?'var(--green)':cr.avg_ctr>1?'var(--yellow)':'var(--text)'};font-family:var(--mono)">${cr.avg_ctr||'—'}${cr.avg_ctr?'%':''}</div>
+      </div>
+      <div style="background:var(--bg4);border-radius:7px;padding:10px;text-align:center">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-bottom:4px">CPL</div>
+        <div style="font-size:20px;font-weight:800;color:${cr.avg_cpl>0&&cr.avg_cpl<10?'var(--green)':cr.avg_cpl<15?'var(--yellow)':'var(--text)'};font-family:var(--mono)">${cr.avg_cpl?'$'+cr.avg_cpl:'—'}</div>
+      </div>
+      <div style="background:var(--bg4);border-radius:7px;padding:10px;text-align:center">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-bottom:4px">ЗАЛИВОВ</div>
+        <div style="font-size:20px;font-weight:800;color:#fff;font-family:var(--mono)">${cr.launches||0}</div>
+      </div>
+    </div>
+    ${cr.notes?`<div style="background:var(--bg4);border-radius:7px;padding:10px;font-size:12px;color:var(--text2);line-height:1.6">${cr.notes}</div>`:''}
+    `:'<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px">Крео не найден в библиотеке.<br>Добавь его в разделе Крео.</div>'}
+  `
+  mo.classList.add('open')
 }
 
 // ── AUTO LOGIN ──
