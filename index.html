@@ -20,6 +20,7 @@ let db,CURRENT_USER=null
 let ZALIVS=[],DOMAINS=[],TASKS=[],METRICS=[],SALES_DATA=[],TEMPLATES=[]
 let expZ=null,dragId=null,moGeo='',moScore=0,domGeoSel=[],deGeoSel=[],deEditId=null
 let CREO_REPORTS=[]
+let CREO_LIB=[],INSIGHTS=[],clEditId=null,creoLibTab='pl'
 let curDoc=null,chartData=null,jFolders=[],jLoose=[]
 let creoCurrentZaliv=null,creoCurrentId=null,srchSelIdx=-1
 
@@ -2124,13 +2125,7 @@ document.getElementById('crf-funnel').addEventListener('change',rcreo)
 document.getElementById('crf-q').addEventListener('input',rcreo)
 
 
-// ══════════════════════════════════════════
-// CREO LIBRARY v2 — table + insight board
-// ══════════════════════════════════════════
-let CREO_LIB=[]
-let INSIGHTS=[]
-let clEditId=null
-let creoLibTab='pl' // keep for compat
+// CREO LIBRARY v2 — vars moved to global section
 
 async function loadCreoLib(){
   if(!db)return
@@ -2231,16 +2226,18 @@ function renderCreoTable(){
 }
 
 function openAddCreoLib(){
-  clEditId=null
-  document.getElementById('cl-name').value=''
-  document.getElementById('cl-geo').value='PL'
-  document.getElementById('cl-funnel').value='Калькулятор'
-  document.getElementById('cl-buyer').value=CURRENT_USER?.name||'Illia'
-  document.getElementById('cl-status').value='ready'
-  document.getElementById('cl-notes').value=''
-  document.getElementById('cl-img-preview').innerHTML='📷 Нажми или перетащи скрин'
-  const fi=document.getElementById('cl-img-inp');if(fi)fi.value=''
-  document.getElementById('mo-creo-lib').classList.add('open')
+  try{
+    clEditId=null
+    document.getElementById('cl-name').value=''
+    document.getElementById('cl-geo').value='PL'
+    document.getElementById('cl-funnel').value='Калькулятор'
+    document.getElementById('cl-buyer').value=CURRENT_USER?.name||'Illia'
+    document.getElementById('cl-status').value='ready'
+    document.getElementById('cl-notes').value=''
+    document.getElementById('cl-img-preview').innerHTML='📷 Нажми или перетащи скрин'
+    const fi=document.getElementById('cl-img-inp');if(fi)fi.value=''
+    document.getElementById('mo-creo-lib').classList.add('open')
+  }catch(e){console.error('openAddCreoLib:',e)}
 }
 
 function bindCreoFilters(){
@@ -2275,15 +2272,18 @@ function renderInsightBoard(){
 }
 
 function addInsightInline(){
-  const tag=document.getElementById('insight-tag')?.value||'insight'
-  const text=document.getElementById('insight-new-text')?.value?.trim()
-  if(!text){toast('Напиши мысль','err');return}
-  const buyer=CURRENT_USER?.name||'Unknown'
-  INSIGHTS.unshift({tag,text,buyer,date:new Date().toLocaleDateString('ru')})
-  localStorage.setItem('creo_insights',JSON.stringify(INSIGHTS))
-  document.getElementById('insight-new-text').value=''
-  renderInsightBoard()
-  toast('Сохранено','ok')
+  try{
+    if(!Array.isArray(INSIGHTS))window.INSIGHTS=[]
+    const tag=document.getElementById('insight-tag')?.value||'insight'
+    const text=document.getElementById('insight-new-text')?.value?.trim()
+    if(!text){toast('Напиши мысль','err');return}
+    const buyer=CURRENT_USER?.name||'Unknown'
+    INSIGHTS.unshift({tag,text,buyer,date:new Date().toLocaleDateString('ru')})
+    localStorage.setItem('creo_insights',JSON.stringify(INSIGHTS))
+    document.getElementById('insight-new-text').value=''
+    renderInsightBoard()
+    toast('Сохранено','ok')
+  }catch(e){console.error('addInsightInline error:',e);toast('Ошибка: '+e.message,'err')}
 }
 
 function delInsight(i){
@@ -2410,7 +2410,7 @@ function updCreoSelects(){
 }
 
 // Hook into archiving — mark creos as used with stats
-const _origCreoAddSave=creoAddSave
+// creoAddSave is overridden here to add markCreosAsUsed
 function creoAddSave(){
   // Before saving, collect creo names and stats to mark as used
   const creosRaw=document.getElementById('ca-creos')?.value||''
