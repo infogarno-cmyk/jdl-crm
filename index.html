@@ -385,11 +385,12 @@ document.getElementById('root').innerHTML=`
         <!-- LEFT: Library -->
         <div>
           <div class="fbar" style="margin-bottom:12px">
-            <select class="fsel" id="clf-geo"><option value="">🌐 GEO</option><option value="PL">🇵🇱 PL</option><option value="UAPL">🇵🇱🇺🇦 UAPL</option><option value="UACZ">UACZ</option></select>
-            <select class="fsel" id="clf-status"><option value="">🏷 Статус</option><option value="ready">🎯 Ждёт</option><option value="used">⚡ Использован</option><option value="hall">🏆 Зал Славы</option></select>
+            <select class="fsel" id="clf-geo"><option value="">🌐 GEO</option><option value="PL">🇵🇱 PL</option><option value="UAPL">🇵🇱🇺🇦 UAPL</option></select>
+            <select class="fsel" id="clf-status"><option value="">🏷 Статус</option><option value="ready">✨ Clean</option><option value="used">⚡ Use</option><option value="hall">🏆 MWP</option></select>
             <select class="fsel" id="clf-funnel"><option value="">🎯 Воронка</option><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select>
+            <select class="fsel" id="clf-buyer"><option value="">👤 Все</option><option value="Illia">Illia</option><option value="Danya">Danya</option></select>
             <input class="fsrch" id="clf-q" placeholder="🔍 Поиск...">
-            <button class="badd" id="btn-add-creo-lib" style="margin-left:auto">+ Крео</button>
+            <button class="badd" onclick="openAddCreoLib()" style="margin-left:auto">+ Крео</button>
           </div>
           <!-- Stats strip -->
           <div id="clf-stats" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"></div>
@@ -405,11 +406,21 @@ document.getElementById('root').innerHTML=`
         </div>
         <!-- RIGHT: Buyers Insight board -->
         <div class="insight-board" id="insight-board">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-            <span style="font-size:13px;font-weight:800;color:#fff">💡 Buyers Insight</span>
-            <button class="badd" style="margin-left:0;font-size:10px;padding:4px 10px" onclick="openAddInsight()">+ Мысль</button>
+          <div style="margin-bottom:12px">
+            <span style="font-size:13px;font-weight:800;color:#fff;display:block;margin-bottom:8px">💡 Buyers Insight</span>
+            <!-- Inline add form -->
+            <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px">
+              <select id="insight-tag" style="width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:5px;color:var(--text2);font-size:11px;padding:4px 8px;outline:none;margin-bottom:7px;font-family:var(--sans)">
+                <option value="insight">💡 Инсайт</option>
+                <option value="trend">📈 Тренд</option>
+                <option value="hypo">🔬 Гипотеза</option>
+                <option value="fail">❌ Провал</option>
+              </select>
+              <textarea id="insight-new-text" style="width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-size:12px;padding:7px 9px;resize:none;outline:none;font-family:var(--sans);min-height:60px;line-height:1.5" placeholder="Напиши мысль, наблюдение, тенденцию..."></textarea>
+              <button onclick="addInsightInline()" style="margin-top:6px;width:100%;padding:6px;border-radius:5px;border:1px solid var(--bord2);background:var(--bord-dim);color:var(--bord2);font-size:11px;cursor:pointer;font-weight:700;font-family:var(--sans)">+ Добавить</button>
+            </div>
           </div>
-          <div id="insight-cards"></div>
+          <div id="insight-cards" style="display:flex;flex-direction:column;gap:7px"></div>
         </div>
       </div>
     </div>
@@ -2150,10 +2161,12 @@ function renderCreoTable(){
   const funnel=document.getElementById('clf-funnel')?.value||''
   const q=document.getElementById('clf-q')?.value?.toLowerCase()||''
 
+  const buyer=document.getElementById('clf-buyer')?.value||''
   let f=CREO_LIB.filter(cr=>
     (!geo||cr.geo===geo)&&
     (!status||cr.status===status)&&
     (!funnel||cr.funnel===funnel)&&
+    (!buyer||cr.buyer===buyer)&&
     (!q||cr.name?.toLowerCase().includes(q)||cr.notes?.toLowerCase().includes(q))
   )
 
@@ -2183,7 +2196,7 @@ function renderCreoTable(){
 
   tbody.innerHTML=f.map(cr=>{
     const statusColor=cr.status==='hall'?'#ffd700':cr.status==='used'?'var(--yellow)':'var(--blue)'
-    const statusLabel=cr.status==='hall'?'🏆 Зал Славы':cr.status==='used'?'⚡ Использован':'🎯 Ждёт'
+    const statusLabel=cr.status==='hall'?'🏆 MWP':cr.status==='used'?'⚡ Use':'✨ Clean'
     const geoClass=cr.geo==='PL'?'gpl':'gplua'
     const ctrColor=cr.avg_ctr>2?'var(--green)':cr.avg_ctr>1?'var(--yellow)':cr.avg_ctr>0?'var(--red)':'var(--text3)'
     const cplColor=cr.avg_cpl>0&&cr.avg_cpl<10?'var(--green)':cr.avg_cpl<15?'var(--yellow)':cr.avg_cpl>0?'var(--red)':'var(--text3)'
@@ -2217,24 +2230,27 @@ function renderCreoTable(){
   }).join('')
 }
 
+function openAddCreoLib(){
+  clEditId=null
+  document.getElementById('cl-name').value=''
+  document.getElementById('cl-geo').value='PL'
+  document.getElementById('cl-funnel').value='Калькулятор'
+  document.getElementById('cl-buyer').value=CURRENT_USER?.name||'Illia'
+  document.getElementById('cl-status').value='ready'
+  document.getElementById('cl-notes').value=''
+  document.getElementById('cl-img-preview').innerHTML='📷 Нажми или перетащи скрин'
+  const fi=document.getElementById('cl-img-inp');if(fi)fi.value=''
+  document.getElementById('mo-creo-lib').classList.add('open')
+}
+
 function bindCreoFilters(){
-  ;['clf-geo','clf-status','clf-funnel'].forEach(id=>{
+  ;['clf-geo','clf-status','clf-funnel','clf-buyer'].forEach(id=>{
     const el=document.getElementById(id)
     if(el&&!el._creobound){el._creobound=true;el.addEventListener('change',renderCreoTable)}
   })
   const q=document.getElementById('clf-q')
   if(q&&!q._creobound){q._creobound=true;q.addEventListener('input',renderCreoTable)}
-  const addBtn=document.getElementById('btn-add-creo-lib')
-  if(addBtn&&!addBtn._creobound){
-    addBtn._creobound=true
-    addBtn.addEventListener('click',()=>{
-      clEditId=null
-      document.getElementById('cl-name').value=''
-      document.getElementById('cl-notes').value=''
-      document.getElementById('cl-img-preview').innerHTML='📷 Нажми или перетащи скрин'
-      document.getElementById('mo-creo-lib').classList.add('open')
-    })
-  }
+
 }
 
 // ── Insight Board ──
@@ -2258,15 +2274,16 @@ function renderInsightBoard(){
   `).join('')
 }
 
-function openAddInsight(){
-  const tag=prompt('Тег (trend/hypo/insight/fail):','insight')
-  if(!tag)return
-  const text=prompt('Мысль:')
-  if(!text?.trim())return
+function addInsightInline(){
+  const tag=document.getElementById('insight-tag')?.value||'insight'
+  const text=document.getElementById('insight-new-text')?.value?.trim()
+  if(!text){toast('Напиши мысль','err');return}
   const buyer=CURRENT_USER?.name||'Unknown'
-  INSIGHTS.unshift({tag,text:text.trim(),buyer,date:new Date().toLocaleDateString('ru')})
+  INSIGHTS.unshift({tag,text,buyer,date:new Date().toLocaleDateString('ru')})
   localStorage.setItem('creo_insights',JSON.stringify(INSIGHTS))
+  document.getElementById('insight-new-text').value=''
   renderInsightBoard()
+  toast('Сохранено','ok')
 }
 
 function delInsight(i){
