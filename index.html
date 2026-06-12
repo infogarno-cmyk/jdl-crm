@@ -1540,29 +1540,29 @@ function showInlineNew(afterEl,onConfirm,placeholder='Название...'){
 function startNewFolder(){
   showInlineNew(null,async name=>{
     const fid='folder_'+Date.now(),docId='doc_'+Date.now()
-    const{data}=await db.from('journal_docs').insert({id:docId,title:'Новый документ',body:'',folder_id:fid,folder_name:name,sort_order:Date.now()}).select().single()
-    if(data){jFolders.push({id:fid,name,docs:[data]});curDoc=docId;rtree();loadDocById(docId)}
+    const{data,error}=await db.from('journal_docs').insert({id:docId,title:'Новый документ',body:'',folder_id:fid,folder_name:name,sort_order:Date.now()}).select().single();if(error){toast('Ошибка: '+error.message,'err');console.error(error);return}
+    if(data){jFolders.push({id:fid,name,docs:[data]});curDoc=data.id;rtree();loadDocById(data.id)}
   },'Название папки...')
 }
 function startNewDoc(){
   showInlineNew(null,async title=>{
     const id='doc_'+Date.now()
-    const{data}=await db.from('journal_docs').insert({id,title,body:'',folder_id:'',folder_name:'',sort_order:Date.now()}).select().single()
-    if(data){jLoose.push(data);curDoc=id;rtree();loadDocById(id)}
+    const{data,error}=await db.from('journal_docs').insert({id:'doc_'+Date.now(),title,body:'',folder_id:'',folder_name:'',sort_order:Date.now()}).select().single();if(error){toast('Ошибка: '+error.message,'err');console.error(error);return}
+    if(data){jLoose.push(data);curDoc=data.id;rtree();loadDocById(data.id)}
   },'Название документа...')
 }
 function startNewDocInFolder(fid,fname){
   const grp=document.querySelector(`[data-fid="${fid}"]`)?.closest('.jgrp')
   showInlineNew(grp,async title=>{
     const id='doc_'+Date.now()
-    const{data}=await db.from('journal_docs').insert({id,title,body:'',folder_id:fid,folder_name:fname,sort_order:Date.now()}).select().single()
-    if(data){const f=jFolders.find(x=>x.id===fid);if(f)f.docs.push(data);curDoc=id;rtree();loadDocById(id)}
+    const{data,error}=await db.from('journal_docs').insert({id:'doc_'+Date.now(),title,body:'',folder_id:fid,folder_name:fname,sort_order:Date.now()}).select().single();if(error){toast('Ошибка: '+error.message,'err');return}
+    if(data){const f=jFolders.find(x=>x.id===fid);if(f)f.docs.push(data);curDoc=data.id;rtree();loadDocById(data.id)}
   },'Название документа...')
 }
 
 function loadDocById(id){
   curDoc=id
-  const all=[...jLoose,...jFolders.flatMap(f=>f.docs)],d=all.find(x=>x.id===id)
+  const all=[...jLoose,...jFolders.flatMap(f=>f.docs)],d=all.find(x=>String(x.id)===String(id))
   if(d){
     document.getElementById('j-title').value=d.title
     const ed=document.getElementById('jeditor')
@@ -1599,7 +1599,7 @@ async function saveDoc(){
   const title=document.getElementById('j-title').value
   const body=document.getElementById('jeditor').innerHTML
   await db.from('journal_docs').update({title,body,updated_at:new Date().toISOString()}).eq('id',curDoc)
-  const all=[...jLoose,...jFolders.flatMap(f=>f.docs)],d=all.find(x=>x.id===curDoc)
+  const all=[...jLoose,...jFolders.flatMap(f=>f.docs)],d=all.find(x=>String(x.id)===String(curDoc))
   if(d){d.title=title;d.body=body}
   toast('Сохранено','ok')
   const btn=document.getElementById('btn-jsave');btn.textContent='✅ Сохранено';setTimeout(()=>btn.textContent='💾 Сохранить',1500)
