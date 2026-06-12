@@ -1152,6 +1152,19 @@ function exRow(z){
           <option value="${z.domain||''}">${z.domain||'— выбрать —'}</option>
           ${DOMAINS.filter(d=>d.active).map(d=>`<option value="${d.url}"${z.domain===d.url?' selected':''}>${d.url}</option>`).join('')}
         </select></div>
+      <div style="margin-bottom:8px"><div class="elb">Крео (из библиотеки по GEO)</div>
+        <div id="ef-creo-list-${z.id}" style="display:flex;flex-direction:column;gap:5px">
+          ${(z.creos||[]).map((cr,ci)=>`
+            <div style="display:flex;gap:5px">
+              <select class="efi ef-creo-sel" style="flex:1" data-zid="${z.id}" data-ci="${ci}">
+                <option value="${cr}">${cr||'— выбрать —'}</option>
+                ${CREO_LIB.filter(lib=>lib.geo===(z.geo==='PLUA'?'UAPL':z.geo)).map(lib=>`<option value="${lib.name}"${lib.name===cr?' selected':''}>${lib.name}${lib.status==='hall'?' 🏆':lib.status==='used'?' ⚡':' ✨'}</option>`).join('')}
+              </select>
+            </div>
+          `).join('')}
+          ${(z.creos||[]).length<5?`<button class="addg" onclick="addCreoToExpand('${z.id}')">+ Крео</button>`:''}
+        </div>
+      </div>
       <div style="margin-bottom:8px"><div class="elb">Score (0–6)</div><div style="display:flex;gap:3px">${Array.from({length:7},(_,i)=>`<button class="spb spb-e${z.score===i?' s'+i:''}" data-zid="${z.id}" data-sc="${i}">${i}</button>`).join('')}</div></div>
       <div class="srow"><button class="sbdl" data-zid="${z.id}">🗑 Удалить</button><button class="sbsv" data-zid="${z.id}">💾 Сохранить</button></div>
     </div>
@@ -1198,7 +1211,8 @@ async function setStatus(id,sel){
 }
 async function saveEdit(id){
   const z=ZALIVS.find(x=>x.id===id);if(!z)return
-  const u={name:document.getElementById('ef-name-'+id).value.trim()||z.name,ad_budget:parseFloat(document.getElementById('ef-ad-'+id).value)||z.ad_budget,rk_budget:parseFloat(document.getElementById('ef-rk-'+id).value)||z.rk_budget,domain:document.getElementById('ef-dom-'+id).value.trim(),insights:document.getElementById('ef-ins-'+id).value,updated_at:new Date().toISOString()}
+  const creoSels=[...document.querySelectorAll('#ef-creo-list-'+id+' .ef-creo-sel')].map(s=>s.value).filter(Boolean)
+  const u={name:document.getElementById('ef-name-'+id).value.trim()||z.name,ad_budget:parseFloat(document.getElementById('ef-ad-'+id).value)||z.ad_budget,rk_budget:parseFloat(document.getElementById('ef-rk-'+id).value)||z.rk_budget,domain:document.getElementById('ef-dom-'+id).value.trim(),creos:creoSels.length?creoSels:z.creos,insights:document.getElementById('ef-ins-'+id).value,updated_at:new Date().toISOString()}
   await db.from('zalivs').update(u).eq('id',id);Object.assign(z,u);toast('Сохранено','ok');rzalivs()
 }
 async function delZaliv(id){if(!confirm('Удалить?'))return;await db.from('zalivs').delete().eq('id',id);ZALIVS=ZALIVS.filter(z=>z.id!==id);expZ=null;toast('Удалено','ok');rzalivs()}
@@ -1227,7 +1241,19 @@ function openMoZaliv(tpl=null){
 function updDomains(){const sel=document.getElementById('md');const f=moGeo?DOMAINS.filter(d=>(d.geos||[]).includes(moGeo)&&d.active):DOMAINS.filter(d=>d.active);sel.innerHTML='<option value="">— выбрать —</option>'+f.map(d=>`<option value="${d.url}">${d.url}</option>`).join('')}
 function updPrev(){const g=moGeo||'GEO',b=document.getElementById('mr').value||'budget';document.getElementById('mo-prev').textContent=`D{${new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})}}${g}/PH1./garno/kalk\\LEADS/${b}$`}
 function addCreoField(val=''){
-  const l=document.getElementById('mcreo-list');if(l.children.length>=5)return;const d=document.createElement('div');d.className='gr';const i=document.createElement('input');i.className='fi mcreo-input';i.placeholder='Крео #'+(l.children.length+1);i.value=val;const b=document.createElement('button');b.type='button';b.className='rmbtn';b.textContent='×';b.onclick=()=>{if(l.children.length>1)d.remove()};d.appendChild(i);d.appendChild(b);l.appendChild(d);setTimeout(updCreoSelects,50)}
+  const l=document.getElementById('mcreo-list')
+  if(l.children.length>=5)return
+  const d=document.createElement('div');d.className='gr'
+  const sel=document.createElement('select');sel.className='fi mcreo-input';sel.style.flex='1'
+  const geoMap={'PL':'PL','PLUA':'UAPL'};const libGeo=geoMap[moGeo]||''
+  const opts=CREO_LIB.filter(cr=>!libGeo||cr.geo===libGeo)
+  sel.innerHTML='<option value="">— выбрать крео —</option>'+
+    opts.map(cr=>`<option value="${cr.name}"${cr.name===val?' selected':''}>${cr.name}${cr.status==='hall'?' 🏆':cr.status==='used'?' ⚡':' ✨'}</option>`).join('')
+  if(val&&!opts.find(cr=>cr.name===val))sel.innerHTML+=`<option value="${val}" selected>${val}</option>`
+  const b=document.createElement('button');b.type='button';b.className='rmbtn';b.textContent='×'
+  b.onclick=()=>{if(l.children.length>1)d.remove()}
+  d.appendChild(sel);d.appendChild(b);l.appendChild(d)
+}
 function addGoalField(val=''){const l=document.getElementById('mg-list');const d=document.createElement('div');d.className='gr';const i=document.createElement('input');i.className='fi mgoal-input';i.placeholder='Цель '+(l.children.length+1);i.value=val;const b=document.createElement('button');b.type='button';b.className='rmbtn';b.textContent='×';b.onclick=()=>{if(l.children.length>1)d.remove()};d.appendChild(i);d.appendChild(b);l.appendChild(d)}
 async function svz(){
   const name=document.getElementById('mn').value.trim()
@@ -2430,20 +2456,16 @@ document.addEventListener('paste',e=>{
 
 // Creo picker in zaliv modal — datalist autocomplete
 function updCreoSelects(){
+  // Refresh all creo selects in modal when GEO changes
   const geo=moGeo
-  const funnel=document.getElementById('mf')?.value||''
-  const libCreos=CREO_LIB.filter(cr=>
-    (!geo||(cr.geo==='PL'&&geo==='PL')||(cr.geo==='UAPL'&&geo==='PLUA'))&&
-    (!funnel||cr.funnel===funnel)
-  )
-  // Remove old datalists
-  document.querySelectorAll('[id^="creo-dl-"]').forEach(d=>d.remove())
-  document.querySelectorAll('.mcreo-input').forEach((inp,i)=>{
-    const dlId='creo-dl-'+i
-    const dl=document.createElement('datalist');dl.id=dlId
-    libCreos.forEach(cr=>{const o=document.createElement('option');o.value=cr.name;dl.appendChild(o)})
-    document.body.appendChild(dl)
-    inp.setAttribute('list',dlId)
+  const geoMap={'PL':'PL','PLUA':'UAPL'}
+  const libGeo=geoMap[geo]||''
+  const libCreos=CREO_LIB.filter(cr=>!libGeo||cr.geo===libGeo)
+  document.querySelectorAll('.mcreo-input').forEach(sel=>{
+    if(sel.tagName!=='SELECT')return
+    const cur=sel.value
+    sel.innerHTML='<option value="">— выбрать крео —</option>'+
+      libCreos.map(cr=>`<option value="${cr.name}"${cr.name===cur?' selected':''}>${cr.name}${cr.status==='hall'?' 🏆':cr.status==='used'?' ⚡':' ✨'} · ${cr.funnel||''}</option>`).join('')
   })
 }
 
@@ -2492,6 +2514,23 @@ function creoAddSave(){
 }
 
 document.head.insertAdjacentHTML('beforeend','<style>@keyframes cardIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}</style>')
+
+function addCreoToExpand(zid){
+  const z=ZALIVS.find(x=>x.id==zid);if(!z)return
+  if((z.creos||[]).length>=5)return
+  const list=document.getElementById('ef-creo-list-'+zid)
+  if(!list)return
+  const div=document.createElement('div');div.style.cssText='display:flex;gap:5px'
+  const sel=document.createElement('select');sel.className='efi ef-creo-sel';sel.style.flex='1'
+  sel.setAttribute('data-zid',zid)
+  sel.innerHTML='<option value="">— выбрать —</option>'+
+    CREO_LIB.filter(cr=>cr.geo===(z.geo==='PLUA'?'UAPL':z.geo)).map(cr=>`<option value="${cr.name}">${cr.name}${cr.status==='hall'?' 🏆':cr.status==='used'?' ⚡':' ✨'}</option>`).join('')
+  div.appendChild(sel)
+  // Insert before the + button
+  const addBtn=list.querySelector('.addg')
+  if(addBtn)list.insertBefore(div,addBtn)
+  else list.appendChild(div)
+}
 
 // ── AUTO LOGIN ──
 const _saved=localStorage.getItem('jdl_user')
