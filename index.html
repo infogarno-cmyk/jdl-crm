@@ -1029,7 +1029,7 @@ function rzalivs(){
   document.getElementById('zt-body').innerHTML=html||`<tr><td colspan="10" class="empty">Нет заливов</td></tr>`
   document.querySelectorAll('#zt-body tr[data-zid]').forEach(tr=>{
     tr.addEventListener('click',e=>{
-      if(e.target.closest('button,select,a,.ctag,.exrow,.exin,.exbl,.insta,.efi,.sbsv,.sbdl,.spb-e,.spb,.rmbtn'))return
+      if(e.target.closest('button,select,a,.ctag,.exrow,.exin,.exbl,.insta,.efi,.sbsv,.sbdl,.spb-e,.spb,.rmbtn,.ef-creo-del,.ef-creo-row'))return
       togZ(parseInt(tr.dataset.zid))
     })
   })
@@ -1160,7 +1160,7 @@ function exRow(z){
                 <option value="${cr}">${cr||'— выбрать —'}</option>
                 ${CREO_LIB.filter(lib=>lib.geo===(z.geo==='PLUA'?'UAPL':z.geo)).map(lib=>`<option value="${lib.name}"${lib.name===cr?' selected':''}>${lib.name}${lib.status==='hall'?' 🏆':lib.status==='used'?' ⚡':' ✨'}</option>`).join('')}
               </select>
-              <button class="rmbtn ef-creo-del" data-zid="${z.id}" data-ci="${ci}" title="Удалить крео" style="color:var(--red);font-size:16px;flex-shrink:0">×</button>
+              <button class="rmbtn ef-creo-del" data-zid="${z.id}" data-ci="${ci}" title="Удалить крео" style="color:var(--red);font-size:16px;flex-shrink:0" onclick="event.stopPropagation()">×</button>
             </div>
           `).join('')}
           ${(z.creos||[]).length<5?`<button class="addg" onclick="addCreoToExpand('${z.id}')">+ Крео</button>`:''}
