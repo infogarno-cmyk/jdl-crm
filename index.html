@@ -2331,11 +2331,13 @@ async function saveCreoLib(){
 
   let screenshot_url=clEditId?CREO_LIB.find(x=>x.id===clEditId)?.screenshot_url:null
   const fileInp=document.getElementById('cl-img-inp')
-  if(fileInp?.files?.[0]){
-    const file=fileInp.files[0]
-    const path=`lib/${Date.now()}.png`
+  const fileInp2=document.getElementById('cl-img-inp')
+  if(fileInp2?.files?.[0]){
+    const file=fileInp2.files[0]
+    const path=`creolib_${Date.now()}.png`
     const{error:upErr}=await db.storage.from('creo-screenshots').upload(path,file,{upsert:true,contentType:file.type})
-    if(!upErr){const{data:ud}=db.storage.from('creo-screenshots').getPublicUrl(path);screenshot_url=ud.publicUrl}
+    if(upErr){console.error('Upload error:',upErr)}
+    else{const{data:ud}=db.storage.from('creo-screenshots').getPublicUrl(path);screenshot_url=ud.publicUrl}
   }
 
   const payload={name,geo,funnel,buyer,status,notes,screenshot_url,hall_geo}
@@ -2388,6 +2390,28 @@ document.getElementById('cl-img-drop')?.addEventListener('drop',e=>{
     const dt=new DataTransfer();dt.items.add(file);document.getElementById('cl-img-inp').files=dt.files
     const r=new FileReader();r.onload=ev=>{document.getElementById('cl-img-preview').innerHTML=`<img src="${ev.target.result}" style="max-height:80px;border-radius:6px;display:block;margin:0 auto">`};r.readAsDataURL(file)
   }
+})
+
+// Ctrl+V paste from clipboard
+document.addEventListener('paste',e=>{
+  const mo=document.getElementById('mo-creo-lib')
+  if(!mo?.classList.contains('open'))return
+  const items=[...e.clipboardData.items]
+  const imgItem=items.find(item=>item.type.startsWith('image/'))
+  if(!imgItem)return
+  e.preventDefault()
+  const file=imgItem.getAsFile()
+  if(!file)return
+  const dt=new DataTransfer();dt.items.add(file)
+  document.getElementById('cl-img-inp').files=dt.files
+  const r=new FileReader()
+  r.onload=ev=>{
+    document.getElementById('cl-img-preview').innerHTML=`<img src="${ev.target.result}" style="max-height:80px;border-radius:6px;display:block;margin:0 auto">`
+    toast('Скрин вставлен из буфера ✓','ok')
+  }
+  r.readAsDataURL(file)
+  document.getElementById('cl-img-drop').style.borderColor='var(--green)'
+  setTimeout(()=>document.getElementById('cl-img-drop').style.borderColor='',1500)
 })
 
 // Creo picker in zaliv modal — datalist autocomplete
