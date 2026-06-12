@@ -225,39 +225,23 @@ html,body{height:100%;overflow:hidden;max-width:100vw;font-family:var(--sans);ba
 .jeditor th{background:var(--bg4);border:1px solid var(--border2);padding:6px 10px;text-align:left;font-weight:700;color:var(--text2);font-size:11px}
 .jeditor td{border:1px solid var(--border);padding:6px 10px}.jeditor p{margin:3px 0}
 /* CREO LIBRARY */
-.creo-tabs{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
-.creo-tab{padding:6px 14px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
-.creo-tab:hover{border-color:var(--border3);color:var(--text2)}
-.creo-tab.active{background:var(--bord-dim);border-color:var(--bord2);color:var(--bord2)}
-.creo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
-.creo-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:all .2s;position:relative}
-.creo-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.4)}
-.creo-card.status-ready{border-top:3px solid var(--blue)}
-.creo-card.status-used{border-top:3px solid var(--yellow)}
-.creo-card.status-hall{border-top:3px solid #ffd700}
-.creo-img{width:100%;height:130px;object-fit:cover;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:32px}
-.creo-img img{width:100%;height:100%;object-fit:cover}
-.creo-body{padding:10px 12px}
-.creo-name{font-size:12px;font-weight:700;color:#fff;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.creo-meta{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}
-.creo-note{font-size:11px;color:var(--text3);line-height:1.4;margin-top:4px}
-.creo-actions{display:flex;gap:5px;margin-top:8px}
-.creo-btn{flex:1;padding:4px 8px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:10px;cursor:pointer;font-family:var(--sans);font-weight:600;transition:all .15s}
-.creo-btn:hover{border-color:var(--bord);color:var(--bord2)}
-.creo-btn.hall{border-color:#b8860b;color:#ffd700;background:rgba(255,215,0,.08)}
-.creo-btn.hall:hover{background:rgba(255,215,0,.15)}
-.creo-empty{text-align:center;padding:60px 20px;color:var(--text3)}
-.creo-empty-ico{font-size:48px;margin-bottom:12px}
-.creo-empty-txt{font-size:13px;margin-bottom:16px}
-/* Insight editor */
-.insight-wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.insight-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
-.insight-hdr{font-size:12px;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:8px}
-.insight-ava{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;font-family:var(--mono)}
-.insight-ta{flex:1;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:12px;padding:10px 12px;resize:none;outline:none;font-family:var(--sans);line-height:1.7;min-height:200px}
-.insight-ta:focus{border-color:var(--bord)}
-.insight-save{padding:6px 16px;border-radius:6px;border:1px solid var(--bord2);background:var(--bord-dim);color:var(--bord2);font-size:11px;cursor:pointer;font-weight:700;font-family:var(--sans);align-self:flex-end}
-.insight-save:hover{background:var(--bord);color:#fff}
+.creo-two-col{display:grid;grid-template-columns:1fr 320px;gap:14px;align-items:start}
+/* Insight board */
+.insight-board{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;max-height:calc(100vh - 160px);overflow-y:auto}
+.insight-note{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;position:relative;animation:cardIn .2s ease}
+.insight-note:hover{border-color:var(--border2)}
+.insight-note-tag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;margin-bottom:6px;display:inline-block;text-transform:uppercase;letter-spacing:.5px}
+.tag-trend{background:rgba(64,128,255,.15);color:var(--blue)}
+.tag-hypo{background:rgba(144,96,208,.15);color:var(--purple)}
+.tag-insight{background:rgba(46,160,67,.15);color:var(--green)}
+.tag-fail{background:rgba(224,64,80,.15);color:var(--red)}
+.insight-note-text{font-size:12px;color:var(--text);line-height:1.6;margin-bottom:6px}
+.insight-note-meta{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--text3)}
+.insight-note-del{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--text3);cursor:pointer;opacity:0;font-size:12px}.insight-note:hover .insight-note-del{opacity:1}
+.insight-note-del:hover{color:var(--red)}
+/* Creo table row screenshot */
+.clf-thumb{width:32px;height:32px;border-radius:5px;object-fit:cover;cursor:pointer}
+.clf-thumb-placeholder{width:32px;height:32px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:14px}
 /* CREO TABLE (AB report) */
 /* CREO TABLE */
 .creo-stat-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden}
@@ -392,21 +376,42 @@ document.getElementById('root').innerHTML=`
       <div class="kanban" id="kanban"></div>
     </div>
     <div class="page" id="page-creo">
-      <!-- Creo tabs -->
-      <div class="creo-tabs" id="creo-tabs">
-        <div class="creo-tab active" data-ctab="pl">🎨 Creo PL</div>
-        <div class="creo-tab" data-ctab="uapl">🎨 Creo UAPL</div>
-        <div class="creo-tab" data-ctab="use-pl">⚡ USE PL</div>
-        <div class="creo-tab" data-ctab="use-uapl">⚡ USE UAPL</div>
-        <div class="creo-tab" data-ctab="mwp-pl">🏆 MWP PL</div>
-        <div class="creo-tab" data-ctab="mwp-uapl">🏆 MWP UAPL</div>
-        <div class="creo-tab" data-ctab="mwp-uacz">🏆 MWP UACZ</div>
-        <div class="creo-tab" data-ctab="insight">💡 Buyers Insight</div>
-        <div class="creo-tab" data-ctab="ab">📊 A/B Отчёт</div>
-        <button class="badd" id="btn-add-creo-lib" style="margin-left:auto">+ Добавить крео</button>
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:14px">
+        <span class="fhtit">Библиотека крео</span>
+        <span class="fhcnt" id="creo-lib-count">(0)</span>
       </div>
-      <!-- Tab content -->
-      <div id="creo-lib-content" style="margin-top:14px"></div>
+      <!-- Two sections: Library + Insight -->
+      <div class="creo-two-col" id="creo-two-col">
+        <!-- LEFT: Library -->
+        <div>
+          <div class="fbar" style="margin-bottom:12px">
+            <select class="fsel" id="clf-geo"><option value="">🌐 GEO</option><option value="PL">🇵🇱 PL</option><option value="UAPL">🇵🇱🇺🇦 UAPL</option><option value="UACZ">UACZ</option></select>
+            <select class="fsel" id="clf-status"><option value="">🏷 Статус</option><option value="ready">🎯 Ждёт</option><option value="used">⚡ Использован</option><option value="hall">🏆 Зал Славы</option></select>
+            <select class="fsel" id="clf-funnel"><option value="">🎯 Воронка</option><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select>
+            <input class="fsrch" id="clf-q" placeholder="🔍 Поиск...">
+            <button class="badd" id="btn-add-creo-lib" style="margin-left:auto">+ Крео</button>
+          </div>
+          <!-- Stats strip -->
+          <div id="clf-stats" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"></div>
+          <!-- Table -->
+          <div class="ztwrap">
+            <table class="zt"><thead><tr>
+              <th style="width:36px"></th>
+              <th>НАЗВАНИЕ / ID</th><th>GEO</th><th>ВОРОНКА</th><th>СТАТУС</th>
+              <th>CTR %</th><th>CPL $</th><th>CQL $</th><th>ЗАЛИВОВ</th><th>БАЕР</th><th></th>
+            </tr></thead>
+            <tbody id="clf-tbody"></tbody></table>
+          </div>
+        </div>
+        <!-- RIGHT: Buyers Insight board -->
+        <div class="insight-board" id="insight-board">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <span style="font-size:13px;font-weight:800;color:#fff">💡 Buyers Insight</span>
+            <button class="badd" style="margin-left:0;font-size:10px;padding:4px 10px" onclick="openAddInsight()">+ Мысль</button>
+          </div>
+          <div id="insight-cards"></div>
+        </div>
+      </div>
     </div>
     <div class="page" id="page-journal" style="padding:0">
       <div class="jlay">
@@ -618,6 +623,7 @@ document.querySelectorAll('#mo-score .spb').forEach(btn=>btn.addEventListener('c
   moScore=parseInt(this.dataset.score);document.querySelectorAll('#mo-score .spb').forEach(b=>b.className='spb');this.className='spb s'+moScore
 }))
 document.getElementById('mr').addEventListener('input',updPrev)
+document.getElementById('mf').addEventListener('change',updCreoSelects)
 document.getElementById('btn-add-creo').addEventListener('click',()=>addCreoField())
 document.getElementById('btn-add-goal').addEventListener('click',()=>addGoalField())
 document.getElementById('btn-create-zaliv').addEventListener('click',svz)
@@ -710,7 +716,7 @@ function setupRT(){
     .on('postgres_changes',{event:'*',schema:'public',table:'journal_docs'},()=>loadJ().then(rtree))
     .on('postgres_changes',{event:'*',schema:'public',table:'metrics_daily'},()=>loadM().then(()=>{rdash();if(expZ){const el=document.getElementById('ex-metrics-'+expZ);if(el){const z=ZALIVS.find(x=>x.id===expZ);if(z)el.innerHTML=getZalivMetrics(z)}}}))
     .on('postgres_changes',{event:'*',schema:'public',table:'creo_reports'},()=>loadCreoReports().then(rcreo))
-    .on('postgres_changes',{event:'*',schema:'public',table:'creo_library'},()=>loadCreoLib().then(()=>renderCreoTabContent(creoLibTab)))
+    .on('postgres_changes',{event:'*',schema:'public',table:'creo_library'},()=>loadCreoLib().then(renderCreoPage))
     .subscribe()
 }
 
@@ -751,7 +757,7 @@ function gp(id,el){
   document.getElementById('page-'+id).classList.add('active');el.classList.add('active')
   if(id==='zalivs')rzalivs();if(id==='domains')rdomains();if(id==='tasks')rtasks();if(id==='sales')rsales()
   if(id==='journal'){rtree();if(curDoc)loadDocById(curDoc)};if(id==='dash')rdash()
-  if(id==='creo'){renderCreoTabContent(creoLibTab)}
+  if(id==='creo'){renderCreoPage()}
 }
 
 function countUp(el,target,pre='',suf='',dur=800){
@@ -1198,6 +1204,7 @@ function openMoZaliv(tpl=null){
     document.getElementById('mr').value=tpl.rk_budget||''
     if(tpl.buyer)document.getElementById('mb').value=tpl.buyer
     if(tpl.funnel)document.getElementById('mf').value=tpl.funnel
+    setTimeout(updCreoSelects,100)
     if(moGeo)document.querySelectorAll('[data-geo]').forEach(b=>{if(b.dataset.geo===moGeo)b.classList.add('sel')})
     document.querySelectorAll('#mo-score .spb').forEach(b=>{b.className='spb'+(parseInt(b.dataset.score)===moScore?' s'+moScore:'')})
     ;(tpl.creos||[]).forEach(c=>addCreoField(c));(tpl.goals||[]).forEach(g=>addGoalField(g))
@@ -2107,185 +2114,168 @@ document.getElementById('crf-q').addEventListener('input',rcreo)
 
 
 // ══════════════════════════════════════════
-// CREO LIBRARY
+// CREO LIBRARY v2 — table + insight board
 // ══════════════════════════════════════════
-let CREO_LIB = []
-let creoLibTab = 'pl'
-let clEditId = null
+let CREO_LIB=[]
+let INSIGHTS=[]
+let clEditId=null
+let creoLibTab='pl' // keep for compat
 
 async function loadCreoLib(){
   if(!db)return
-  const{data}=await db.from('creo_library').select('*').order('created_at',{ascending:false})
+  const{data,error}=await db.from('creo_library').select('*').order('created_at',{ascending:false})
+  if(error&&error.message?.includes('does not exist')){
+    console.log('creo_library table missing — run SQL to create it')
+    CREO_LIB=[]
+    return
+  }
   CREO_LIB=data||[]
+  // Load insights from localStorage (no separate table needed)
+  try{INSIGHTS=JSON.parse(localStorage.getItem('creo_insights')||'[]')}catch(e){INSIGHTS=[]}
 }
 
 function rcreoLib(){
-  renderCreoTabContent(creoLibTab)
+  renderCreoPage()
 }
 
-// Tab switching
-document.querySelectorAll('.creo-tab[data-ctab]').forEach(tab=>{
-  tab.addEventListener('click',function(){
-    document.querySelectorAll('.creo-tab').forEach(t=>t.classList.remove('active'))
-    this.classList.add('active')
-    creoLibTab=this.dataset.ctab
-    renderCreoTabContent(creoLibTab)
+function renderCreoPage(){
+  renderCreoTable()
+  renderInsightBoard()
+  bindCreoFilters()
+}
+
+function renderCreoTable(){
+  const geo=document.getElementById('clf-geo')?.value||''
+  const status=document.getElementById('clf-status')?.value||''
+  const funnel=document.getElementById('clf-funnel')?.value||''
+  const q=document.getElementById('clf-q')?.value?.toLowerCase()||''
+
+  let f=CREO_LIB.filter(cr=>
+    (!geo||cr.geo===geo)&&
+    (!status||cr.status===status)&&
+    (!funnel||cr.funnel===funnel)&&
+    (!q||cr.name?.toLowerCase().includes(q)||cr.notes?.toLowerCase().includes(q))
+  )
+
+  const cnt=document.getElementById('creo-lib-count')
+  if(cnt)cnt.textContent='('+f.length+')'
+
+  // Stats strip
+  const statsEl=document.getElementById('clf-stats')
+  if(statsEl){
+    const ready=CREO_LIB.filter(x=>x.status==='ready').length
+    const used=CREO_LIB.filter(x=>x.status==='used').length
+    const hall=CREO_LIB.filter(x=>x.status==='hall').length
+    statsEl.innerHTML=`
+      <span style="background:rgba(64,128,255,.12);border:1px solid rgba(64,128,255,.25);color:var(--blue);border-radius:20px;padding:3px 12px;font-size:11px;font-weight:700">🎯 ${ready} ждут</span>
+      <span style="background:rgba(212,160,23,.12);border:1px solid rgba(212,160,23,.25);color:var(--yellow);border-radius:20px;padding:3px 12px;font-size:11px;font-weight:700">⚡ ${used} в работе</span>
+      <span style="background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.25);color:#ffd700;border-radius:20px;padding:3px 12px;font-size:11px;font-weight:700">🏆 ${hall} в зале</span>
+    `
+  }
+
+  const tbody=document.getElementById('clf-tbody')
+  if(!tbody)return
+
+  if(!f.length){
+    tbody.innerHTML=`<tr><td colspan="11" class="empty">Нет крео — добавь первый</td></tr>`
+    return
+  }
+
+  tbody.innerHTML=f.map(cr=>{
+    const statusColor=cr.status==='hall'?'#ffd700':cr.status==='used'?'var(--yellow)':'var(--blue)'
+    const statusLabel=cr.status==='hall'?'🏆 Зал Славы':cr.status==='used'?'⚡ Использован':'🎯 Ждёт'
+    const geoClass=cr.geo==='PL'?'gpl':'gplua'
+    const ctrColor=cr.avg_ctr>2?'var(--green)':cr.avg_ctr>1?'var(--yellow)':cr.avg_ctr>0?'var(--red)':'var(--text3)'
+    const cplColor=cr.avg_cpl>0&&cr.avg_cpl<10?'var(--green)':cr.avg_cpl<15?'var(--yellow)':cr.avg_cpl>0?'var(--red)':'var(--text3)'
+    return`<tr style="cursor:pointer" data-clf-id="${cr.id}">
+      <td>
+        ${cr.screenshot_url
+          ?`<img class="clf-thumb" src="${cr.screenshot_url}" onclick="event.stopPropagation();window.open('${cr.screenshot_url}','_blank')">`
+          :`<div class="clf-thumb-placeholder">${cr.status==='hall'?'🏆':cr.status==='used'?'📊':'🎨'}</div>`
+        }
+      </td>
+      <td>
+        <div style="font-weight:700;color:#fff;font-size:12px">${cr.name}</div>
+        ${cr.notes?`<div style="font-size:10px;color:var(--text3);margin-top:2px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cr.notes}</div>`:''}
+      </td>
+      <td><span class="zgeo gchip ${geoClass}">${cr.geo}</span></td>
+      <td><span class="fchip">${cr.funnel||'—'}</span></td>
+      <td><span style="font-size:10px;font-weight:700;color:${statusColor}">${statusLabel}</span></td>
+      <td style="font-family:var(--mono);font-weight:700;color:${ctrColor}">${cr.avg_ctr?cr.avg_ctr+'%':'—'}</td>
+      <td style="font-family:var(--mono);font-weight:700;color:${cplColor}">${cr.avg_cpl?'$'+cr.avg_cpl:'—'}</td>
+      <td style="font-family:var(--mono);color:var(--text2)">${cr.avg_cql?'$'+cr.avg_cql:'—'}</td>
+      <td style="font-family:var(--mono);color:var(--text3)">${cr.launches||0}</td>
+      <td><span class="tma">${cr.buyer||'—'}</span></td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button class="spb" style="width:auto;padding:0 7px;font-size:10px" onclick="event.stopPropagation();openEditCreoLib(${cr.id})">✏️</button>
+          ${cr.status!=='hall'?`<button class="spb s5" style="width:auto;padding:0 7px;font-size:10px" onclick="event.stopPropagation();setCreoHall(${cr.id})">🏆</button>`:''}
+          <button class="spb s0" style="width:auto;padding:0 7px;font-size:10px" onclick="event.stopPropagation();delCreoLib(${cr.id})">✕</button>
+        </div>
+      </td>
+    </tr>`
+  }).join('')
+}
+
+function bindCreoFilters(){
+  ;['clf-geo','clf-status','clf-funnel'].forEach(id=>{
+    const el=document.getElementById(id)
+    if(el&&!el._creobound){el._creobound=true;el.addEventListener('change',renderCreoTable)}
   })
-})
+  const q=document.getElementById('clf-q')
+  if(q&&!q._creobound){q._creobound=true;q.addEventListener('input',renderCreoTable)}
+  const addBtn=document.getElementById('btn-add-creo-lib')
+  if(addBtn&&!addBtn._creobound){
+    addBtn._creobound=true
+    addBtn.addEventListener('click',()=>{
+      clEditId=null
+      document.getElementById('cl-name').value=''
+      document.getElementById('cl-notes').value=''
+      document.getElementById('cl-img-preview').innerHTML='📷 Нажми или перетащи скрин'
+      document.getElementById('mo-creo-lib').classList.add('open')
+    })
+  }
+}
 
-document.getElementById('btn-add-creo-lib').addEventListener('click',()=>{
-  clEditId=null
-  document.getElementById('cl-name').value=''
-  document.getElementById('cl-notes').value=''
-  document.getElementById('cl-img-preview').innerHTML='📷 Нажми или перетащи скрин'
-  document.getElementById('mo-creo-lib').classList.add('open')
-})
-
-function renderCreoTabContent(tab){
-  const el=document.getElementById('creo-lib-content')
+// ── Insight Board ──
+function renderInsightBoard(){
+  const el=document.getElementById('insight-cards')
   if(!el)return
-
-  if(tab==='insight'){
-    renderInsight(el);return
+  if(!INSIGHTS.length){
+    el.innerHTML=`<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">Нет заметок.<br>Добавь первую мысль 💡</div>`
+    return
   }
-  if(tab==='ab'){
-    renderABReport(el);return
-  }
-
-  // Filter creo_library by tab
-  let filtered=[]
-  let title='',emptyText='',statusLabel=''
-
-  if(tab==='pl'){
-    filtered=CREO_LIB.filter(c=>c.geo==='PL'&&c.status==='ready')
-    title='🎨 Creo PL — Готовы к запуску';emptyText='Нет крео готовых к запуску для PL'
-  }else if(tab==='uapl'){
-    filtered=CREO_LIB.filter(c=>c.geo==='UAPL'&&c.status==='ready')
-    title='🎨 Creo UAPL — Готовы к запуску';emptyText='Нет крео готовых к запуску для UAPL'
-  }else if(tab==='use-pl'){
-    filtered=CREO_LIB.filter(c=>c.geo==='PL'&&(c.status==='used'||c.status==='hall'))
-    title='⚡ USE PL — Использованные крео';emptyText='Нет использованных крео для PL'
-  }else if(tab==='use-uapl'){
-    filtered=CREO_LIB.filter(c=>c.geo==='UAPL'&&(c.status==='used'||c.status==='hall'))
-    title='⚡ USE UAPL — Использованные крео';emptyText='Нет использованных крео для UAPL'
-  }else if(tab==='mwp-pl'){
-    filtered=CREO_LIB.filter(c=>c.hall_geo==='PL'||c.geo==='PL'&&c.status==='hall')
-    title='🏆 MWP PL — Зал Славы';emptyText='Зал Славы пуст — добавь лучшие крео'
-  }else if(tab==='mwp-uapl'){
-    filtered=CREO_LIB.filter(c=>c.hall_geo==='UAPL'||c.geo==='UAPL'&&c.status==='hall')
-    title='🏆 MWP UAPL — Зал Славы';emptyText='Зал Славы пуст — добавь лучшие крео'
-  }else if(tab==='mwp-uacz'){
-    filtered=CREO_LIB.filter(c=>c.hall_geo==='UACZ'||c.geo==='UACZ'&&c.status==='hall')
-    title='🏆 MWP UACZ — Зал Славы';emptyText='Зал Славы пуст'
-  }
-
-  el.innerHTML=`
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div style="font-size:15px;font-weight:800;color:#fff">${title}</div>
-      <span style="font-size:12px;color:var(--text3);font-family:var(--mono)">${filtered.length} крео</span>
-    </div>
-    ${filtered.length===0
-      ? `<div class="creo-empty"><div class="creo-empty-ico">${tab.startsWith('mwp')?'🏆':tab.startsWith('use')?'⚡':'🎨'}</div><div class="creo-empty-txt">${emptyText}</div><button class="badd" onclick="document.getElementById('btn-add-creo-lib').click()">+ Добавить крео</button></div>`
-      : `<div class="creo-grid">${filtered.map(creoCard).join('')}</div>`
-    }
-  `
-
-  // Bind card actions
-  el.querySelectorAll('[data-edit-creo]').forEach(btn=>{
-    btn.addEventListener('click',e=>{e.stopPropagation();openEditCreoLib(parseInt(btn.dataset.editCreo))})
-  })
-  el.querySelectorAll('[data-hall-creo]').forEach(btn=>{
-    btn.addEventListener('click',e=>{e.stopPropagation();setCreoHall(parseInt(btn.dataset.hallCreo))})
-  })
-  el.querySelectorAll('[data-del-creo]').forEach(btn=>{
-    btn.addEventListener('click',e=>{e.stopPropagation();delCreoLib(parseInt(btn.dataset.delCreo))})
-  })
-}
-
-function creoCard(cr){
-  const statusColor=cr.status==='hall'?'#ffd700':cr.status==='used'?'var(--yellow)':'var(--blue)'
-  const statusLabel=cr.status==='hall'?'🏆 Зал Славы':cr.status==='used'?'⚡ Использован':'🎯 Готов'
-  const geoClass=cr.geo==='PL'?'gpl':'gplua'
-  return`<div class="creo-card status-${cr.status}" style="animation:cardIn .3s ease">
-    <div class="creo-img" style="background:var(--bg4)">
-      ${cr.screenshot_url
-        ? `<img src="${cr.screenshot_url}" alt="${cr.name}" style="width:100%;height:130px;object-fit:cover">`
-        : `<span style="font-size:36px">${cr.status==='hall'?'🏆':cr.status==='used'?'📊':'🎨'}</span>`
-      }
-    </div>
-    <div class="creo-body">
-      <div class="creo-name" title="${cr.name}">${cr.name}</div>
-      <div class="creo-meta">
-        <span class="zgeo gchip ${geoClass}">${cr.geo}</span>
-        <span class="fchip">${cr.funnel||'—'}</span>
-        <span style="font-size:10px;color:${statusColor};font-weight:700">${statusLabel}</span>
-      </div>
-      ${cr.buyer?`<span class="tma" style="font-size:10px">${cr.buyer}</span>`:''}
-      ${cr.notes?`<div class="creo-note">${cr.notes}</div>`:''}
-      <div class="creo-actions">
-        <button class="creo-btn" data-edit-creo="${cr.id}">✏️ Ред.</button>
-        ${cr.status!=='hall'?`<button class="creo-btn hall" data-hall-creo="${cr.id}">🏆</button>`:''}
-        <button class="creo-btn" data-del-creo="${cr.id}" style="color:var(--text3)">✕</button>
+  el.innerHTML=INSIGHTS.map((n,i)=>`
+    <div class="insight-note">
+      <button class="insight-note-del" onclick="delInsight(${i})">✕</button>
+      <span class="insight-note-tag tag-${n.tag}">${{trend:'📈 Тренд',hypo:'🔬 Гипотеза',insight:'💡 Инсайт',fail:'❌ Провал'}[n.tag]||n.tag}</span>
+      <div class="insight-note-text">${n.text}</div>
+      <div class="insight-note-meta">
+        <span class="tma">${n.buyer}</span>
+        <span>${n.date}</span>
       </div>
     </div>
-  </div>`
+  `).join('')
 }
 
-function renderInsight(el){
-  const insightIllia=localStorage.getItem('insight_illia')||''
-  const insightDanya=localStorage.getItem('insight_danya')||''
-  el.innerHTML=`
-    <div style="margin-bottom:14px;font-size:15px;font-weight:800;color:#fff">💡 Buyers Insight</div>
-    <div style="font-size:12px;color:var(--text3);margin-bottom:16px;line-height:1.6">Личные заметки баеров — тенденции, стили, наблюдения по всем крео. Что работает, что нет.</div>
-    <div class="insight-wrap">
-      <div class="insight-card">
-        <div class="insight-hdr">
-          <div class="insight-ava" style="background:rgba(181,34,64,.15);color:#b52240;border:1px solid #8b1a2e">IB</div>
-          <span>Illia — Junior Buyer</span>
-        </div>
-        <textarea class="insight-ta" id="insight-illia" placeholder="Тенденции, что работает, что нет, стили крео...">${insightIllia}</textarea>
-        <button class="insight-save" onclick="saveInsight('illia')">💾 Сохранить</button>
-      </div>
-      <div class="insight-card">
-        <div class="insight-hdr">
-          <div class="insight-ava" style="background:rgba(64,128,255,.1);color:#6090ff;border:1px solid #1a3060">DM</div>
-          <span>Danya — Head of Marketing</span>
-        </div>
-        <textarea class="insight-ta" id="insight-danya" placeholder="Тенденции, что работает, что нет, стили крео...">${insightDanya}</textarea>
-        <button class="insight-save" onclick="saveInsight('danya')">💾 Сохранить</button>
-      </div>
-    </div>
-  `
+function openAddInsight(){
+  const tag=prompt('Тег (trend/hypo/insight/fail):','insight')
+  if(!tag)return
+  const text=prompt('Мысль:')
+  if(!text?.trim())return
+  const buyer=CURRENT_USER?.name||'Unknown'
+  INSIGHTS.unshift({tag,text:text.trim(),buyer,date:new Date().toLocaleDateString('ru')})
+  localStorage.setItem('creo_insights',JSON.stringify(INSIGHTS))
+  renderInsightBoard()
 }
 
-function saveInsight(buyer){
-  const val=document.getElementById('insight-'+buyer)?.value||''
-  localStorage.setItem('insight_'+buyer,val)
-  toast('Инсайт сохранён','ok')
+function delInsight(i){
+  INSIGHTS.splice(i,1)
+  localStorage.setItem('creo_insights',JSON.stringify(INSIGHTS))
+  renderInsightBoard()
 }
 
-function renderABReport(el){
-  // Render existing creo_reports
-  el.innerHTML=`
-    <div style="margin-bottom:14px;font-size:15px;font-weight:800;color:#fff">📊 A/B Отчёт</div>
-    <div class="fbar" style="margin-bottom:14px">
-      <select class="fsel" id="crf-geo"><option value="">🌐 GEO</option><option value="PL">🇵🇱 PL</option><option value="PLUA">🇵🇱🇺🇦 PLUA</option></select>
-      <select class="fsel" id="crf-creator"><option value="">👤 Все</option><option value="Illia">Illia</option><option value="Danya">Danya</option></select>
-      <input class="fsrch" id="crf-q" placeholder="🔍 Поиск...">
-    </div>
-    <div id="creo-stats-row" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px"></div>
-    <div class="ztwrap"><table class="zt"><thead><tr>
-      <th>КРЕО</th><th>GEO</th><th>CREATOR</th><th>ВОРОНКА</th><th>ПЕРИОД</th>
-      <th>CTR %</th><th>CR %</th><th>CPL $</th><th>CQL $</th><th>TOTAL zł</th><th>NOTES</th><th></th>
-    </tr></thead><tbody id="creo-tbody"></tbody></table></div>
-  `
-  // Wire AB filters
-  document.getElementById('crf-geo')?.addEventListener('change',rcreo)
-  document.getElementById('crf-creator')?.addEventListener('change',rcreo)
-  document.getElementById('crf-q')?.addEventListener('input',rcreo)
-  rcreo()
-}
-
+// ── CRUD ──
 async function openEditCreoLib(id){
   const cr=CREO_LIB.find(x=>x.id===id);if(!cr)return
   clEditId=id
@@ -2296,24 +2286,20 @@ async function openEditCreoLib(id){
   document.getElementById('cl-status').value=cr.status||'ready'
   document.getElementById('cl-notes').value=cr.notes||''
   document.getElementById('cl-img-preview').innerHTML=cr.screenshot_url
-    ?`<img src="${cr.screenshot_url}" style="max-height:80px;border-radius:6px">`
+    ?`<img src="${cr.screenshot_url}" style="max-height:80px;border-radius:6px;display:block;margin:0 auto">`
     :'📷 Нажми или перетащи скрин'
   document.getElementById('mo-creo-lib').classList.add('open')
 }
 
 async function setCreoHall(id){
-  await db.from('creo_library').update({status:'hall'}).eq('id',id)
-  const cr=CREO_LIB.find(x=>x.id===id);if(cr)cr.status='hall'
-  toast('Добавлено в Зал Славы 🏆','ok')
-  renderCreoTabContent(creoLibTab)
+  const{error}=await db.from('creo_library').update({status:'hall'}).eq('id',id)
+  if(!error){const cr=CREO_LIB.find(x=>x.id===id);if(cr)cr.status='hall';renderCreoTable();toast('В Зал Славы 🏆','ok')}
 }
 
 async function delCreoLib(id){
-  if(!confirm('Удалить крео?'))return
+  if(!confirm('Удалить крео из библиотеки?'))return
   await db.from('creo_library').delete().eq('id',id)
-  CREO_LIB=CREO_LIB.filter(x=>x.id!==id)
-  toast('Удалено','ok')
-  renderCreoTabContent(creoLibTab)
+  CREO_LIB=CREO_LIB.filter(x=>x.id!==id);renderCreoTable();toast('Удалено','ok')
 }
 
 async function saveCreoLib(){
@@ -2324,99 +2310,133 @@ async function saveCreoLib(){
   const buyer=document.getElementById('cl-buyer').value
   const status=document.getElementById('cl-status').value
   const notes=document.getElementById('cl-notes').value
-  const hallGeo=status==='hall'?geo:null
+  const hall_geo=status==='hall'?geo:null
 
-  // Upload screenshot if selected
   let screenshot_url=clEditId?CREO_LIB.find(x=>x.id===clEditId)?.screenshot_url:null
   const fileInp=document.getElementById('cl-img-inp')
   if(fileInp?.files?.[0]){
     const file=fileInp.files[0]
-    const path=`lib/${Date.now()}_${name.replace(/[^a-z0-9]/gi,'_')}.png`
+    const path=`lib/${Date.now()}.png`
     const{error:upErr}=await db.storage.from('creo-screenshots').upload(path,file,{upsert:true,contentType:file.type})
-    if(!upErr){
-      const{data:urlData}=db.storage.from('creo-screenshots').getPublicUrl(path)
-      screenshot_url=urlData.publicUrl
-    }
+    if(!upErr){const{data:ud}=db.storage.from('creo-screenshots').getPublicUrl(path);screenshot_url=ud.publicUrl}
   }
 
-  const payload={name,geo,funnel,buyer,status,notes,screenshot_url,hall_geo:hallGeo}
+  const payload={name,geo,funnel,buyer,status,notes,screenshot_url,hall_geo}
 
   if(clEditId){
     const{error}=await db.from('creo_library').update(payload).eq('id',clEditId)
-    if(!error){const cr=CREO_LIB.find(x=>x.id===clEditId);if(cr)Object.assign(cr,payload);toast('Крео обновлено','ok')}
+    if(!error){const cr=CREO_LIB.find(x=>x.id===clEditId);if(cr)Object.assign(cr,payload);toast('Обновлено','ok')}
     else{toast('Ошибка: '+error.message,'err');return}
   }else{
     const{data,error}=await db.from('creo_library').insert(payload).select().single()
     if(!error&&data){CREO_LIB.unshift(data);toast('Крео добавлено','ok')}
-    else{toast('Ошибка: '+error?.message,'err');return}
+    else{toast('Ошибка: '+(error?.message||'unknown'),'err');return}
   }
   document.getElementById('mo-creo-lib').classList.remove('open')
-  renderCreoTabContent(creoLibTab)
+  renderCreoTable()
 }
 
-// Wire image upload in modal
+// Auto-update creo status when added to zaliv
+// Called from openCreoAddModal after archiving
+async function markCreosAsUsed(creoNames, stats){
+  // creoNames: array of creo ids/names, stats: {ctr, cpl, cql} averages
+  for(const name of creoNames){
+    const cr=CREO_LIB.find(x=>x.name===name||x.name===name.trim())
+    if(!cr)continue
+    const launches=(cr.launches||0)+1
+    const newCtr=stats.ctr||cr.avg_ctr||0
+    const newCpl=stats.cpl||cr.avg_cpl||0
+    const newCql=stats.cql||cr.avg_cql||0
+    const upd={status:'used',launches,avg_ctr:newCtr,avg_cpl:newCpl,avg_cql:newCql}
+    await db.from('creo_library').update(upd).eq('id',cr.id)
+    Object.assign(cr,upd)
+  }
+  renderCreoTable()
+}
+
+// Wire image upload
 document.getElementById('cl-img-inp')?.addEventListener('change',function(){
   if(this.files?.[0]){
-    const reader=new FileReader()
-    reader.onload=e=>{
-      document.getElementById('cl-img-preview').innerHTML=`<img src="${e.target.result}" style="max-height:80px;border-radius:6px">`
-    }
-    reader.readAsDataURL(this.files[0])
+    const r=new FileReader();r.onload=e=>{
+      document.getElementById('cl-img-preview').innerHTML=`<img src="${e.target.result}" style="max-height:80px;border-radius:6px;display:block;margin:0 auto">`
+    };r.readAsDataURL(this.files[0])
   }
 })
-
-// Drag & drop on image area
 document.getElementById('cl-img-drop')?.addEventListener('dragover',e=>{e.preventDefault();e.currentTarget.style.borderColor='var(--bord2)'})
 document.getElementById('cl-img-drop')?.addEventListener('dragleave',e=>{e.currentTarget.style.borderColor=''})
 document.getElementById('cl-img-drop')?.addEventListener('drop',e=>{
   e.preventDefault();e.currentTarget.style.borderColor=''
   const file=e.dataTransfer.files[0]
   if(file?.type.startsWith('image/')){
-    const dt=new DataTransfer();dt.items.add(file)
-    document.getElementById('cl-img-inp').files=dt.files
-    const reader=new FileReader()
-    reader.onload=ev=>{document.getElementById('cl-img-preview').innerHTML=`<img src="${ev.target.result}" style="max-height:80px;border-radius:6px">`}
-    reader.readAsDataURL(file)
+    const dt=new DataTransfer();dt.items.add(file);document.getElementById('cl-img-inp').files=dt.files
+    const r=new FileReader();r.onload=ev=>{document.getElementById('cl-img-preview').innerHTML=`<img src="${ev.target.result}" style="max-height:80px;border-radius:6px;display:block;margin:0 auto">`};r.readAsDataURL(file)
   }
 })
 
-// ── UPDATE ZALIVS MODAL — creo picker from library ──
+// Creo picker in zaliv modal — datalist autocomplete
 function updCreoSelects(){
-  // Called when GEO or funnel changes in zaliv modal
   const geo=moGeo
-  const funnel=document.getElementById('mf')?.value
+  const funnel=document.getElementById('mf')?.value||''
   const libCreos=CREO_LIB.filter(cr=>
-    cr.status==='ready'&&
     (!geo||(cr.geo==='PL'&&geo==='PL')||(cr.geo==='UAPL'&&geo==='PLUA'))&&
     (!funnel||cr.funnel===funnel)
   )
-  // Update creo field placeholders with suggestions
+  // Remove old datalists
+  document.querySelectorAll('[id^="creo-dl-"]').forEach(d=>d.remove())
   document.querySelectorAll('.mcreo-input').forEach((inp,i)=>{
-    if(libCreos[i])inp.setAttribute('list','creo-datalist-'+i)
-  })
-  // Create datalists
-  const existing=document.querySelectorAll('[id^="creo-datalist-"]')
-  existing.forEach(d=>d.remove())
-  document.querySelectorAll('.mcreo-input').forEach((inp,i)=>{
-    const dl=document.createElement('datalist')
-    dl.id='creo-datalist-'+i
-    libCreos.forEach(cr=>{
-      const opt=document.createElement('option')
-      opt.value=cr.name
-      dl.appendChild(opt)
-    })
+    const dlId='creo-dl-'+i
+    const dl=document.createElement('datalist');dl.id=dlId
+    libCreos.forEach(cr=>{const o=document.createElement('option');o.value=cr.name;dl.appendChild(o)})
     document.body.appendChild(dl)
-    inp.setAttribute('list','creo-datalist-'+i)
+    inp.setAttribute('list',dlId)
   })
 }
 
-// Hook into existing GEO/funnel change
-const _origUpdDomains=updDomains
-// Call updCreoSelects when modal opens
-const _origOpenMoZaliv=openMoZaliv
+// Hook into archiving — mark creos as used with stats
+const _origCreoAddSave=creoAddSave
+function creoAddSave(){
+  // Before saving, collect creo names and stats to mark as used
+  const creosRaw=document.getElementById('ca-creos')?.value||''
+  const creos=creosRaw?creosRaw.split(',').map(s=>s.trim()).filter(Boolean):[]
+  if(!creos.length){toast('Нет крео для сохранения','err');return}
 
-// Add card-in animation
-document.head.insertAdjacentHTML('beforeend','<style>@keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}</style>')
+  const zalivId=parseInt(document.getElementById('ca-zaliv-id').value)
+  const spend=parseFloat(document.getElementById('ca-spend').value)||0
+  const rows=creos.map((cr,i)=>({
+    zaliv_id:zalivId,creo_id:cr,
+    geo:document.getElementById('ca-geo').value,
+    creator:document.getElementById('ca-creator').value,
+    funnel:document.getElementById('ca-funnel').value,
+    date_start:document.getElementById('ca-date-start').value,
+    date_end:document.getElementById('ca-date-end').value,
+    spend:Math.round(spend/Math.max(creos.length,1)*100)/100,
+    ctr:parseFloat(document.getElementById('ca-ctr-'+i)?.value)||0,
+    cr:parseFloat(document.getElementById('ca-cr-'+i)?.value)||0,
+    cpl:parseFloat(document.getElementById('ca-cpl-'+i)?.value)||0,
+    cql:parseFloat(document.getElementById('ca-cql-'+i)?.value)||0,
+    notes:document.getElementById('ca-notes-'+i)?.value||''
+  }))
+
+  db.from('creo_reports').insert(rows).then(({error})=>{
+    if(!error){
+      toast(rows.length+' крео добавлено в отчёт','ok')
+      document.getElementById('mo-creo-add').classList.remove('open')
+      loadCreoReports()
+      applyOFFStatus(zalivId)
+      // Mark creos as used in library
+      const avgStats={
+        ctr:Math.round(rows.reduce((s,r)=>s+(r.ctr||0),0)/rows.length*100)/100,
+        cpl:Math.round(rows.reduce((s,r)=>s+(r.cpl||0),0)/rows.length*100)/100,
+        cql:Math.round(rows.reduce((s,r)=>s+(r.cql||0),0)/rows.length*100)/100
+      }
+      markCreosAsUsed(creos,avgStats)
+    }else{
+      toast('Ошибка: '+error.message,'err')
+    }
+  })
+}
+
+document.head.insertAdjacentHTML('beforeend','<style>@keyframes cardIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}</style>')
 
 // ── AUTO LOGIN ──
 const _saved=localStorage.getItem('jdl_user')
