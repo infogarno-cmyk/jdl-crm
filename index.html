@@ -16,14 +16,14 @@ const GARNO_URL='https://bnyjwjuejrfalbubdbcv.supabase.co'
 const GARNO_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJueWp3anVlanJmYWxidWJkYmN2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTcyNDQ2NSwiZXhwIjoyMDk1MzAwNDY1fQ.l9ka9b_PzKdu-gock8ZACqODicJDZYCc1laMw_HMBvA'
 const USERS={illia:{name:'Illia',role:'Junior Buyer',initials:'IB',color:'#b52240',bg:'rgba(181,34,64,.15)',border:'#8b1a2e'},danya:{name:'Danya',role:'Head of Marketing',initials:'DM',color:'#6090ff',bg:'rgba(64,128,255,.1)',border:'#1a3060'}}
 const AUTO_STATUS_LOCKED=['Proliw','Perezaliw']
-let db,CURRENT_USER=null
-let ZALIVS=[],DOMAINS=[],TASKS=[],METRICS=[],SALES_DATA=[],TEMPLATES=[]
+var db,CURRENT_USER=null
+var ZALIVS=[],DOMAINS=[],TASKS=[],METRICS=[],SALES_DATA=[],TEMPLATES=[]
 const SCLS={Check:'sc',Scale:'ss',OFF:'so',Test:'st',Proliw:'sp',Perezaliw:'sz'}
-let expZ=null,dragId=null,moGeo='',moScore=0,domGeoSel=[],deGeoSel=[],deEditId=null
-let CREO_REPORTS=[]
-let CREO_LIB=[],INSIGHTS=[],clEditId=null,creoLibTab='pl',_pastedImageFile=null,_taskEditId=null
-let curDoc=null,chartData=null,jFolders=[],jLoose=[]
-let creoCurrentZaliv=null,creoCurrentId=null,srchSelIdx=-1
+var expZ=null,dragId=null,moGeo='',moScore=0,domGeoSel=[],deGeoSel=[],deEditId=null
+var CREO_REPORTS=[]
+var CREO_LIB=[],INSIGHTS=[],clEditId=null,creoLibTab='pl',_pastedImageFile=null,_taskEditId=null
+var curDoc=null,chartData=null,jFolders=[],jLoose=[]
+var creoCurrentZaliv=null,creoCurrentId=null,srchSelIdx=-1
 
 document.head.insertAdjacentHTML('beforeend',`<style>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
@@ -1414,7 +1414,7 @@ async function delTkConfirmed(id){
   TASKS=TASKS.filter(t=>t.id!==id);rtasks()
 }
 
-let _saveOrderTimer=null
+var _saveOrderTimer=null
 function saveTaskOrder(){
   // Debounce — wait 300ms after last drag before saving
   clearTimeout(_saveOrderTimer)
@@ -1597,7 +1597,7 @@ async function cyclePr(id,cur){
 }
 
 // ── DRAG & DROP v7 — чёткие зоны, сохранение порядка ──
-let dragOverEl=null,dragOverPos=null
+var dragOverEl=null,dragOverPos=null
 
 document.addEventListener('dragstart',e=>{
   const tc=e.target.closest('.tcard[data-id]');if(!tc)return
@@ -1988,7 +1988,7 @@ async function delCreoReport(id){
 // ══════════════════════════════════════════
 // MODULE 3: АВТО-АРХИВ ПРИ OFF
 // ══════════════════════════════════════════
-let offPendingZalivId=null
+var offPendingZalivId=null
 
 function interceptOFF(zalivId){
   const z=ZALIVS.find(x=>x.id===zalivId);if(!z)return false
