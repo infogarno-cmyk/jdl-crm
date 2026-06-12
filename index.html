@@ -1155,11 +1155,12 @@ function exRow(z){
       <div style="margin-bottom:8px"><div class="elb">Крео (из библиотеки по GEO)</div>
         <div id="ef-creo-list-${z.id}" style="display:flex;flex-direction:column;gap:5px">
           ${(z.creos||[]).map((cr,ci)=>`
-            <div style="display:flex;gap:5px">
+            <div style="display:flex;gap:5px;align-items:center">
               <select class="efi ef-creo-sel" style="flex:1" data-zid="${z.id}" data-ci="${ci}">
                 <option value="${cr}">${cr||'— выбрать —'}</option>
                 ${CREO_LIB.filter(lib=>lib.geo===(z.geo==='PLUA'?'UAPL':z.geo)).map(lib=>`<option value="${lib.name}"${lib.name===cr?' selected':''}>${lib.name}${lib.status==='hall'?' 🏆':lib.status==='used'?' ⚡':' ✨'}</option>`).join('')}
               </select>
+              <button class="rmbtn ef-creo-del" data-zid="${z.id}" data-ci="${ci}" title="Удалить крео" style="color:var(--red);font-size:16px;flex-shrink:0">×</button>
             </div>
           `).join('')}
           ${(z.creos||[]).length<5?`<button class="addg" onclick="addCreoToExpand('${z.id}')">+ Крео</button>`:''}
@@ -1997,6 +1998,22 @@ function interceptOFF(zalivId){
   document.getElementById('mo-off-confirm').classList.add('open')
   return true // intercepted
 }
+
+// Creo del from expand row
+document.addEventListener('click',function(e){
+  const delBtn=e.target.closest('.ef-creo-del')
+  if(delBtn){
+    e.stopPropagation()
+    const zid=parseInt(delBtn.dataset.zid)
+    const ci=parseInt(delBtn.dataset.ci)
+    const z=ZALIVS.find(x=>x.id===zid);if(!z)return
+    z.creos=(z.creos||[]).filter((_,i)=>i!==ci)
+    db.from('zalivs').update({creos:z.creos,updated_at:new Date().toISOString()}).eq('id',zid)
+    // Remove row from DOM instantly
+    delBtn.closest('div[style]').remove()
+    toast('Крео удалено','ok')
+  }
+})
 
 // Creo lib button delegation
 document.addEventListener('click',function(e){
