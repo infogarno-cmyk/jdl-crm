@@ -1216,7 +1216,44 @@ async function saveEdit(id){
   await db.from('zalivs').update(u).eq('id',id);Object.assign(z,u);toast('Сохранено','ok');rzalivs()
 }
 async function delZaliv(id){if(!confirm('Удалить?'))return;await db.from('zalivs').delete().eq('id',id);ZALIVS=ZALIVS.filter(z=>z.id!==id);expZ=null;toast('Удалено','ok');rzalivs()}
-async function addCreoInline(id){const v=prompt('Крео ID:');if(!v?.trim())return;const z=ZALIVS.find(x=>x.id===id);if(!z||(z.creos||[]).length>=5)return;z.creos=[...(z.creos||[]),v.trim()];await db.from('zalivs').update({creos:z.creos}).eq('id',id);rzalivs()}
+async async function addCreoInline(id){
+  const z=ZALIVS.find(x=>x.id===id);if(!z||(z.creos||[]).length>=5)return
+  // Build select from creo library filtered by zaliv GEO
+  const geoMap={'PL':'PL','PLUA':'UAPL'}
+  const libGeo=geoMap[z.geo]||''
+  const opts=CREO_LIB.filter(cr=>!libGeo||cr.geo===libGeo)
+  if(!opts.length){
+    // Fallback to prompt if no creos in library
+    const v=prompt('Крео ID (библиотека пуста):');if(!v?.trim())return
+    z.creos=[...(z.creos||[]),v.trim()]
+    await db.from('zalivs').update({creos:z.creos}).eq('id',id);rzalivs();return
+  }
+  // Show inline select in the creo cell
+  const btn=document.querySelector(\`.cadd[data-zid="${id}"]\`)
+  if(!btn)return
+  const wrap=document.createElement('div')
+  wrap.style.cssText='display:flex;gap:4px;margin-top:3px'
+  const sel=document.createElement('select')
+  sel.className='ssel'
+  sel.style.cssText='flex:1;font-size:11px;max-width:160px'
+  sel.innerHTML='<option value="">— крео —</option>'+
+    opts.map(cr=>`<option value="${cr.name}">${cr.name}${cr.status==='hall'?' 🏆':cr.status==='used'?' ⚡':' ✨'}</option>`).join('')
+  const ok=document.createElement('button')
+  ok.className='sbsv';ok.textContent='✓';ok.style.cssText='padding:2px 8px;font-size:11px'
+  const cancel=document.createElement('button')
+  cancel.className='sbdl';cancel.textContent='✕';cancel.style.cssText='padding:2px 7px;font-size:11px'
+  ok.onclick=async(e)=>{
+    e.stopPropagation()
+    const v=sel.value;if(!v)return
+    z.creos=[...(z.creos||[]),v]
+    await db.from('zalivs').update({creos:z.creos}).eq('id',id)
+    wrap.remove();rzalivs()
+  }
+  cancel.onclick=(e)=>{e.stopPropagation();wrap.remove()}
+  wrap.appendChild(sel);wrap.appendChild(ok);wrap.appendChild(cancel)
+  btn.parentNode.insertBefore(wrap,btn)
+  btn.style.display='none'
+}
 
 function openMoZaliv(tpl=null){
   moGeo='';moScore=0
