@@ -20,7 +20,7 @@ let db,CURRENT_USER=null
 let ZALIVS=[],DOMAINS=[],TASKS=[],METRICS=[],SALES_DATA=[],TEMPLATES=[]
 let expZ=null,dragId=null,moGeo='',moScore=0,domGeoSel=[],deGeoSel=[],deEditId=null
 let CREO_REPORTS=[]
-let CREO_LIB=[],INSIGHTS=[],clEditId=null,creoLibTab='pl'
+let CREO_LIB=[],INSIGHTS=[],clEditId=null,creoLibTab='pl',_pastedImageFile=null
 let curDoc=null,chartData=null,jFolders=[],jLoose=[]
 let creoCurrentZaliv=null,creoCurrentId=null,srchSelIdx=-1
 
@@ -1981,6 +1981,16 @@ function interceptOFF(zalivId){
   return true // intercepted
 }
 
+// Creo lib button delegation
+document.addEventListener('click',function(e){
+  const editBtn=e.target.closest('[data-clf-edit]')
+  if(editBtn){e.stopPropagation();openEditCreoLib(parseInt(editBtn.dataset.clfEdit));return}
+  const hallBtn=e.target.closest('[data-clf-hall]')
+  if(hallBtn){e.stopPropagation();setCreoHall(parseInt(hallBtn.dataset.clfHall));return}
+  const delBtn=e.target.closest('[data-clf-del]')
+  if(delBtn){e.stopPropagation();delCreoLib(parseInt(delBtn.dataset.clfDel));return}
+})
+
 function offSkip(){
   if(!offPendingZalivId)return
   document.getElementById('mo-off-confirm').classList.remove('open')
@@ -2214,11 +2224,11 @@ function renderCreoTable(){
       <td style="font-family:var(--mono);color:var(--text2)">${cr.avg_cql?'$'+cr.avg_cql:'—'}</td>
       <td style="font-family:var(--mono);color:var(--text3)">${cr.launches||0}</td>
       <td><span class="tma">${cr.buyer||'—'}</span></td>
-      <td>
+      <td onclick="event.stopPropagation()">
         <div style="display:flex;gap:4px">
-          <button class="spb" style="width:auto;padding:0 7px;font-size:10px" onclick="event.stopPropagation();openEditCreoLib(${cr.id})">✏️</button>
-          ${cr.status!=='hall'?`<button class="spb s5" style="width:auto;padding:0 7px;font-size:10px" onclick="event.stopPropagation();setCreoHall(${cr.id})">🏆</button>`:''}
-          <button class="spb s0" style="width:auto;padding:0 7px;font-size:10px" onclick="event.stopPropagation();delCreoLib(${cr.id})">✕</button>
+          <button class="spb clf-edit-btn" style="width:auto;padding:0 7px;font-size:10px" data-clf-edit="${cr.id}">✏️</button>
+          ${cr.status!=='hall'?`<button class="spb s5 clf-hall-btn" style="width:auto;padding:0 7px;font-size:10px" data-clf-hall="${cr.id}">🏆</button>`:''}
+          <button class="spb s0 clf-del-btn" style="width:auto;padding:0 7px;font-size:10px" data-clf-del="${cr.id}">✕</button>
         </div>
       </td>
     </tr>`
@@ -2296,7 +2306,8 @@ function delInsight(i){
 
 // ── CRUD ──
 async function openEditCreoLib(id){
-  const cr=CREO_LIB.find(x=>x.id===id);if(!cr)return
+  console.log('openEditCreoLib called, id=',id,'CREO_LIB.length=',CREO_LIB.length)
+  const cr=CREO_LIB.find(x=>x.id===id);if(!cr){toast('Крео не найден (id='+id+')','err');return}
   clEditId=id;_pastedImageFile=null
   document.getElementById('cl-name').value=cr.name||''
   document.getElementById('cl-geo').value=cr.geo||'PL'
@@ -2399,7 +2410,6 @@ document.getElementById('cl-img-drop')?.addEventListener('drop',e=>{
 })
 
 // Ctrl+V paste from clipboard - store file directly
-let _pastedImageFile = null
 document.addEventListener('paste',e=>{
   const mo=document.getElementById('mo-creo-lib')
   if(!mo?.classList.contains('open'))return
