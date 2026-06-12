@@ -18,6 +18,7 @@ const USERS={illia:{name:'Illia',role:'Junior Buyer',initials:'IB',color:'#b5224
 const AUTO_STATUS_LOCKED=['Proliw','Perezaliw']
 let db,CURRENT_USER=null
 let ZALIVS=[],DOMAINS=[],TASKS=[],METRICS=[],SALES_DATA=[],TEMPLATES=[]
+const SCLS={Check:'sc',Scale:'ss',OFF:'so',Test:'st',Proliw:'sp',Perezaliw:'sz'}
 let expZ=null,dragId=null,moGeo='',moScore=0,domGeoSel=[],deGeoSel=[],deEditId=null
 let CREO_REPORTS=[]
 let CREO_LIB=[],INSIGHTS=[],clEditId=null,creoLibTab='pl',_pastedImageFile=null
@@ -990,7 +991,6 @@ function chartMouseMove(e){
   tt.innerHTML=`<strong>${r.day}</strong>`+c._S.map(s=>`<div class="ctrow"><span class="ctl" style="color:${s.c}">${s.l}</span><span class="ctv" style="color:${s.c}">${s.d[ci]}</span></div>`).join('')+`<div class="ctrow" style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px"><span class="ctl">Spend</span><span class="ctv">$${Math.round((parseFloat(r.spend_pl)||0)+(parseFloat(r.spend_plua)||0))}</span></div>`
 }
 // ── ZALIVS ──
-const SCLS={Check:'sc',Scale:'ss',OFF:'so',Test:'st',Proliw:'sp',Perezaliw:'sz'}
 function scoreToAutoStatus(s){return s<=2?'OFF':s<=4?'Check':'Scale'}
 function gchip(g){return`<span class="zgeo gchip ${g==='PL'?'gpl':'gplua'}">${g}</span>`}
 function spbs(z){return Array.from({length:7},(_,i)=>`<button class="spb${z.score===i?' s'+i:''}" data-zid="${z.id}" data-sc="${i}">${i}</button>`).join('')}
