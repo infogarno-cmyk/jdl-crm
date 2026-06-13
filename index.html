@@ -2633,6 +2633,60 @@ function updPrev(){
   el.textContent=`D{${today}}${g}/PH1./garno/kalk\LEADS/${b}$`
 }
 
+function openMoZaliv(tpl=null){
+  moGeo='';moScore=0
+  document.querySelectorAll('[data-geo]').forEach(b=>b.classList.remove('sel'))
+  document.querySelectorAll('#mo-score .spb').forEach((b,i)=>{b.className='spb'+(i===0?' s0':'')})
+  document.getElementById('mn').value=''
+  document.getElementById('ma').value=''
+  document.getElementById('mr').value=''
+  document.getElementById('mcreo-list').innerHTML=''
+  document.getElementById('mg-list').innerHTML=''
+  if(tpl){
+    moGeo=tpl.geo||'';moScore=tpl.score||0
+    document.getElementById('mn').value=tpl.name_template||''
+    document.getElementById('ma').value=tpl.ad_budget||''
+    document.getElementById('mr').value=tpl.rk_budget||''
+    if(tpl.buyer)document.getElementById('mb').value=tpl.buyer
+    if(tpl.funnel)document.getElementById('mf').value=tpl.funnel
+    if(moGeo)document.querySelectorAll('[data-geo]').forEach(b=>{if(b.dataset.geo===moGeo)b.classList.add('sel')})
+    document.querySelectorAll('#mo-score .spb').forEach(b=>{b.className='spb'+(parseInt(b.dataset.score)===moScore?' s'+moScore:'')})
+    ;(tpl.creos||[]).forEach(c=>addCreoField(c))
+    ;(tpl.goals||[]).forEach(g=>addGoalField(g))
+  }else{
+    addCreoField()
+    addGoalField()
+  }
+  updDomains();updPrev()
+  document.getElementById('mo-zaliv').classList.add('open')
+}
+
+function addCreoField(val=''){
+  const l=document.getElementById('mcreo-list')
+  if(!l||l.children.length>=5)return
+  const d=document.createElement('div');d.className='gr'
+  const sel=document.createElement('select');sel.className='fi mcreo-input';sel.style.flex='1'
+  const geoMap={'PL':'PL','PLUA':'UAPL'};const libGeo=geoMap[moGeo]||''
+  const opts=CREO_LIB.filter(cr=>!libGeo||cr.geo===libGeo)
+  sel.innerHTML='<option value="">— выбрать крео —</option>'+
+    opts.map(cr=>`<option value="${cr.name}"${cr.name===val?' selected':''}>${cr.name}${cr.status==='hall'?' 🏆':cr.status==='used'?' ⚡':' ✨'}</option>`).join('')
+  if(val&&!opts.find(cr=>cr.name===val))sel.innerHTML+=`<option value="${val}" selected>${val}</option>`
+  const b=document.createElement('button');b.type='button';b.className='rmbtn';b.textContent='×'
+  b.onclick=()=>{if(l.children.length>1)d.remove()}
+  d.appendChild(sel);d.appendChild(b);l.appendChild(d)
+}
+
+function addGoalField(val=''){
+  const l=document.getElementById('mg-list')
+  if(!l)return
+  const d=document.createElement('div');d.className='gr'
+  const i=document.createElement('input');i.className='fi mgoal-input'
+  i.placeholder='Цель '+(l.children.length+1);i.value=val
+  const b=document.createElement('button');b.type='button';b.className='rmbtn';b.textContent='×'
+  b.onclick=()=>{if(l.children.length>1)d.remove()}
+  d.appendChild(i);d.appendChild(b);l.appendChild(d)
+}
+
 // ── AUTO LOGIN ──
 // Auto-login
 const _saved=localStorage.getItem('jdl_user')
