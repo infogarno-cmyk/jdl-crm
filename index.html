@@ -962,9 +962,9 @@ function SaleModal({lead,t,onConfirm,onCancel}){
 }
 
 // ─── ADD LEAD MODAL ───────────────────────────────────────────────────────────
-function AddLeadModal({onClose,onAdd,domains,t,lang,nextNum,currentUser}){
+function AddLeadModal({onClose,onAdd,srcList,t,lang,nextNum,currentUser}){
   const todayIso=new Date().toISOString().slice(0,10);
-  const allDomains=domains&&domains.length?domains:SOURCES;
+  const allDomains=srcList&&srcList.length?srcList:SOURCES;
   const [form,setForm]=useState({name:"",phone:"",action:"undefined",clientLang:"pl",source:allDomains[0]||SOURCES[0],manager:currentUser||"",notes:"",budgetTimeline:"unconfirmed",dateOverride:todayIso});
   const set=(k,v)=>setForm(p=>({...p,[k]:v}));
 
@@ -1173,7 +1173,7 @@ function Dashboard({leads,events,t,lang}){
 }
 
 // ─── LEADS PAGE ───────────────────────────────────────────────────────────────
-function LeadsPage({leads,setLeads,setLeadsNow,updateDb,domains,t,mgr,search,onOpen}){
+function LeadsPage({leads,setLeads,setLeadsNow,updateDb,srcList,t,mgr,search,onOpen}){
   const [dateFrom,setDateFrom]=useState("");
   const [dateTo,setDateTo]=useState("");
   const [fQ,setFQ]=useState("all");const [fA,setFA]=useState("all");const [fS,setFS]=useState("all");const [sort,setSort]=useState("date");
@@ -1224,7 +1224,7 @@ function LeadsPage({leads,setLeads,setLeadsNow,updateDb,domains,t,mgr,search,onO
       <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
         <select value={fQ} onChange={e=>setFQ(e.target.value)} style={ss}><option value="all">{t.qualification}</option>{QUALS.map(q=><option key={q} value={q}>{t[q]}</option>)}</select>
         <select value={fA} onChange={e=>setFA(e.target.value)} style={ss}><option value="all">{t.action}</option>{ACTIONS.map(a=><option key={a} value={a}>{t[a]}</option>)}</select>
-        <select value={fS} onChange={e=>setFS(e.target.value)} style={ss}><option value="all">{t.source}</option>{(domains&&domains.length?domains:SOURCES).map(s=><option key={s} value={s}>{srcShort(s)}</option>)}</select>
+        <select value={fS} onChange={e=>setFS(e.target.value)} style={ss}><option value="all">{t.source}</option>{(srcList&&srcList.length?srcList:SOURCES).map(s=><option key={s} value={s}>{srcShort(s)}</option>)}</select>
         <select value={sort} onChange={e=>setSort(e.target.value)} style={ss}><option value="date">{t.date}</option><option value="id">ID</option><option value="score">{t.score} ↓</option></select>
       </div>
       <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
@@ -1262,7 +1262,7 @@ function LeadsPage({leads,setLeads,setLeadsNow,updateDb,domains,t,mgr,search,onO
 }
 
 // ─── LEAD DETAIL ──────────────────────────────────────────────────────────────
-function LeadDetail({lead,setLeads,updateDb,domains,t,lang,onClose,onAddSale,currentUser}){
+function LeadDetail({lead,setLeads,updateDb,srcList,t,lang,onClose,onAddSale,currentUser}){
   const [editing,setEditing]=useState(false);
   const [form,setForm]=useState({...lead});
   const [showSale,setShowSale]=useState(false);
@@ -1296,7 +1296,7 @@ function LeadDetail({lead,setLeads,updateDb,domains,t,lang,onClose,onAddSale,cur
             <div style={{fontSize:10,color:C.accent,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>📞 Контакт</div>
             {inp("name",t.name)}{inp("phone",t.phone)}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
-              <div><div style={{fontSize:10,color:C.muted,marginBottom:3,textTransform:"uppercase",letterSpacing:0.5}}>{t.source||"Источник"}</div>{editing?<select value={form.source||""} onChange={e=>set("source",e.target.value)} style={{background:C.surface,border:`1px solid ${C.borderMd}`,color:C.text,borderRadius:6,padding:"6px 10px",fontSize:11,width:"100%"}}>{(domains&&domains.length?domains:SOURCES).map(s=><option key={s} value={s}>{s}</option>)}</select>:<SrcBadge source={form.source}/>}</div><div><div style={{fontSize:10,color:C.muted,marginBottom:3,textTransform:"uppercase",letterSpacing:0.5}}>Язык клиента</div>{editing?<div style={{display:"flex",gap:4,marginTop:2}}>{[{v:"pl",flag:"🇵🇱",label:"PL"},{v:"ua",flag:"🇺🇦",label:"UA"}].map(({v,flag,label})=><button key={v} onClick={()=>set("clientLang",v)} style={{fontSize:16,padding:"3px 8px",borderRadius:6,border:`2px solid ${(form.clientLang||"pl")===v?C.accent:"transparent"}`,background:(form.clientLang||"pl")===v?C.accentDim:"transparent",cursor:"pointer",color:C.text,fontSize:11,display:"flex",alignItems:"center",gap:3}}><span style={{fontSize:15}}>{flag}</span>{label}</button>)}</div>:<span style={{fontSize:16}}>{form.clientLang==="ua"?"🇺🇦 UA":"🇵🇱 PL"}</span>}</div>
+              <div><div style={{fontSize:10,color:C.muted,marginBottom:3,textTransform:"uppercase",letterSpacing:0.5}}>{t.source||"Источник"}</div>{editing?<select value={form.source||""} onChange={e=>set("source",e.target.value)} style={{background:C.surface,border:`1px solid ${C.borderMd}`,color:C.text,borderRadius:6,padding:"6px 10px",fontSize:11,width:"100%"}}>{(srcList&&srcList.length?srcList:SOURCES).map(s=><option key={s} value={s}>{s}</option>)}</select>:<SrcBadge source={form.source}/>}</div><div><div style={{fontSize:10,color:C.muted,marginBottom:3,textTransform:"uppercase",letterSpacing:0.5}}>Язык клиента</div>{editing?<div style={{display:"flex",gap:4,marginTop:2}}>{[{v:"pl",flag:"🇵🇱",label:"PL"},{v:"ua",flag:"🇺🇦",label:"UA"}].map(({v,flag,label})=><button key={v} onClick={()=>set("clientLang",v)} style={{fontSize:16,padding:"3px 8px",borderRadius:6,border:`2px solid ${(form.clientLang||"pl")===v?C.accent:"transparent"}`,background:(form.clientLang||"pl")===v?C.accentDim:"transparent",cursor:"pointer",color:C.text,fontSize:11,display:"flex",alignItems:"center",gap:3}}><span style={{fontSize:15}}>{flag}</span>{label}</button>)}</div>:<span style={{fontSize:16}}>{form.clientLang==="ua"?"🇺🇦 UA":"🇵🇱 PL"}</span>}</div>
               <div><div style={{fontSize:10,color:C.muted,marginBottom:3,textTransform:"uppercase",letterSpacing:0.5}}>Дата</div>{editing?<input type="date" value={createdAtToIso(form.createdAt)} onChange={e=>set("createdAt",isoToCreatedAt(e.target.value))} style={{background:C.surface,border:`1px solid ${C.borderMd}`,color:C.text,borderRadius:6,padding:"6px 10px",fontSize:12,width:"100%",colorScheme:"dark"}}/>:<div style={{fontSize:12,color:C.text}}>{form.createdAt||"—"}</div>}</div>
             </div>
             <div style={{marginBottom:10}}><div style={{fontSize:10,color:C.muted,marginBottom:3,textTransform:"uppercase",letterSpacing:0.5}}>{t.action}</div>{editing?<select value={form.action||""} onChange={e=>set("action",e.target.value)} style={{background:C.surface,border:`1px solid ${C.borderMd}`,color:C.text,borderRadius:6,padding:"6px 10px",fontSize:12,width:"100%"}}>{ACTIONS.map(o=><option key={o} value={o}>{t[o]||o}</option>)}</select>:<Badge label={t[form.action]||"—"} color={ACT_COLOR[form.action]||C.muted} action={form.action} small/>}</div>
@@ -1484,8 +1484,8 @@ function CalendarPage({events,setEvents,setEventsNow,updateDb,t,lang}){
 }
 
 // ─── ANALYTICS ────────────────────────────────────────────────────────────────
-function DomainManager({domains,updateDb}){
-  const domList=domains&&domains.length?domains:SOURCES;
+function DomainManager({srcList,updateDb}){
+  const domList=srcList&&srcList.length?srcList:SOURCES;
   const [newDom,setNewDom]=useState("");
   const addDomain=()=>{const d=newDom.trim();if(!d||domList.includes(d))return;updateDb(p=>({...p,domains:[...(p.domains||domList),d]}),true);setNewDom("");};
   const removeDomain=(d)=>{if(domList.length<=1)return;updateDb(p=>({...p,domains:(p.domains||domList).filter(x=>x!==d)}),true);};
@@ -1508,11 +1508,11 @@ function DomainManager({domains,updateDb}){
   );
 }
 
-function AnalyticsPage({leads,sales,domains,updateDb,t}){
+function AnalyticsPage({leads,sales,srcList,updateDb,t}){
   const [dateFrom,setDateFrom]=useState("");
   const [dateTo,setDateTo]=useState("");
   const fl=filterByCustomRange(leads,dateFrom,dateTo);const fs=filterByCustomRange(sales,dateFrom,dateTo);
-  const domList=domains&&domains.length?domains:SOURCES;
+  const domList=srcList&&srcList.length?srcList:SOURCES;
   const domData=domList.map(d=>{const dl=fl.filter(l=>l.source===d);const kwaly=dl.filter(l=>l.score>=4).length;const dsales=fs.filter(s=>s.source===d);return{name:d,total:dl.length,kwaly,kwalyPct:dl.length?parseFloat((kwaly/dl.length*100).toFixed(1)):0,salesCount:dsales.length,salesRev:dsales.reduce((a,s)=>a+s.saleAmount,0)};}).filter(d=>d.total>0).sort((a,b)=>b.total-a.total);
   const mData=MANAGERS.map(m=>{const ml=fl.filter(l=>l.manager===m);const ms=fs.filter(s=>s.manager===m);const total=ml.length;const kwaly=ml.filter(l=>l.score>=4).length;const s4=ml.filter(l=>l.score===4).length;const s5=ml.filter(l=>l.score===5).length;const avg=total?(ml.reduce((a,l)=>a+l.score,0)/total).toFixed(2):0;return{name:m,total,kwaly,kwalyPct:total?parseFloat((kwaly/total*100).toFixed(1)):0,to5:s4?parseFloat((s5/s4*100).toFixed(1)):0,toSell:s5?parseFloat((ms.length/s5*100).toFixed(1)):0,salesCount:ms.length,salesRev:ms.reduce((a,s)=>a+s.saleAmount,0),visits:ml.filter(l=>l.score>=5).length,avg:parseFloat(avg)};});
   const podium=[...mData].filter(m=>m.name!=="Danya").sort((a,b)=>b.salesRev-a.salesRev).slice(0,3);const medals=["🥇","🥈","🥉"];
@@ -1566,7 +1566,7 @@ function AnalyticsPage({leads,sales,domains,updateDb,t}){
         </div>
       )}
 
-      <DomainManager domains={domains} updateDb={updateDb}/>
+      <DomainManager srcList={srcList} updateDb={updateDb}/>
     </div>
   );
 }
@@ -1834,7 +1834,7 @@ function GarnoCRM(){
   const sales   = db.sales   ?? [];
   const nextNum = db.nextNum ?? (leads.length+1);
   const chatHist= db.chat    ?? [];
-  const domains  = (db.domains&&db.domains.length) ? db.domains : SOURCES;
+  const srcList = (db.domains&&db.domains.length) ? db.domains : SOURCES;
 
   const setLeads      = upd => updateDb(p=>({...p,leads:  typeof upd==="function"?upd(p.leads  ??[]):upd}));
   const setLeadsNow   = upd => updateDb(p=>({...p,leads:  typeof upd==="function"?upd(p.leads  ??[]):upd}),true);
@@ -1881,15 +1881,15 @@ function GarnoCRM(){
         {syncError&&<div style={{background:"rgba(248,113,113,0.15)",borderBottom:`1px solid rgba(248,113,113,0.4)`,padding:"8px 16px",fontSize:12,color:"#f87171",display:"flex",alignItems:"center",gap:10,flexShrink:0}}><span style={{fontSize:16}}>⚠️</span><span style={{flex:1}}>{syncError}</span><span style={{fontSize:10,color:"rgba(248,113,113,0.7)"}}>Данные в безопасности — сохранены локально</span></div>}
         <div style={{flex:1,overflowY:"auto"}}>
           {page==="dashboard"  && <Dashboard leads={leads} events={events} t={t} lang={lang}/>}
-          {page==="leads"      && <LeadsPage leads={leads} setLeads={setLeads} setLeadsNow={setLeadsNow} updateDb={updateDb} domains={domains} t={t} mgr={mgr} search={search} onOpen={setSelLead}/>}
+          {page==="leads"      && <LeadsPage leads={leads} setLeads={setLeads} setLeadsNow={setLeadsNow} updateDb={updateDb} srcList={srcList} t={t} mgr={mgr} search={search} onOpen={setSelLead}/>}
           {page==="calendar"   && <CalendarPage events={events} setEvents={setEvents} setEventsNow={setEventsNow} updateDb={updateDb} t={t} lang={lang}/>}
-          {page==="analytics"  && <AnalyticsPage leads={leads} sales={sales} domains={domains} updateDb={updateDb} t={t}/>}
+          {page==="analytics"  && <AnalyticsPage leads={leads} sales={sales} srcList={srcList} updateDb={updateDb} t={t}/>}
           {page==="ai"         && <AIPage leads={leads} events={events} sales={sales} t={t} lang={lang} chatHistory={chatHist} setChatHistory={setChatHistory}/>}
           {page==="sales"      && <SalesPage sales={sales} setSales={setSales} setSalesNow={setSalesNow} updateDb={updateDb} t={t} lang={lang}/>}
         </div>
       </div>
-      {selLead  && <LeadDetail lead={selLead} setLeads={setLeadsNow} updateDb={updateDb} domains={domains} t={t} lang={lang} onClose={()=>setSelLead(null)} onAddSale={addSale} currentUser={currentUser}/>}
-      {showAdd  && <AddLeadModal onClose={()=>setShowAdd(false)} onAdd={addLead} domains={domains} t={t} lang={lang} nextNum={nextNum} currentUser={currentUser}/>}
+      {selLead  && <LeadDetail lead={selLead} setLeads={setLeadsNow} updateDb={updateDb} srcList={srcList} t={t} lang={lang} onClose={()=>setSelLead(null)} onAddSale={addSale} currentUser={currentUser}/>}
+      {showAdd  && <AddLeadModal onClose={()=>setShowAdd(false)} onAdd={addLead} srcList={srcList} t={t} lang={lang} nextNum={nextNum} currentUser={currentUser}/>}
     </div>
   );
 }
