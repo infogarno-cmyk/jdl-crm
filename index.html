@@ -207,7 +207,7 @@ html,body{height:100%;overflow:hidden;max-width:100vw;font-family:var(--sans);ba
 .j-new-ok{background:var(--bord-dim);border:1px solid var(--bord2);color:var(--bord2);border-radius:4px;padding:3px 9px;font-size:11px;cursor:pointer;font-family:var(--sans)}.j-new-ok:hover{background:var(--bord);color:#fff}
 .j-new-x{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:0 3px}.j-new-x:hover{color:var(--red)}
 .jmain{display:flex;flex-direction:column;overflow:hidden}
-.jtb{display:flex;gap:4px;padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center;flex-shrink:0}
+.jtb{display:flex;gap:4px;padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--border);border-top:2px solid var(--border2);flex-wrap:wrap;align-items:center;flex-shrink:0;margin-top:8px}
 
 .jtbtn{padding:4px 11px;border-radius:4px;border:1px solid transparent;background:transparent;color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--mono);font-weight:600;height:30px}.jtbtn:hover{background:var(--bg4);color:var(--text);border-color:var(--border)}
 .jtb-sep{width:1px;height:20px;background:var(--border2);margin:0 4px;flex-shrink:0}
@@ -216,7 +216,9 @@ html,body{height:100%;overflow:hidden;max-width:100vw;font-family:var(--sans);ba
 .jeditor{flex:1;outline:none;min-height:300px;font-size:13px;line-height:1.85;color:var(--text);font-family:var(--sans);caret-color:var(--bord2)}
 .jeditor:empty::before{content:attr(data-placeholder);color:var(--text3);pointer-events:none}
 .jeditor h1{font-size:24px;font-weight:800;color:#fff;margin:16px 0 8px;line-height:1.3}
-.jeditor h2{font-size:18px;font-weight:700;color:#e8e8f0;margin:14px 0 6px;padding-bottom:5px;border-bottom:1px solid var(--border);line-height:1.3}
+.jeditor h2{font-size:18px;font-weight:700;color:#e8e8f0;margin:14px 0 6px;padding-bottom:5px;border-bottom:1px solid var(--border);line-height:1.3;cursor:pointer;user-select:none;position:relative;padding-left:18px}
+.jeditor h2::before{content:'▾';position:absolute;left:0;top:2px;font-size:11px;color:var(--text3);transition:transform .15s}
+.jeditor h2.collapsed::before{transform:rotate(-90deg)}
 .jeditor h3{font-size:14px;font-weight:700;color:var(--text2);margin:12px 0 4px}
 .jeditor strong{color:#fff;font-weight:700}.jeditor em{color:var(--text2);font-style:italic}
 .jeditor code{background:var(--bg4);border-radius:3px;padding:1px 6px;font-family:var(--mono);font-size:11px;color:var(--bord2)}
@@ -2713,6 +2715,19 @@ function applyColor(color){
 
 // Autosave journal with debounce
 var _jAutoSave=null
+// H2 collapsible - delegate click on h2 inside jeditor
+document.getElementById('jeditor').addEventListener('click',function(e){
+  const h2=e.target.closest('h2')
+  if(!h2)return
+  h2.classList.toggle('collapsed')
+  // Toggle visibility of all siblings until next h1/h2
+  let el=h2.nextElementSibling
+  while(el&&!['H1','H2'].includes(el.tagName)){
+    el.style.display=h2.classList.contains('collapsed')?'none':''
+    el=el.nextElementSibling
+  }
+})
+
 document.getElementById('jeditor').addEventListener('input',function(){
   clearTimeout(_jAutoSave)
   _jAutoSave=setTimeout(()=>{
@@ -2745,30 +2760,30 @@ document.getElementById('jeditor').addEventListener('keydown',function(e){
     const sel=window.getSelection()
     if(!sel.rangeCount)return
     const range=sel.getRangeAt(0)
-    // Check if we're at start of line or after bullet
-    const blockEl=range.startContainer.parentElement?.closest('p,div,li')
-    if(blockEl&&blockEl.tagName!=='LI'){
-      // Wrap current block in callout div
+    const node=range.startContainer
+    // Find the closest block-level element
+    const block=node.nodeType===3
+      ?node.parentElement?.closest('h1,h2,h3,h4,p,div:not(.jeditor):not(.callout),li')
+      :node.closest('h1,h2,h3,h4,p,div:not(.jeditor):not(.callout),li')
+    if(block&&block.tagName==='LI'){
+      document.execCommand('indent',false,null)
+      return
+    }
+    if(block&&block.id!=='jeditor'){
+      // Wrap in callout preserving all content/HTML
       const callout=document.createElement('div')
       callout.className='callout'
-      callout.contentEditable='true'
-      // Get current line text
-      const text=range.startContainer.textContent||''
-      callout.textContent=text
-      if(blockEl&&blockEl.parentNode){
-        blockEl.parentNode.replaceChild(callout,blockEl)
-      }else{
-        document.execCommand('insertHTML',false,'<div class="callout"><br></div>')
-      }
-      // Place cursor inside callout
-      const newRange=document.createRange()
-      newRange.selectNodeContents(callout)
-      newRange.collapse(false)
+      callout.innerHTML=block.innerHTML||block.textContent
+      block.parentNode.replaceChild(callout,block)
+      // Place cursor at end of callout
+      const r=document.createRange()
+      r.selectNodeContents(callout)
+      r.collapse(false)
       sel.removeAllRanges()
-      sel.addRange(newRange)
+      sel.addRange(r)
     }else{
-      // Inside list - normal indent
-      document.execCommand('indent',false,null)
+      // Fallback: insert callout block
+      document.execCommand('insertHTML',false,'<div class="callout"><br></div>')
     }
   }
 })
