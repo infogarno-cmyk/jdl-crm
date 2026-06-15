@@ -226,6 +226,8 @@ html,body{height:100%;overflow:hidden;max-width:100vw;font-family:var(--sans);ba
 .jeditor table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px}
 .jeditor th{background:var(--bg4);border:1px solid var(--border2);padding:6px 10px;text-align:left;font-weight:700;color:var(--text2);font-size:11px}
 .jeditor td{border:1px solid var(--border);padding:6px 10px}.jeditor p{margin:3px 0}
+.jeditor .callout{background:var(--bg4);border-left:3px solid var(--bord2);border-radius:0 6px 6px 0;padding:8px 12px;margin:6px 0;color:var(--text)}
+.jeditor .callout::before{content:'💡 ';font-size:11px}
 /* CREO LIBRARY */
 .creo-two-col{display:grid;grid-template-columns:1fr 320px;gap:14px;align-items:start}
 /* Insight board */
@@ -430,8 +432,12 @@ document.getElementById('root').innerHTML=`
     <div class="page" id="page-journal" style="padding:0">
       <div class="jlay">
         <div class="jsb">
-          <div class="jsbtop"><button class="jsbbtn" onclick="startNewFolder()">+ Папка</button><button class="jsbbtn" onclick="startNewDoc()">+ Документ</button></div>
+          
           <div class="jtree" id="j-tree"></div>
+          <div style="padding:8px;border-top:1px solid var(--border);display:flex;gap:6px">
+            <button class="jsbbtn" onclick="startNewFolder()">+ Папка</button>
+            <button class="jsbbtn" onclick="startNewDoc()">+ Документ</button>
+          </div>
         </div>
         <div class="jmain" id="jmain">
           <div class="jtb" id="jtb">
@@ -448,8 +454,16 @@ document.getElementById('root').innerHTML=`
             <div class="jtb-sep"></div>
             <button class="jtbtn" id="btn-ins-table">⊞ Таблица</button>
             <button class="jtbtn" data-cmd="insertHorizontalRule">—</button>
+            <button class="jtbtn" onclick="deleteTable()" title="Удалить таблицу" style="color:var(--red)">⊠</button>
             <div class="jtb-sep"></div>
             <button class="jtbtn" onclick="saveDoc()" style="color:var(--bord2);margin-left:auto">💾 Сохранить</button>
+            <div class="jtb-sep"></div>
+            <button class="jtbtn" title="Жёлтый" onclick="applyColor('#f0c040')" style="color:#f0c040;font-weight:900">A</button>
+            <button class="jtbtn" title="Красный" onclick="applyColor('#e04050')" style="color:#e04050;font-weight:900">A</button>
+            <button class="jtbtn" title="Зелёный" onclick="applyColor('#2ea043')" style="color:#2ea043;font-weight:900">A</button>
+            <button class="jtbtn" title="Оранжевый" onclick="applyColor('#e08040')" style="color:#e08040;font-weight:900">A</button>
+            <button class="jtbtn" title="Синий" onclick="applyColor('#4080ff')" style="color:#4080ff;font-weight:900">A</button>
+            <button class="jtbtn" title="Сброс цвета" onclick="applyColor('inherit')" style="color:var(--text3)">A</button>
           </div>
           <div class="jeditor-wrap" id="jeditor-wrap">
             <input class="j-title-inp" id="j-title" placeholder="Заголовок...">
@@ -2685,6 +2699,87 @@ function addGoalField(val=''){
   const b=document.createElement('button');b.type='button';b.className='rmbtn';b.textContent='×'
   b.onclick=()=>{if(l.children.length>1)d.remove()}
   d.appendChild(i);d.appendChild(b);l.appendChild(d)
+}
+
+// ── JOURNAL HELPERS ──
+function applyColor(color){
+  document.getElementById('jeditor').focus()
+  if(color==='inherit'){
+    document.execCommand('removeFormat',false,null)
+  }else{
+    document.execCommand('foreColor',false,color)
+  }
+}
+
+// Autosave journal with debounce
+var _jAutoSave=null
+document.getElementById('jeditor').addEventListener('input',function(){
+  clearTimeout(_jAutoSave)
+  _jAutoSave=setTimeout(()=>{
+    if(curDoc)saveDocSilent()
+  },1500)
+})
+document.getElementById('j-title').addEventListener('input',function(){
+  clearTimeout(_jAutoSave)
+  _jAutoSave=setTimeout(()=>{
+    if(curDoc)saveDocSilent()
+  },1500)
+})
+
+async function saveDocSilent(){
+  if(!curDoc)return
+  const title=document.getElementById('j-title').value
+  const body=document.getElementById('jeditor').innerHTML
+  await db.from('journal_docs').update({title,body,updated_at:new Date().toISOString()}).eq('id',String(curDoc))
+  const all=[...jLoose,...jFolders.flatMap(f=>f.docs)]
+  const d=all.find(x=>String(x.id)===String(curDoc))
+  if(d){d.title=title;d.body=body}
+  // Update sidebar title silently
+  rtree()
+}
+
+// Tab key → callout block (Obsidian-style)
+document.getElementById('jeditor').addEventListener('keydown',function(e){
+  if(e.key==='Tab'){
+    e.preventDefault()
+    const sel=window.getSelection()
+    if(!sel.rangeCount)return
+    const range=sel.getRangeAt(0)
+    // Check if we're at start of line or after bullet
+    const blockEl=range.startContainer.parentElement?.closest('p,div,li')
+    if(blockEl&&blockEl.tagName!=='LI'){
+      // Wrap current block in callout div
+      const callout=document.createElement('div')
+      callout.className='callout'
+      callout.contentEditable='true'
+      // Get current line text
+      const text=range.startContainer.textContent||''
+      callout.textContent=text
+      if(blockEl&&blockEl.parentNode){
+        blockEl.parentNode.replaceChild(callout,blockEl)
+      }else{
+        document.execCommand('insertHTML',false,'<div class="callout"><br></div>')
+      }
+      // Place cursor inside callout
+      const newRange=document.createRange()
+      newRange.selectNodeContents(callout)
+      newRange.collapse(false)
+      sel.removeAllRanges()
+      sel.addRange(newRange)
+    }else{
+      // Inside list - normal indent
+      document.execCommand('indent',false,null)
+    }
+  }
+})
+
+// Delete table when cursor is inside it
+function deleteTable(){
+  const sel=window.getSelection()
+  if(!sel.rangeCount)return
+  const table=sel.getRangeAt(0).startContainer.parentElement?.closest('table')
+  if(table){table.remove();toast('Таблица удалена','ok')}
+  else toast('Поставь курсор внутрь таблицы','info')
 }
 
 // ── AUTO LOGIN ──
