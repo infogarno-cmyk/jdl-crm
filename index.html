@@ -1834,6 +1834,7 @@ function GarnoCRM(){
   const sales   = db.sales   ?? [];
   const nextNum = db.nextNum ?? (leads.length+1);
   const chatHist= db.chat    ?? [];
+  const domains  = (db.domains&&db.domains.length) ? db.domains : SOURCES;
 
   const setLeads      = upd => updateDb(p=>({...p,leads:  typeof upd==="function"?upd(p.leads  ??[]):upd}));
   const setLeadsNow   = upd => updateDb(p=>({...p,leads:  typeof upd==="function"?upd(p.leads  ??[]):upd}),true);
@@ -1882,13 +1883,13 @@ function GarnoCRM(){
           {page==="dashboard"  && <Dashboard leads={leads} events={events} t={t} lang={lang}/>}
           {page==="leads"      && <LeadsPage leads={leads} setLeads={setLeads} setLeadsNow={setLeadsNow} updateDb={updateDb} domains={domains} t={t} mgr={mgr} search={search} onOpen={setSelLead}/>}
           {page==="calendar"   && <CalendarPage events={events} setEvents={setEvents} setEventsNow={setEventsNow} updateDb={updateDb} t={t} lang={lang}/>}
-          {page==="analytics"  && <AnalyticsPage leads={leads} sales={sales} t={t} lang={lang}/>}
+          {page==="analytics"  && <AnalyticsPage leads={leads} sales={sales} domains={domains} updateDb={updateDb} t={t}/>}
           {page==="ai"         && <AIPage leads={leads} events={events} sales={sales} t={t} lang={lang} chatHistory={chatHist} setChatHistory={setChatHistory}/>}
           {page==="sales"      && <SalesPage sales={sales} setSales={setSales} setSalesNow={setSalesNow} updateDb={updateDb} t={t} lang={lang}/>}
         </div>
       </div>
       {selLead  && <LeadDetail lead={selLead} setLeads={setLeadsNow} updateDb={updateDb} domains={domains} t={t} lang={lang} onClose={()=>setSelLead(null)} onAddSale={addSale} currentUser={currentUser}/>}
-      {showAdd  && <AddLeadModal onClose={()=>setShowAdd(false)} onAdd={addLead} t={t} lang={lang} nextNum={nextNum} currentUser={currentUser}/>}
+      {showAdd  && <AddLeadModal onClose={()=>setShowAdd(false)} onAdd={addLead} domains={domains} t={t} lang={lang} nextNum={nextNum} currentUser={currentUser}/>}
     </div>
   );
 }
