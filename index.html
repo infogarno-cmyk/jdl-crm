@@ -351,6 +351,7 @@ document.getElementById('root').innerHTML=`
         <input class="fsrch" id="zf-q" placeholder="🔍 Поиск...">
         <button class="btpl" id="btn-open-templates">📋 Шаблоны</button>
         <button class="btpl" id="btn-import-meta" style="border-color:var(--blue-bg);color:var(--blue)">⬇ Импорт из Meta</button>
+        <button class="btpl" onclick="autoMatchCampaignIds()" style="border-color:rgba(144,96,208,.4);color:var(--purple)" title="Автоматически сопоставить campaign IDs по названию">🔗 Матч IDs</button>
         <button class="badd" id="btn-new-zaliv">+ Новый залив</button>
       </div>
       <div class="zbulk-bar" id="zbulk-bar">
@@ -1895,6 +1896,8 @@ async function importCampaignsFromMeta(){
     setSS('ok',added>0?`Импортировано ${added} РК`:'Нет новых РК')
     if(added>0){toast(`Импортировано ${added} новых РК из Meta`,'ok');rzalivs()}
     else toast('Все кампании уже импортированы','info')
+    // Auto-match campaign IDs for existing zalivs
+    setTimeout(autoMatchCampaignIds,500)
   }catch(e){
     setSS('','Ошибка импорта')
     toast('Нужно задеплоить функцию get-campaigns в Supabase','err')
@@ -2821,6 +2824,48 @@ function deleteTable(){
   const table=sel.getRangeAt(0).startContainer.parentElement?.closest('table')
   if(table){table.remove();toast('Таблица удалена','ok')}
   else toast('Поставь курсор внутрь таблицы','info')
+}
+
+// ── AUTO-MATCH CAMPAIGN IDs ──
+async function autoMatchCampaignIds(){
+  if(!db)return
+  setSS('syncing','Матчинг campaign IDs...')
+  try{
+    const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
+      body:'{}'
+    })
+    const d=await r.json()
+    if(!d.campaigns?.length){setSS('ok','—');return}
+
+    let matched=0
+    for(const z of ZALIVS){
+      if(z.campaign_id)continue // already has ID
+      // Match by name similarity
+      const match=d.campaigns.find(camp=>{
+        const cn=camp.name.toLowerCase().replace(/\s+/g,'')
+        const zn=z.name.toLowerCase().replace(/\s+/g,'')
+        // Check if names are similar enough (first 20 chars)
+        return cn.slice(0,20)===zn.slice(0,20)||zn.includes(cn.slice(0,15))||cn.includes(zn.slice(0,15))
+      })
+      if(match){
+        await db.from('zalivs').update({campaign_id:String(match.id)}).eq('id',z.id)
+        z.campaign_id=String(match.id)
+        matched++
+        console.log('Matched:',z.name,'→',match.id)
+      }
+    }
+    setSS('ok',matched>0?`Сопоставлено ${matched} кампаний`:'Нет новых совпадений')
+    if(matched>0){
+      toast(`Автоматически сопоставлено ${matched} campaign IDs`,'ok')
+      rzalivs()
+    }else{
+      toast('Совпадений не найдено — введи ID вручную в редактировании','info')
+    }
+  }catch(e){
+    setSS('','Ошибка');console.error(e)
+  }
 }
 
 // ── AUTO LOGIN ──
