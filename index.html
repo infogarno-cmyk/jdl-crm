@@ -1128,16 +1128,11 @@ async function bulkDeleteZalivs(){
 }
 
 function getZalivMetrics(z){
-  const el=document.getElementById('ex-metrics-'+z.id)
-  if(!el)return '<div style="font-size:11px;color:var(--text3)">—</div>'
-  // If has campaign_id - fetch real Meta metrics
+  // Returns placeholder HTML - actual fetch happens after render via fetchCampaignMetrics
   if(z.campaign_id){
-    // Show loading, then fetch
-    setTimeout(()=>fetchCampaignMetrics(z),0)
-    return '<div style="font-size:11px;color:var(--text3);padding:4px">⏳ Загрузка метрик...</div>'
+    return '<div style="font-size:11px;color:var(--text3);padding:4px">⏳ Загрузка метрик из Meta...</div>'
   }
-  // Fallback: show note that campaign_id not linked
-  return '<div style="font-size:11px;color:var(--text3);padding:4px">Нет campaign_id — импортируй РК через кнопку ⬇ Импорт из Meta</div>'
+  return '<div style="font-size:11px;color:var(--text3);padding:4px">Введи Campaign ID (Meta) и сохрани залив</div>'
 }
 
 async function fetchCampaignMetrics(z){
@@ -1229,7 +1224,17 @@ function exRow(z){
   </div></td></tr>`
 }
 
-function togZ(id){expZ=(expZ===id?null:id);rzalivs()}
+function togZ(id){
+  expZ=(expZ===id?null:id)
+  rzalivs()
+  // After render, fetch campaign metrics if expand is open
+  if(expZ){
+    const z=ZALIVS.find(x=>x.id===expZ)
+    if(z&&z.campaign_id){
+      setTimeout(()=>fetchCampaignMetrics(z),100)
+    }
+  }
+}
 async function setInd(id,ind){await db.from('zalivs').update({ind,updated_at:new Date().toISOString()}).eq('id',id);const z=ZALIVS.find(x=>x.id===id);if(z)z.ind=ind;rzalivs()}
 async function setScore(id,score){
   const z=ZALIVS.find(x=>x.id===id);if(!z)return
