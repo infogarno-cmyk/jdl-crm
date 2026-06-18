@@ -1128,49 +1128,66 @@ async function bulkDeleteZalivs(){
 }
 
 function getZalivMetrics(z){
-  // Parse date from zaliv name e.g. D[09.06] or 09.06
-  let dateStartISO=null
-  const raw=z.date||''
-  if(raw){
-    const p=raw.split('.');
-    if(p.length===2){
-      const yr=new Date().getFullYear()
-      dateStartISO=yr+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0')
-    }
+  const el=document.getElementById('ex-metrics-'+z.id)
+  if(!el)return '<div style="font-size:11px;color:var(--text3)">—</div>'
+  // If has campaign_id - fetch real Meta metrics
+  if(z.campaign_id){
+    // Show loading, then fetch
+    setTimeout(()=>fetchCampaignMetrics(z),0)
+    return '<div style="font-size:11px;color:var(--text3);padding:4px">⏳ Загрузка метрик...</div>'
   }
-  if(!dateStartISO&&z.created_at)dateStartISO=z.created_at.split('T')[0]
-  const today=new Date().toISOString().split('T')[0]
-  const rows=METRICS.filter(m=>(!dateStartISO||m.day>=dateStartISO)&&m.day<=today)
-  if(!rows.length)return '<div style="font-size:11px;color:var(--text3)">Нет данных за период</div>'
-  let spend=0,leads=0,quals=0
-  rows.forEach(r=>{
-    if(z.geo==='PL'){spend+=parseFloat(r.spend_pl||0);leads+=(r.leads_pl||0)}
-    else if(z.geo==='PLUA'){spend+=parseFloat(r.spend_plua||0);leads+=(r.leads_plua||0)}
-    else{spend+=parseFloat(r.spend_pl||0)+parseFloat(r.spend_plua||0);leads+=(r.leads_pl||0)+(r.leads_plua||0)}
-    quals+=r.quals||0
-  })
-  spend=Math.round(spend*100)/100
-  const cpl=leads>0?Math.round(spend/leads*100)/100:0
-  const cql=quals>0?Math.round(spend/quals*100)/100:0
-  const avgCtr=rows.length?Math.round(rows.reduce((s,r)=>s+parseFloat(r.ctr||0),0)/rows.length*100)/100:0
-  const days=rows.length
-  return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
-    <div style="background:var(--bg5);border-radius:5px;padding:7px 9px;text-align:center">
-      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">SPEND</div>
-      <div style="font-size:16px;font-weight:800;color:var(--yellow);font-family:var(--mono)">$${spend}</div>
-      <div style="font-size:9px;color:var(--text3)">${days}д · $${Math.round(spend/days)}/д</div>
-    </div>
-    <div style="background:var(--bg5);border-radius:5px;padding:7px 9px;text-align:center">
-      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">CPL / CQL</div>
-      <div style="font-size:16px;font-weight:800;color:${cpl>0&&cpl<10?'var(--green)':cpl<15?'var(--yellow)':'var(--red)'};font-family:var(--mono)">$${cpl}</div>
-      <div style="font-size:9px;color:var(--text3)">CQL: $${cql}</div>
-    </div>
-    <div style="background:var(--bg5);border-radius:5px;padding:7px 9px;text-align:center">
-      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">LEADS / CTR</div>
-      <div style="font-size:16px;font-weight:800;color:#fff;font-family:var(--mono)">${leads}</div>
-      <div style="font-size:9px;color:var(--text3)">CTR: ${avgCtr}%</div>
-    </div>
-  </div>`
+  // Fallback: show note that campaign_id not linked
+  return '<div style="font-size:11px;color:var(--text3);padding:4px">Нет campaign_id — импортируй РК через кнопку ⬇ Импорт из Meta</div>'
+}
+
+async function fetchCampaignMetrics(z){
+  const el=document.getElementById('ex-metrics-'+z.id)
+  if(!el)return
+  try{
+    // Parse date_start from zaliv date field
+    let since=null
+    const raw=z.date||''
+    if(raw){
+      const p=raw.split('.')
+      if(p.length===2){
+        const yr=new Date().getFullYear()
+        since=`${yr}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`
+      }
+    }
+    if(!since&&z.created_at)since=z.created_at.split('T')[0]
+    const until=new Date().toISOString().split('T')[0]
+
+    const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
+      body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since,until})
+    })
+    const d=await r.json()
+    if(!d.ok||d.error){
+      el.innerHTML='<div style="font-size:11px;color:var(--red)">Ошибка: '+(d.error||'Meta API')+'</div>'
+      return
+    }
+    const cplColor=d.cpl>0&&d.cpl<10?'var(--green)':d.cpl<15?'var(--yellow)':d.cpl>0?'var(--red)':'var(--text)'
+    el.innerHTML=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+      <div style="background:var(--bg5);border-radius:5px;padding:7px 9px;text-align:center">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">SPEND</div>
+        <div style="font-size:16px;font-weight:800;color:var(--yellow);font-family:var(--mono)">$${d.spend}</div>
+        <div style="font-size:9px;color:var(--text3)">${d.days}д · $${d.spend_daily}/д</div>
+      </div>
+      <div style="background:var(--bg5);border-radius:5px;padding:7px 9px;text-align:center">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">CPL</div>
+        <div style="font-size:16px;font-weight:800;color:${cplColor};font-family:var(--mono)">${d.cpl>0?'$'+d.cpl:'—'}</div>
+        <div style="font-size:9px;color:var(--text3)">CTR: ${d.ctr}%</div>
+      </div>
+      <div style="background:var(--bg5);border-radius:5px;padding:7px 9px;text-align:center">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">LEADS</div>
+        <div style="font-size:16px;font-weight:800;color:#fff;font-family:var(--mono)">${d.leads}</div>
+        <div style="font-size:9px;color:var(--text3)">${d.clicks} кликов</div>
+      </div>
+    </div>`
+  }catch(e){
+    if(el)el.innerHTML='<div style="font-size:11px;color:var(--red)">Ошибка загрузки</div>'
+  }
 }
 
 function exRow(z){
@@ -1178,6 +1195,8 @@ function exRow(z){
     <div class="exbl"><div class="exlb">Редактировать</div>
       <div style="margin-bottom:8px"><div class="elb">Название</div><input class="efi" id="ef-name-${z.id}" value="${(z.name||'').replace(/"/g,'&quot;')}"></div>
       <div class="erow"><div><div class="elb">AD $</div><input class="efi" id="ef-ad-${z.id}" type="number" value="${z.ad_budget}"></div><div><div class="elb">RK $</div><input class="efi" id="ef-rk-${z.id}" type="number" value="${z.rk_budget}"></div></div>
+      <div style="margin-bottom:8px"><div class="elb">Campaign ID (Meta)</div>
+        <input class="efi" id="ef-cid-${z.id}" value="${z.campaign_id||''}" placeholder="12345678901234"></div>
       <div style="margin-bottom:8px"><div class="elb">Домен</div>
         <select class="efi" id="ef-dom-${z.id}">
           <option value="${z.domain||''}">${z.domain||'— выбрать —'}</option>
@@ -1244,7 +1263,8 @@ async function setStatus(id,sel){
 async function saveEdit(id){
   const z=ZALIVS.find(x=>x.id===id);if(!z)return
   const creoSels=[...document.querySelectorAll('#ef-creo-list-'+id+' .ef-creo-sel')].map(s=>s.value).filter(Boolean)
-  const u={name:document.getElementById('ef-name-'+id).value.trim()||z.name,ad_budget:parseFloat(document.getElementById('ef-ad-'+id).value)||z.ad_budget,rk_budget:parseFloat(document.getElementById('ef-rk-'+id).value)||z.rk_budget,domain:document.getElementById('ef-dom-'+id).value.trim(),creos:creoSels.length?creoSels:z.creos,insights:document.getElementById('ef-ins-'+id).value,updated_at:new Date().toISOString()}
+  const cidVal=document.getElementById('ef-cid-'+id)?.value?.trim()||z.campaign_id||null
+  const u={name:document.getElementById('ef-name-'+id).value.trim()||z.name,ad_budget:parseFloat(document.getElementById('ef-ad-'+id).value)||z.ad_budget,rk_budget:parseFloat(document.getElementById('ef-rk-'+id).value)||z.rk_budget,domain:document.getElementById('ef-dom-'+id).value.trim(),creos:creoSels.length?creoSels:z.creos,insights:document.getElementById('ef-ins-'+id).value,campaign_id:cidVal,updated_at:new Date().toISOString()}
   await db.from('zalivs').update(u).eq('id',id);Object.assign(z,u);toast('Сохранено','ok');rzalivs()
 }
 async function delZaliv(id){if(!confirm('Удалить?'))return;await db.from('zalivs').delete().eq('id',id);ZALIVS=ZALIVS.filter(z=>z.id!==id);expZ=null;toast('Удалено','ok');rzalivs()}
@@ -1858,6 +1878,7 @@ async function importCampaignsFromMeta(){
         domain:'',creos:[],goals:[],
         ind:'profit',status:'Check',insights:'',
         buyer,funnel,score:3,
+        campaign_id:String(camp.id),
         date:date||new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
       }).select().single()
       if(!error&&zData){
