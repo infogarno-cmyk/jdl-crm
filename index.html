@@ -1054,9 +1054,19 @@ function rzalivs(){
     (!_zfInd||z.ind===_zfInd)&&
     (!q||z.name.toLowerCase().includes(q))
   )
-  // Sort
-  if(sort==='new')f=[...f].sort((a,b)=>b.id-a.id)
-  else if(sort==='old')f=[...f].sort((a,b)=>a.id-b.id)
+  // Sort — parse real date from z.date or campaign name
+  const getZDate=z=>{
+    const raw=z.date||parseDateFromCampName(z.name)||''
+    if(!raw)return 0
+    const p=raw.split('.')
+    if(p.length===2){
+      const yr=new Date().getFullYear()
+      return new Date(yr+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0')).getTime()
+    }
+    return 0
+  }
+  if(sort==='new')f=[...f].sort((a,b)=>getZDate(b)-getZDate(a))
+  else if(sort==='old')f=[...f].sort((a,b)=>getZDate(a)-getZDate(b))
   else if(sort==='score')f=[...f].sort((a,b)=>(b.score||0)-(a.score||0))
   else if(sort==='budget')f=[...f].sort((a,b)=>(b.rk_budget||0)-(a.rk_budget||0))
   document.getElementById('z-count').textContent='('+f.length+')'
