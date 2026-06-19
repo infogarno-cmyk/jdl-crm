@@ -344,6 +344,12 @@ document.getElementById('root').innerHTML=`
     <div class="page" id="page-zalivs">
       <div class="fhdr"><span class="fhtit">Все РК</span><span class="fhcnt" id="z-count">(0)</span></div>
       <div class="fbar">
+        <div style="display:flex;gap:3px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:3px">
+          <button class="pb" id="zf-ind-all" data-ind="" style="padding:3px 10px;border-radius:4px;font-size:10px;font-weight:700;border:none;background:var(--bg5);color:#fff">Все</button>
+          <button class="pb" id="zf-ind-p" data-ind="profit" style="padding:3px 10px;border-radius:4px;font-size:10px;font-weight:700;border:none;color:var(--green)">P</button>
+          <button class="pb" id="zf-ind-d" data-ind="drop" style="padding:3px 10px;border-radius:4px;font-size:10px;font-weight:700;border:none;color:var(--yellow)">D</button>
+          <button class="pb" id="zf-ind-o" data-ind="off" style="padding:3px 10px;border-radius:4px;font-size:10px;font-weight:700;border:none;color:var(--red)">O</button>
+        </div>
         <select class="fsel" id="zf-geo"><option value="">🌐 GEO</option><option value="PL">🇵🇱 PL</option><option value="PLUA">🇵🇱🇺🇦 PLUA</option></select>
         <select class="fsel" id="zf-status"><option value="">🏷 Статус</option><option value="Check">Check</option><option value="Scale">Scale</option><option value="OFF">OFF</option><option value="Test">Test</option><option value="Proliw">Proliw</option><option value="Perezaliw">Perezaliw</option></select>
         <select class="fsel" id="zf-sort"><option value="new">📅 Новые сначала</option><option value="old">📅 Старые сначала</option><option value="score">⭐ По score</option><option value="budget">💰 По бюджету</option></select>
@@ -646,6 +652,19 @@ document.querySelectorAll('#sp-btns .pb').forEach(btn=>btn.addEventListener('cli
 document.getElementById('sp-from').addEventListener('change',rsales)
 document.getElementById('sp-to').addEventListener('change',rsales)
 document.getElementById('zf-geo').addEventListener('change',rzalivs)
+// IND filter buttons
+var _zfInd=''
+document.querySelectorAll('[data-ind]').forEach(btn=>{
+  btn.addEventListener('click',function(){
+    _zfInd=this.dataset.ind
+    document.querySelectorAll('[data-ind]').forEach(b=>{
+      b.style.background=b===this?'var(--bg2)':'transparent'
+      b.style.opacity=b===this?'1':'0.6'
+    })
+    this.style.opacity='1'
+    rzalivs()
+  })
+})
 document.getElementById('zf-status').addEventListener('change',rzalivs)
 document.getElementById('zf-q').addEventListener('input',rzalivs)
 document.getElementById('zf-sort').addEventListener('change',rzalivs)
@@ -1028,7 +1047,13 @@ function rzalivs(){
   const geo=document.getElementById('zf-geo').value,st=document.getElementById('zf-status').value,q=document.getElementById('zf-q').value.toLowerCase()
   const sort=document.getElementById('zf-sort')?.value||'new'
   const buyer=document.getElementById('zf-buyer')?.value||''
-  let f=ZALIVS.filter(z=>(!geo||z.geo===geo)&&(!st||z.status===st)&&(!buyer||z.buyer===buyer)&&(!q||z.name.toLowerCase().includes(q)))
+  let f=ZALIVS.filter(z=>
+    (!geo||z.geo===geo)&&
+    (!st||z.status===st)&&
+    (!buyer||z.buyer===buyer)&&
+    (!_zfInd||z.ind===_zfInd)&&
+    (!q||z.name.toLowerCase().includes(q))
+  )
   // Sort
   if(sort==='new')f=[...f].sort((a,b)=>b.id-a.id)
   else if(sort==='old')f=[...f].sort((a,b)=>a.id-b.id)
@@ -1043,7 +1068,7 @@ function rzalivs(){
     html+=`<tr class="${rc}" data-zid="${z.id}" style="cursor:pointer">
       <td style="width:30px"><input type="checkbox" class="zcheck zrow-check" data-zid="${z.id}" onclick="event.stopPropagation()"></td>
       <td><div class="ind-t"><button class="itb${z.ind==='profit'?' ap':''}" data-zid="${z.id}" data-ind="profit">P</button><button class="itb${z.ind==='drop'?' ad':''}" data-zid="${z.id}" data-ind="drop">D</button><button class="itb${z.ind==='off'?' ao':''}" data-zid="${z.id}" data-ind="off">O</button></div></td>
-      <td style="color:var(--text3);font-size:11px;font-family:var(--mono)">${z.date||'—'}</td>
+      <td style="color:var(--text3);font-size:11px;font-family:var(--mono)">${z.date||parseDateFromCampName(z.name)||'—'}</td>
       <td>${gchip(z.geo)}</td>
       <td><div class="rkn">${z.name}</div></td>
       <td><div style="display:flex;gap:3px">${spbs(z)}</div></td>
@@ -1879,7 +1904,9 @@ async function importCampaignsFromMeta(){
       const budget=parseFloat(camp.daily_budget||0)/100||0
 
       // Check if zaliv with exact same name already exists
-      const existing=ZALIVS.find(z=>z.name.trim()===camp.name.trim())
+      // Normalize names for comparison - strip whitespace, dashes, special chars
+      const normName=n=>n.trim().replace(/\s+/g,' ').toLowerCase()
+      const existing=ZALIVS.find(z=>normName(z.name)===normName(camp.name))
 
       if(existing){
         // Replace: update existing zaliv with fresh data + campaign_id
@@ -1958,9 +1985,13 @@ function parseFunnelFromName(name){
 }
 
 function parseDateFromCampName(name){
-  // D[09.06] or D{09.06} → 09.06
-  const m=name.match(/[DId\[{](\d{2}[.,]\d{2})/)
+  // Matches: D{17.06} I[16.06] D[09.06] etc
+  // After first letter, optionally {[ then DD.MM
+  const m=name.match(/^[A-Za-z][{\[(]?(\d{2}[.,]\d{2})/)
   if(m)return m[1].replace(',','.')
+  // fallback: any DD.MM pattern
+  const m2=name.match(/(\d{2}[.,]\d{2})/)
+  if(m2)return m2[1].replace(',','.')
   return null
 }
 
