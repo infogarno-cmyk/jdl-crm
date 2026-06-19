@@ -1870,17 +1870,45 @@ async function importCampaignsFromMeta(){
     const d=await r.json()
     if(!d.campaigns||!d.campaigns.length){setSS('ok','Нет новых РК');toast('Нет новых кампаний в Meta','info');return}
 
-    let added=0
+    let added=0,replaced=0
     for(const camp of d.campaigns){
-      if(importedIds.has(String(camp.id)))continue
       const buyer=camp.name.trim()[0]==='I'?'Illia':'Danya'
       const geo=parseGeoFromName(camp.name)
       const funnel=parseFunnelFromName(camp.name)
       const date=parseDateFromCampName(camp.name)
+      const budget=parseFloat(camp.daily_budget||0)/100||0
+
+      // Check if zaliv with exact same name already exists
+      const existing=ZALIVS.find(z=>z.name.trim()===camp.name.trim())
+
+      if(existing){
+        // Replace: update existing zaliv with fresh data + campaign_id
+        const upd={
+          campaign_id:String(camp.id),
+          ad_budget:budget,
+          rk_budget:budget,
+          geo,funnel,buyer,
+          date:date||existing.date,
+          updated_at:new Date().toISOString()
+        }
+        const{error}=await db.from('zalivs').update(upd).eq('id',existing.id)
+        if(!error){
+          Object.assign(existing,upd)
+          // Update imported_campaigns
+          await db.from('imported_campaigns').upsert({campaign_id:String(camp.id),zaliv_id:existing.id},{onConflict:'campaign_id'})
+          replaced++
+          console.log('Replaced:',camp.name)
+        }
+        continue
+      }
+
+      // Skip if already imported by campaign_id
+      if(importedIds.has(String(camp.id)))continue
+
+      // New zaliv
       const{data:zData,error}=await db.from('zalivs').insert({
         geo,name:camp.name,
-        ad_budget:parseFloat(camp.daily_budget||0)/100||0,
-        rk_budget:parseFloat(camp.daily_budget||0)/100||0,
+        ad_budget:budget,rk_budget:budget,
         domain:'',creos:[],goals:[],
         ind:'profit',status:'Check',insights:'',
         buyer,funnel,score:3,
@@ -1893,9 +1921,11 @@ async function importCampaignsFromMeta(){
         added++
       }
     }
-    setSS('ok',added>0?`Импортировано ${added} РК`:'Нет новых РК')
-    if(added>0){toast(`Импортировано ${added} новых РК из Meta`,'ok');rzalivs()}
-    else toast('Все кампании уже импортированы','info')
+    setSS('ok',(added+replaced)>0?`Импорт: +${added} новых, ${replaced} обновлено`:'Нет изменений')
+    if(added>0||replaced>0){
+      toast(`Импорт Meta: +${added} новых, ${replaced} обновлено`,'ok')
+      rzalivs()
+    }else toast('Нет новых кампаний за последние 3 дня','info')
     // Auto-match campaign IDs for existing zalivs
     setTimeout(autoMatchCampaignIds,500)
   }catch(e){
