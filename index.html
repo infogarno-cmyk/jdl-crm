@@ -773,7 +773,11 @@ function setupRT(){
   if(!db)return
   db.channel('jdl-rt')
     .on('postgres_changes',{event:'*',schema:'public',table:'zalivs'},()=>loadZ().then(rzalivs))
-    .on('postgres_changes',{event:'*',schema:'public',table:'tasks'},()=>{if(!_saveOrderTimer)loadT().then(rtasks)})
+    .on('postgres_changes',{event:'*',schema:'public',table:'tasks'},()=>{
+      // Block RT reload while saving or for 2s after save
+      if(_saveOrderTimer||_taskSaveBlock)return
+      loadT().then(rtasks)
+    })
     .on('postgres_changes',{event:'*',schema:'public',table:'domains'},()=>loadD().then(rdomains))
     .on('postgres_changes',{event:'*',schema:'public',table:'journal_docs'},()=>loadJ().then(rtree))
     .on('postgres_changes',{event:'*',schema:'public',table:'metrics_daily'},()=>loadM().then(()=>{rdash();if(expZ){const el=document.getElementById('ex-metrics-'+expZ);if(el){const z=ZALIVS.find(x=>x.id===expZ);if(z)el.innerHTML=getZalivMetrics(z)}}}))
@@ -1491,20 +1495,25 @@ async function delTkConfirmed(id){
   TASKS=TASKS.filter(t=>t.id!==id);rtasks()
 }
 
-var _saveOrderTimer=null
+var _saveOrderTimer=null,_taskSaveBlock=false
 async function saveTaskOrder(){
   // Debounce — wait 300ms after last drag before saving
   clearTimeout(_saveOrderTimer)
+  _taskSaveBlock=true
   _saveOrderTimer=setTimeout(async()=>{
-    // Update sort_order for all tasks in current order
-    const updates=TASKS.map((t,i)=>({id:t.id,sort_order:i*10}))
-    // Single upsert instead of N updates
-    for(const u of updates){
-      if(TASKS.find(t=>t.id===u.id)?.sort_order!==u.sort_order){
-        await db.from('tasks').update({sort_order:u.sort_order,col:TASKS.find(t=>t.id===u.id)?.col}).eq('id',u.id)
-      }
+    // Save sort_order AND col for every task in current state
+    for(let i=0;i<TASKS.length;i++){
+      const t=TASKS[i]
+      await db.from('tasks').update({
+        sort_order:i*10,
+        col:t.col,
+        updated_at:new Date().toISOString()
+      }).eq('id',t.id)
     }
-  },300)
+    _saveOrderTimer=null
+    // Keep block for extra 1s to prevent RT bounce
+    setTimeout(()=>{_taskSaveBlock=false},1000)
+  },500)
 }
 
 function showQA(col){document.querySelectorAll('.kqwrap').forEach(q=>q.classList.remove('open'));const q=document.getElementById('kq-'+col);if(q){q.classList.add('open');q.querySelector('input').focus()}}
