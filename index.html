@@ -2193,38 +2193,84 @@ async function applyOFFStatus(zalivId){
 }
 
 function openCreoAddModal(z){
-  // Считаем реальные метрики из METRICS за период открута залива
-  // Дата старта из названия или created_at залива
-  let dateStartRaw=z.date||null
-  // Парсим дату из формата DD.MM
-  let dateStartISO=null
-  if(dateStartRaw){
-    const p=dateStartRaw.split('.')
-    if(p.length===2){
-      const yr=new Date().getFullYear()
-      dateStartISO=`${yr}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`
-    }
+  // If zaliv has campaign_id - fetch real Meta metrics
+  if(z.campaign_id){
+    document.getElementById('creo-add-fields').innerHTML='<div style="padding:20px;text-align:center;color:var(--text3)">⏳ Загрузка метрик из Meta...</div>'
+    document.getElementById('mo-creo-add').classList.add('open')
+    fetchCampaignMetrics(z).then(()=>{
+      // After metrics loaded, build the form
+      _buildCreoAddModal(z)
+    }).catch(()=>{
+      _buildCreoAddModalFallback(z)
+    })
+    return
   }
+  _buildCreoAddModalFallback(z)
+}
+
+async function fetchCreoAddMetrics(z){
+  if(!z.campaign_id)return null
+  try{
+    let since=null
+    const raw=z.date||''
+    if(raw){const p=raw.split('.');if(p.length===2){const yr=new Date().getFullYear();since=`${yr}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`}}
+    if(!since&&z.created_at)since=z.created_at.split('T')[0]
+    const until=new Date().toISOString().split('T')[0]
+    const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
+      body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since,until})
+    })
+    const d=await r.json()
+    if(d.ok)return d
+    return null
+  }catch(e){return null}
+}
+
+function _buildCreoAddModalWithMeta(z, meta){
+  const spend=meta?meta.spend:0
+  const totalLeads=meta?meta.leads:0
+  const totalQuals=0
+  const autoCpl=meta?meta.cpl:0
+  const autoCql=0
+  const avgCtr=meta?meta.ctr:0
+  const dateStart=z.date||new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
+  const dateEndFmt=new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
+  _renderCreoAddForm(z,{spend,totalLeads,totalQuals,autoCpl,autoCql,avgCtr,dateStart,dateEndFmt})
+}
+
+function _buildCreoAddModalFallback(z){
+  // Use METRICS as fallback
+  let dateStartISO=null
+  const raw=z.date||''
+  if(raw){const p=raw.split('.');if(p.length===2){const yr=new Date().getFullYear();dateStartISO=`${yr}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`}}
   if(!dateStartISO&&z.created_at)dateStartISO=z.created_at.split('T')[0]
   const dateEnd=new Date().toISOString().split('T')[0]
-  // Считаем суммарный spend из metrics_daily за период
   const metrics=METRICS.filter(m=>(!dateStartISO||m.day>=dateStartISO)&&m.day<=dateEnd)
-  // Для geo PL берём spend_pl, для PLUA берём spend_plua
-  let spend=0
-  let totalLeads=0,totalQuals=0,avgCtr=0
-  if(metrics.length){
-    if(z.geo==='PL'){spend=metrics.reduce((s,m)=>s+parseFloat(m.spend_pl||0),0);totalLeads=metrics.reduce((s,m)=>s+(m.leads_pl||0),0)}
-    else if(z.geo==='PLUA'){spend=metrics.reduce((s,m)=>s+parseFloat(m.spend_plua||0),0);totalLeads=metrics.reduce((s,m)=>s+(m.leads_plua||0),0)}
-    else{spend=metrics.reduce((s,m)=>s+parseFloat(m.spend_pl||0)+parseFloat(m.spend_plua||0),0);totalLeads=metrics.reduce((s,m)=>s+(m.leads_pl||0)+(m.leads_plua||0),0)}
-    totalQuals=metrics.reduce((s,m)=>s+(m.quals||0),0)
-    avgCtr=metrics.length?Math.round(metrics.reduce((s,m)=>s+parseFloat(m.ctr||0),0)/metrics.length*100)/100:0
-  }
+  let spend=0,totalLeads=0,totalQuals=0
+  metrics.forEach(r=>{
+    if(z.geo==='PL'){spend+=parseFloat(r.spend_pl||0);totalLeads+=(r.leads_pl||0)}
+    else if(z.geo==='PLUA'){spend+=parseFloat(r.spend_plua||0);totalLeads+=(r.leads_plua||0)}
+    else{spend+=parseFloat(r.spend_pl||0)+parseFloat(r.spend_plua||0);totalLeads+=(r.leads_pl||0)+(r.leads_plua||0)}
+    totalQuals+=r.quals||0
+  })
   spend=Math.round(spend*100)/100
   const autoCpl=totalLeads>0?Math.round(spend/totalLeads*100)/100:0
   const autoCql=totalQuals>0?Math.round(spend/totalQuals*100)/100:0
+  const avgCtr=metrics.length?Math.round(metrics.reduce((s,r)=>s+parseFloat(r.ctr||0),0)/metrics.length*100)/100:0
   const dateStart=z.date||new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
   const dateEndFmt=new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
+  _renderCreoAddForm(z,{spend,totalLeads,totalQuals,autoCpl,autoCql,avgCtr,dateStart,dateEndFmt})
+}
 
+function _buildCreoAddModal(z){
+  fetchCreoAddMetrics(z).then(meta=>{
+    if(meta)_buildCreoAddModalWithMeta(z,meta)
+    else _buildCreoAddModalFallback(z)
+  })
+}
+
+function _renderCreoAddForm(z,{spend,totalLeads,totalQuals,autoCpl,autoCql,avgCtr,dateStart,dateEndFmt}){
   document.getElementById('creo-add-fields').innerHTML=`
     <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:12px;margin-bottom:14px">
       <div style="display:flex;gap:16px;font-size:12px;flex-wrap:wrap;margin-bottom:8px">
@@ -2232,13 +2278,12 @@ function openCreoAddModal(z){
         <span style="color:var(--text2)">👤 ${z.buyer||'—'}</span>
         <span style="color:var(--text2)">🎯 ${z.funnel||'—'}</span>
         <span style="color:var(--text3);font-family:var(--mono)">📅 ${dateStart} → ${dateEndFmt}</span>
+        ${z.campaign_id?'<span style="color:var(--purple);font-size:10px">📊 Meta данные</span>':'<span style="color:var(--text3);font-size:10px">📊 Из общих метрик</span>'}
       </div>
       <div style="display:flex;gap:12px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:8px">
         <span style="font-size:11px;color:var(--text3)">Spend: <strong style="color:var(--yellow);font-family:var(--mono)">$${spend}</strong></span>
         <span style="font-size:11px;color:var(--text3)">Leads: <strong style="color:var(--text);font-family:var(--mono)">${totalLeads}</strong></span>
-        <span style="font-size:11px;color:var(--text3)">Quals: <strong style="color:var(--text);font-family:var(--mono)">${totalQuals}</strong></span>
         <span style="font-size:11px;color:var(--text3)">CPL: <strong style="color:var(--blue);font-family:var(--mono)">${autoCpl>0?'$'+autoCpl:'—'}</strong></span>
-        <span style="font-size:11px;color:var(--text3)">CQL: <strong style="color:var(--purple);font-family:var(--mono)">${autoCql>0?'$'+autoCql:'—'}</strong></span>
         <span style="font-size:11px;color:var(--text3)">CTR: <strong style="color:var(--green);font-family:var(--mono)">${avgCtr}%</strong></span>
       </div>
     </div>
@@ -2268,6 +2313,7 @@ function openCreoAddModal(z){
   `
   document.getElementById('mo-creo-add').classList.add('open')
 }
+
 
 function creoAddSave(){
   const zalivId=parseInt(document.getElementById('ca-zaliv-id').value)
