@@ -308,6 +308,7 @@ document.getElementById('root').innerHTML=`
       <div class="nb" id="nb-tasks"><span class="dot"></span>Tasks</div>
       <div class="nb" id="nb-zalivs"><span class="dot"></span>Заливы</div>
       <div class="nb" id="nb-journal"><span class="dot"></span>Журнал</div>
+      <div class="nb" id="nb-analysis"><span class="dot"></span>Анализ РК</div>
       <div class="nb" id="nb-creo"><span class="dot"></span>Крео</div>
       <div class="nb" id="nb-sales"><span class="dot"></span>Sales</div>
       <div class="nb" id="nb-domains"><span class="dot"></span>Домены</div>
@@ -438,6 +439,44 @@ document.getElementById('root').innerHTML=`
         </div>
       </div>
     </div>
+    <div class="page" id="page-analysis">
+      <div style="display:grid;grid-template-columns:320px 1fr;gap:16px;height:calc(100vh - 80px)">
+        <!-- LEFT: selector + history -->
+        <div style="display:flex;flex-direction:column;gap:10px;overflow:hidden">
+          <div class="fhdr" style="margin-bottom:0"><span class="fhtit">Анализ РК</span></div>
+          <!-- Zaliv selector -->
+          <div class="card" style="padding:12px">
+            <div class="elb" style="margin-bottom:6px">Выбери РК</div>
+            <select class="fi" id="an-zaliv-sel" style="margin-bottom:10px">
+              <option value="">— выбрать залив —</option>
+            </select>
+            <div class="elb" style="margin-bottom:6px">Период</div>
+            <div style="display:flex;gap:6px;margin-bottom:10px">
+              <input type="date" class="fi" id="an-from" style="flex:1">
+              <input type="date" class="fi" id="an-to" style="flex:1">
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px" id="an-presets">
+              <button class="pb" data-adays="7">7д</button>
+              <button class="pb" data-adays="14">14д</button>
+              <button class="pb" data-adays="30">30д</button>
+            </div>
+            <button class="bsv" style="width:100%;padding:8px" onclick="generateAnalysis()">📊 Сгенерировать анализ</button>
+          </div>
+          <!-- History -->
+          <div style="flex:1;overflow-y:auto">
+            <div class="elb" style="margin-bottom:8px;padding:0 2px">История анализов</div>
+            <div id="an-history"></div>
+          </div>
+        </div>
+        <!-- RIGHT: analysis result -->
+        <div style="overflow-y:auto">
+          <div id="an-result" style="min-height:200px">
+            <div class="empty" style="margin-top:60px">Выбери залив и нажми «Сгенерировать анализ»</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="page" id="page-journal" style="padding:0">
       <div class="jlay">
         <div class="jsb">
@@ -629,7 +668,7 @@ function toast(msg,type='ok'){const w=document.getElementById('toast-wrap');cons
 // ── EVENTS ──
 document.getElementById('btn-illia').addEventListener('click',()=>doLogin('illia'))
 document.getElementById('btn-danya').addEventListener('click',()=>doLogin('danya'))
-;['dash','zalivs','domains','sales','tasks','journal','creo'].forEach(id=>document.getElementById('nb-'+id).addEventListener('click',function(){gp(id,this)}))
+;['dash','zalivs','domains','sales','tasks','journal','creo','analysis'].forEach(id=>document.getElementById('nb-'+id).addEventListener('click',function(){gp(id,this)}))
 document.getElementById('sync-btn').addEventListener('click',manualSync)
 document.getElementById('uchip').addEventListener('click',doLogout)
 document.getElementById('lnk-zalivs').addEventListener('click',()=>gp('zalivs',document.getElementById('nb-zalivs')))
@@ -757,7 +796,7 @@ async function init(){
   const today=new Date().toISOString().split('T')[0]
   ;['pd-from','pd-to','sp-from','sp-to'].forEach(id=>document.getElementById(id).value=today)
   try{db=supabase.createClient(SB_URL,SB_ANON)}catch(e){console.error(e)}
-  await Promise.all([loadZ(),loadD(),loadT(),loadJ(),loadM(),loadSales(),loadTemplates(),loadCreoReports(),loadCreoLib()])
+  await Promise.all([loadZ(),loadD(),loadT(),loadJ(),loadM(),loadSales(),loadTemplates(),loadCreoReports(),loadCreoLib(),loadRkAnalyses(),loadInsights()])
   rdash();setupRT();setSS('ok','Данные загружены')
 }
 function setSS(s,t){document.getElementById('sdot').className='sdot '+s;document.getElementById('stxt').textContent=t}
@@ -821,9 +860,15 @@ async function loadTemplates(){
 function gp(id,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'))
   document.getElementById('page-'+id).classList.add('active');el.classList.add('active')
-  if(id==='zalivs')rzalivs();if(id==='domains')rdomains();if(id==='tasks')rtasks();if(id==='sales')rsales()
+  if(id==='zalivs')rzalivs();if(id==='domains')rdomains();if(id==='tasks'){
+    // Auto-set filter to current user
+    const tfU=document.getElementById('tf-u')
+    if(tfU&&CURRENT_USER&&!tfU.value)tfU.value=CURRENT_USER.name
+    rtasks()
+  };if(id==='sales')rsales()
   if(id==='journal'){rtree();if(curDoc)loadDocById(curDoc)};if(id==='dash')rdash()
   if(id==='creo'){renderCreoPage()}
+  if(id==='analysis'){initAnalysisPage()}
 }
 
 function countUp(el,target,pre='',suf='',dur=800){
@@ -1593,7 +1638,7 @@ function launchConfetti(){
 }
 
 function rtasks(){
-  const uf=document.getElementById('tf-u').value,who=CURRENT_USER?CURRENT_USER.name:''
+  const uf=document.getElementById('tf-u').value||(CURRENT_USER?CURRENT_USER.name:''),who=CURRENT_USER?CURRENT_USER.name:''
   const cols=[{id:'all',t:'All Tasks',c:'var(--text2)'},{id:'todo',t:'TO DO',c:'var(--blue)'},{id:'process',t:'Process',c:'var(--yellow)'},{id:'done',t:'Done',c:'var(--green)'}]
   const filt=uf?TASKS.filter(t=>t.assignee===uf):TASKS
   document.getElementById('kanban').innerHTML=cols.map(c=>{
@@ -2992,6 +3037,286 @@ async function autoMatchCampaignIds(){
   }catch(e){
     setSS('','Ошибка');console.error(e)
   }
+}
+
+
+// ══════════════════════════════════════════
+// АНАЛИЗ РК
+// ══════════════════════════════════════════
+async function loadRkAnalyses(){
+  if(!db)return
+  const{data}=await db.from('rk_analyses').select('*').order('created_at',{ascending:false})
+  RK_ANALYSES=data||[]
+}
+
+function initAnalysisPage(){
+  // Populate zaliv selector
+  const sel=document.getElementById('an-zaliv-sel')
+  if(sel){
+    sel.innerHTML='<option value="">— выбрать залив —</option>'+
+      ZALIVS.map(z=>`<option value="${z.id}">${z.name}</option>`).join('')
+  }
+  // Set default period: last 7 days
+  const today=new Date().toISOString().split('T')[0]
+  const week=new Date(Date.now()-7*864e5).toISOString().split('T')[0]
+  document.getElementById('an-from').value=week
+  document.getElementById('an-to').value=today
+  // Wire presets
+  document.querySelectorAll('[data-adays]').forEach(btn=>{
+    btn.addEventListener('click',function(){
+      document.querySelectorAll('[data-adays]').forEach(b=>b.classList.remove('active'))
+      this.classList.add('active')
+      const d=parseInt(this.dataset.adays)
+      document.getElementById('an-from').value=new Date(Date.now()-d*864e5).toISOString().split('T')[0]
+      document.getElementById('an-to').value=new Date().toISOString().split('T')[0]
+    })
+  })
+  renderAnalysisHistory()
+}
+
+function renderAnalysisHistory(){
+  const hist=document.getElementById('an-history')
+  if(!hist)return
+  if(!RK_ANALYSES.length){hist.innerHTML='<div class="empty" style="padding:16px 0">Нет сохранённых анализов</div>';return}
+  hist.innerHTML=RK_ANALYSES.slice(0,20).map(a=>`
+    <div class="card" style="padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:border-color .15s" onclick="loadAnalysis(${a.id})">
+      <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.zaliv_name||'—'}</div>
+      <div style="display:flex;gap:8px;font-size:10px;color:var(--text3)">
+        <span>${a.period_from||''}→${a.period_to||''}</span>
+        <span style="color:var(--yellow);font-family:var(--mono)">$${a.spend}</span>
+        <span>${a.leads} лидов</span>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:2px">${a.month_key||''} · ${a.buyer||''}</div>
+    </div>
+  `).join('')
+}
+
+async function generateAnalysis(){
+  const zalivId=parseInt(document.getElementById('an-zaliv-sel')?.value)
+  if(!zalivId){toast('Выбери залив','err');return}
+  const z=ZALIVS.find(x=>x.id===zalivId)
+  if(!z){toast('Залив не найден','err');return}
+  const from=document.getElementById('an-from').value
+  const to=document.getElementById('an-to').value
+  if(!from||!to){toast('Укажи период','err');return}
+
+  const res=document.getElementById('an-result')
+  res.innerHTML='<div class="empty" style="margin-top:40px">⏳ Загрузка метрик из Meta...</div>'
+
+  // Fetch real Meta metrics for this campaign
+  let meta=null
+  if(z.campaign_id){
+    try{
+      const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
+        body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since:from,until:to})
+      })
+      const d=await r.json()
+      if(d.ok)meta=d
+    }catch(e){console.error('Meta fetch:',e)}
+  }
+
+  // Build form with fetched data
+  const spend=meta?meta.spend:0
+  const clicks=meta?meta.clicks:0
+  const reach=meta?meta.impressions:0 // using impressions as reach approximation
+  const ctr=meta?meta.ctr:0
+  const cpc=meta&&meta.clicks>0?Math.round(meta.spend/meta.clicks*100)/100:0
+  const cpm=meta&&meta.impressions>0?Math.round(meta.spend/meta.impressions*1000*100)/100:0
+
+  res.innerHTML=`
+    <div style="max-width:700px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-size:16px;font-weight:800;color:#fff">${z.name}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">${from} → ${to} · <span class="zgeo gchip ${z.geo==='PL'?'gpl':'gplua'}">${z.geo}</span></div>
+        </div>
+        <button class="bsv" onclick="saveAnalysis()">💾 Сохранить анализ</button>
+      </div>
+
+      <!-- Analysis table -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+        <table class="zt" id="an-table" style="width:100%">
+          <tbody>
+            ${anRow('Период', from+' → '+to)}
+            ${anRow('Домен / воронка', (z.domain||'—')+' / '+(z.funnel||'—'))}
+            ${anRow('Spend $', `<span style="color:var(--yellow);font-family:var(--mono);font-weight:700">$${spend}</span>`, true)}
+            <tr><td colspan="2" style="background:var(--bg3);padding:6px 14px;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700">📊 Охват и трафик (из Meta)</td></tr>
+            ${anRow('Охват (Reach)', `<span id="an-v-reach" style="font-family:var(--mono)">${reach.toLocaleString('ru')}</span><span style="font-size:10px;color:var(--purple);margin-left:6px">Meta</span>`)}
+            ${anRow('Частота', `<input class="efi" id="an-i-freq" type="number" step="0.01" value="0" style="width:100px"> <span style="font-size:10px;color:var(--text3)">(из Meta Ads Manager)</span>`)}
+            ${anRow('CPM $', `<span id="an-v-cpm" style="font-family:var(--mono)">$${cpm}</span><span style="font-size:10px;color:var(--purple);margin-left:6px">Meta</span>`)}
+            ${anRow('Ср. время просмотра (с)', `<input class="efi" id="an-i-viewtime" type="number" step="0.1" value="0" style="width:100px"> <span style="font-size:10px;color:var(--text3)">(из Meta)</span>`)}
+            ${anRow('Клики', `<span style="font-family:var(--mono)">${clicks.toLocaleString('ru')}</span><span style="font-size:10px;color:var(--purple);margin-left:6px">Meta</span>`)}
+            ${anRow('CPC $', `<span style="font-family:var(--mono)">$${cpc}</span><span style="font-size:10px;color:var(--purple);margin-left:6px">Meta</span>`)}
+            ${anRow('CTR %', `<span style="color:${ctr>2?'var(--green)':ctr>1?'var(--yellow)':'var(--red)'};font-family:var(--mono);font-weight:700">${ctr}%</span><span style="font-size:10px;color:var(--purple);margin-left:6px">Meta</span>`)}
+            <tr><td colspan="2" style="background:var(--bg3);padding:6px 14px;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700">📋 Лиды и конверсия</td></tr>
+            ${anRow('Лиды', `<input class="efi" id="an-i-leads" type="number" value="0" style="width:100px" oninput="recalcAnalysis(${spend},${clicks})"> <span style="font-size:10px;color:var(--text3)">(вручную)</span>`)}
+            ${anRow('CR %', `<span id="an-v-cr" style="font-family:var(--mono)">0%</span> <span style="font-size:10px;color:var(--text3)">= Лиды / Клики × 100</span>`)}
+            ${anRow('CPL $', `<span id="an-v-cpl" style="font-family:var(--mono)">—</span> <span style="font-size:10px;color:var(--text3)">= Spend / Лиды</span>`)}
+            ${anRow('Квалы', `<input class="efi" id="an-i-quals" type="number" value="0" style="width:100px" oninput="recalcAnalysis(${spend},${clicks})"> <span style="font-size:10px;color:var(--text3)">(вручную)</span>`)}
+            ${anRow('AR %', `<span id="an-v-ar" style="font-family:var(--mono)">0%</span> <span style="font-size:10px;color:var(--text3)">= Квалы / Лиды × 100</span>`)}
+            ${anRow('CQL $', `<span id="an-v-cql" style="font-family:var(--mono)">—</span> <span style="font-size:10px;color:var(--text3)">= Spend / Квалы</span>`)}
+            <tr><td colspan="2" style="background:var(--bg3);padding:6px 14px;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700">📝 Заметки</td></tr>
+            <tr><td colspan="2" style="padding:10px 14px"><textarea class="fi" id="an-notes" style="min-height:80px;resize:none;width:100%" placeholder="Выводы, наблюдения..."></textarea></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Hidden fields for save -->
+      <input type="hidden" id="an-save-zid" value="${z.id}">
+      <input type="hidden" id="an-save-zname" value="${z.name}">
+      <input type="hidden" id="an-save-spend" value="${spend}">
+      <input type="hidden" id="an-save-reach" value="${reach}">
+      <input type="hidden" id="an-save-clicks" value="${clicks}">
+      <input type="hidden" id="an-save-ctr" value="${ctr}">
+      <input type="hidden" id="an-save-cpm" value="${cpm}">
+      <input type="hidden" id="an-save-cpc" value="${cpc}">
+      <input type="hidden" id="an-save-from" value="${from}">
+      <input type="hidden" id="an-save-to" value="${to}">
+      <input type="hidden" id="an-save-buyer" value="${z.buyer||CURRENT_USER?.name||''}">
+      <input type="hidden" id="an-save-geo" value="${z.geo||''}">
+      <input type="hidden" id="an-save-funnel" value="${z.funnel||''}">
+    </div>
+  `
+}
+
+function anRow(label,value,bold=false){
+  return `<tr>
+    <td style="padding:8px 14px;font-size:11px;color:var(--text3);font-weight:600;width:45%;border-bottom:1px solid var(--border)">${label}</td>
+    <td style="padding:8px 14px;font-size:12px;font-weight:${bold?800:500};color:#fff;border-bottom:1px solid var(--border)">${value}</td>
+  </tr>`
+}
+
+function recalcAnalysis(spend,clicks){
+  const leads=parseInt(document.getElementById('an-i-leads')?.value)||0
+  const quals=parseInt(document.getElementById('an-i-quals')?.value)||0
+  const cr=clicks>0?Math.round(leads/clicks*10000)/100:0
+  const cpl=leads>0?Math.round(spend/leads*100)/100:0
+  const ar=leads>0?Math.round(quals/leads*10000)/100:0
+  const cql=quals>0?Math.round(spend/quals*100)/100:0
+  const crEl=document.getElementById('an-v-cr')
+  const cplEl=document.getElementById('an-v-cpl')
+  const arEl=document.getElementById('an-v-ar')
+  const cqlEl=document.getElementById('an-v-cql')
+  if(crEl)crEl.textContent=cr+'%'
+  if(cplEl)cplEl.textContent=cpl>0?'$'+cpl:'—'
+  if(arEl)arEl.textContent=ar+'%'
+  if(cqlEl)cqlEl.textContent=cql>0?'$'+cql:'—'
+}
+
+async function saveAnalysis(){
+  const zid=parseInt(document.getElementById('an-save-zid')?.value)
+  if(!zid){toast('Сначала сгенерируй анализ','err');return}
+  const leads=parseInt(document.getElementById('an-i-leads')?.value)||0
+  const quals=parseInt(document.getElementById('an-i-quals')?.value)||0
+  const freq=parseFloat(document.getElementById('an-i-freq')?.value)||0
+  const viewtime=parseFloat(document.getElementById('an-i-viewtime')?.value)||0
+  const spend=parseFloat(document.getElementById('an-save-spend')?.value)||0
+  const clicks=parseInt(document.getElementById('an-save-clicks')?.value)||0
+  const cr=clicks>0?Math.round(leads/clicks*10000)/100:0
+  const cpl=leads>0?Math.round(spend/leads*100)/100:0
+  const ar=leads>0?Math.round(quals/leads*10000)/100:0
+  const cql=quals>0?Math.round(spend/quals*100)/100:0
+  const from=document.getElementById('an-save-from')?.value
+  const to=document.getElementById('an-save-to')?.value
+  const now=new Date()
+  const monthKey=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
+
+  const payload={
+    zaliv_id:zid,
+    zaliv_name:document.getElementById('an-save-zname')?.value,
+    period_from:from,period_to:to,
+    reach:parseInt(document.getElementById('an-save-reach')?.value)||0,
+    frequency:freq,
+    cpm:parseFloat(document.getElementById('an-save-cpm')?.value)||0,
+    avg_view_time:viewtime,
+    clicks,
+    cpc:parseFloat(document.getElementById('an-save-cpc')?.value)||0,
+    ctr:parseFloat(document.getElementById('an-save-ctr')?.value)||0,
+    spend,leads,quals,cr,cpl,ar,cql,
+    buyer:document.getElementById('an-save-buyer')?.value||CURRENT_USER?.name||'',
+    geo:document.getElementById('an-save-geo')?.value||'',
+    funnel:document.getElementById('an-save-funnel')?.value||'',
+    notes:document.getElementById('an-notes')?.value||'',
+    month_key:monthKey
+  }
+
+  const{data,error}=await db.from('rk_analyses').insert(payload).select().single()
+  if(!error&&data){
+    RK_ANALYSES.unshift(data)
+    renderAnalysisHistory()
+    toast('Анализ сохранён','ok')
+  }else{
+    toast('Ошибка: '+(error?.message||'unknown'),'err')
+  }
+}
+
+function loadAnalysis(id){
+  const a=RK_ANALYSES.find(x=>x.id===id)
+  if(!a)return
+  // Pre-fill selectors and regenerate
+  const sel=document.getElementById('an-zaliv-sel')
+  if(sel)sel.value=a.zaliv_id
+  document.getElementById('an-from').value=a.period_from||''
+  document.getElementById('an-to').value=a.period_to||''
+  generateAnalysis().then(()=>{
+    // After generation, restore manual inputs
+    setTimeout(()=>{
+      if(document.getElementById('an-i-leads'))document.getElementById('an-i-leads').value=a.leads||0
+      if(document.getElementById('an-i-quals'))document.getElementById('an-i-quals').value=a.quals||0
+      if(document.getElementById('an-i-freq'))document.getElementById('an-i-freq').value=a.frequency||0
+      if(document.getElementById('an-i-viewtime'))document.getElementById('an-i-viewtime').value=a.avg_view_time||0
+      if(document.getElementById('an-notes'))document.getElementById('an-notes').value=a.notes||''
+      recalcAnalysis(a.spend,a.clicks)
+    },500)
+  })
+}
+
+// ── INSIGHTS → Supabase ──
+async function loadInsights(){
+  if(!db)return
+  try{
+    const{data}=await db.from('creo_insights').select('*').order('created_at',{ascending:false})
+    INSIGHTS=data||[]
+  }catch(e){
+    // Fallback to localStorage
+    try{INSIGHTS=JSON.parse(localStorage.getItem('creo_insights')||'[]')}catch(e2){INSIGHTS=[]}
+  }
+}
+
+async function addInsightInline(){
+  try{
+    const tag=document.getElementById('insight-tag')?.value||'insight'
+    const text=document.getElementById('insight-new-text')?.value?.trim()
+    if(!text){toast('Напиши мысль','err');return}
+    const buyer=CURRENT_USER?.name||'Unknown'
+    const newInsight={tag,text,buyer,created_at:new Date().toISOString()}
+    // Save to Supabase
+    const{data,error}=await db.from('creo_insights').insert({tag,text,buyer}).select().single()
+    if(!error&&data){
+      INSIGHTS.unshift(data)
+    }else{
+      // Fallback localStorage
+      INSIGHTS.unshift({...newInsight,date:new Date().toLocaleDateString('ru')})
+      localStorage.setItem('creo_insights',JSON.stringify(INSIGHTS))
+    }
+    document.getElementById('insight-new-text').value=''
+    renderInsightBoard()
+    toast('Сохранено','ok')
+  }catch(e){console.error('addInsightInline:',e);toast('Ошибка: '+e.message,'err')}
+}
+
+async function delInsight(id){
+  // id can be DB id or array index
+  const item=INSIGHTS[id]
+  if(!item)return
+  if(item.id){
+    await db.from('creo_insights').delete().eq('id',item.id)
+  }
+  INSIGHTS.splice(id,1)
+  if(!item.id)localStorage.setItem('creo_insights',JSON.stringify(INSIGHTS))
+  renderInsightBoard()
 }
 
 // ── AUTO LOGIN ──
