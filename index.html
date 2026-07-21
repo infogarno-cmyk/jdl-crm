@@ -278,6 +278,16 @@ html,body{height:100%;overflow:hidden;max-width:100vw;font-family:var(--sans);ba
 .bcn{padding:7px 16px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--sans);font-weight:600}.bcn:hover{color:var(--text)}
 .bsv{padding:7px 16px;border-radius:6px;border:1px solid var(--bord2);background:var(--bord-dim);color:var(--bord2);font-size:12px;cursor:pointer;font-weight:700;font-family:var(--sans)}.bsv:hover{background:var(--bord);color:#fff}
 .empty{text-align:center;padding:30px;color:var(--text3);font-size:13px}
+.an-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;position:relative}
+.an-card-hdr{background:var(--bg3);padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.an-table td{padding:7px 12px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:12px}
+.an-table td:first-child{font-size:11px;color:var(--text3);font-weight:600;width:40%}
+.an-section{background:var(--bg3);padding:5px 12px;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700}
+.an-val{font-family:var(--mono);font-weight:700;color:#fff}
+.an-editable{background:var(--bg4);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-size:12px;padding:3px 7px;outline:none;font-family:var(--mono);width:80px;text-align:right}
+.an-editable:focus{border-color:var(--bord)}
+.an-auto{color:var(--purple);font-size:10px;margin-left:5px}
+.an-manual{color:var(--text3);font-size:10px;margin-left:5px}
 .tpl-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;max-height:260px;overflow-y:auto}
 .tpl-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;cursor:pointer;transition:border-color .15s}.tpl-item:hover{border-color:var(--bord)}
 .tpl-name{flex:1;font-size:13px;font-weight:600;color:var(--text)}.tpl-meta{font-size:11px;color:var(--text3)}.tpl-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px 5px}.tpl-del:hover{color:var(--red)}
@@ -440,43 +450,71 @@ document.getElementById('root').innerHTML=`
       </div>
     </div>
     <div class="page" id="page-analysis">
-      <div style="display:grid;grid-template-columns:320px 1fr;gap:16px;height:calc(100vh - 80px)">
-        <!-- LEFT: selector + history -->
-        <div style="display:flex;flex-direction:column;gap:10px;overflow:hidden">
-          <div class="fhdr" style="margin-bottom:0"><span class="fhtit">Анализ РК</span></div>
-          <!-- Zaliv selector -->
-          <div class="card" style="padding:12px">
-            <div class="elb" style="margin-bottom:6px">Выбери РК</div>
-            <select class="fi" id="an-zaliv-sel" style="margin-bottom:10px">
-              <option value="">— выбрать залив —</option>
-            </select>
-            <div class="elb" style="margin-bottom:6px">Период</div>
-            <div style="display:flex;gap:6px;margin-bottom:10px">
-              <input type="date" class="fi" id="an-from" style="flex:1">
-              <input type="date" class="fi" id="an-to" style="flex:1">
+      <div style="display:grid;grid-template-columns:280px 1fr;gap:14px;height:calc(100vh - 80px);overflow:hidden">
+
+        <!-- LEFT PANEL: selector + filters + history -->
+        <div style="display:flex;flex-direction:column;gap:8px;overflow:hidden">
+
+          <!-- Filters -->
+          <div class="card" style="padding:10px 12px;flex-shrink:0">
+            <div class="elb" style="margin-bottom:5px">Залив</div>
+            <select class="fi" id="an-zaliv-sel" style="margin-bottom:8px;font-size:11px"></select>
+
+            <div style="display:flex;gap:6px;margin-bottom:6px">
+              <div style="flex:1"><div class="elb" style="margin-bottom:3px">Баер</div>
+                <select class="fi" id="an-buyer-f" style="font-size:11px">
+                  <option value="">Все</option>
+                  <option value="Illia">Illia</option>
+                  <option value="Danya">Danya</option>
+                </select>
+              </div>
+              <div style="flex:1"><div class="elb" style="margin-bottom:3px">GEO</div>
+                <select class="fi" id="an-geo-f" style="font-size:11px">
+                  <option value="">Все</option>
+                  <option value="PL">PL</option>
+                  <option value="PLUA">PLUA</option>
+                </select>
+              </div>
             </div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px" id="an-presets">
-              <button class="pb" data-adays="7">7д</button>
-              <button class="pb" data-adays="14">14д</button>
-              <button class="pb" data-adays="30">30д</button>
+
+            <div class="elb" style="margin-bottom:4px">Период</div>
+            <div style="display:flex;gap:5px;margin-bottom:6px">
+              <input type="date" class="fi" id="an-from" style="flex:1;font-size:10px">
+              <input type="date" class="fi" id="an-to" style="flex:1;font-size:10px">
             </div>
-            <button class="bsv" style="width:100%;padding:8px" onclick="generateAnalysis()">📊 Сгенерировать анализ</button>
+
+            <!-- Quick presets -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px">
+              <button class="pb" data-apreset="1dc" style="font-size:10px;padding:4px">1DC</button>
+              <button class="pb" data-apreset="2dc" style="font-size:10px;padding:4px">2DC</button>
+              <button class="pb" data-apreset="3dc" style="font-size:10px;padding:4px">3DC</button>
+              <button class="pb" data-apreset="kwartal" style="font-size:10px;padding:4px">Kwartal</button>
+            </div>
+
+            <button class="bsv" style="width:100%;padding:7px;font-size:12px" onclick="generateAnalysis()">📊 Сгенерировать</button>
           </div>
-          <!-- History -->
-          <div style="flex:1;overflow-y:auto">
-            <div class="elb" style="margin-bottom:8px;padding:0 2px">История анализов</div>
+
+          <!-- History list -->
+          <div style="flex:1;overflow-y:auto;min-height:0">
+            <div class="elb" style="margin-bottom:6px;padding:0 2px">История анализов</div>
+            <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+              <select class="fsel" id="an-hist-geo" style="font-size:10px;padding:3px 8px">
+                <option value="">GEO</option><option value="PL">PL</option><option value="PLUA">PLUA</option>
+              </select>
+              <select class="fsel" id="an-hist-buyer" style="font-size:10px;padding:3px 8px">
+                <option value="">Баер</option><option value="Illia">Illia</option><option value="Danya">Danya</option>
+              </select>
+            </div>
             <div id="an-history"></div>
           </div>
         </div>
-        <!-- RIGHT: analysis result -->
-        <div style="overflow-y:auto">
-          <div id="an-result" style="min-height:200px">
-            <div class="empty" style="margin-top:60px">Выбери залив и нажми «Сгенерировать анализ»</div>
-          </div>
+
+        <!-- RIGHT PANEL: analysis results (can show multiple) -->
+        <div style="overflow-y:auto;display:flex;flex-direction:column;gap:12px" id="an-results-wrap">
+          <div class="empty" style="margin-top:60px" id="an-empty-msg">Выбери залив и нажми «Сгенерировать»</div>
         </div>
       </div>
     </div>
-
     <div class="page" id="page-journal" style="padding:0">
       <div class="jlay">
         <div class="jsb">
@@ -3041,8 +3079,10 @@ async function autoMatchCampaignIds(){
 
 
 // ══════════════════════════════════════════
-// АНАЛИЗ РК
+// АНАЛИЗ РК v2
 // ══════════════════════════════════════════
+var _anOpenIds = [] // IDs of open analyses shown simultaneously
+
 async function loadRkAnalyses(){
   if(!db)return
   const{data}=await db.from('rk_analyses').select('*').order('created_at',{ascending:false})
@@ -3050,45 +3090,182 @@ async function loadRkAnalyses(){
 }
 
 function initAnalysisPage(){
-  // Populate zaliv selector
-  const sel=document.getElementById('an-zaliv-sel')
-  if(sel){
-    sel.innerHTML='<option value="">— выбрать залив —</option>'+
-      ZALIVS.map(z=>`<option value="${z.id}">${z.name}</option>`).join('')
-  }
-  // Set default period: last 7 days
+  // Populate zaliv selector with buyer/geo filters
+  updateAnZalivList()
+
+  // Wire filter changes
+  ;['an-buyer-f','an-geo-f'].forEach(id=>{
+    const el=document.getElementById(id)
+    if(el&&!el._anbound){el._anbound=true;el.addEventListener('change',updateAnZalivList)}
+  })
+
+  // Default period: last 7 days
   const today=new Date().toISOString().split('T')[0]
-  const week=new Date(Date.now()-7*864e5).toISOString().split('T')[0]
-  document.getElementById('an-from').value=week
+  document.getElementById('an-from').value=new Date(Date.now()-7*864e5).toISOString().split('T')[0]
   document.getElementById('an-to').value=today
-  // Wire presets
-  document.querySelectorAll('[data-adays]').forEach(btn=>{
+
+  // Preset buttons
+  document.querySelectorAll('[data-apreset]').forEach(btn=>{
+    if(btn._anbound)return
+    btn._anbound=true
     btn.addEventListener('click',function(){
-      document.querySelectorAll('[data-adays]').forEach(b=>b.classList.remove('active'))
+      document.querySelectorAll('[data-apreset]').forEach(b=>b.classList.remove('active'))
       this.classList.add('active')
-      const d=parseInt(this.dataset.adays)
-      document.getElementById('an-from').value=new Date(Date.now()-d*864e5).toISOString().split('T')[0]
-      document.getElementById('an-to').value=new Date().toISOString().split('T')[0]
+      applyAnPreset(this.dataset.apreset)
     })
   })
+
+  // History filters
+  ;['an-hist-geo','an-hist-buyer'].forEach(id=>{
+    const el=document.getElementById(id)
+    if(el&&!el._anbound){el._anbound=true;el.addEventListener('change',renderAnalysisHistory)}
+  })
+
   renderAnalysisHistory()
+}
+
+function updateAnZalivList(){
+  const buyer=document.getElementById('an-buyer-f')?.value||''
+  const geo=document.getElementById('an-geo-f')?.value||''
+  const sel=document.getElementById('an-zaliv-sel')
+  if(!sel)return
+  const filtered=ZALIVS.filter(z=>(!buyer||z.buyer===buyer)&&(!geo||z.geo===geo))
+  sel.innerHTML='<option value="">— выбрать залив —</option>'+
+    filtered.map(z=>`<option value="${z.id}">${z.name}</option>`).join('')
+}
+
+function applyAnPreset(preset){
+  const sel=document.getElementById('an-zaliv-sel')
+  const zid=parseInt(sel?.value)
+  const z=ZALIVS.find(x=>x.id===zid)
+  // Get campaign start date
+  const raw=z?.date||''
+  let startDate=null
+  if(raw){
+    const p=raw.split('.')
+    if(p.length===2){
+      const yr=new Date().getFullYear()
+      startDate=new Date(`${yr}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`)
+    }
+  }
+  if(!startDate)startDate=new Date()
+
+  const fmt=d=>d.toISOString().split('T')[0]
+  const addDays=(d,n)=>new Date(d.getTime()+n*864e5)
+
+  if(preset==='1dc'){
+    document.getElementById('an-from').value=fmt(startDate)
+    document.getElementById('an-to').value=fmt(startDate)
+  }else if(preset==='2dc'){
+    document.getElementById('an-from').value=fmt(addDays(startDate,1))
+    document.getElementById('an-to').value=fmt(addDays(startDate,1))
+  }else if(preset==='3dc'){
+    document.getElementById('an-from').value=fmt(startDate)
+    document.getElementById('an-to').value=fmt(addDays(startDate,1))
+  }else if(preset==='kwartal'){
+    document.getElementById('an-from').value=fmt(startDate)
+    document.getElementById('an-to').value=fmt(addDays(startDate,2))
+  }
 }
 
 function renderAnalysisHistory(){
   const hist=document.getElementById('an-history')
   if(!hist)return
-  if(!RK_ANALYSES.length){hist.innerHTML='<div class="empty" style="padding:16px 0">Нет сохранённых анализов</div>';return}
-  hist.innerHTML=RK_ANALYSES.slice(0,20).map(a=>`
-    <div class="card" style="padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:border-color .15s" onclick="loadAnalysis(${a.id})">
-      <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.zaliv_name||'—'}</div>
-      <div style="display:flex;gap:8px;font-size:10px;color:var(--text3)">
-        <span>${a.period_from||''}→${a.period_to||''}</span>
-        <span style="color:var(--yellow);font-family:var(--mono)">$${a.spend}</span>
-        <span>${a.leads} лидов</span>
-      </div>
-      <div style="font-size:10px;color:var(--text3);margin-top:2px">${a.month_key||''} · ${a.buyer||''}</div>
+  const geo=document.getElementById('an-hist-geo')?.value||''
+  const buyer=document.getElementById('an-hist-buyer')?.value||''
+  let filtered=RK_ANALYSES.filter(a=>(!geo||a.geo===geo)&&(!buyer||a.buyer===buyer))
+  if(!filtered.length){
+    hist.innerHTML='<div class="empty" style="padding:16px 0;font-size:11px">Нет анализов</div>'
+    return
+  }
+  // Group by month
+  const byMonth={}
+  filtered.forEach(a=>{
+    const mk=a.month_key||'—'
+    if(!byMonth[mk])byMonth[mk]=[]
+    byMonth[mk].push(a)
+  })
+  hist.innerHTML=Object.entries(byMonth).map(([month,items])=>`
+    <div style="margin-bottom:12px">
+      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;font-weight:700">${month}</div>
+      ${items.map(a=>`
+        <div class="an-card" style="margin-bottom:6px;cursor:pointer;transition:border-color .15s" onclick="toggleAnalysisView(${a.id})">
+          <div style="padding:8px 10px">
+            <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.zaliv_name||'—'}</div>
+            <div style="display:flex;gap:6px;font-size:10px;color:var(--text3);flex-wrap:wrap">
+              <span>${a.period_from||''}→${a.period_to||''}</span>
+              <span style="color:var(--yellow)">$${a.spend}</span>
+              <span>${a.leads}L / ${a.quals}Q</span>
+              <span class="zgeo gchip ${a.geo==='PL'?'gpl':'gplua'}" style="padding:0 5px;font-size:9px">${a.geo||'?'}</span>
+            </div>
+          </div>
+        </div>
+      `).join('')}
     </div>
   `).join('')
+}
+
+function toggleAnalysisView(id){
+  if(_anOpenIds.includes(id)){
+    _anOpenIds=_anOpenIds.filter(x=>x!==id)
+  }else{
+    _anOpenIds.push(id)
+  }
+  renderOpenAnalyses()
+}
+
+function renderOpenAnalyses(){
+  const wrap=document.getElementById('an-results-wrap')
+  if(!wrap)return
+  const empty=document.getElementById('an-empty-msg')
+  if(empty)empty.style.display=_anOpenIds.length?'none':'block'
+  // Remove old saved analysis cards
+  wrap.querySelectorAll('.an-saved-card').forEach(el=>el.remove())
+  // Render each open analysis
+  _anOpenIds.forEach(id=>{
+    const a=RK_ANALYSES.find(x=>x.id===id)
+    if(!a)return
+    const div=document.createElement('div')
+    div.className='an-card an-saved-card'
+    div.innerHTML=renderAnalysisCard(a,false)
+    wrap.appendChild(div)
+  })
+}
+
+function renderAnalysisCard(a, editable){
+  const geoClass=a.geo==='PL'?'gpl':'gplua'
+  const ctrColor=a.ctr>2?'var(--green)':a.ctr>1?'var(--yellow)':'var(--red)'
+  const cplColor=a.cpl>0&&a.cpl<10?'var(--green)':a.cpl<15?'var(--yellow)':a.cpl>0?'var(--red)':'#fff'
+  return`
+    <div class="an-card-hdr">
+      <span class="zgeo gchip ${geoClass}">${a.geo||'?'}</span>
+      <span style="font-size:13px;font-weight:800;color:#fff;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.zaliv_name||'—'}</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">${a.period_from||''}→${a.period_to||''}</span>
+      <span style="font-family:var(--mono);font-weight:800;color:var(--yellow)">$${a.spend}</span>
+      ${editable?'':'<button onclick="toggleAnalysisView('+a.id+')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:0 4px">×</button>'}
+    </div>
+    <table class="an-table" style="width:100%">
+      <tbody>
+        <tr><td colspan="2" class="an-section">📊 Охват и трафик</td></tr>
+        <tr><td>Охват (Reach)</td><td><span class="an-val">${(a.reach||0).toLocaleString('ru')}</span><span class="an-auto">Meta</span></td></tr>
+        <tr><td>AmFreq</td><td><span class="an-val">${a.frequency||0}</span><span class="an-auto">Meta</span></td></tr>
+        <tr><td>PeriodFreq</td><td><span class="an-val">${a.frequency||0}</span><span class="an-auto">Meta</span></td></tr>
+        <tr><td>CPM $</td><td><span class="an-val">$${a.cpm||0}</span><span class="an-auto">Meta</span></td></tr>
+        <tr><td>Ср.вр (с)</td><td><span class="an-val">${a.avg_view_time||0}</span><span class="an-auto">Meta</span></td></tr>
+        <tr><td colspan="2" class="an-section">🖱 Клики</td></tr>
+        <tr><td>Клики</td><td><span class="an-val">${(a.clicks||0).toLocaleString('ru')}</span><span class="an-auto">Meta</span></td></tr>
+        <tr><td>CPC $</td><td><span class="an-val">$${a.cpc||0}</span><span class="an-auto">Meta</span></td></tr>
+        <tr><td>CTR %</td><td><span class="an-val" style="color:${ctrColor}">${a.ctr||0}%</span><span class="an-auto">Meta</span></td></tr>
+        <tr><td colspan="2" class="an-section">📋 Конверсия</td></tr>
+        <tr><td>Лиды</td><td><span class="an-val">${a.leads||0}</span><span class="an-manual">ручной</span></td></tr>
+        <tr><td>CR %</td><td><span class="an-val">${a.cr||0}%</span></td></tr>
+        <tr><td>CPL $</td><td><span class="an-val" style="color:${cplColor}">$${a.cpl||0}</span></td></tr>
+        <tr><td>Квалы</td><td><span class="an-val">${a.quals||0}</span><span class="an-manual">ручной</span></td></tr>
+        <tr><td>AR %</td><td><span class="an-val">${a.ar||0}%</span></td></tr>
+        <tr><td>CQL $</td><td><span class="an-val">$${a.cql||0}</span></td></tr>
+        ${a.notes?`<tr><td colspan="2" class="an-section">📝 Заметки</td></tr><tr><td colspan="2" style="padding:8px 12px;font-size:12px;color:var(--text2)">${a.notes}</td></tr>`:''}
+      </tbody>
+    </table>`
 }
 
 async function generateAnalysis(){
@@ -3100,11 +3277,20 @@ async function generateAnalysis(){
   const to=document.getElementById('an-to').value
   if(!from||!to){toast('Укажи период','err');return}
 
-  const res=document.getElementById('an-result')
-  res.innerHTML='<div class="empty" style="margin-top:40px">⏳ Загрузка метрик из Meta...</div>'
+  const wrap=document.getElementById('an-results-wrap')
+  const emptyMsg=document.getElementById('an-empty-msg')
+  if(emptyMsg)emptyMsg.style.display='none'
 
-  // Fetch real Meta metrics for this campaign
-  let meta=null
+  // Remove previous new-analysis form
+  wrap.querySelectorAll('.an-new-form').forEach(el=>el.remove())
+
+  const formDiv=document.createElement('div')
+  formDiv.className='an-card an-new-form'
+  formDiv.innerHTML='<div class="an-card-hdr"><span style="color:var(--text3)">⏳ Загрузка метрик из Meta...</span></div>'
+  wrap.insertBefore(formDiv,wrap.firstChild)
+
+  // Fetch Meta metrics
+  var meta=null
   if(z.campaign_id){
     try{
       const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
@@ -3114,78 +3300,78 @@ async function generateAnalysis(){
       })
       const d=await r.json()
       if(d.ok)meta=d
-    }catch(e){console.error('Meta fetch:',e)}
+    }catch(e){console.error('Meta:',e)}
   }
 
-  // Build form with fetched data
+  // Also fetch video metrics (avg watch time, frequency)
+  var metaVideo=null
+  if(z.campaign_id){
+    try{
+      const r2=await fetch(SB_URL+'/functions/v1/get-campaigns',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
+        body:JSON.stringify({action:'get_campaign_video',campaign_id:z.campaign_id,since:from,until:to})
+      })
+      const d2=await r2.json()
+      if(d2.ok)metaVideo=d2
+    }catch(e){console.log('Video metrics not available')}
+  }
+
   const spend=meta?meta.spend:0
   const clicks=meta?meta.clicks:0
-  const reach=meta?meta.impressions:0 // using impressions as reach approximation
+  const reach=meta?meta.impressions:0
   const ctr=meta?meta.ctr:0
   const cpc=meta&&meta.clicks>0?Math.round(meta.spend/meta.clicks*100)/100:0
   const cpm=meta&&meta.impressions>0?Math.round(meta.spend/meta.impressions*1000*100)/100:0
+  const freq=metaVideo?.frequency||0
+  const avgView=metaVideo?.avg_view_time||0
+  const geoClass=z.geo==='PL'?'gpl':'gplua'
 
-  res.innerHTML=`
-    <div style="max-width:700px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-        <div>
-          <div style="font-size:16px;font-weight:800;color:#fff">${z.name}</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:3px">${from} → ${to} · <span class="zgeo gchip ${z.geo==='PL'?'gpl':'gplua'}">${z.geo}</span></div>
-        </div>
-        <button class="bsv" onclick="saveAnalysis()">💾 Сохранить анализ</button>
-      </div>
-
-      <!-- Analysis table -->
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
-        <table class="zt" id="an-table" style="width:100%">
-          <tbody>
-            ${anRow('Период', from+' → '+to)}
-            ${anRow('Домен / воронка', (z.domain||'—')+' / '+(z.funnel||'—'))}
-            ${anRow('Spend $', `<span style="color:var(--yellow);font-family:var(--mono);font-weight:700">$${spend}</span>`, true)}
-            <tr><td colspan="2" style="background:var(--bg3);padding:6px 14px;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700">📊 Охват и трафик (из Meta)</td></tr>
-            ${anRow('Охват (Reach)', `<span id="an-v-reach" style="font-family:var(--mono)">${reach.toLocaleString('ru')}</span><span style="font-size:10px;color:var(--purple);margin-left:6px">Meta</span>`)}
-            ${anRow('Частота', `<input class="efi" id="an-i-freq" type="number" step="0.01" value="0" style="width:100px"> <span style="font-size:10px;color:var(--text3)">(из Meta Ads Manager)</span>`)}
-            ${anRow('CPM $', `<span id="an-v-cpm" style="font-family:var(--mono)">$${cpm}</span><span style="font-size:10px;color:var(--purple);margin-left:6px">Meta</span>`)}
-            ${anRow('Ср. время просмотра (с)', `<input class="efi" id="an-i-viewtime" type="number" step="0.1" value="0" style="width:100px"> <span style="font-size:10px;color:var(--text3)">(из Meta)</span>`)}
-            ${anRow('Клики', `<span style="font-family:var(--mono)">${clicks.toLocaleString('ru')}</span><span style="font-size:10px;color:var(--purple);margin-left:6px">Meta</span>`)}
-            ${anRow('CPC $', `<span style="font-family:var(--mono)">$${cpc}</span><span style="font-size:10px;color:var(--purple);margin-left:6px">Meta</span>`)}
-            ${anRow('CTR %', `<span style="color:${ctr>2?'var(--green)':ctr>1?'var(--yellow)':'var(--red)'};font-family:var(--mono);font-weight:700">${ctr}%</span><span style="font-size:10px;color:var(--purple);margin-left:6px">Meta</span>`)}
-            <tr><td colspan="2" style="background:var(--bg3);padding:6px 14px;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700">📋 Лиды и конверсия</td></tr>
-            ${anRow('Лиды', `<input class="efi" id="an-i-leads" type="number" value="0" style="width:100px" oninput="recalcAnalysis(${spend},${clicks})"> <span style="font-size:10px;color:var(--text3)">(вручную)</span>`)}
-            ${anRow('CR %', `<span id="an-v-cr" style="font-family:var(--mono)">0%</span> <span style="font-size:10px;color:var(--text3)">= Лиды / Клики × 100</span>`)}
-            ${anRow('CPL $', `<span id="an-v-cpl" style="font-family:var(--mono)">—</span> <span style="font-size:10px;color:var(--text3)">= Spend / Лиды</span>`)}
-            ${anRow('Квалы', `<input class="efi" id="an-i-quals" type="number" value="0" style="width:100px" oninput="recalcAnalysis(${spend},${clicks})"> <span style="font-size:10px;color:var(--text3)">(вручную)</span>`)}
-            ${anRow('AR %', `<span id="an-v-ar" style="font-family:var(--mono)">0%</span> <span style="font-size:10px;color:var(--text3)">= Квалы / Лиды × 100</span>`)}
-            ${anRow('CQL $', `<span id="an-v-cql" style="font-family:var(--mono)">—</span> <span style="font-size:10px;color:var(--text3)">= Spend / Квалы</span>`)}
-            <tr><td colspan="2" style="background:var(--bg3);padding:6px 14px;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700">📝 Заметки</td></tr>
-            <tr><td colspan="2" style="padding:10px 14px"><textarea class="fi" id="an-notes" style="min-height:80px;resize:none;width:100%" placeholder="Выводы, наблюдения..."></textarea></td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Hidden fields for save -->
-      <input type="hidden" id="an-save-zid" value="${z.id}">
-      <input type="hidden" id="an-save-zname" value="${z.name}">
-      <input type="hidden" id="an-save-spend" value="${spend}">
-      <input type="hidden" id="an-save-reach" value="${reach}">
-      <input type="hidden" id="an-save-clicks" value="${clicks}">
-      <input type="hidden" id="an-save-ctr" value="${ctr}">
-      <input type="hidden" id="an-save-cpm" value="${cpm}">
-      <input type="hidden" id="an-save-cpc" value="${cpc}">
-      <input type="hidden" id="an-save-from" value="${from}">
-      <input type="hidden" id="an-save-to" value="${to}">
-      <input type="hidden" id="an-save-buyer" value="${z.buyer||CURRENT_USER?.name||''}">
-      <input type="hidden" id="an-save-geo" value="${z.geo||''}">
-      <input type="hidden" id="an-save-funnel" value="${z.funnel||''}">
+  formDiv.innerHTML=`
+    <div class="an-card-hdr">
+      <span class="zgeo gchip ${geoClass}">${z.geo}</span>
+      <span style="font-size:13px;font-weight:800;color:#fff;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${z.name}</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">${from}→${to}</span>
+      <span style="font-family:var(--mono);font-weight:800;color:var(--yellow)">$${spend}</span>
     </div>
+    <table class="an-table" style="width:100%">
+      <tbody>
+        <tr><td colspan="2" class="an-section">📊 Охват и трафик (Meta)</td></tr>
+        <tr><td>Охват</td><td><span class="an-val">${reach.toLocaleString('ru')}</span><span class="an-auto">Meta</span></td></tr>
+        <tr><td>AmFreq</td><td><span class="an-val">${freq||'—'}</span><span class="an-auto">Meta</span></td></tr>
+        <tr><td>PeriodFreq</td><td><span class="an-val">${freq||'—'}</span><span class="an-auto">Meta</span></td></tr>
+        <tr><td>CPM $</td><td><span class="an-val">$${cpm}</span><span class="an-auto">Meta</span></td></tr>
+        <tr><td>Ср.вр (с)</td><td><span class="an-val">${avgView||'—'}</span><span class="an-auto">Meta</span></td></tr>
+        <tr><td colspan="2" class="an-section">🖱 Клики (Meta)</td></tr>
+        <tr><td>Клики</td><td><span class="an-val">${clicks.toLocaleString('ru')}</span><span class="an-auto">Meta</span></td></tr>
+        <tr><td>CPC $</td><td><span class="an-val">$${cpc}</span><span class="an-auto">Meta</span></td></tr>
+        <tr><td>CTR %</td><td><span class="an-val" style="color:${ctr>2?'var(--green)':ctr>1?'var(--yellow)':'var(--red)'}">${ctr}%</span><span class="an-auto">Meta</span></td></tr>
+        <tr><td colspan="2" class="an-section">✍️ Ввод данных</td></tr>
+        <tr><td>Лиды</td><td>
+          <input class="an-editable" id="an-i-leads" type="number" value="0" oninput="recalcAnalysis(${spend},${clicks})">
+          <span class="an-manual">вручную</span>
+        </td></tr>
+        <tr><td>CR %</td><td><span class="an-val" id="an-v-cr">0%</span><span style="font-size:10px;color:var(--text3);margin-left:5px">= Лиды/Клики×100</span></td></tr>
+        <tr><td>CPL $</td><td><span class="an-val" id="an-v-cpl">—</span><span style="font-size:10px;color:var(--text3);margin-left:5px">= Spend/Лиды</span></td></tr>
+        <tr><td>Квалы</td><td>
+          <input class="an-editable" id="an-i-quals" type="number" value="0" oninput="recalcAnalysis(${spend},${clicks})">
+          <span class="an-manual">вручную</span>
+        </td></tr>
+        <tr><td>AR %</td><td><span class="an-val" id="an-v-ar">0%</span><span style="font-size:10px;color:var(--text3);margin-left:5px">= Квалы/Лиды×100</span></td></tr>
+        <tr><td>CQL $</td><td><span class="an-val" id="an-v-cql">—</span><span style="font-size:10px;color:var(--text3);margin-left:5px">= Spend/Квалы</span></td></tr>
+        <tr><td>I</td><td><input class="an-editable" id="an-i-eye" type="number" value="0" style="width:60px"> <span class="an-manual">вручную</span></td></tr>
+        <tr><td colspan="2" class="an-section">📝 Заметки</td></tr>
+        <tr><td colspan="2" style="padding:8px 12px">
+          <textarea class="fi" id="an-notes" style="min-height:60px;resize:none;width:100%;font-size:12px" placeholder="Выводы..."></textarea>
+        </td></tr>
+      </tbody>
+    </table>
+    <div style="padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end">
+      <button class="bsv" onclick="saveAnalysis(${z.id},'${z.name.replace(/'/g,'').slice(0,40)}',${spend},${clicks},${reach},${ctr},${cpc},${cpm},${freq},${avgView},'${z.buyer||''}','${z.geo||''}','${z.funnel||''}','${from}','${to}')">💾 Сохранить анализ</button>
+    </div>
+    <input type="hidden" id="an-save-from" value="${from}">
+    <input type="hidden" id="an-save-to" value="${to}">
   `
-}
-
-function anRow(label,value,bold=false){
-  return `<tr>
-    <td style="padding:8px 14px;font-size:11px;color:var(--text3);font-weight:600;width:45%;border-bottom:1px solid var(--border)">${label}</td>
-    <td style="padding:8px 14px;font-size:12px;font-weight:${bold?800:500};color:#fff;border-bottom:1px solid var(--border)">${value}</td>
-  </tr>`
 }
 
 function recalcAnalysis(spend,clicks){
@@ -3195,83 +3381,56 @@ function recalcAnalysis(spend,clicks){
   const cpl=leads>0?Math.round(spend/leads*100)/100:0
   const ar=leads>0?Math.round(quals/leads*10000)/100:0
   const cql=quals>0?Math.round(spend/quals*100)/100:0
-  const crEl=document.getElementById('an-v-cr')
-  const cplEl=document.getElementById('an-v-cpl')
-  const arEl=document.getElementById('an-v-ar')
-  const cqlEl=document.getElementById('an-v-cql')
-  if(crEl)crEl.textContent=cr+'%'
-  if(cplEl)cplEl.textContent=cpl>0?'$'+cpl:'—'
-  if(arEl)arEl.textContent=ar+'%'
-  if(cqlEl)cqlEl.textContent=cql>0?'$'+cql:'—'
+  const cplColor=cpl>0&&cpl<10?'var(--green)':cpl<15?'var(--yellow)':cpl>0?'var(--red)':'#fff'
+  const crEl=document.getElementById('an-v-cr');if(crEl)crEl.textContent=cr+'%'
+  const cplEl=document.getElementById('an-v-cpl');if(cplEl){cplEl.textContent=cpl>0?'$'+cpl:'—';cplEl.style.color=cplColor}
+  const arEl=document.getElementById('an-v-ar');if(arEl)arEl.textContent=ar+'%'
+  const cqlEl=document.getElementById('an-v-cql');if(cqlEl)cqlEl.textContent=cql>0?'$'+cql:'—'
 }
 
-async function saveAnalysis(){
-  const zid=parseInt(document.getElementById('an-save-zid')?.value)
-  if(!zid){toast('Сначала сгенерируй анализ','err');return}
+async function saveAnalysis(zid,zname,spend,clicks,reach,ctr,cpc,cpm,freq,avgView,buyer,geo,funnel,from,to){
   const leads=parseInt(document.getElementById('an-i-leads')?.value)||0
   const quals=parseInt(document.getElementById('an-i-quals')?.value)||0
-  const freq=parseFloat(document.getElementById('an-i-freq')?.value)||0
-  const viewtime=parseFloat(document.getElementById('an-i-viewtime')?.value)||0
-  const spend=parseFloat(document.getElementById('an-save-spend')?.value)||0
-  const clicks=parseInt(document.getElementById('an-save-clicks')?.value)||0
+  const eye=parseInt(document.getElementById('an-i-eye')?.value)||0
+  const notes=document.getElementById('an-notes')?.value||''
   const cr=clicks>0?Math.round(leads/clicks*10000)/100:0
   const cpl=leads>0?Math.round(spend/leads*100)/100:0
   const ar=leads>0?Math.round(quals/leads*10000)/100:0
   const cql=quals>0?Math.round(spend/quals*100)/100:0
-  const from=document.getElementById('an-save-from')?.value
-  const to=document.getElementById('an-save-to')?.value
   const now=new Date()
   const monthKey=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
 
-  const payload={
-    zaliv_id:zid,
-    zaliv_name:document.getElementById('an-save-zname')?.value,
+  const{data,error}=await db.from('rk_analyses').insert({
+    zaliv_id:zid,zaliv_name:zname,
     period_from:from,period_to:to,
-    reach:parseInt(document.getElementById('an-save-reach')?.value)||0,
-    frequency:freq,
-    cpm:parseFloat(document.getElementById('an-save-cpm')?.value)||0,
-    avg_view_time:viewtime,
-    clicks,
-    cpc:parseFloat(document.getElementById('an-save-cpc')?.value)||0,
-    ctr:parseFloat(document.getElementById('an-save-ctr')?.value)||0,
-    spend,leads,quals,cr,cpl,ar,cql,
-    buyer:document.getElementById('an-save-buyer')?.value||CURRENT_USER?.name||'',
-    geo:document.getElementById('an-save-geo')?.value||'',
-    funnel:document.getElementById('an-save-funnel')?.value||'',
-    notes:document.getElementById('an-notes')?.value||'',
-    month_key:monthKey
-  }
+    reach,frequency:freq,cpm,avg_view_time:avgView,
+    clicks,cpc,ctr,spend,
+    leads,quals,cr,cpl,ar,cql,
+    buyer:buyer||CURRENT_USER?.name||'',
+    geo,funnel,notes,month_key:monthKey
+  }).select().single()
 
-  const{data,error}=await db.from('rk_analyses').insert(payload).select().single()
   if(!error&&data){
     RK_ANALYSES.unshift(data)
     renderAnalysisHistory()
-    toast('Анализ сохранён','ok')
+    toast('Анализ сохранён ✓','ok')
+    // Remove new-form, show saved card
+    document.querySelector('.an-new-form')?.remove()
+    _anOpenIds.push(data.id)
+    renderOpenAnalyses()
   }else{
     toast('Ошибка: '+(error?.message||'unknown'),'err')
+    console.error('saveAnalysis error:',error)
   }
 }
 
 function loadAnalysis(id){
-  const a=RK_ANALYSES.find(x=>x.id===id)
-  if(!a)return
-  // Pre-fill selectors and regenerate
-  const sel=document.getElementById('an-zaliv-sel')
-  if(sel)sel.value=a.zaliv_id
-  document.getElementById('an-from').value=a.period_from||''
-  document.getElementById('an-to').value=a.period_to||''
-  generateAnalysis().then(()=>{
-    // After generation, restore manual inputs
-    setTimeout(()=>{
-      if(document.getElementById('an-i-leads'))document.getElementById('an-i-leads').value=a.leads||0
-      if(document.getElementById('an-i-quals'))document.getElementById('an-i-quals').value=a.quals||0
-      if(document.getElementById('an-i-freq'))document.getElementById('an-i-freq').value=a.frequency||0
-      if(document.getElementById('an-i-viewtime'))document.getElementById('an-i-viewtime').value=a.avg_view_time||0
-      if(document.getElementById('an-notes'))document.getElementById('an-notes').value=a.notes||''
-      recalcAnalysis(a.spend,a.clicks)
-    },500)
-  })
+  if(!_anOpenIds.includes(id)){
+    _anOpenIds.push(id)
+    renderOpenAnalyses()
+  }
 }
+
 
 // ── INSIGHTS → Supabase ──
 async function loadInsights(){
