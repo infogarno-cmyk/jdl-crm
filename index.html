@@ -279,6 +279,15 @@ html,body{height:100%;overflow:hidden;max-width:100vw;font-family:var(--sans);ba
 .bsv{padding:7px 16px;border-radius:6px;border:1px solid var(--bord2);background:var(--bord-dim);color:var(--bord2);font-size:12px;cursor:pointer;font-weight:700;font-family:var(--sans)}.bsv:hover{background:var(--bord);color:#fff}
 .empty{text-align:center;padding:30px;color:var(--text3);font-size:13px}
 .an-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;position:relative}
+.an-tree-item{display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:11px;color:var(--text2);border-left:2px solid transparent;transition:all .12s}
+.an-tree-item:hover{background:var(--bg3);color:var(--text)}
+.an-tree-item.active{background:rgba(181,34,64,.08);color:#fff;border-left-color:var(--bord2)}
+.an-tree-item .an-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.an-tree-item .an-meta{font-size:10px;color:var(--text3);margin-left:auto;font-family:var(--mono)}
+.an-tree-sect{padding:5px 12px 2px;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-top:6px}
+.an-tree-yr{padding:7px 12px 4px;font-size:11px;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:6px;cursor:pointer}
+.an-tree-yr:hover{color:#fff}
+.an-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
 .an-card-hdr{background:var(--bg3);padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .an-table td{padding:7px 12px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:12px}
 .an-table td:first-child{font-size:11px;color:var(--text3);font-weight:600;width:40%}
@@ -449,72 +458,26 @@ document.getElementById('root').innerHTML=`
         </div>
       </div>
     </div>
-    <div class="page" id="page-analysis">
-      <div style="display:grid;grid-template-columns:280px 1fr;gap:14px;height:calc(100vh - 80px);overflow:hidden">
+    <div class="page" id="page-analysis" style="padding:0;overflow:hidden;height:calc(100vh - 42px)">
+  <div style="display:grid;grid-template-columns:240px 1fr;height:100%;overflow:hidden">
 
-        <!-- LEFT PANEL: selector + filters + history -->
-        <div style="display:flex;flex-direction:column;gap:8px;overflow:hidden">
-
-          <!-- Filters -->
-          <div class="card" style="padding:10px 12px;flex-shrink:0">
-            <div class="elb" style="margin-bottom:5px">Залив</div>
-            <select class="fi" id="an-zaliv-sel" style="margin-bottom:8px;font-size:11px"></select>
-
-            <div style="display:flex;gap:6px;margin-bottom:6px">
-              <div style="flex:1"><div class="elb" style="margin-bottom:3px">Баер</div>
-                <select class="fi" id="an-buyer-f" style="font-size:11px">
-                  <option value="">Все</option>
-                  <option value="Illia">Illia</option>
-                  <option value="Danya">Danya</option>
-                </select>
-              </div>
-              <div style="flex:1"><div class="elb" style="margin-bottom:3px">GEO</div>
-                <select class="fi" id="an-geo-f" style="font-size:11px">
-                  <option value="">Все</option>
-                  <option value="PL">PL</option>
-                  <option value="PLUA">PLUA</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="elb" style="margin-bottom:4px">Период</div>
-            <div style="display:flex;gap:5px;margin-bottom:6px">
-              <input type="date" class="fi" id="an-from" style="flex:1;font-size:10px">
-              <input type="date" class="fi" id="an-to" style="flex:1;font-size:10px">
-            </div>
-
-            <!-- Quick presets -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px">
-              <button class="pb" data-apreset="1dc" style="font-size:10px;padding:4px">1DC</button>
-              <button class="pb" data-apreset="2dc" style="font-size:10px;padding:4px">2DC</button>
-              <button class="pb" data-apreset="3dc" style="font-size:10px;padding:4px">3DC</button>
-              <button class="pb" data-apreset="kwartal" style="font-size:10px;padding:4px">Kwartal</button>
-            </div>
-
-            <button class="bsv" style="width:100%;padding:7px;font-size:12px" onclick="generateAnalysis()">📊 Сгенерировать</button>
-          </div>
-
-          <!-- History list -->
-          <div style="flex:1;overflow-y:auto;min-height:0">
-            <div class="elb" style="margin-bottom:6px;padding:0 2px">История анализов</div>
-            <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
-              <select class="fsel" id="an-hist-geo" style="font-size:10px;padding:3px 8px">
-                <option value="">GEO</option><option value="PL">PL</option><option value="PLUA">PLUA</option>
-              </select>
-              <select class="fsel" id="an-hist-buyer" style="font-size:10px;padding:3px 8px">
-                <option value="">Баер</option><option value="Illia">Illia</option><option value="Danya">Danya</option>
-              </select>
-            </div>
-            <div id="an-history"></div>
-          </div>
-        </div>
-
-        <!-- RIGHT PANEL: analysis results (can show multiple) -->
-        <div style="overflow-y:auto;display:flex;flex-direction:column;gap:12px" id="an-results-wrap">
-          <div class="empty" style="margin-top:60px" id="an-empty-msg">Выбери залив и нажми «Сгенерировать»</div>
-        </div>
+    <!-- LEFT: tree sidebar -->
+    <div style="display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--bg2);overflow:hidden">
+      <div style="padding:10px 12px;border-bottom:1px solid var(--border)">
+        <input class="fsrch" id="an-search" placeholder="Поиск РК..." style="width:100%;font-size:11px">
+      </div>
+      <div style="flex:1;overflow-y:auto" id="an-tree"></div>
+      <div style="padding:10px 12px;border-top:1px solid var(--border)">
+        <button class="bsv" style="width:100%;padding:7px;font-size:11px" onclick="showNewAnalysisPanelFor(null)">+ Новый анализ</button>
       </div>
     </div>
+
+    <!-- RIGHT: content -->
+    <div style="overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px" id="an-content">
+      <div class="empty" style="margin-top:100px">Выбери РК из списка слева</div>
+    </div>
+  </div>
+</div>
     <div class="page" id="page-journal" style="padding:0">
       <div class="jlay">
         <div class="jsb">
@@ -3079,9 +3042,11 @@ async function autoMatchCampaignIds(){
 
 
 // ══════════════════════════════════════════
-// АНАЛИЗ РК v2
+// АНАЛИЗ РК v4 — Variant 1 design
 // ══════════════════════════════════════════
-var _anOpenIds = [] // IDs of open analyses shown simultaneously
+var _anSelZalivId = null
+var _anSelYr = null
+var _anSelMonth = null
 
 async function loadRkAnalyses(){
   if(!db)return
@@ -3090,288 +3055,288 @@ async function loadRkAnalyses(){
 }
 
 function initAnalysisPage(){
-  // Populate zaliv selector with buyer/geo filters
-  updateAnZalivList()
+  renderAnTree()
+  const s=document.getElementById('an-search')
+  if(s&&!s._anbound){s._anbound=true;s.addEventListener('input',renderAnTree)}
+}
 
-  // Wire filter changes
-  ;['an-buyer-f','an-geo-f'].forEach(id=>{
-    const el=document.getElementById(id)
-    if(el&&!el._anbound){el._anbound=true;el.addEventListener('change',updateAnZalivList)}
+function renderAnTree(){
+  const el=document.getElementById('an-tree')
+  if(!el)return
+  const q=(document.getElementById('an-search')?.value||'').toLowerCase()
+
+  // Group zalivs by geo → year → month
+  // Use all zalivs + analyses
+  const geo_yr_month = {}
+
+  // From analyses
+  RK_ANALYSES.forEach(a=>{
+    const geo=a.geo||'?'
+    const yr=a.month_key?.split('-')[0]||'2026'
+    const mo=a.month_key||'?'
+    const zid=a.zaliv_id
+    if(!geo_yr_month[geo])geo_yr_month[geo]={}
+    if(!geo_yr_month[geo][yr])geo_yr_month[geo][yr]={}
+    if(!geo_yr_month[geo][yr][mo])geo_yr_month[geo][yr][mo]={}
+    if(!geo_yr_month[geo][yr][mo][zid])geo_yr_month[geo][yr][mo][zid]={name:a.zaliv_name,count:0,ind:null}
+    geo_yr_month[geo][yr][mo][zid].count++
   })
 
-  // Default period: last 7 days
-  const today=new Date().toISOString().split('T')[0]
-  document.getElementById('an-from').value=new Date(Date.now()-7*864e5).toISOString().split('T')[0]
-  document.getElementById('an-to').value=today
+  // Add zalivs without analyses
+  ZALIVS.forEach(z=>{
+    if(q&&!z.name.toLowerCase().includes(q))return
+    const geo=z.geo||'?'
+    const yr=new Date().getFullYear().toString()
+    const mo=`${yr}-${String(new Date().getMonth()+1).padStart(2,'0')}`
+    if(!geo_yr_month[geo])geo_yr_month[geo]={}
+    if(!geo_yr_month[geo][yr])geo_yr_month[geo][yr]={}
+    if(!geo_yr_month[geo][yr][mo])geo_yr_month[geo][yr][mo]={}
+    if(!geo_yr_month[geo][yr][mo][z.id]){
+      geo_yr_month[geo][yr][mo][z.id]={name:z.name,count:0,ind:z.ind}
+    }else{
+      geo_yr_month[geo][yr][mo][z.id].ind=z.ind
+    }
+  })
 
-  // Preset buttons
+  const MONTH_NAMES=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь']
+  const moName=mk=>{const m=parseInt(mk?.split('-')[1]||1);return MONTH_NAMES[m-1]||mk}
+  const indColor=ind=>ind==='profit'?'#2ea043':ind==='drop'?'#e08040':'#e04050'
+
+  let html=''
+  Object.entries(geo_yr_month).sort().forEach(([geo,yrs])=>{
+    Object.entries(yrs).sort((a,b)=>b[0]-a[0]).forEach(([yr,months])=>{
+      html+=`<div class="an-tree-yr" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">
+        <span class="zgeo gchip ${geo==='PL'?'gpl':'gplua'}" style="font-size:9px;padding:1px 5px">${geo}</span>
+        <span style="font-weight:700;font-size:12px">RKFB ${geo} ${yr}</span>
+        <span style="font-size:10px;color:var(--text3);margin-left:auto">${Object.values(months).reduce((s,m)=>s+Object.keys(m).length,0)} РК</span>
+      </div>
+      <div class="an-yr-body">`
+
+      Object.entries(months).sort((a,b)=>b[0].localeCompare(a[0])).forEach(([mo,zalivs])=>{
+        html+=`<div class="an-tree-sect">${moName(mo)} ${yr}</div>`
+        Object.entries(zalivs).forEach(([zid,info])=>{
+          if(q&&!info.name.toLowerCase().includes(q))return
+          const dot=indColor(info.ind)
+          const isActive=_anSelZalivId===parseInt(zid)
+          html+=`<div class="an-tree-item${isActive?' active':''}" onclick="selectAnZaliv(${zid})">
+            <div class="an-dot" style="background:${dot};flex-shrink:0"></div>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${info.name}</span>
+            ${info.count>0?`<span class="an-meta">${info.count}×</span>`:'<span class="an-meta" style="color:var(--bord2)">+ анализ</span>'}
+          </div>`
+        })
+      })
+      html+=`</div>`
+    })
+  })
+
+  el.innerHTML=html||'<div class="empty" style="padding:20px;font-size:11px">Нет данных</div>'
+}
+
+function selectAnZaliv(zid){
+  _anSelZalivId=zid
+  // Update active state
+  document.querySelectorAll('#an-tree .an-tree-item').forEach(el=>{
+    el.classList.toggle('active',el.getAttribute('onclick')===`selectAnZaliv(${zid})`)
+  })
+  renderAnZalivHistory(zid)
+}
+
+function renderAnZalivHistory(zid){
+  const content=document.getElementById('an-content')
+  if(!content)return
+  const z=ZALIVS.find(x=>x.id===zid)
+  const analyses=RK_ANALYSES.filter(a=>a.zaliv_id===zid)
+  const indColor=z?.ind==='profit'?'#2ea043':z?.ind==='drop'?'#e08040':'#e04050'
+
+  content.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0">
+      <div style="width:9px;height:9px;border-radius:50%;background:${indColor};flex-shrink:0"></div>
+      <span style="font-size:14px;font-weight:700;color:#fff;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${z?.name||'Залив '+zid}</span>
+      <button class="bsv" style="padding:5px 14px;font-size:11px;flex-shrink:0" onclick="showNewAnalysisPanelFor(${zid})">+ Анализ</button>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:-4px">
+      ${z?`<span class="zgeo gchip ${z.geo==='PL'?'gpl':'gplua'}" style="font-size:9px">${z.geo}</span>
+      <span style="font-size:11px;color:var(--text3)">${z.funnel||''}</span>
+      <span style="font-size:11px;color:var(--text3)">· ${z.buyer||''}</span>
+      <span style="font-size:11px;color:var(--text3)">· ${z.status||''}</span>`:''}
+    </div>
+    ${analyses.length===0
+      ?'<div class="empty" style="margin-top:40px">Нет анализов — нажми «+ Анализ»</div>'
+      :`<div class="an-cards-grid">${analyses.map(a=>`<div class="an-card">${renderAnalysisCard(a)}</div>`).join('')}</div>`
+    }
+  `
+}
+
+function renderAnalysisCard(a){
+  const ctrC=a.ctr>2?'#2ea043':a.ctr>1?'#e08040':'#e04050'
+  const cplC=a.cpl>0&&a.cpl<10?'#2ea043':a.cpl<15?'#e08040':a.cpl>0?'#e04050':'#fff'
+  const cell=(l,v,col)=>`<div style="padding:6px 9px;border-bottom:1px solid var(--border)">
+    <div style="font-size:9px;color:var(--text3);margin-bottom:2px">${l}</div>
+    <div style="font-size:12px;font-weight:700;color:${col||'#fff'};font-family:var(--mono)">${v}</div>
+  </div>`
+  return`
+    <div style="background:var(--bg3);padding:7px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">${a.period_from||''}→${a.period_to||''}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;font-weight:700;color:#e08040;font-family:var(--mono)">$${a.spend}</span>
+        <button onclick="toggleAnCard(${a.id})" title="Свернуть" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;line-height:1;padding:0">⊟</button>
+      </div>
+    </div>
+    <div id="an-body-${a.id}">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--border)">
+        ${cell('Охват',(a.reach||0).toLocaleString('ru'))}
+        ${cell('Клики',(a.clicks||0).toLocaleString('ru'))}
+        ${cell('Лиды',a.leads||0,'#2ea043')}
+        ${cell('AmFreq',a.frequency||0)}
+        ${cell('CPC $','$'+(a.cpc||0))}
+        ${cell('CR %',(a.cr||0)+'%',ctrC)}
+        ${cell('PeriodFreq',a.frequency||0)}
+        ${cell('CTR %',(a.ctr||0)+'%',ctrC)}
+        ${cell('CPL $','$'+(a.cpl||0),cplC)}
+        ${cell('CPM $','$'+(a.cpm||0))}
+        ${cell('','')}
+        ${cell('AR %',(a.ar||0)+'%')}
+        ${cell('Ср.вр (с)',a.avg_view_time||0)}
+        ${cell('','')}
+        ${cell('CQL $','$'+(a.cql||0))}
+        <div style="grid-column:1/-1;padding:5px 9px;border-top:1px solid var(--border)">
+          <span style="font-size:10px;color:var(--text3)">Квалы — </span>
+          <span style="font-size:12px;font-weight:700;color:#fff;font-family:var(--mono)">${a.quals||0}</span>
+          ${a.notes?`<span style="font-size:10px;color:var(--text3);margin-left:12px;font-style:italic">${a.notes}</span>`:''}
+        </div>
+      </div>
+    </div>`
+}
+
+function toggleAnCard(id){
+  const body=document.getElementById('an-body-'+id)
+  if(!body)return
+  const btn=body.previousElementSibling?.querySelector('button[title]')
+  if(body.style.display==='none'){body.style.display='';if(btn)btn.textContent='⊟'}
+  else{body.style.display='none';if(btn)btn.textContent='⊞'}
+}
+
+function showNewAnalysisPanel(){showNewAnalysisPanelFor(null)}
+
+function showNewAnalysisPanelFor(preZalivId){
+  const content=document.getElementById('an-content')
+  if(!content)return
+  const today=new Date().toISOString().split('T')[0]
+  const zalivOpts=ZALIVS.map(z=>`<option value="${z.id}"${z.id===preZalivId?' selected':''}>${z.name}</option>`).join('')
+  content.innerHTML=`
+    <div style="max-width:580px">
+      <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:14px">📊 Новый анализ</div>
+      <div class="card" style="padding:12px;margin-bottom:12px">
+        <div class="elb" style="margin-bottom:4px">Залив</div>
+        <select class="fi" id="an-zaliv-sel" style="margin-bottom:10px">${zalivOpts}</select>
+        <div class="elb" style="margin-bottom:4px">Период</div>
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <input type="date" class="fi" id="an-from" value="${new Date(Date.now()-7*864e5).toISOString().split('T')[0]}" style="flex:1">
+          <input type="date" class="fi" id="an-to" value="${today}" style="flex:1">
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:10px">
+          <button class="pb" data-apreset="1dc" style="font-size:10px;padding:4px">1DC</button>
+          <button class="pb" data-apreset="2dc" style="font-size:10px;padding:4px">2DC</button>
+          <button class="pb" data-apreset="3dc" style="font-size:10px;padding:4px">3DC</button>
+          <button class="pb" data-apreset="kwartal" style="font-size:10px;padding:4px">Kwartal</button>
+        </div>
+        <button class="bsv" style="width:100%;padding:8px" onclick="generateAnalysis()">⚡ Загрузить из Meta</button>
+      </div>
+      <div id="an-results-wrap"></div>
+    </div>`
   document.querySelectorAll('[data-apreset]').forEach(btn=>{
-    if(btn._anbound)return
-    btn._anbound=true
     btn.addEventListener('click',function(){
       document.querySelectorAll('[data-apreset]').forEach(b=>b.classList.remove('active'))
       this.classList.add('active')
       applyAnPreset(this.dataset.apreset)
     })
   })
-
-  // History filters
-  ;['an-hist-geo','an-hist-buyer'].forEach(id=>{
-    const el=document.getElementById(id)
-    if(el&&!el._anbound){el._anbound=true;el.addEventListener('change',renderAnalysisHistory)}
-  })
-
-  renderAnalysisHistory()
-}
-
-function updateAnZalivList(){
-  const buyer=document.getElementById('an-buyer-f')?.value||''
-  const geo=document.getElementById('an-geo-f')?.value||''
-  const sel=document.getElementById('an-zaliv-sel')
-  if(!sel)return
-  const filtered=ZALIVS.filter(z=>(!buyer||z.buyer===buyer)&&(!geo||z.geo===geo))
-  sel.innerHTML='<option value="">— выбрать залив —</option>'+
-    filtered.map(z=>`<option value="${z.id}">${z.name}</option>`).join('')
 }
 
 function applyAnPreset(preset){
-  const sel=document.getElementById('an-zaliv-sel')
-  const zid=parseInt(sel?.value)
+  const zid=parseInt(document.getElementById('an-zaliv-sel')?.value)
   const z=ZALIVS.find(x=>x.id===zid)
-  // Get campaign start date
   const raw=z?.date||''
-  let startDate=null
-  if(raw){
-    const p=raw.split('.')
-    if(p.length===2){
-      const yr=new Date().getFullYear()
-      startDate=new Date(`${yr}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`)
-    }
-  }
-  if(!startDate)startDate=new Date()
-
+  let start=new Date()
+  if(raw){const p=raw.split('.');if(p.length===2){const yr=new Date().getFullYear();start=new Date(`${yr}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`)}}
   const fmt=d=>d.toISOString().split('T')[0]
-  const addDays=(d,n)=>new Date(d.getTime()+n*864e5)
-
-  if(preset==='1dc'){
-    document.getElementById('an-from').value=fmt(startDate)
-    document.getElementById('an-to').value=fmt(startDate)
-  }else if(preset==='2dc'){
-    document.getElementById('an-from').value=fmt(addDays(startDate,1))
-    document.getElementById('an-to').value=fmt(addDays(startDate,1))
-  }else if(preset==='3dc'){
-    document.getElementById('an-from').value=fmt(startDate)
-    document.getElementById('an-to').value=fmt(addDays(startDate,1))
-  }else if(preset==='kwartal'){
-    document.getElementById('an-from').value=fmt(startDate)
-    document.getElementById('an-to').value=fmt(addDays(startDate,2))
-  }
-}
-
-function renderAnalysisHistory(){
-  const hist=document.getElementById('an-history')
-  if(!hist)return
-  const geo=document.getElementById('an-hist-geo')?.value||''
-  const buyer=document.getElementById('an-hist-buyer')?.value||''
-  let filtered=RK_ANALYSES.filter(a=>(!geo||a.geo===geo)&&(!buyer||a.buyer===buyer))
-  if(!filtered.length){
-    hist.innerHTML='<div class="empty" style="padding:16px 0;font-size:11px">Нет анализов</div>'
-    return
-  }
-  // Group by month
-  const byMonth={}
-  filtered.forEach(a=>{
-    const mk=a.month_key||'—'
-    if(!byMonth[mk])byMonth[mk]=[]
-    byMonth[mk].push(a)
-  })
-  hist.innerHTML=Object.entries(byMonth).map(([month,items])=>`
-    <div style="margin-bottom:12px">
-      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;font-weight:700">${month}</div>
-      ${items.map(a=>`
-        <div class="an-card" style="margin-bottom:6px;cursor:pointer;transition:border-color .15s" onclick="toggleAnalysisView(${a.id})">
-          <div style="padding:8px 10px">
-            <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.zaliv_name||'—'}</div>
-            <div style="display:flex;gap:6px;font-size:10px;color:var(--text3);flex-wrap:wrap">
-              <span>${a.period_from||''}→${a.period_to||''}</span>
-              <span style="color:var(--yellow)">$${a.spend}</span>
-              <span>${a.leads}L / ${a.quals}Q</span>
-              <span class="zgeo gchip ${a.geo==='PL'?'gpl':'gplua'}" style="padding:0 5px;font-size:9px">${a.geo||'?'}</span>
-            </div>
-          </div>
-        </div>
-      `).join('')}
-    </div>
-  `).join('')
-}
-
-function toggleAnalysisView(id){
-  if(_anOpenIds.includes(id)){
-    _anOpenIds=_anOpenIds.filter(x=>x!==id)
-  }else{
-    _anOpenIds.push(id)
-  }
-  renderOpenAnalyses()
-}
-
-function renderOpenAnalyses(){
-  const wrap=document.getElementById('an-results-wrap')
-  if(!wrap)return
-  const empty=document.getElementById('an-empty-msg')
-  if(empty)empty.style.display=_anOpenIds.length?'none':'block'
-  // Remove old saved analysis cards
-  wrap.querySelectorAll('.an-saved-card').forEach(el=>el.remove())
-  // Render each open analysis
-  _anOpenIds.forEach(id=>{
-    const a=RK_ANALYSES.find(x=>x.id===id)
-    if(!a)return
-    const div=document.createElement('div')
-    div.className='an-card an-saved-card'
-    div.innerHTML=renderAnalysisCard(a,false)
-    wrap.appendChild(div)
-  })
-}
-
-function renderAnalysisCard(a, editable){
-  const geoClass=a.geo==='PL'?'gpl':'gplua'
-  const ctrColor=a.ctr>2?'var(--green)':a.ctr>1?'var(--yellow)':'var(--red)'
-  const cplColor=a.cpl>0&&a.cpl<10?'var(--green)':a.cpl<15?'var(--yellow)':a.cpl>0?'var(--red)':'#fff'
-  return`
-    <div class="an-card-hdr">
-      <span class="zgeo gchip ${geoClass}">${a.geo||'?'}</span>
-      <span style="font-size:13px;font-weight:800;color:#fff;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.zaliv_name||'—'}</span>
-      <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">${a.period_from||''}→${a.period_to||''}</span>
-      <span style="font-family:var(--mono);font-weight:800;color:var(--yellow)">$${a.spend}</span>
-      ${editable?'':'<button onclick="toggleAnalysisView('+a.id+')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:0 4px">×</button>'}
-    </div>
-    <table class="an-table" style="width:100%">
-      <tbody>
-        <tr><td colspan="2" class="an-section">📊 Охват и трафик</td></tr>
-        <tr><td>Охват (Reach)</td><td><span class="an-val">${(a.reach||0).toLocaleString('ru')}</span><span class="an-auto">Meta</span></td></tr>
-        <tr><td>AmFreq</td><td><span class="an-val">${a.frequency||0}</span><span class="an-auto">Meta</span></td></tr>
-        <tr><td>PeriodFreq</td><td><span class="an-val">${a.frequency||0}</span><span class="an-auto">Meta</span></td></tr>
-        <tr><td>CPM $</td><td><span class="an-val">$${a.cpm||0}</span><span class="an-auto">Meta</span></td></tr>
-        <tr><td>Ср.вр (с)</td><td><span class="an-val">${a.avg_view_time||0}</span><span class="an-auto">Meta</span></td></tr>
-        <tr><td colspan="2" class="an-section">🖱 Клики</td></tr>
-        <tr><td>Клики</td><td><span class="an-val">${(a.clicks||0).toLocaleString('ru')}</span><span class="an-auto">Meta</span></td></tr>
-        <tr><td>CPC $</td><td><span class="an-val">$${a.cpc||0}</span><span class="an-auto">Meta</span></td></tr>
-        <tr><td>CTR %</td><td><span class="an-val" style="color:${ctrColor}">${a.ctr||0}%</span><span class="an-auto">Meta</span></td></tr>
-        <tr><td colspan="2" class="an-section">📋 Конверсия</td></tr>
-        <tr><td>Лиды</td><td><span class="an-val">${a.leads||0}</span><span class="an-manual">ручной</span></td></tr>
-        <tr><td>CR %</td><td><span class="an-val">${a.cr||0}%</span></td></tr>
-        <tr><td>CPL $</td><td><span class="an-val" style="color:${cplColor}">$${a.cpl||0}</span></td></tr>
-        <tr><td>Квалы</td><td><span class="an-val">${a.quals||0}</span><span class="an-manual">ручной</span></td></tr>
-        <tr><td>AR %</td><td><span class="an-val">${a.ar||0}%</span></td></tr>
-        <tr><td>CQL $</td><td><span class="an-val">$${a.cql||0}</span></td></tr>
-        ${a.notes?`<tr><td colspan="2" class="an-section">📝 Заметки</td></tr><tr><td colspan="2" style="padding:8px 12px;font-size:12px;color:var(--text2)">${a.notes}</td></tr>`:''}
-      </tbody>
-    </table>`
+  const add=n=>new Date(start.getTime()+n*864e5)
+  const map={'1dc':[fmt(start),fmt(start)],'2dc':[fmt(add(1)),fmt(add(1))],'3dc':[fmt(start),fmt(add(1))],'kwartal':[fmt(start),fmt(add(2))]}
+  const [f,t]=map[preset]||[fmt(start),fmt(start)]
+  document.getElementById('an-from').value=f
+  document.getElementById('an-to').value=t
 }
 
 async function generateAnalysis(){
   const zalivId=parseInt(document.getElementById('an-zaliv-sel')?.value)
   if(!zalivId){toast('Выбери залив','err');return}
   const z=ZALIVS.find(x=>x.id===zalivId)
-  if(!z){toast('Залив не найден','err');return}
+  if(!z)return
   const from=document.getElementById('an-from').value
   const to=document.getElementById('an-to').value
   if(!from||!to){toast('Укажи период','err');return}
-
   const wrap=document.getElementById('an-results-wrap')
-  const emptyMsg=document.getElementById('an-empty-msg')
-  if(emptyMsg)emptyMsg.style.display='none'
+  if(!wrap)return
+  wrap.innerHTML='<div class="empty" style="padding:16px">⏳ Загрузка из Meta...</div>'
 
-  // Remove previous new-analysis form
-  wrap.querySelectorAll('.an-new-form').forEach(el=>el.remove())
-
-  const formDiv=document.createElement('div')
-  formDiv.className='an-card an-new-form'
-  formDiv.innerHTML='<div class="an-card-hdr"><span style="color:var(--text3)">⏳ Загрузка метрик из Meta...</span></div>'
-  wrap.insertBefore(formDiv,wrap.firstChild)
-
-  // Fetch Meta metrics
-  var meta=null
+  var meta=null,metaVideo=null
   if(z.campaign_id){
     try{
-      const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
-        method:'POST',
-        headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
-        body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since:from,until:to})
-      })
-      const d=await r.json()
-      if(d.ok)meta=d
-    }catch(e){console.error('Meta:',e)}
-  }
-
-  // Also fetch video metrics (avg watch time, frequency)
-  var metaVideo=null
-  if(z.campaign_id){
+      const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since:from,until:to})})
+      const d=await r.json();if(d.ok)meta=d
+    }catch(e){}
     try{
-      const r2=await fetch(SB_URL+'/functions/v1/get-campaigns',{
-        method:'POST',
-        headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
-        body:JSON.stringify({action:'get_campaign_video',campaign_id:z.campaign_id,since:from,until:to})
-      })
-      const d2=await r2.json()
-      if(d2.ok)metaVideo=d2
-    }catch(e){console.log('Video metrics not available')}
+      const r2=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_campaign_video',campaign_id:z.campaign_id,since:from,until:to})})
+      const d2=await r2.json();if(d2.ok)metaVideo=d2
+    }catch(e){}
   }
 
   const spend=meta?meta.spend:0
   const clicks=meta?meta.clicks:0
   const reach=meta?meta.impressions:0
   const ctr=meta?meta.ctr:0
-  const cpc=meta&&meta.clicks>0?Math.round(meta.spend/meta.clicks*100)/100:0
-  const cpm=meta&&meta.impressions>0?Math.round(meta.spend/meta.impressions*1000*100)/100:0
+  const cpc=meta&&clicks>0?Math.round(spend/clicks*100)/100:0
+  const cpm=meta&&reach>0?Math.round(spend/reach*1000*100)/100:0
   const freq=metaVideo?.frequency||0
   const avgView=metaVideo?.avg_view_time||0
-  const geoClass=z.geo==='PL'?'gpl':'gplua'
+  const ctrC=ctr>2?'#2ea043':ctr>1?'#e08040':'#e04050'
 
-  formDiv.innerHTML=`
-    <div class="an-card-hdr">
-      <span class="zgeo gchip ${geoClass}">${z.geo}</span>
-      <span style="font-size:13px;font-weight:800;color:#fff;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${z.name}</span>
-      <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">${from}→${to}</span>
-      <span style="font-family:var(--mono);font-weight:800;color:var(--yellow)">$${spend}</span>
-    </div>
-    <table class="an-table" style="width:100%">
-      <tbody>
-        <tr><td colspan="2" class="an-section">📊 Охват и трафик (Meta)</td></tr>
-        <tr><td>Охват</td><td><span class="an-val">${reach.toLocaleString('ru')}</span><span class="an-auto">Meta</span></td></tr>
-        <tr><td>AmFreq</td><td><span class="an-val">${freq||'—'}</span><span class="an-auto">Meta</span></td></tr>
-        <tr><td>PeriodFreq</td><td><span class="an-val">${freq||'—'}</span><span class="an-auto">Meta</span></td></tr>
-        <tr><td>CPM $</td><td><span class="an-val">$${cpm}</span><span class="an-auto">Meta</span></td></tr>
-        <tr><td>Ср.вр (с)</td><td><span class="an-val">${avgView||'—'}</span><span class="an-auto">Meta</span></td></tr>
-        <tr><td colspan="2" class="an-section">🖱 Клики (Meta)</td></tr>
-        <tr><td>Клики</td><td><span class="an-val">${clicks.toLocaleString('ru')}</span><span class="an-auto">Meta</span></td></tr>
-        <tr><td>CPC $</td><td><span class="an-val">$${cpc}</span><span class="an-auto">Meta</span></td></tr>
-        <tr><td>CTR %</td><td><span class="an-val" style="color:${ctr>2?'var(--green)':ctr>1?'var(--yellow)':'var(--red)'}">${ctr}%</span><span class="an-auto">Meta</span></td></tr>
-        <tr><td colspan="2" class="an-section">✍️ Ввод данных</td></tr>
-        <tr><td>Лиды</td><td>
-          <input class="an-editable" id="an-i-leads" type="number" value="0" oninput="recalcAnalysis(${spend},${clicks})">
-          <span class="an-manual">вручную</span>
-        </td></tr>
-        <tr><td>CR %</td><td><span class="an-val" id="an-v-cr">0%</span><span style="font-size:10px;color:var(--text3);margin-left:5px">= Лиды/Клики×100</span></td></tr>
-        <tr><td>CPL $</td><td><span class="an-val" id="an-v-cpl">—</span><span style="font-size:10px;color:var(--text3);margin-left:5px">= Spend/Лиды</span></td></tr>
-        <tr><td>Квалы</td><td>
-          <input class="an-editable" id="an-i-quals" type="number" value="0" oninput="recalcAnalysis(${spend},${clicks})">
-          <span class="an-manual">вручную</span>
-        </td></tr>
-        <tr><td>AR %</td><td><span class="an-val" id="an-v-ar">0%</span><span style="font-size:10px;color:var(--text3);margin-left:5px">= Квалы/Лиды×100</span></td></tr>
-        <tr><td>CQL $</td><td><span class="an-val" id="an-v-cql">—</span><span style="font-size:10px;color:var(--text3);margin-left:5px">= Spend/Квалы</span></td></tr>
-        <tr><td>I</td><td><input class="an-editable" id="an-i-eye" type="number" value="0" style="width:60px"> <span class="an-manual">вручную</span></td></tr>
-        <tr><td colspan="2" class="an-section">📝 Заметки</td></tr>
-        <tr><td colspan="2" style="padding:8px 12px">
-          <textarea class="fi" id="an-notes" style="min-height:60px;resize:none;width:100%;font-size:12px" placeholder="Выводы..."></textarea>
-        </td></tr>
-      </tbody>
-    </table>
-    <div style="padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end">
-      <button class="bsv" onclick="saveAnalysis(${z.id},'${z.name.replace(/'/g,'').slice(0,40)}',${spend},${clicks},${reach},${ctr},${cpc},${cpm},${freq},${avgView},'${z.buyer||''}','${z.geo||''}','${z.funnel||''}','${from}','${to}')">💾 Сохранить анализ</button>
-    </div>
-    <input type="hidden" id="an-save-from" value="${from}">
-    <input type="hidden" id="an-save-to" value="${to}">
-  `
+  wrap.innerHTML=`
+    <div class="an-card">
+      <div style="background:var(--bg3);padding:8px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="zgeo gchip ${z.geo==='PL'?'gpl':'gplua'}" style="font-size:9px">${z.geo}</span>
+          <span style="font-size:11px;font-weight:700;color:#fff;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${z.name}</span>
+        </div>
+        <span style="font-size:12px;font-weight:700;color:#e08040;font-family:var(--mono)">$${spend}</span>
+      </div>
+      ${!z.campaign_id?'<div style="padding:6px 10px;font-size:10px;color:#e08040;border-bottom:1px solid var(--border)">⚠ Нет Campaign ID — введи в редактировании залива</div>':''}
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--border)">
+        <div style="padding:6px 9px;border-bottom:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">Охват</div><div style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">${reach.toLocaleString('ru')}</div></div>
+        <div style="padding:6px 9px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">Клики</div><div style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">${clicks.toLocaleString('ru')}</div></div>
+        <div style="padding:6px 9px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">Лиды</div><input class="an-editable" id="an-i-leads" type="number" value="0" oninput="recalcAnalysis(${spend},${clicks})" style="width:70px"></div>
+        <div style="padding:6px 9px;border-bottom:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">AmFreq</div><div style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">${freq}</div></div>
+        <div style="padding:6px 9px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">CPC $</div><div style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">$${cpc}</div></div>
+        <div style="padding:6px 9px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">CR %</div><div style="font-size:12px;font-weight:700;font-family:var(--mono)" id="an-v-cr">0%</div></div>
+        <div style="padding:6px 9px;border-bottom:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">PeriodFreq</div><div style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">${freq}</div></div>
+        <div style="padding:6px 9px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">CTR %</div><div style="font-size:12px;font-weight:700;font-family:var(--mono);color:${ctrC}">${ctr}%</div></div>
+        <div style="padding:6px 9px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">CPL $</div><div style="font-size:12px;font-weight:700;font-family:var(--mono)" id="an-v-cpl">—</div></div>
+        <div style="padding:6px 9px;border-bottom:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">CPM $</div><div style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">$${cpm}</div></div>
+        <div style="padding:6px 9px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)"></div>
+        <div style="padding:6px 9px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">AR %</div><div style="font-size:12px;font-weight:700;font-family:var(--mono)" id="an-v-ar">0%</div></div>
+        <div style="padding:6px 9px;border-bottom:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">Ср.вр (с)</div><div style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">${avgView}</div></div>
+        <div style="padding:6px 9px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)"></div>
+        <div style="padding:6px 9px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">CQL $</div><div style="font-size:12px;font-weight:700;font-family:var(--mono)" id="an-v-cql">—</div></div>
+        <div style="grid-column:1/-1;padding:6px 9px;display:flex;align-items:center;gap:10px">
+          <span style="font-size:9px;color:var(--text3)">Квалы</span>
+          <input class="an-editable" id="an-i-quals" type="number" value="0" oninput="recalcAnalysis(${spend},${clicks})" style="width:60px">
+        </div>
+      </div>
+      <div style="padding:8px 10px;border-top:1px solid var(--border)">
+        <textarea class="fi" id="an-notes" style="min-height:44px;resize:none;width:100%;font-size:11px;margin-bottom:8px" placeholder="Заметки..."></textarea>
+        <button class="bsv" style="width:100%;padding:7px" onclick="saveCurrentAnalysis(${z.id},${spend},${clicks},${reach},${ctr},${cpc},${cpm},${freq},${avgView},'${(z.buyer||'').replace(/'/g,'')}','${z.geo||''}','${(z.funnel||'').replace(/'/g,'')}','${from}','${to}')">💾 Сохранить</button>
+      </div>
+    </div>`
 }
 
 function recalcAnalysis(spend,clicks){
@@ -3381,17 +3346,18 @@ function recalcAnalysis(spend,clicks){
   const cpl=leads>0?Math.round(spend/leads*100)/100:0
   const ar=leads>0?Math.round(quals/leads*10000)/100:0
   const cql=quals>0?Math.round(spend/quals*100)/100:0
-  const cplColor=cpl>0&&cpl<10?'var(--green)':cpl<15?'var(--yellow)':cpl>0?'var(--red)':'#fff'
-  const crEl=document.getElementById('an-v-cr');if(crEl)crEl.textContent=cr+'%'
-  const cplEl=document.getElementById('an-v-cpl');if(cplEl){cplEl.textContent=cpl>0?'$'+cpl:'—';cplEl.style.color=cplColor}
-  const arEl=document.getElementById('an-v-ar');if(arEl)arEl.textContent=ar+'%'
-  const cqlEl=document.getElementById('an-v-cql');if(cqlEl)cqlEl.textContent=cql>0?'$'+cql:'—'
+  const cplC=cpl>0&&cpl<10?'#2ea043':cpl<15?'#e08040':cpl>0?'#e04050':'#fff'
+  const el=id=>document.getElementById(id)
+  if(el('an-v-cr'))el('an-v-cr').textContent=cr+'%'
+  if(el('an-v-cpl')){el('an-v-cpl').textContent=cpl>0?'$'+cpl:'—';el('an-v-cpl').style.color=cplC}
+  if(el('an-v-ar'))el('an-v-ar').textContent=ar+'%'
+  if(el('an-v-cql'))el('an-v-cql').textContent=cql>0?'$'+cql:'—'
 }
 
-async function saveAnalysis(zid,zname,spend,clicks,reach,ctr,cpc,cpm,freq,avgView,buyer,geo,funnel,from,to){
+async function saveCurrentAnalysis(zid,spend,clicks,reach,ctr,cpc,cpm,freq,avgView,buyer,geo,funnel,from,to){
+  const z=ZALIVS.find(x=>x.id===zid)
   const leads=parseInt(document.getElementById('an-i-leads')?.value)||0
   const quals=parseInt(document.getElementById('an-i-quals')?.value)||0
-  const eye=parseInt(document.getElementById('an-i-eye')?.value)||0
   const notes=document.getElementById('an-notes')?.value||''
   const cr=clicks>0?Math.round(leads/clicks*10000)/100:0
   const cpl=leads>0?Math.round(spend/leads*100)/100:0
@@ -3401,35 +3367,28 @@ async function saveAnalysis(zid,zname,spend,clicks,reach,ctr,cpc,cpm,freq,avgVie
   const monthKey=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
 
   const{data,error}=await db.from('rk_analyses').insert({
-    zaliv_id:zid,zaliv_name:zname,
+    zaliv_id:zid,zaliv_name:z?.name||'',
     period_from:from,period_to:to,
     reach,frequency:freq,cpm,avg_view_time:avgView,
-    clicks,cpc,ctr,spend,
-    leads,quals,cr,cpl,ar,cql,
-    buyer:buyer||CURRENT_USER?.name||'',
-    geo,funnel,notes,month_key:monthKey
+    clicks,cpc,ctr,spend,leads,quals,cr,cpl,ar,cql,
+    buyer:buyer||CURRENT_USER?.name||'',geo,funnel,notes,month_key:monthKey
   }).select().single()
 
   if(!error&&data){
     RK_ANALYSES.unshift(data)
-    renderAnalysisHistory()
     toast('Анализ сохранён ✓','ok')
-    // Remove new-form, show saved card
-    document.querySelector('.an-new-form')?.remove()
-    _anOpenIds.push(data.id)
-    renderOpenAnalyses()
+    renderAnTree()
+    selectAnZaliv(zid)
   }else{
     toast('Ошибка: '+(error?.message||'unknown'),'err')
-    console.error('saveAnalysis error:',error)
+    console.error(error)
   }
 }
 
-function loadAnalysis(id){
-  if(!_anOpenIds.includes(id)){
-    _anOpenIds.push(id)
-    renderOpenAnalyses()
-  }
-}
+// stubs
+function renderAnalysisHistory(){}
+function loadAnalysis(id){}
+function saveAnalysis(){}
 
 
 // ── INSIGHTS → Supabase ──
