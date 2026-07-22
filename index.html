@@ -3366,11 +3366,19 @@ async function loadAdsetResult(adsetId,z,from,to,adsets){
   const adsetName=adsetId==='all'?'Вся кампания':(adsets.find(a=>a.id===adsetId)?.name||adsetId)
   const ctrC=ctr>2?'#2ea043':ctr>1?'#e08040':'#e04050'
 
-  const cell=(l,v,col,input)=>`<div style="padding:6px 9px;border-bottom:1px solid var(--border)">
-    <div style="font-size:9px;color:var(--text3);margin-bottom:2px">${l}</div>
-    ${input||`<div style="font-size:12px;font-weight:700;color:${col||'#fff'};font-family:var(--mono)">${v}</div>`}
+  // Helper: editable cell (auto from Meta or manual)
+  const ecell=(label,id,val,auto,col)=>`<div style="padding:6px 9px;border-bottom:1px solid var(--border)">
+    <div style="font-size:9px;color:var(--text3);margin-bottom:3px;display:flex;align-items:center;gap:4px">
+      ${label}
+      ${auto?'<span style="font-size:8px;color:var(--purple);background:rgba(144,96,208,.15);padding:0 4px;border-radius:3px">Meta</span>':'<span style="font-size:8px;color:var(--text3);background:var(--bg4);padding:0 4px;border-radius:3px">ручной</span>'}
+    </div>
+    <input class="an-editable" id="${id}" type="number" step="0.01" value="${val}" oninput="recalcAnalysis()" style="width:80px;color:${col||'#fff'}">
   </div>`
-  const inp=(id,val)=>`<input class="an-editable" id="${id}" type="number" value="${val}" oninput="recalcAnalysis(${spend},${clicks})" style="width:70px">`
+  // Calculated cell (not editable)
+  const ccell=(label,id,hint)=>`<div style="padding:6px 9px;border-bottom:1px solid var(--border)">
+    <div style="font-size:9px;color:var(--text3);margin-bottom:3px">${label} <span style="font-size:8px;opacity:.5">${hint||''}</span></div>
+    <div id="${id}" style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">—</div>
+  </div>`
 
   res.innerHTML=`
     <div class="an-card">
@@ -3379,28 +3387,27 @@ async function loadAdsetResult(adsetId,z,from,to,adsets){
           <span class="zgeo gchip ${z.geo==='PL'?'gpl':'gplua'}" style="font-size:9px">${z.geo}</span>
           <span style="font-size:11px;font-weight:700;color:#fff">${adsetName}</span>
         </div>
-        <span style="font-size:12px;font-weight:700;color:#e08040;font-family:var(--mono)">$${spend}</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:9px;color:var(--text3)">Spend</span>
+          <input class="an-editable" id="an-i-spend" type="number" step="0.01" value="${spend}" oninput="recalcAnalysis()" style="width:80px;color:#e08040">
+        </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr">
-        ${cell('Охват',reach.toLocaleString('ru'))}
-        ${cell('Клики',clicks.toLocaleString('ru'))}
-        ${cell('Лиды','0','#2ea043',inp('an-i-leads',0))}
-        ${cell('AmFreq',freq)}
-        ${cell('CPC $','$'+cpc)}
-        ${cell('CR %','0%'+'<span id="an-v-cr" style="display:none">0</span>','','<div id="an-v-cr" style="font-size:12px;font-weight:700;font-family:var(--mono)">0%</div>')}
-        ${cell('PeriodFreq',freq)}
-        ${cell('CTR %',ctr+'%',ctrC)}
-        ${cell('CPL $','—','','<div id="an-v-cpl" style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">—</div>')}
-        ${cell('CPM $','$'+cpm)}
-        ${cell('','')}
-        ${cell('AR %','—','','<div id="an-v-ar" style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">0%</div>')}
-        ${cell('Ср.вр (с)',avgView)}
-        ${cell('','')}
-        ${cell('CQL $','—','','<div id="an-v-cql" style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">—</div>')}
-        <div style="grid-column:1/-1;padding:6px 9px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--border)">
-          <span style="font-size:9px;color:var(--text3)">Квалы</span>
-          <input class="an-editable" id="an-i-quals" type="number" value="0" oninput="recalcAnalysis(${spend},${clicks})" style="width:60px">
-        </div>
+        ${ecell('Охват','an-i-reach',reach,true)}
+        ${ecell('Клики','an-i-clicks',clicks,true)}
+        ${ecell('Лиды','an-i-leads',0,false,'#2ea043')}
+        ${ecell('AmFreq (ввод)','an-i-amfreq',0,false)}
+        ${ecell('CPC $','an-i-cpc',cpc,true)}
+        ${ccell('CR %','an-v-cr','= Лиды/Клики×100')}
+        ${ecell('PeriodFreq','an-i-freq',freq,true)}
+        ${ecell('CTR %','an-i-ctr',ctr,true)}
+        ${ccell('CPL $','an-v-cpl','= Spend/Лиды')}
+        ${ecell('CPM $','an-i-cpm',cpm,true)}
+        ${ecell('Ср.вр (с)','an-i-viewtime',avgView,true)}
+        ${ccell('AR %','an-v-ar','= Квалы/Лиды×100')}
+        ${ecell('Квалы','an-i-quals',0,false)}
+        <div style="padding:6px 9px;border-bottom:1px solid var(--border)"></div>
+        ${ccell('CQL $','an-v-cql','= Spend/Квалы')}
       </div>
       <div style="padding:8px 10px;border-top:1px solid var(--border)">
         <textarea class="fi" id="an-notes" style="min-height:44px;resize:none;width:100%;font-size:11px;margin-bottom:8px" placeholder="Заметки..."></textarea>
@@ -3410,9 +3417,12 @@ async function loadAdsetResult(adsetId,z,from,to,adsets){
 }
 
 
-function recalcAnalysis(spend,clicks){
-  const leads=parseInt(document.getElementById('an-i-leads')?.value)||0
-  const quals=parseInt(document.getElementById('an-i-quals')?.value)||0
+function recalcAnalysis(){
+  const v=id=>parseFloat(document.getElementById(id)?.value)||0
+  const spend=v('an-i-spend')
+  const clicks=v('an-i-clicks')
+  const leads=v('an-i-leads')
+  const quals=v('an-i-quals')
   const cr=clicks>0?Math.round(leads/clicks*10000)/100:0
   const cpl=leads>0?Math.round(spend/leads*100)/100:0
   const ar=leads>0?Math.round(quals/leads*10000)/100:0
@@ -3425,10 +3435,20 @@ function recalcAnalysis(spend,clicks){
   if(el('an-v-cql'))el('an-v-cql').textContent=cql>0?'$'+cql:'—'
 }
 
-async function saveCurrentAnalysis(zid,spend,clicks,reach,ctr,cpc,cpm,freq,avgView,buyer,geo,funnel,from,to,adsetId,adsetName){
+async function saveCurrentAnalysis(zid,spendArg,clicksArg,reachArg,ctrArg,cpcArg,cpmArg,freqArg,avgViewArg,buyer,geo,funnel,from,to,adsetId,adsetName){
   const z=ZALIVS.find(x=>x.id===zid)
-  const leads=parseInt(document.getElementById('an-i-leads')?.value)||0
-  const quals=parseInt(document.getElementById('an-i-quals')?.value)||0
+  const vv=id=>parseFloat(document.getElementById(id)?.value)||0
+  const spend=vv('an-i-spend')||spendArg
+  const clicks=vv('an-i-clicks')||clicksArg
+  const reach=vv('an-i-reach')||reachArg
+  const ctr=vv('an-i-ctr')||ctrArg
+  const cpc=vv('an-i-cpc')||cpcArg
+  const cpm=vv('an-i-cpm')||cpmArg
+  const freq=vv('an-i-freq')||freqArg
+  const avgView=vv('an-i-viewtime')||avgViewArg
+  const amfreq=vv('an-i-amfreq')
+  const leads=vv('an-i-leads')
+  const quals=vv('an-i-quals')
   const notes=document.getElementById('an-notes')?.value||''
   const cr=clicks>0?Math.round(leads/clicks*10000)/100:0
   const cpl=leads>0?Math.round(spend/leads*100)/100:0
