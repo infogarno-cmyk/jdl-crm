@@ -3279,65 +3279,136 @@ async function generateAnalysis(){
   if(!wrap)return
   wrap.innerHTML='<div class="empty" style="padding:16px">⏳ Загрузка из Meta...</div>'
 
-  var meta=null,metaVideo=null
-  if(z.campaign_id){
+  if(!z.campaign_id){
+    wrap.innerHTML='<div class="empty" style="padding:16px;color:#e08040">⚠ Нет Campaign ID — введи в редактировании залива</div>'
+    return
+  }
+
+  // Fetch adsets first
+  var adsets=[]
+  try{
+    const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
+      method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
+      body:JSON.stringify({action:'get_adsets',campaign_id:z.campaign_id})
+    })
+    const d=await r.json()
+    if(d.ok)adsets=d.adsets||[]
+  }catch(e){console.error(e)}
+
+  // Show adset selector + load all insights in parallel
+  wrap.innerHTML=`<div style="margin-bottom:10px">
+    <div class="elb" style="margin-bottom:5px">Адсеты (${adsets.length})</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="pb active" onclick="selectAdsetView('all',${zalivId},'${from}','${to}')" data-adset="all">Все / кампания</button>
+      ${adsets.map(a=>`<button class="pb" onclick="selectAdsetView('${a.id}',${zalivId},'${from}','${to}')" data-adset="${a.id}" title="${a.name}">${a.name.slice(0,25)}${a.name.length>25?'...':''}</button>`).join('')}
+    </div>
+    <div id="an-adset-result"></div>
+  </div>`
+
+  // Auto-load campaign-level
+  await loadAdsetResult('all',z,from,to,adsets)
+}
+
+async function selectAdsetView(adsetId,zalivId,from,to){
+  document.querySelectorAll('[data-adset]').forEach(b=>{
+    b.classList.toggle('active',b.dataset.adset===adsetId)
+  })
+  const z=ZALIVS.find(x=>x.id===zalivId)
+  if(!z)return
+  // Get adsets list from DOM buttons
+  const adsets=[...document.querySelectorAll('[data-adset]:not([data-adset="all"])')]
+    .map(b=>({id:b.dataset.adset,name:b.title||b.textContent}))
+  await loadAdsetResult(adsetId,z,from,to,adsets)
+}
+
+async function loadAdsetResult(adsetId,z,from,to,adsets){
+  const res=document.getElementById('an-adset-result')
+  if(!res)return
+  res.innerHTML='<div class="empty" style="padding:10px">⏳ Загрузка...</div>'
+
+  var meta=null
+  if(adsetId==='all'){
+    // Campaign level
     try{
-      const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since:from,until:to})})
+      const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
+        method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
+        body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since:from,until:to})
+      })
       const d=await r.json();if(d.ok)meta=d
     }catch(e){}
     try{
-      const r2=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_campaign_video',campaign_id:z.campaign_id,since:from,until:to})})
-      const d2=await r2.json();if(d2.ok)metaVideo=d2
+      const r2=await fetch(SB_URL+'/functions/v1/get-campaigns',{
+        method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
+        body:JSON.stringify({action:'get_campaign_video',campaign_id:z.campaign_id,since:from,until:to})
+      })
+      const d2=await r2.json()
+      if(d2.ok&&meta){meta.frequency=d2.frequency;meta.avg_view_time=d2.avg_view_time}
+    }catch(e){}
+  }else{
+    // Adset level
+    try{
+      const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
+        method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
+        body:JSON.stringify({action:'get_adset_insights',adset_id:adsetId,since:from,until:to})
+      })
+      const d=await r.json();if(d.ok)meta=d
     }catch(e){}
   }
 
   const spend=meta?meta.spend:0
   const clicks=meta?meta.clicks:0
-  const reach=meta?meta.impressions:0
+  const reach=meta?(meta.reach||meta.impressions||0):0
   const ctr=meta?meta.ctr:0
-  const cpc=meta&&clicks>0?Math.round(spend/clicks*100)/100:0
-  const cpm=meta&&reach>0?Math.round(spend/reach*1000*100)/100:0
-  const freq=metaVideo?.frequency||0
-  const avgView=metaVideo?.avg_view_time||0
+  const cpc=meta?meta.cpc:0
+  const cpm=meta?meta.cpm:0
+  const freq=meta?meta.frequency||0:0
+  const avgView=meta?meta.avg_view_time||0:0
+  const adsetName=adsetId==='all'?'Вся кампания':(adsets.find(a=>a.id===adsetId)?.name||adsetId)
   const ctrC=ctr>2?'#2ea043':ctr>1?'#e08040':'#e04050'
 
-  wrap.innerHTML=`
+  const cell=(l,v,col,input)=>`<div style="padding:6px 9px;border-bottom:1px solid var(--border)">
+    <div style="font-size:9px;color:var(--text3);margin-bottom:2px">${l}</div>
+    ${input||`<div style="font-size:12px;font-weight:700;color:${col||'#fff'};font-family:var(--mono)">${v}</div>`}
+  </div>`
+  const inp=(id,val)=>`<input class="an-editable" id="${id}" type="number" value="${val}" oninput="recalcAnalysis(${spend},${clicks})" style="width:70px">`
+
+  res.innerHTML=`
     <div class="an-card">
-      <div style="background:var(--bg3);padding:8px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div style="background:var(--bg3);padding:7px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
         <div style="display:flex;align-items:center;gap:8px">
           <span class="zgeo gchip ${z.geo==='PL'?'gpl':'gplua'}" style="font-size:9px">${z.geo}</span>
-          <span style="font-size:11px;font-weight:700;color:#fff;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${z.name}</span>
+          <span style="font-size:11px;font-weight:700;color:#fff">${adsetName}</span>
         </div>
         <span style="font-size:12px;font-weight:700;color:#e08040;font-family:var(--mono)">$${spend}</span>
       </div>
-      ${!z.campaign_id?'<div style="padding:6px 10px;font-size:10px;color:#e08040;border-bottom:1px solid var(--border)">⚠ Нет Campaign ID — введи в редактировании залива</div>':''}
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--border)">
-        <div style="padding:6px 9px;border-bottom:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">Охват</div><div style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">${reach.toLocaleString('ru')}</div></div>
-        <div style="padding:6px 9px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">Клики</div><div style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">${clicks.toLocaleString('ru')}</div></div>
-        <div style="padding:6px 9px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">Лиды</div><input class="an-editable" id="an-i-leads" type="number" value="0" oninput="recalcAnalysis(${spend},${clicks})" style="width:70px"></div>
-        <div style="padding:6px 9px;border-bottom:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">AmFreq</div><div style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">${freq}</div></div>
-        <div style="padding:6px 9px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">CPC $</div><div style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">$${cpc}</div></div>
-        <div style="padding:6px 9px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">CR %</div><div style="font-size:12px;font-weight:700;font-family:var(--mono)" id="an-v-cr">0%</div></div>
-        <div style="padding:6px 9px;border-bottom:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">PeriodFreq</div><div style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">${freq}</div></div>
-        <div style="padding:6px 9px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">CTR %</div><div style="font-size:12px;font-weight:700;font-family:var(--mono);color:${ctrC}">${ctr}%</div></div>
-        <div style="padding:6px 9px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">CPL $</div><div style="font-size:12px;font-weight:700;font-family:var(--mono)" id="an-v-cpl">—</div></div>
-        <div style="padding:6px 9px;border-bottom:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">CPM $</div><div style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">$${cpm}</div></div>
-        <div style="padding:6px 9px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)"></div>
-        <div style="padding:6px 9px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">AR %</div><div style="font-size:12px;font-weight:700;font-family:var(--mono)" id="an-v-ar">0%</div></div>
-        <div style="padding:6px 9px;border-bottom:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">Ср.вр (с)</div><div style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">${avgView}</div></div>
-        <div style="padding:6px 9px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)"></div>
-        <div style="padding:6px 9px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">CQL $</div><div style="font-size:12px;font-weight:700;font-family:var(--mono)" id="an-v-cql">—</div></div>
-        <div style="grid-column:1/-1;padding:6px 9px;display:flex;align-items:center;gap:10px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr">
+        ${cell('Охват',reach.toLocaleString('ru'))}
+        ${cell('Клики',clicks.toLocaleString('ru'))}
+        ${cell('Лиды','0','#2ea043',inp('an-i-leads',0))}
+        ${cell('AmFreq',freq)}
+        ${cell('CPC $','$'+cpc)}
+        ${cell('CR %','0%'+'<span id="an-v-cr" style="display:none">0</span>','','<div id="an-v-cr" style="font-size:12px;font-weight:700;font-family:var(--mono)">0%</div>')}
+        ${cell('PeriodFreq',freq)}
+        ${cell('CTR %',ctr+'%',ctrC)}
+        ${cell('CPL $','—','','<div id="an-v-cpl" style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">—</div>')}
+        ${cell('CPM $','$'+cpm)}
+        ${cell('','')}
+        ${cell('AR %','—','','<div id="an-v-ar" style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">0%</div>')}
+        ${cell('Ср.вр (с)',avgView)}
+        ${cell('','')}
+        ${cell('CQL $','—','','<div id="an-v-cql" style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">—</div>')}
+        <div style="grid-column:1/-1;padding:6px 9px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--border)">
           <span style="font-size:9px;color:var(--text3)">Квалы</span>
           <input class="an-editable" id="an-i-quals" type="number" value="0" oninput="recalcAnalysis(${spend},${clicks})" style="width:60px">
         </div>
       </div>
       <div style="padding:8px 10px;border-top:1px solid var(--border)">
         <textarea class="fi" id="an-notes" style="min-height:44px;resize:none;width:100%;font-size:11px;margin-bottom:8px" placeholder="Заметки..."></textarea>
-        <button class="bsv" style="width:100%;padding:7px" onclick="saveCurrentAnalysis(${z.id},${spend},${clicks},${reach},${ctr},${cpc},${cpm},${freq},${avgView},'${(z.buyer||'').replace(/'/g,'')}','${z.geo||''}','${(z.funnel||'').replace(/'/g,'')}','${from}','${to}')">💾 Сохранить</button>
+        <button class="bsv" style="width:100%;padding:7px" onclick="saveCurrentAnalysis(${z.id},${spend},${clicks},${reach},${ctr},${cpc},${cpm},${freq},${avgView},'${(z.buyer||'').replace(/'/g,'')}','${z.geo||''}','${(z.funnel||'').replace(/'/g,'')}','${from}','${to}','${adsetId==='all'?'':adsetId}','${adsetName.replace(/'/g,'').slice(0,50)}')">💾 Сохранить</button>
       </div>
     </div>`
 }
+
 
 function recalcAnalysis(spend,clicks){
   const leads=parseInt(document.getElementById('an-i-leads')?.value)||0
@@ -3354,7 +3425,7 @@ function recalcAnalysis(spend,clicks){
   if(el('an-v-cql'))el('an-v-cql').textContent=cql>0?'$'+cql:'—'
 }
 
-async function saveCurrentAnalysis(zid,spend,clicks,reach,ctr,cpc,cpm,freq,avgView,buyer,geo,funnel,from,to){
+async function saveCurrentAnalysis(zid,spend,clicks,reach,ctr,cpc,cpm,freq,avgView,buyer,geo,funnel,from,to,adsetId,adsetName){
   const z=ZALIVS.find(x=>x.id===zid)
   const leads=parseInt(document.getElementById('an-i-leads')?.value)||0
   const quals=parseInt(document.getElementById('an-i-quals')?.value)||0
@@ -3366,13 +3437,21 @@ async function saveCurrentAnalysis(zid,spend,clicks,reach,ctr,cpc,cpm,freq,avgVi
   const now=new Date()
   const monthKey=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
 
-  const{data,error}=await db.from('rk_analyses').insert({
+  const payload={
     zaliv_id:zid,zaliv_name:z?.name||'',
     period_from:from,period_to:to,
     reach,frequency:freq,cpm,avg_view_time:avgView,
     clicks,cpc,ctr,spend,leads,quals,cr,cpl,ar,cql,
     buyer:buyer||CURRENT_USER?.name||'',geo,funnel,notes,month_key:monthKey
-  }).select().single()
+  }
+  // Save to adset_analyses if adset selected
+  if(adsetId&&adsetId!=='all'&&adsetId!=='undefined'){
+    await db.from('adset_analyses').insert({
+      ...payload,campaign_id:ZALIVS.find(x=>x.id===zid)?.campaign_id||'',
+      adset_id:adsetId,adset_name:adsetName||''
+    })
+  }
+  const{data,error}=await db.from('rk_analyses').insert(payload).select().single()
 
   if(!error&&data){
     RK_ANALYSES.unshift(data)
