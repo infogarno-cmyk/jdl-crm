@@ -97,6 +97,11 @@ html,body{height:100%;overflow:hidden;max-width:100vw;font-family:var(--sans);ba
 .tpb{width:3px;height:28px;border-radius:2px;flex-shrink:0}.tmt{flex:1;font-weight:500}.tms{font-size:10px;padding:2px 7px;border-radius:3px;font-weight:600}
 .ts-todo{background:var(--bg4);color:var(--text3)}.ts-proc{background:var(--yellow-bg);color:var(--yellow)}.tma{font-size:10px;color:var(--text3);background:var(--bg4);padding:2px 6px;border-radius:10px;border:1px solid var(--border)}
 .cwrap{position:relative}.ccanv{display:block;width:100%;cursor:crosshair}
+.chleg{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3);cursor:pointer;padding:2px 6px;border-radius:4px;transition:all .15s;position:relative}
+.chleg::before{content:'';width:14px;height:2px;background:var(--cc,#fff);display:inline-block;border-radius:2px;flex-shrink:0}
+.chleg.active{color:#fff}
+.chleg:not(.active){opacity:.3}
+.chleg:hover{opacity:1}
 .ctt{position:absolute;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:8px 12px;font-size:11px;pointer-events:none;display:none;z-index:10;min-width:150px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
 .ctt strong{color:#fff;display:block;margin-bottom:4px}.ctrow{display:flex;justify-content:space-between;gap:16px;margin-bottom:2px}.ctl{color:var(--text3)}.ctv{font-family:var(--mono);font-weight:600}
 .fhdr{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}.fhtit{font-size:18px;font-weight:800;color:#fff}.fhcnt{font-size:13px;color:var(--bord2);font-weight:700;font-family:var(--mono)}
@@ -340,6 +345,11 @@ document.getElementById('root').innerHTML=`
     <div class="page active" id="page-dash">
       <div class="pbar">
         <div class="pdates"><div class="pdw">📅<input type="date" class="pdi" id="pd-from"></div><span class="pdash">—</span><div class="pdw">📅<input type="date" class="pdi" id="pd-to"></div></div>
+        <select class="fsel" id="df-buyer" onchange="rdash()" style="margin-right:8px">
+          <option value="">👥 Общий</option>
+          <option value="Illia">Illia</option>
+          <option value="Danya">Danya</option>
+        </select>
         <div class="pbtns"><button class="pb active" data-days="1">1 день</button><button class="pb" data-days="3">3 дня</button><button class="pb" data-days="7">Неделя</button><button class="pb" data-days="14">2 нед.</button><button class="pb" data-days="30">Месяц</button><button class="pb" data-days="90">Квартал</button><button class="pb" data-days="365">Год</button><button class="pb" data-days="0">Всё</button></div>
       </div>
       <div class="krow">
@@ -357,7 +367,12 @@ document.getElementById('root').innerHTML=`
       <div class="card" style="margin-bottom:12px"><div class="chdr"><span class="ctit">Sales</span><span class="clnk" id="lnk-sales">Все →</span></div><div id="d-sales-kpi" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"></div></div>
       <div class="card" style="margin-bottom:12px"><div class="chdr"><span class="ctit">Активные задачи</span><span class="clnk" id="lnk-tasks">Все →</span></div><div id="d-tasks"></div></div>
       <div class="card">
-        <div class="chdr"><span class="ctit">Динамика CPL / CQL / CTR</span><div style="display:flex;gap:10px"><span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:14px;height:2px;background:#4080ff;display:inline-block;border-radius:2px"></span>CPL</span><span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:14px;height:2px;background:#d4a017;display:inline-block;border-radius:2px"></span>CQL</span><span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:14px;height:2px;background:#2ea043;display:inline-block;border-radius:2px"></span>CTR</span></div></div>
+        <div class="chdr"><span class="ctit">Динамика</span><div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="chleg active" data-cmet="cpl" style="--cc:#4080ff">CPL</span>
+          <span class="chleg active" data-cmet="cql" style="--cc:#d4a017">CQL</span>
+          <span class="chleg active" data-cmet="ctr" style="--cc:#2ea043">CTR</span>
+          <span class="chleg active" data-cmet="spend" style="--cc:#e04050">Spend</span>
+        </div></div>
         <div class="cwrap"><canvas id="dyn-chart" class="ccanv" height="130"></canvas><div class="ctt" id="chart-tt"></div></div>
       </div>
     </div>
@@ -761,6 +776,25 @@ document.addEventListener('keydown',e=>{
 })
 const dcc=document.getElementById('dyn-chart')
 dcc.addEventListener('mousemove',chartMouseMove)
+  // Wire legend toggles
+  document.querySelectorAll('.chleg').forEach(el=>{
+    if(el._clegBound)return;el._clegBound=true
+    el.addEventListener('mouseenter',()=>{
+      // Dim all except this
+      document.querySelectorAll('.chleg').forEach(b=>b.style.opacity=b===el?'1':'0.2')
+      const k=el.dataset.cmet
+      // highlight on chart via focused redraw
+      renderChartFocused(k)
+    })
+    el.addEventListener('mouseleave',()=>{
+      document.querySelectorAll('.chleg').forEach(b=>b.style.opacity='')
+      renderChart(false)
+    })
+    el.addEventListener('click',()=>{
+      el.classList.toggle('active')
+      renderChart(false)
+    })
+  })
 dcc.addEventListener('mouseleave',()=>document.getElementById('chart-tt').style.display='none')
 window.addEventListener('resize',()=>{if(chartData)drawChart(chartData)})
 
@@ -959,13 +993,43 @@ function rdash(){
 }
 
 // ── CHART ──
+function renderChartFocused(focusKey){
+  if(!chartData||!chartData.length)return
+  const rows=chartData,cv=document.getElementById('dyn-chart'),ctx=cv.getContext('2d')
+  const W=cv.width,H=cv.height,P={t:10,b:22,l:10,r:10},cw=W-P.l-P.r,ch=H-P.t-P.b
+  ctx.clearRect(0,0,W,H)
+  const allS=[
+    {k:'cpl',d:rows.map(r=>parseFloat(r.cpl)||0),c:'#4080ff'},
+    {k:'cql',d:rows.map(r=>parseFloat(r.cql)||0),c:'#d4a017'},
+    {k:'ctr',d:rows.map(r=>parseFloat(r.ctr)||0),c:'#2ea043'},
+    {k:'spend',d:rows.map(r=>parseFloat(r.spend_pl||0)+parseFloat(r.spend_plua||0)),c:'#e04050'}
+  ]
+  allS.forEach(s=>{s.mn=Math.min(...s.d);s.mx=Math.max(...s.d);if(s.mx===s.mn)s.mx=s.mn+1})
+  const n=rows.length,xs=n>1?cw/(n-1):0,px=i=>P.l+i*xs,py=(v,s)=>P.t+ch*(1-(v-s.mn)/(s.mx-s.mn))
+  allS.forEach(s=>{
+    const isFocus=s.k===focusKey
+    ctx.globalAlpha=isFocus?1:0.1
+    ctx.beginPath();ctx.moveTo(px(0),py(s.d[0],s))
+    for(let i=1;i<n;i++)ctx.lineTo(px(i),py(s.d[i],s))
+    ctx.strokeStyle=s.c;ctx.lineWidth=isFocus?2.5:1;ctx.stroke()
+    ctx.globalAlpha=1
+  })
+}
+
 function drawChart(rows){chartData=rows;const c=document.getElementById('dyn-chart');if(!c)return;c.width=c.parentElement.offsetWidth||600;c.height=130;renderChart(true)}
 function renderChart(animate=false){
   if(!chartData||!chartData.length)return
   const rows=chartData,c=document.getElementById('dyn-chart'),ctx=c.getContext('2d')
   const W=c.width,H=c.height,P={t:10,b:22,l:10,r:10},cw=W-P.l-P.r,ch=H-P.t-P.b
   ctx.clearRect(0,0,W,H)
-  const S=[{d:rows.map(r=>parseFloat(r.cpl)||0),c:'#4080ff',l:'CPL'},{d:rows.map(r=>parseFloat(r.cql)||0),c:'#d4a017',l:'CQL'},{d:rows.map(r=>parseFloat(r.ctr)||0),c:'#2ea043',l:'CTR'}]
+  const activeMets=new Set([...(document.querySelectorAll('.chleg.active')||[])].map(el=>el.dataset.cmet))
+  const allS=[
+    {k:'cpl',d:rows.map(r=>parseFloat(r.cpl)||0),c:'#4080ff',l:'CPL'},
+    {k:'cql',d:rows.map(r=>parseFloat(r.cql)||0),c:'#d4a017',l:'CQL'},
+    {k:'ctr',d:rows.map(r=>parseFloat(r.ctr)||0),c:'#2ea043',l:'CTR'},
+    {k:'spend',d:rows.map(r=>parseFloat(r.spend_pl||0)+parseFloat(r.spend_plua||0)),c:'#e04050',l:'Spend'}
+  ]
+  const S=allS.filter(s=>activeMets.size===0||activeMets.has(s.k))
   S.forEach(s=>{s.mn=Math.min(...s.d);s.mx=Math.max(...s.d);if(s.mx===s.mn)s.mx=s.mn+1})
   const n=rows.length,xs=n>1?cw/(n-1):0,px=i=>P.l+i*xs,py=(v,s)=>P.t+ch*(1-(v-s.mn)/(s.mx-s.mn))
   ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1
@@ -1969,8 +2033,15 @@ async function importCampaignsFromMeta(){
       const budget=parseFloat(camp.daily_budget||0)/100||0
 
       // Check if zaliv with exact same name already exists
-      // Normalize names for comparison - strip whitespace, dashes, special chars
+      // Normalize names for comparison
       const normName=n=>n.trim().replace(/\s+/g,' ').toLowerCase()
+      // Find match but ensure campaign_id not already used by another zaliv
+      const campIdStr=String(camp.id)
+      const alreadyAssigned=ZALIVS.find(z=>z.campaign_id===campIdStr&&z.name.trim()!==camp.name.trim())
+      if(alreadyAssigned){
+        console.log('campaign_id already assigned to different zaliv:',alreadyAssigned.name)
+        replaced++; continue
+      }
       const existing=ZALIVS.find(z=>normName(z.name)===normName(camp.name))
 
       if(existing){
@@ -3012,20 +3083,26 @@ async function autoMatchCampaignIds(){
     if(!d.campaigns?.length){setSS('ok','—');return}
 
     let matched=0
-    for(const z of ZALIVS){
-      if(z.campaign_id)continue // already has ID
-      // Match by name similarity
-      const match=d.campaigns.find(camp=>{
-        const cn=camp.name.toLowerCase().replace(/\s+/g,'')
-        const zn=z.name.toLowerCase().replace(/\s+/g,'')
-        // Check if names are similar enough (first 20 chars)
-        return cn.slice(0,20)===zn.slice(0,20)||zn.includes(cn.slice(0,15))||cn.includes(zn.slice(0,15))
+    // Track which campaign_ids have already been assigned
+    const usedCampIds=new Set(ZALIVS.filter(z=>z.campaign_id).map(z=>z.campaign_id))
+
+    for(const camp of d.campaigns){
+      // Skip if this campaign_id already assigned to any zaliv
+      if(usedCampIds.has(String(camp.id)))continue
+
+      // Find first zaliv without campaign_id that matches this campaign name
+      const normCamp=camp.name.toLowerCase().replace(/\s+/g,'').slice(0,25)
+      const match=ZALIVS.find(z=>{
+        if(z.campaign_id)return false // already has ID
+        const normZ=z.name.toLowerCase().replace(/\s+/g,'').slice(0,25)
+        return normZ===normCamp||normZ.includes(normCamp.slice(0,15))||normCamp.includes(normZ.slice(0,15))
       })
       if(match){
-        await db.from('zalivs').update({campaign_id:String(match.id)}).eq('id',z.id)
-        z.campaign_id=String(match.id)
+        await db.from('zalivs').update({campaign_id:String(camp.id)}).eq('id',match.id)
+        match.campaign_id=String(camp.id)
+        usedCampIds.add(String(camp.id))
         matched++
-        console.log('Matched:',z.name,'→',match.id)
+        console.log('Matched:',match.name,'→',camp.id)
       }
     }
     setSS('ok',matched>0?`Сопоставлено ${matched} кампаний`:'Нет новых совпадений')
@@ -3069,11 +3146,18 @@ function renderAnTree(){
   // Use all zalivs + analyses
   const geo_yr_month = {}
 
-  // From analyses
+  // From analyses - group by period_from month, not created_at
   RK_ANALYSES.forEach(a=>{
     const geo=a.geo||'?'
-    const yr=a.month_key?.split('-')[0]||'2026'
-    const mo=a.month_key||'?'
+    // Use period_from to determine month (when the campaign ran)
+    let mo=a.month_key||'?'
+    if(a.period_from){
+      // period_from format: YYYY-MM-DD or DD.MM.YYYY
+      let pf=a.period_from
+      if(pf.includes('.')){const p=pf.split('.');const yr2=new Date().getFullYear();pf=`${yr2}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`}
+      mo=pf.slice(0,7) // YYYY-MM
+    }
+    const yr=mo.split('-')[0]||'2026'
     const zid=a.zaliv_id
     if(!geo_yr_month[geo])geo_yr_month[geo]={}
     if(!geo_yr_month[geo][yr])geo_yr_month[geo][yr]={}
@@ -3174,40 +3258,41 @@ function renderAnalysisCard(a){
     <div style="font-size:9px;color:var(--text3);margin-bottom:2px">${l}</div>
     <div style="font-size:12px;font-weight:700;color:${col||'#fff'};font-family:var(--mono)">${v}</div>
   </div>`
+  const adsetLabel=a.adset_name&&a.adset_name!=='null'?'📊 '+a.adset_name:a.adset_id&&a.adset_id!=='null'?'Адсет: '+a.adset_id:'Вся кампания'
+  const adsetColor=a.adset_name&&a.adset_name!=='null'?'var(--purple)':'var(--text3)'
   return`
-    <div style="background:var(--bg3);padding:7px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-      <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">${a.period_from||''}→${a.period_to||''}</span>
-      <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:12px;font-weight:700;color:#e08040;font-family:var(--mono)">$${a.spend}</span>
-        <button onclick="toggleAnCard(${a.id})" title="Свернуть" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;line-height:1;padding:0">⊟</button>
+    <div style="background:var(--bg3);padding:7px 10px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+        <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">${a.period_from||''}→${a.period_to||''}</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-family:var(--mono);font-weight:800;color:#e08040">$${a.spend}</span>
+          <button onclick="editAnalysis(${a.id})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0" title="Редактировать">✏️</button>
+          <button onclick="toggleAnCard(${a.id})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;line-height:1;padding:0" title="Свернуть">⊟</button>
+        </div>
       </div>
+      <div style="font-size:10px;color:${adsetColor};font-weight:600">${adsetLabel}</div>
     </div>
     <div id="an-body-${a.id}">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--border)">
         ${cell('Охват',(a.reach||0).toLocaleString('ru'))}
         ${cell('Клики',(a.clicks||0).toLocaleString('ru'))}
         ${cell('Лиды',a.leads||0,'#2ea043')}
-        ${cell('AmFreq',a.frequency||0)}
+        ${cell('AmFreq',a.amfreq||a.frequency||0)}
         ${cell('CPC $','$'+(a.cpc||0))}
         ${cell('CR %',(a.cr||0)+'%',ctrC)}
         ${cell('PeriodFreq',a.frequency||0)}
         ${cell('CTR %',(a.ctr||0)+'%',ctrC)}
         ${cell('CPL $','$'+(a.cpl||0),cplC)}
         ${cell('CPM $','$'+(a.cpm||0))}
-        ${cell('','')}
-        ${cell('AR %',(a.ar||0)+'%')}
         ${cell('Ср.вр (с)',a.avg_view_time||0)}
-        ${cell('','')}
+        ${cell('AR %',(a.ar||0)+'%')}
+        ${cell('Квалы',a.quals||0)}
+        <div style="padding:6px 9px;border-bottom:1px solid var(--border)"></div>
         ${cell('CQL $','$'+(a.cql||0))}
-        <div style="grid-column:1/-1;padding:5px 9px;border-top:1px solid var(--border)">
-          <span style="font-size:10px;color:var(--text3)">Квалы — </span>
-          <span style="font-size:12px;font-weight:700;color:#fff;font-family:var(--mono)">${a.quals||0}</span>
-          ${a.notes?`<span style="font-size:10px;color:var(--text3);margin-left:12px;font-style:italic">${a.notes}</span>`:''}
-        </div>
+        ${a.notes?`<div style="grid-column:1/-1;padding:7px 10px;font-size:11px;color:var(--text3);font-style:italic;border-top:1px solid var(--border)">${a.notes}</div>`:''}
       </div>
     </div>`
 }
-
 function toggleAnCard(id){
   const body=document.getElementById('an-body-'+id)
   if(!body)return
@@ -3277,7 +3362,13 @@ async function generateAnalysis(){
   if(!from||!to){toast('Укажи период','err');return}
   const wrap=document.getElementById('an-results-wrap')
   if(!wrap)return
-  wrap.innerHTML='<div class="empty" style="padding:16px">⏳ Загрузка из Meta...</div>'
+  // Show existing analyses for this zaliv above the form
+  const existingAnalyses=RK_ANALYSES.filter(a=>a.zaliv_id===zalivId)
+  const existingHtml=existingAnalyses.length
+    ?`<div style="margin-bottom:12px"><div class="elb" style="margin-bottom:6px">Предыдущие анализы (${existingAnalyses.length})</div>
+       <div class="an-cards-grid">${existingAnalyses.map(a=>`<div class="an-card">${renderAnalysisCard(a)}</div>`).join('')}</div></div>`
+    :''
+  wrap.innerHTML=existingHtml+'<div class="empty" style="padding:16px">⏳ Загрузка из Meta...</div>'
 
   if(!z.campaign_id){
     wrap.innerHTML='<div class="empty" style="padding:16px;color:#e08040">⚠ Нет Campaign ID — введи в редактировании залива</div>'
@@ -3457,12 +3548,22 @@ async function saveCurrentAnalysis(zid,spendArg,clicksArg,reachArg,ctrArg,cpcArg
   const now=new Date()
   const monthKey=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
 
+  // Determine month from period_from (when campaign ran)
+  let periodMonthKey=monthKey
+  if(from){
+    let pf=from
+    if(pf.includes('.')){const p=pf.split('.');const yr2=new Date().getFullYear();pf=`${yr2}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`}
+    periodMonthKey=pf.slice(0,7)
+  }
   const payload={
     zaliv_id:zid,zaliv_name:z?.name||'',
     period_from:from,period_to:to,
     reach,frequency:freq,cpm,avg_view_time:avgView,
     clicks,cpc,ctr,spend,leads,quals,cr,cpl,ar,cql,
-    buyer:buyer||CURRENT_USER?.name||'',geo,funnel,notes,month_key:monthKey
+    buyer:buyer||CURRENT_USER?.name||'',geo,funnel,notes,
+    month_key:periodMonthKey,
+    adset_id:adsetId&&adsetId!=='all'&&adsetId!=='undefined'?adsetId:null,
+    adset_name:adsetName&&adsetName!=='Вся кампания'?adsetName:null
   }
   // Save to adset_analyses if adset selected
   if(adsetId&&adsetId!=='all'&&adsetId!=='undefined'){
@@ -3488,6 +3589,106 @@ async function saveCurrentAnalysis(zid,spendArg,clicksArg,reachArg,ctrArg,cpcArg
 function renderAnalysisHistory(){}
 function loadAnalysis(id){}
 function saveAnalysis(){}
+
+// Edit existing analysis
+function editAnalysis(id){
+  const a=RK_ANALYSES.find(x=>x.id===id)
+  if(!a)return
+  const content=document.getElementById('an-content')
+  if(!content)return
+
+  const cell=(label,fieldId,val,auto)=>`<div style="padding:6px 9px;border-bottom:1px solid var(--border)">
+    <div style="font-size:9px;color:var(--text3);margin-bottom:3px">${label} ${auto?'<span style="font-size:8px;color:var(--purple);background:rgba(144,96,208,.15);padding:0 4px;border-radius:3px">Meta</span>':''}</div>
+    <input class="an-editable" id="an-edit-${fieldId}" type="number" step="0.01" value="${val||0}" style="width:80px">
+  </div>`
+  const ccell=(label,id)=>`<div style="padding:6px 9px;border-bottom:1px solid var(--border)">
+    <div style="font-size:9px;color:var(--text3);margin-bottom:3px">${label}</div>
+    <div id="an-edit-calc-${id}" style="font-size:12px;font-weight:700;font-family:var(--mono);color:#fff">—</div>
+  </div>`
+
+  // Show edit form at top of content
+  const editDiv=document.createElement('div')
+  editDiv.id='an-edit-form-'+id
+  editDiv.className='an-card'
+  editDiv.style.marginBottom='12px'
+  editDiv.innerHTML=`
+    <div style="background:var(--bg3);padding:8px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:12px;font-weight:700;color:#fff">✏️ Редактировать анализ · ${a.period_from}→${a.period_to}</span>
+      <button onclick="document.getElementById('an-edit-form-${id}')?.remove()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr">
+      ${cell('Охват','reach',a.reach,true)}
+      ${cell('Клики','clicks',a.clicks,true)}
+      ${cell('Лиды','leads',a.leads)}
+      ${cell('AmFreq','amfreq',a.amfreq||0)}
+      ${cell('CPC $','cpc',a.cpc,true)}
+      <div style="padding:6px 9px;border-bottom:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:3px">CR %</div><div id="an-edit-cr-${id}" style="font-size:12px;font-weight:700;font-family:var(--mono)">${a.cr||0}%</div></div>
+      ${cell('PeriodFreq','freq',a.frequency,true)}
+      ${cell('CTR %','ctr',a.ctr,true)}
+      <div style="padding:6px 9px;border-bottom:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:3px">CPL $</div><div id="an-edit-cpl-${id}" style="font-size:12px;font-weight:700;font-family:var(--mono)">${a.cpl||0}</div></div>
+      ${cell('CPM $','cpm',a.cpm,true)}
+      ${cell('Ср.вр (с)','viewtime',a.avg_view_time,true)}
+      <div style="padding:6px 9px;border-bottom:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:3px">AR %</div><div id="an-edit-ar-${id}" style="font-size:12px;font-weight:700;font-family:var(--mono)">${a.ar||0}%</div></div>
+      ${cell('Квалы','quals',a.quals)}
+      <div></div>
+      <div style="padding:6px 9px;border-bottom:1px solid var(--border)"><div style="font-size:9px;color:var(--text3);margin-bottom:3px">CQL $</div><div id="an-edit-cql-${id}" style="font-size:12px;font-weight:700;font-family:var(--mono)">${a.cql||0}</div></div>
+    </div>
+    <div style="padding:8px 10px">
+      <textarea id="an-edit-notes-${id}" class="fi" style="min-height:44px;resize:none;width:100%;font-size:11px;margin-bottom:8px">${a.notes||''}</textarea>
+      <button class="bsv" style="width:100%;padding:7px" onclick="saveEditedAnalysis(${id})">💾 Сохранить изменения</button>
+    </div>
+  `
+  // Wire recalc
+  ;['leads','quals','clicks','cpc'].forEach(f=>{
+    document.getElementById('an-edit-'+f)?.addEventListener('input',()=>recalcEditAnalysis(id))
+  })
+  // Insert before existing cards
+  content.insertBefore(editDiv,content.firstChild)
+  recalcEditAnalysis(id)
+}
+
+function recalcEditAnalysis(id){
+  const v=f=>parseFloat(document.getElementById('an-edit-'+f)?.value)||0
+  const spend=RK_ANALYSES.find(x=>x.id===id)?.spend||0
+  const leads=v('leads'),quals=v('quals'),clicks=v('clicks')
+  const cr=clicks>0?Math.round(leads/clicks*10000)/100:0
+  const cpl=leads>0?Math.round(spend/leads*100)/100:0
+  const ar=leads>0?Math.round(quals/leads*10000)/100:0
+  const cql=quals>0?Math.round(spend/quals*100)/100:0
+  const cplC=cpl>0&&cpl<10?'#2ea043':cpl<15?'#e08040':cpl>0?'#e04050':'#fff'
+  const el=s=>document.getElementById('an-edit-'+s)
+  if(el('cr-'+id))el('cr-'+id).textContent=cr+'%'
+  if(el('cpl-'+id)){el('cpl-'+id).textContent=cpl>0?'$'+cpl:'—';el('cpl-'+id).style.color=cplC}
+  if(el('ar-'+id))el('ar-'+id).textContent=ar+'%'
+  if(el('cql-'+id))el('cql-'+id).textContent=cql>0?'$'+cql:'—'
+}
+
+async function saveEditedAnalysis(id){
+  const a=RK_ANALYSES.find(x=>x.id===id)
+  if(!a||!db)return
+  const v=f=>parseFloat(document.getElementById('an-edit-'+f)?.value)||0
+  const leads=v('leads'),quals=v('quals'),clicks=v('clicks')
+  const cpc=v('cpc'),ctr=v('ctr'),cpm=v('cpm'),freq=v('freq'),avgView=v('viewtime'),reach=v('reach')
+  const cr=clicks>0?Math.round(leads/clicks*10000)/100:0
+  const cpl=leads>0?Math.round(a.spend/leads*100)/100:0
+  const ar=leads>0?Math.round(quals/leads*10000)/100:0
+  const cql=quals>0?Math.round(a.spend/quals*100)/100:0
+  const notes=document.getElementById('an-edit-notes-'+id)?.value||''
+
+  const{error}=await db.from('rk_analyses').update({
+    reach,clicks,leads,quals,cpc,ctr,cpm,frequency:freq,avg_view_time:avgView,
+    cr,cpl,ar,cql,notes
+  }).eq('id',id)
+
+  if(!error){
+    Object.assign(a,{reach,clicks,leads,quals,cpc,ctr,cpm,frequency:freq,avg_view_time:avgView,cr,cpl,ar,cql,notes})
+    toast('Анализ обновлён ✓','ok')
+    document.getElementById('an-edit-form-'+id)?.remove()
+    renderAnZalivHistory(a.zaliv_id)
+  }else{
+    toast('Ошибка: '+error.message,'err')
+  }
+}
 
 
 // ── INSIGHTS → Supabase ──
@@ -3534,6 +3735,59 @@ async function delInsight(id){
   INSIGHTS.splice(id,1)
   if(!item.id)localStorage.setItem('creo_insights',JSON.stringify(INSIGHTS))
   renderInsightBoard()
+}
+
+function rdashBuyer(buyer){
+  // Use RK_ANALYSES to build buyer sub-dashboard
+  const from=document.getElementById('pd-from')?.value
+  const to=document.getElementById('pd-to')?.value
+  const analyses=RK_ANALYSES.filter(a=>a.buyer===buyer&&(!from||a.period_from>=from)&&(!to||a.period_to<=to))
+
+  if(!analyses.length){
+    // Show empty state
+    document.querySelectorAll('.kpi-val').forEach(el=>el.textContent='—')
+    const chartWrap=document.getElementById('dyn-chart')?.parentElement
+    if(chartWrap)chartWrap.innerHTML='<div class="empty" style="padding:30px">Нет анализов для '+buyer+' за выбранный период</div>'
+    return
+  }
+
+  // Aggregate metrics from analyses
+  const totSpend=analyses.reduce((s,a)=>s+(a.spend||0),0)
+  const totLeads=analyses.reduce((s,a)=>s+(a.leads||0),0)
+  const totQuals=analyses.reduce((s,a)=>s+(a.quals||0),0)
+  const totClicks=analyses.reduce((s,a)=>s+(a.clicks||0),0)
+  const avgCpl=totLeads>0?Math.round(totSpend/totLeads*100)/100:0
+  const avgCql=totQuals>0?Math.round(totSpend/totQuals*100)/100:0
+  const avgCtr=totClicks>0?Math.round(totLeads/totClicks*10000)/100:0
+  const avgCr=totClicks>0?Math.round(totLeads/totClicks*10000)/100:0
+
+  // Update KPI cards
+  const setKpi=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val}
+  setKpi('kpi-spend','$'+Math.round(totSpend*100)/100)
+  setKpi('kpi-cpl','$'+avgCpl)
+  setKpi('kpi-cql','$'+avgCql)
+  setKpi('kpi-ctr',avgCtr+'%')
+  setKpi('kpi-leads',totLeads)
+  setKpi('kpi-quals',totQuals)
+
+  // Draw buyer chart from analyses
+  const byDate={}
+  analyses.forEach(a=>{
+    const d=a.period_from||a.period_to||''
+    if(!byDate[d])byDate[d]={cpl:0,cql:0,ctr:0,spend:0,leads:0,quals:0,n:0}
+    byDate[d].spend+=a.spend||0
+    byDate[d].leads+=a.leads||0
+    byDate[d].quals+=a.quals||0
+    byDate[d].cpl=byDate[d].leads>0?byDate[d].spend/byDate[d].leads:0
+    byDate[d].cql=byDate[d].quals>0?byDate[d].spend/byDate[d].quals:0
+    byDate[d].n++
+  })
+  const chartRows=Object.entries(byDate).sort().map(([d,v])=>({day:d,...v}))
+  drawChart(chartRows)
+
+  // Show buyer badge
+  const title=document.querySelector('.fhtit')
+  if(title)title.textContent=buyer+' · Дашборд'
 }
 
 // ── AUTO LOGIN ──
