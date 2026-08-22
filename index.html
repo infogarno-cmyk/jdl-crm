@@ -3816,14 +3816,40 @@ function rdashBuyer(buyer){
     return
   }
 
-  const totSpend=Math.round(analyses.reduce((s,a)=>s+(a.spend||0),0)*100)/100
-  const totLeads=analyses.reduce((s,a)=>s+(a.leads||0),0)
-  const totQuals=analyses.reduce((s,a)=>s+(a.quals||0),0)
-  const totClicks=analyses.reduce((s,a)=>s+(a.clicks||0),0)
+  // ── DEDUP: one analysis per RK to avoid double-counting ──
+  // Multiple analyses per RK (1DC/2DC/3DC/Kwartal) overlap in period → summing inflates quals.
+  // Adset-level analyses also duplicate campaign-level (campaign = sum of adsets).
+  // Rule: per zaliv_id, prefer campaign-level (no adset_id), then widest period, then latest.
+  function pickOnePerRK(list){
+    const byZaliv={}
+    list.forEach(a=>{
+      const zid=a.zaliv_id
+      if(!byZaliv[zid]){byZaliv[zid]=a;return}
+      const cur=byZaliv[zid]
+      // Prefer campaign-level over adset-level
+      const aIsCamp=!a.adset_id, curIsCamp=!cur.adset_id
+      if(aIsCamp&&!curIsCamp){byZaliv[zid]=a;return}
+      if(!aIsCamp&&curIsCamp)return
+      // Both same level — prefer widest period span
+      const span=x=>{const f=normDate(x.period_from),t=normDate(x.period_to);if(!f||!t)return 0;return (new Date(t)-new Date(f))}
+      const sa=span(a),sc=span(cur)
+      if(sa>sc){byZaliv[zid]=a;return}
+      if(sa<sc)return
+      // Same span — prefer latest created
+      if((a.created_at||'')>(cur.created_at||''))byZaliv[zid]=a
+    })
+    return Object.values(byZaliv)
+  }
+  const dedup=pickOnePerRK(analyses)
+
+  const totSpend=Math.round(dedup.reduce((s,a)=>s+(a.spend||0),0)*100)/100
+  const totLeads=dedup.reduce((s,a)=>s+(a.leads||0),0)
+  const totQuals=dedup.reduce((s,a)=>s+(a.quals||0),0)
+  const totClicks=dedup.reduce((s,a)=>s+(a.clicks||0),0)
   const avgCpl=totLeads>0?Math.round(totSpend/totLeads*100)/100:0
   const avgCql=totQuals>0?Math.round(totSpend/totQuals*100)/100:0
   // CTR avg weighted by clicks
-  const ctrVals=analyses.filter(a=>a.ctr>0)
+  const ctrVals=dedup.filter(a=>a.ctr>0)
   const avgCtr=ctrVals.length?Math.round(ctrVals.reduce((s,a)=>s+a.ctr,0)/ctrVals.length*100)/100:0
 
   setKpi('d-spend','$'+totSpend,'var(--yellow)')
@@ -3841,9 +3867,9 @@ function rdashBuyer(buyer){
     const a=document.getElementById(id+'-arr');if(a)a.textContent=''
   })
 
-  // Build chart by date — CPL/CQL/CTR/Spend
+  // Build chart by date — CPL/CQL/CTR/Spend (from deduped set)
   const byDate={}
-  analyses.forEach(a=>{
+  dedup.forEach(a=>{
     const d=normDate(a.period_from||a.period_to)
     if(!d)return
     if(!byDate[d])byDate[d]={spend:0,leads:0,quals:0,ctrSum:0,ctrN:0}
