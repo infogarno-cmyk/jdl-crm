@@ -3786,9 +3786,13 @@ function normDate(d){
   return d
 }
 
-function rdashBuyer(buyer){
+async function rdashBuyer(buyer){
   const from=document.getElementById('pd-from')?.value
   const to=document.getElementById('pd-to')?.value
+  // Buyer → letter prefix in RK name (D=Danya, I=Illia)
+  const letter=buyer==='Danya'?'D':buyer==='Illia'?'I':''
+
+  // Analyses for leads/quals (deduped per RK)
   const analyses=RK_ANALYSES.filter(a=>{
     if(a.buyer!==buyer)return false
     const pf=normDate(a.period_from)
@@ -3808,66 +3812,86 @@ function rdashBuyer(buyer){
 
   const setKpi=(id,val,color)=>{const el=document.getElementById(id);if(el){el.textContent=val;if(color)el.style.color=color;el.style.textShadow=''}}
 
-  if(!analyses.length){
-    ['d-spend','d-daily','d-cpl','d-cql','d-roi','d-ctr'].forEach(id=>setKpi(id,'—'))
-    const cv=document.getElementById('dyn-chart')
-    if(cv){const ctx=cv.getContext('2d');ctx.clearRect(0,0,cv.width,cv.height)}
-    const title=document.querySelector('#page-dash .ctit')
-    return
-  }
-
-  // ── DEDUP: one analysis per RK to avoid double-counting ──
-  // Multiple analyses per RK (1DC/2DC/3DC/Kwartal) overlap in period → summing inflates quals.
-  // Adset-level analyses also duplicate campaign-level (campaign = sum of adsets).
-  // Rule: per zaliv_id, prefer campaign-level (no adset_id), then widest period, then latest.
+  // ── LEADS/QUALS from analyses (deduped per RK) ──
   function pickOnePerRK(list){
     const byZaliv={}
     list.forEach(a=>{
       const zid=a.zaliv_id
       if(!byZaliv[zid]){byZaliv[zid]=a;return}
       const cur=byZaliv[zid]
-      // Prefer campaign-level over adset-level
-      const aIsCamp=!a.adset_id, curIsCamp=!cur.adset_id
-      if(aIsCamp&&!curIsCamp){byZaliv[zid]=a;return}
-      if(!aIsCamp&&curIsCamp)return
-      // Both same level — prefer widest period span
-      const span=x=>{const f=normDate(x.period_from),t=normDate(x.period_to);if(!f||!t)return 0;return (new Date(t)-new Date(f))}
+      const aC=!a.adset_id, curC=!cur.adset_id
+      if(aC&&!curC){byZaliv[zid]=a;return}
+      if(!aC&&curC)return
+      const span=x=>{const f=normDate(x.period_from),t=normDate(x.period_to);return f&&t?new Date(t)-new Date(f):0}
       const sa=span(a),sc=span(cur)
       if(sa>sc){byZaliv[zid]=a;return}
       if(sa<sc)return
-      // Same span — prefer latest created
       if((a.created_at||'')>(cur.created_at||''))byZaliv[zid]=a
     })
     return Object.values(byZaliv)
   }
   const dedup=pickOnePerRK(analyses)
-
-  const totSpend=Math.round(dedup.reduce((s,a)=>s+(a.spend||0),0)*100)/100
   const totLeads=dedup.reduce((s,a)=>s+(a.leads||0),0)
   const totQuals=dedup.reduce((s,a)=>s+(a.quals||0),0)
-  const totClicks=dedup.reduce((s,a)=>s+(a.clicks||0),0)
+
+  // ── SPEND/METRICS live from Meta for ALL buyer RK (letter D/I) with campaign_id ──
+  const buyerZalivs=ZALIVS.filter(z=>{
+    const n=(z.name||'').trim()
+    const firstLetter=n.charAt(0).toUpperCase()
+    return firstLetter===letter&&z.campaign_id
+  })
+
+  // Loading state
+  setKpi('d-spend','⏳','var(--yellow)')
+  setKpi('d-daily',totLeads,'#2ea043')
+  setKpi('d-roi',totQuals,'#4080ff')
+
+  let totSpend=0,totClicks=0,totReach=0,ctrSum=0,ctrN=0
+  const spendByDate={}
+
+  // Fetch Meta insights for each buyer RK in parallel
+  const results=await Promise.all(buyerZalivs.map(async z=>{
+    try{
+      const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
+        method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
+        body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since:from,until:to})
+      })
+      const d=await r.json()
+      return d.ok?{z,d}:null
+    }catch(e){return null}
+  }))
+
+  results.forEach(res=>{
+    if(!res)return
+    const{d}=res
+    totSpend+=d.spend||0
+    totClicks+=d.clicks||0
+    totReach+=d.reach||d.impressions||0
+    if(d.ctr>0){ctrSum+=d.ctr;ctrN++}
+  })
+
+  totSpend=Math.round(totSpend*100)/100
   const avgCpl=totLeads>0?Math.round(totSpend/totLeads*100)/100:0
   const avgCql=totQuals>0?Math.round(totSpend/totQuals*100)/100:0
-  // CTR avg weighted by clicks
-  const ctrVals=dedup.filter(a=>a.ctr>0)
-  const avgCtr=ctrVals.length?Math.round(ctrVals.reduce((s,a)=>s+a.ctr,0)/ctrVals.length*100)/100:0
+  const avgCtr=ctrN>0?Math.round(ctrSum/ctrN*100)/100:0
 
   setKpi('d-spend','$'+totSpend,'var(--yellow)')
-  setKpi('d-daily',totLeads,'#2ea043') // ЛИДЫ slot
+  setKpi('d-daily',totLeads,'#2ea043')
   const cplC=avgCpl>0&&avgCpl<10?'var(--green)':avgCpl<=13?'var(--yellow)':avgCpl>0?'var(--red)':'var(--text)'
   setKpi('d-cpl','$'+avgCpl,cplC)
   const cqlC=avgCql>0&&avgCql<25?'var(--green)':avgCql<=35?'var(--yellow)':avgCql>0?'var(--red)':'var(--text)'
   setKpi('d-cql','$'+avgCql,cqlC)
-  setKpi('d-roi',totQuals,'#4080ff') // КВАЛЫ slot
+  setKpi('d-roi',totQuals,'#4080ff')
   setKpi('d-ctr',avgCtr+'%','#fff')
 
-  // Clear comparison arrows (not relevant for buyer view)
+  // Clear comparison arrows
   ;['d-spend','d-daily','d-cpl','d-cql','d-roi','d-ctr'].forEach(id=>{
     const p=document.getElementById(id+'-prev');if(p)p.textContent=''
     const a=document.getElementById(id+'-arr');if(a)a.textContent=''
   })
 
-  // Build chart by date — CPL/CQL/CTR/Spend (from deduped set)
+  // ── CHART: spend from Meta by date is not available per-day here (single period fetch),
+  // so build chart from analyses (CPL/CQL/CTR) using deduped set for leads/quals ──
   const byDate={}
   dedup.forEach(a=>{
     const d=normDate(a.period_from||a.period_to)
@@ -3887,12 +3911,10 @@ function rdashBuyer(buyer){
   }))
   drawChart(chartRows)
 
-  // Chart title
   const ctit=document.querySelector('#page-dash .card:last-child .ctit')
-  if(ctit)ctit.textContent='Динамика · '+buyer
+  if(ctit)ctit.textContent='Динамика · '+buyer+' ('+buyerZalivs.length+' РК из Meta)'
 }
 
-// Reset KPI labels back to general dashboard
 function resetDashLabels(){
   const labels=['SPEND','SPEND DAILY','CPL','CQL','ROI','CTR AVG']
   const labs=document.querySelectorAll('#page-dash .krow .klab')
