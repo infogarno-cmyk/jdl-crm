@@ -916,6 +916,9 @@ function countUp(el,target,pre='',suf='',dur=800){
 }
 // ── DASHBOARD ──
 function rdash(){
+  const buyer=document.getElementById('df-buyer')?.value||''
+  if(buyer){rdashBuyer(buyer);return}
+  resetDashLabels()
   const from=document.getElementById('pd-from').value,to=document.getElementById('pd-to').value
   const rows=METRICS.filter(m=>m.day>=from&&m.day<=to)
   let tS=0,tPL=0,tPLUA=0,tL=0,tQ=0,tSzl=0
@@ -998,20 +1001,27 @@ function renderChartFocused(focusKey){
   const rows=chartData,cv=document.getElementById('dyn-chart'),ctx=cv.getContext('2d')
   const W=cv.width,H=cv.height,P={t:10,b:22,l:10,r:10},cw=W-P.l-P.r,ch=H-P.t-P.b
   ctx.clearRect(0,0,W,H)
+  const nz=v=>{const x=parseFloat(v);return x>0?x:null}
   const allS=[
-    {k:'cpl',d:rows.map(r=>parseFloat(r.cpl)||0),c:'#4080ff'},
-    {k:'cql',d:rows.map(r=>parseFloat(r.cql)||0),c:'#d4a017'},
+    {k:'cpl',d:rows.map(r=>nz(r.cpl)),c:'#4080ff'},
+    {k:'cql',d:rows.map(r=>nz(r.cql)),c:'#d4a017'},
     {k:'ctr',d:rows.map(r=>parseFloat(r.ctr)||0),c:'#2ea043'},
     {k:'spend',d:rows.map(r=>parseFloat(r.spend_pl||0)+parseFloat(r.spend_plua||0)),c:'#e04050'}
   ]
-  allS.forEach(s=>{s.mn=Math.min(...s.d);s.mx=Math.max(...s.d);if(s.mx===s.mn)s.mx=s.mn+1})
+  allS.forEach(s=>{const vals=s.d.filter(v=>v!=null);s.mn=vals.length?Math.min(...vals):0;s.mx=vals.length?Math.max(...vals):1;if(s.mx===s.mn)s.mx=s.mn+1})
   const n=rows.length,xs=n>1?cw/(n-1):0,px=i=>P.l+i*xs,py=(v,s)=>P.t+ch*(1-(v-s.mn)/(s.mx-s.mn))
   allS.forEach(s=>{
     const isFocus=s.k===focusKey
     ctx.globalAlpha=isFocus?1:0.1
-    ctx.beginPath();ctx.moveTo(px(0),py(s.d[0],s))
-    for(let i=1;i<n;i++)ctx.lineTo(px(i),py(s.d[i],s))
-    ctx.strokeStyle=s.c;ctx.lineWidth=isFocus?2.5:1;ctx.stroke()
+    // gap-aware
+    let started=false
+    for(let i=0;i<n;i++){
+      if(s.d[i]==null){started=false;continue}
+      if(!started){ctx.beginPath();ctx.moveTo(px(i),py(s.d[i],s));started=true}
+      else ctx.lineTo(px(i),py(s.d[i],s))
+      // if next is null or end, stroke
+      if(i===n-1||s.d[i+1]==null){ctx.strokeStyle=s.c;ctx.lineWidth=isFocus?2.5:1;ctx.stroke()}
+    }
     ctx.globalAlpha=1
   })
 }
@@ -1023,26 +1033,45 @@ function renderChart(animate=false){
   const W=c.width,H=c.height,P={t:10,b:22,l:10,r:10},cw=W-P.l-P.r,ch=H-P.t-P.b
   ctx.clearRect(0,0,W,H)
   const activeMets=new Set([...(document.querySelectorAll('.chleg.active')||[])].map(el=>el.dataset.cmet))
+  // For CPL/CQL: 0 means no leads/quals that day → break the line (null), don't drop to bottom
+  const nz=v=>{const n=parseFloat(v);return n>0?n:null}
   const allS=[
-    {k:'cpl',d:rows.map(r=>parseFloat(r.cpl)||0),c:'#4080ff',l:'CPL'},
-    {k:'cql',d:rows.map(r=>parseFloat(r.cql)||0),c:'#d4a017',l:'CQL'},
+    {k:'cpl',d:rows.map(r=>nz(r.cpl)),c:'#4080ff',l:'CPL',gap:true},
+    {k:'cql',d:rows.map(r=>nz(r.cql)),c:'#d4a017',l:'CQL',gap:true},
     {k:'ctr',d:rows.map(r=>parseFloat(r.ctr)||0),c:'#2ea043',l:'CTR'},
     {k:'spend',d:rows.map(r=>parseFloat(r.spend_pl||0)+parseFloat(r.spend_plua||0)),c:'#e04050',l:'Spend'}
   ]
   const S=allS.filter(s=>activeMets.size===0||activeMets.has(s.k))
-  S.forEach(s=>{s.mn=Math.min(...s.d);s.mx=Math.max(...s.d);if(s.mx===s.mn)s.mx=s.mn+1})
+  S.forEach(s=>{const vals=s.d.filter(v=>v!=null);s.mn=vals.length?Math.min(...vals):0;s.mx=vals.length?Math.max(...vals):1;if(s.mx===s.mn)s.mx=s.mn+1})
   const n=rows.length,xs=n>1?cw/(n-1):0,px=i=>P.l+i*xs,py=(v,s)=>P.t+ch*(1-(v-s.mn)/(s.mx-s.mn))
   ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1
   for(let i=0;i<=4;i++){const y=P.t+ch*i/4;ctx.beginPath();ctx.moveTo(P.l,y);ctx.lineTo(P.l+cw,y);ctx.stroke()}
   S.forEach(s=>{
-    ctx.save();ctx.beginPath();ctx.moveTo(px(0),H-P.b);ctx.lineTo(px(0),py(s.d[0],s))
-    for(let i=1;i<n;i++){const x0=px(i-1),y0=py(s.d[i-1],s),x1=px(i),y1=py(s.d[i],s),cx=(x0+x1)/2;ctx.bezierCurveTo(cx,y0,cx,y1,x1,y1)}
-    ctx.lineTo(px(n-1),H-P.b);ctx.closePath()
-    const g=ctx.createLinearGradient(0,P.t,0,H-P.b);g.addColorStop(0,s.c+'33');g.addColorStop(1,s.c+'00');ctx.fillStyle=g;ctx.fill()
-    ctx.beginPath();ctx.moveTo(px(0),py(s.d[0],s))
-    for(let i=1;i<n;i++){const x0=px(i-1),y0=py(s.d[i-1],s),x1=px(i),y1=py(s.d[i],s),cx=(x0+x1)/2;ctx.bezierCurveTo(cx,y0,cx,y1,x1,y1)}
-    ctx.strokeStyle=s.c;ctx.lineWidth=2;ctx.stroke()
-    for(let i=0;i<n;i++){ctx.beginPath();ctx.arc(px(i),py(s.d[i],s),3,0,Math.PI*2);ctx.fillStyle=s.c;ctx.fill()}
+    ctx.save()
+    // Draw line in continuous segments, breaking at null values
+    let segStart=-1
+    const drawSeg=(a,b)=>{
+      if(b<=a)return
+      // gradient fill under segment
+      ctx.beginPath();ctx.moveTo(px(a),H-P.b);ctx.lineTo(px(a),py(s.d[a],s))
+      for(let i=a+1;i<=b;i++){const x0=px(i-1),y0=py(s.d[i-1],s),x1=px(i),y1=py(s.d[i],s),cx=(x0+x1)/2;ctx.bezierCurveTo(cx,y0,cx,y1,x1,y1)}
+      ctx.lineTo(px(b),H-P.b);ctx.closePath()
+      const g=ctx.createLinearGradient(0,P.t,0,H-P.b);g.addColorStop(0,s.c+'33');g.addColorStop(1,s.c+'00');ctx.fillStyle=g;ctx.fill()
+      // stroke
+      ctx.beginPath();ctx.moveTo(px(a),py(s.d[a],s))
+      for(let i=a+1;i<=b;i++){const x0=px(i-1),y0=py(s.d[i-1],s),x1=px(i),y1=py(s.d[i],s),cx=(x0+x1)/2;ctx.bezierCurveTo(cx,y0,cx,y1,x1,y1)}
+      ctx.strokeStyle=s.c;ctx.lineWidth=2;ctx.stroke()
+    }
+    for(let i=0;i<n;i++){
+      if(s.d[i]!=null){
+        if(segStart<0)segStart=i
+      }else{
+        if(segStart>=0){drawSeg(segStart,i-1);segStart=-1}
+      }
+    }
+    if(segStart>=0)drawSeg(segStart,n-1)
+    // dots only where data exists
+    for(let i=0;i<n;i++){if(s.d[i]!=null){ctx.beginPath();ctx.arc(px(i),py(s.d[i],s),3,0,Math.PI*2);ctx.fillStyle=s.c;ctx.fill()}}
     ctx.restore()
   })
   ctx.fillStyle='rgba(144,144,168,.6)';ctx.font='10px Manrope,sans-serif';ctx.textAlign='center'
@@ -1082,38 +1111,36 @@ function renderChart(animate=false){
         ctx.rect(0,0,clipX,H)
         ctx.clip()
 
-        // Gradient fill
-        ctx.beginPath()
-        ctx.moveTo(px(0),H-P.b)
-        ctx.lineTo(px(0),py(s.d[0],s))
-        for(let i=1;i<n;i++){
-          const x0=px(i-1),y0=py(s.d[i-1],s),x1=px(i),y1=py(s.d[i],s),cxm=(x0+x1)/2
-          ctx.bezierCurveTo(cxm,y0,cxm,y1,x1,y1)
+        // Draw in gap-aware segments (break where s.d[i]==null)
+        const segs=[]
+        let ss=-1
+        for(let i=0;i<n;i++){
+          if(s.d[i]!=null){if(ss<0)ss=i}
+          else{if(ss>=0){segs.push([ss,i-1]);ss=-1}}
         }
-        ctx.lineTo(px(n-1),H-P.b)
-        ctx.closePath()
-        const g=ctx.createLinearGradient(0,P.t,0,H-P.b)
-        g.addColorStop(0,s.c+'45')
-        g.addColorStop(1,s.c+'00')
-        ctx.fillStyle=g
-        ctx.fill()
+        if(ss>=0)segs.push([ss,n-1])
 
-        // Line stroke with glow
-        ctx.beginPath()
-        ctx.moveTo(px(0),py(s.d[0],s))
-        for(let i=1;i<n;i++){
-          const x0=px(i-1),y0=py(s.d[i-1],s),x1=px(i),y1=py(s.d[i],s),cxm=(x0+x1)/2
-          ctx.bezierCurveTo(cxm,y0,cxm,y1,x1,y1)
-        }
-        ctx.strokeStyle=s.c
-        ctx.lineWidth=2
-        ctx.shadowColor=s.c
-        ctx.shadowBlur=8
-        ctx.stroke()
-        ctx.shadowBlur=0
+        segs.forEach(([a,b])=>{
+          if(b<=a){
+            // single point — just a dot handled below
+            return
+          }
+          // Gradient fill
+          ctx.beginPath()
+          ctx.moveTo(px(a),H-P.b)
+          ctx.lineTo(px(a),py(s.d[a],s))
+          for(let i=a+1;i<=b;i++){const x0=px(i-1),y0=py(s.d[i-1],s),x1=px(i),y1=py(s.d[i],s),cxm=(x0+x1)/2;ctx.bezierCurveTo(cxm,y0,cxm,y1,x1,y1)}
+          ctx.lineTo(px(b),H-P.b);ctx.closePath()
+          const g=ctx.createLinearGradient(0,P.t,0,H-P.b);g.addColorStop(0,s.c+'45');g.addColorStop(1,s.c+'00');ctx.fillStyle=g;ctx.fill()
+          // Stroke with glow
+          ctx.beginPath();ctx.moveTo(px(a),py(s.d[a],s))
+          for(let i=a+1;i<=b;i++){const x0=px(i-1),y0=py(s.d[i-1],s),x1=px(i),y1=py(s.d[i],s),cxm=(x0+x1)/2;ctx.bezierCurveTo(cxm,y0,cxm,y1,x1,y1)}
+          ctx.strokeStyle=s.c;ctx.lineWidth=2;ctx.shadowColor=s.c;ctx.shadowBlur=8;ctx.stroke();ctx.shadowBlur=0
+        })
 
         // Dots fade in as line passes them
         for(let i=0;i<n;i++){
+          if(s.d[i]==null)continue
           const dotX=px(i)
           if(dotX>clipX)continue
           const dotProgress=Math.min(1,(clipX-dotX)/20)
@@ -3166,12 +3193,19 @@ function renderAnTree(){
     geo_yr_month[geo][yr][mo][zid].count++
   })
 
-  // Add zalivs without analyses
+  // Add zalivs without analyses — use REAL date from campaign name, not today
   ZALIVS.forEach(z=>{
     if(q&&!z.name.toLowerCase().includes(q))return
     const geo=z.geo||'?'
-    const yr=new Date().getFullYear().toString()
-    const mo=`${yr}-${String(new Date().getMonth()+1).padStart(2,'0')}`
+    // Parse month from z.date (DD.MM) or from campaign name
+    const curYr=new Date().getFullYear().toString()
+    let mo=`${curYr}-${String(new Date().getMonth()+1).padStart(2,'0')}` // fallback
+    let dateStr=z.date||parseDateFromCampName(z.name)
+    if(dateStr&&dateStr.includes('.')){
+      const p=dateStr.split('.')
+      if(p.length>=2)mo=`${curYr}-${p[1].padStart(2,'0')}`
+    }
+    const yr=mo.split('-')[0]
     if(!geo_yr_month[geo])geo_yr_month[geo]={}
     if(!geo_yr_month[geo][yr])geo_yr_month[geo][yr]={}
     if(!geo_yr_month[geo][yr][mo])geo_yr_month[geo][yr][mo]={}
@@ -3309,11 +3343,11 @@ function showNewAnalysisPanelFor(preZalivId){
   const today=new Date().toISOString().split('T')[0]
   const zalivOpts=ZALIVS.map(z=>`<option value="${z.id}"${z.id===preZalivId?' selected':''}>${z.name}</option>`).join('')
   content.innerHTML=`
-    <div style="max-width:580px">
+    <div style="max-width:820px">
       <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:14px">📊 Новый анализ</div>
-      <div class="card" style="padding:12px;margin-bottom:12px">
+      <div class="card" style="padding:12px;margin-bottom:12px;max-width:580px">
         <div class="elb" style="margin-bottom:4px">Залив</div>
-        <select class="fi" id="an-zaliv-sel" style="margin-bottom:10px">${zalivOpts}</select>
+        <select class="fi" id="an-zaliv-sel" style="margin-bottom:10px" onchange="renderExistingForZaliv()">${zalivOpts}</select>
         <div class="elb" style="margin-bottom:4px">Период</div>
         <div style="display:flex;gap:6px;margin-bottom:8px">
           <input type="date" class="fi" id="an-from" value="${new Date(Date.now()-7*864e5).toISOString().split('T')[0]}" style="flex:1">
@@ -3328,6 +3362,7 @@ function showNewAnalysisPanelFor(preZalivId){
         <button class="bsv" style="width:100%;padding:8px" onclick="generateAnalysis()">⚡ Загрузить из Meta</button>
       </div>
       <div id="an-results-wrap"></div>
+      <div id="an-existing-wrap"></div>
     </div>`
   document.querySelectorAll('[data-apreset]').forEach(btn=>{
     btn.addEventListener('click',function(){
@@ -3336,6 +3371,18 @@ function showNewAnalysisPanelFor(preZalivId){
       applyAnPreset(this.dataset.apreset)
     })
   })
+  // Show existing analyses for pre-selected zaliv immediately
+  renderExistingForZaliv()
+}
+
+function renderExistingForZaliv(){
+  const zid=parseInt(document.getElementById('an-zaliv-sel')?.value)
+  const wrap=document.getElementById('an-existing-wrap')
+  if(!wrap)return
+  const existing=RK_ANALYSES.filter(a=>a.zaliv_id===zid)
+  if(!existing.length){wrap.innerHTML='';return}
+  wrap.innerHTML=`<div style="margin-top:6px"><div class="elb" style="margin-bottom:6px">Предыдущие анализы этой РК (${existing.length})</div>
+    <div class="an-cards-grid">${existing.map(a=>`<div class="an-card">${renderAnalysisCard(a)}</div>`).join('')}</div></div>`
 }
 
 function applyAnPreset(preset){
@@ -3362,13 +3409,7 @@ async function generateAnalysis(){
   if(!from||!to){toast('Укажи период','err');return}
   const wrap=document.getElementById('an-results-wrap')
   if(!wrap)return
-  // Show existing analyses for this zaliv above the form
-  const existingAnalyses=RK_ANALYSES.filter(a=>a.zaliv_id===zalivId)
-  const existingHtml=existingAnalyses.length
-    ?`<div style="margin-bottom:12px"><div class="elb" style="margin-bottom:6px">Предыдущие анализы (${existingAnalyses.length})</div>
-       <div class="an-cards-grid">${existingAnalyses.map(a=>`<div class="an-card">${renderAnalysisCard(a)}</div>`).join('')}</div></div>`
-    :''
-  wrap.innerHTML=existingHtml+'<div class="empty" style="padding:16px">⏳ Загрузка из Meta...</div>'
+  wrap.innerHTML='<div class="empty" style="padding:16px">⏳ Загрузка из Meta...</div>'
 
   if(!z.campaign_id){
     wrap.innerHTML='<div class="empty" style="padding:16px;color:#e08040">⚠ Нет Campaign ID — введи в редактировании залива</div>'
@@ -3558,7 +3599,7 @@ async function saveCurrentAnalysis(zid,spendArg,clicksArg,reachArg,ctrArg,cpcArg
   const payload={
     zaliv_id:zid,zaliv_name:z?.name||'',
     period_from:from,period_to:to,
-    reach,frequency:freq,cpm,avg_view_time:avgView,
+    reach,frequency:freq,amfreq,cpm,avg_view_time:avgView,
     clicks,cpc,ctr,spend,leads,quals,cr,cpl,ar,cql,
     buyer:buyer||CURRENT_USER?.name||'',geo,funnel,notes,
     month_key:periodMonthKey,
@@ -3737,57 +3778,101 @@ async function delInsight(id){
   renderInsightBoard()
 }
 
+function normDate(d){
+  // Normalize DD.MM or DD.MM.YYYY or YYYY-MM-DD → YYYY-MM-DD
+  if(!d)return ''
+  if(d.includes('-'))return d.slice(0,10)
+  if(d.includes('.')){const p=d.split('.');const yr=p[2]||new Date().getFullYear();return `${yr}-${(p[1]||'01').padStart(2,'0')}-${(p[0]||'01').padStart(2,'0')}`}
+  return d
+}
+
 function rdashBuyer(buyer){
-  // Use RK_ANALYSES to build buyer sub-dashboard
   const from=document.getElementById('pd-from')?.value
   const to=document.getElementById('pd-to')?.value
-  const analyses=RK_ANALYSES.filter(a=>a.buyer===buyer&&(!from||a.period_from>=from)&&(!to||a.period_to<=to))
+  const analyses=RK_ANALYSES.filter(a=>{
+    if(a.buyer!==buyer)return false
+    const pf=normDate(a.period_from)
+    if(from&&pf&&pf<from)return false
+    if(to&&pf&&pf>to)return false
+    return true
+  })
+
+  // Relabel KPI cards for buyer view
+  const setLabel=(idx,txt)=>{const labs=document.querySelectorAll('#page-dash .krow .klab');if(labs[idx])labs[idx].textContent=txt}
+  setLabel(0,'SPEND '+buyer.toUpperCase())
+  setLabel(1,'ЛИДЫ')
+  setLabel(2,'CPL')
+  setLabel(3,'CQL')
+  setLabel(4,'КВАЛЫ')
+  setLabel(5,'CTR AVG')
+
+  const setKpi=(id,val,color)=>{const el=document.getElementById(id);if(el){el.textContent=val;if(color)el.style.color=color;el.style.textShadow=''}}
 
   if(!analyses.length){
-    // Show empty state
-    document.querySelectorAll('.kpi-val').forEach(el=>el.textContent='—')
-    const chartWrap=document.getElementById('dyn-chart')?.parentElement
-    if(chartWrap)chartWrap.innerHTML='<div class="empty" style="padding:30px">Нет анализов для '+buyer+' за выбранный период</div>'
+    ['d-spend','d-daily','d-cpl','d-cql','d-roi','d-ctr'].forEach(id=>setKpi(id,'—'))
+    const cv=document.getElementById('dyn-chart')
+    if(cv){const ctx=cv.getContext('2d');ctx.clearRect(0,0,cv.width,cv.height)}
+    const title=document.querySelector('#page-dash .ctit')
     return
   }
 
-  // Aggregate metrics from analyses
-  const totSpend=analyses.reduce((s,a)=>s+(a.spend||0),0)
+  const totSpend=Math.round(analyses.reduce((s,a)=>s+(a.spend||0),0)*100)/100
   const totLeads=analyses.reduce((s,a)=>s+(a.leads||0),0)
   const totQuals=analyses.reduce((s,a)=>s+(a.quals||0),0)
   const totClicks=analyses.reduce((s,a)=>s+(a.clicks||0),0)
   const avgCpl=totLeads>0?Math.round(totSpend/totLeads*100)/100:0
   const avgCql=totQuals>0?Math.round(totSpend/totQuals*100)/100:0
-  const avgCtr=totClicks>0?Math.round(totLeads/totClicks*10000)/100:0
-  const avgCr=totClicks>0?Math.round(totLeads/totClicks*10000)/100:0
+  // CTR avg weighted by clicks
+  const ctrVals=analyses.filter(a=>a.ctr>0)
+  const avgCtr=ctrVals.length?Math.round(ctrVals.reduce((s,a)=>s+a.ctr,0)/ctrVals.length*100)/100:0
 
-  // Update KPI cards
-  const setKpi=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val}
-  setKpi('kpi-spend','$'+Math.round(totSpend*100)/100)
-  setKpi('kpi-cpl','$'+avgCpl)
-  setKpi('kpi-cql','$'+avgCql)
-  setKpi('kpi-ctr',avgCtr+'%')
-  setKpi('kpi-leads',totLeads)
-  setKpi('kpi-quals',totQuals)
+  setKpi('d-spend','$'+totSpend,'var(--yellow)')
+  setKpi('d-daily',totLeads,'#2ea043') // ЛИДЫ slot
+  const cplC=avgCpl>0&&avgCpl<10?'var(--green)':avgCpl<=13?'var(--yellow)':avgCpl>0?'var(--red)':'var(--text)'
+  setKpi('d-cpl','$'+avgCpl,cplC)
+  const cqlC=avgCql>0&&avgCql<25?'var(--green)':avgCql<=35?'var(--yellow)':avgCql>0?'var(--red)':'var(--text)'
+  setKpi('d-cql','$'+avgCql,cqlC)
+  setKpi('d-roi',totQuals,'#4080ff') // КВАЛЫ slot
+  setKpi('d-ctr',avgCtr+'%','#fff')
 
-  // Draw buyer chart from analyses
+  // Clear comparison arrows (not relevant for buyer view)
+  ;['d-spend','d-daily','d-cpl','d-cql','d-roi','d-ctr'].forEach(id=>{
+    const p=document.getElementById(id+'-prev');if(p)p.textContent=''
+    const a=document.getElementById(id+'-arr');if(a)a.textContent=''
+  })
+
+  // Build chart by date — CPL/CQL/CTR/Spend
   const byDate={}
   analyses.forEach(a=>{
-    const d=a.period_from||a.period_to||''
-    if(!byDate[d])byDate[d]={cpl:0,cql:0,ctr:0,spend:0,leads:0,quals:0,n:0}
+    const d=normDate(a.period_from||a.period_to)
+    if(!d)return
+    if(!byDate[d])byDate[d]={spend:0,leads:0,quals:0,ctrSum:0,ctrN:0}
     byDate[d].spend+=a.spend||0
     byDate[d].leads+=a.leads||0
     byDate[d].quals+=a.quals||0
-    byDate[d].cpl=byDate[d].leads>0?byDate[d].spend/byDate[d].leads:0
-    byDate[d].cql=byDate[d].quals>0?byDate[d].spend/byDate[d].quals:0
-    byDate[d].n++
+    if(a.ctr>0){byDate[d].ctrSum+=a.ctr;byDate[d].ctrN++}
   })
-  const chartRows=Object.entries(byDate).sort().map(([d,v])=>({day:d,...v}))
+  const chartRows=Object.entries(byDate).sort().map(([d,v])=>({
+    day:d,
+    cpl:v.leads>0?Math.round(v.spend/v.leads*100)/100:0,
+    cql:v.quals>0?Math.round(v.spend/v.quals*100)/100:0,
+    ctr:v.ctrN>0?Math.round(v.ctrSum/v.ctrN*100)/100:0,
+    spend_pl:v.spend, spend_plua:0
+  }))
   drawChart(chartRows)
 
-  // Show buyer badge
-  const title=document.querySelector('.fhtit')
-  if(title)title.textContent=buyer+' · Дашборд'
+  // Chart title
+  const ctit=document.querySelector('#page-dash .card:last-child .ctit')
+  if(ctit)ctit.textContent='Динамика · '+buyer
+}
+
+// Reset KPI labels back to general dashboard
+function resetDashLabels(){
+  const labels=['SPEND','SPEND DAILY','CPL','CQL','ROI','CTR AVG']
+  const labs=document.querySelectorAll('#page-dash .krow .klab')
+  labs.forEach((el,i)=>{if(labels[i])el.textContent=labels[i]})
+  const ctit=document.querySelector('#page-dash .card:last-child .ctit')
+  if(ctit)ctit.textContent='Динамика'
 }
 
 // ── AUTO LOGIN ──
