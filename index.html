@@ -316,11 +316,18 @@ html,body{height:100%;overflow:hidden;max-width:100vw;font-family:var(--sans);ba
 
 /* ══════════════════ MOBILE ADAPTIVE ══════════════════ */
 @media (max-width:768px){
-  /* Topbar + nav — horizontal scroll */
-  .topbar{padding:0 8px;height:auto;min-height:42px;flex-wrap:wrap;gap:4px}
-  .nav{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex:1 1 100%;order:3;border-top:1px solid var(--border)}
+  /* Topbar: two rows — row 1 = logo+status+user, row 2 = full-width scrollable nav */
+  .topbar{padding:6px 8px 0;height:auto;min-height:unset;flex-wrap:wrap;gap:6px;align-items:center}
+  .logo{font-size:13px;order:1;flex-shrink:0}
+  .sync-area{order:2;margin-left:auto;gap:5px}
+  .sync-area .stxt{display:none}
+  .search-btn{display:none!important}
+  .uchip{order:3;flex-shrink:0}
+  .uname{max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .nav{order:4;flex:1 1 100%;width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-top:1px solid var(--border);margin-top:4px}
   .nav::-webkit-scrollbar{display:none}
-  .nb{padding:8px 10px;font-size:11px;flex-shrink:0}
+  .nb{padding:10px 12px;font-size:11px;flex-shrink:0}
+  .nb .dot{display:none}
   .page{padding:10px 8px}
 
   /* KPI grid → 2 columns */
@@ -353,6 +360,7 @@ html,body{height:100%;overflow:hidden;max-width:100vw;font-family:var(--sans);ba
   .creo-stats{grid-template-columns:repeat(3,1fr)}
 
   /* Analysis — tree columns stack, cards single */
+  #page-analysis{height:auto!important;overflow:visible!important}
   #page-analysis > div{grid-template-columns:1fr!important;height:auto!important}
   #page-analysis [style*="grid-template-columns:240px"],
   #page-analysis [style*="grid-template-columns: 240px"]{grid-template-columns:1fr!important}
