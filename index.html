@@ -17,6 +17,7 @@ const GARNO_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsIn
 const USERS={illia:{name:'Illia',role:'Junior Buyer',initials:'IB',color:'#b52240',bg:'rgba(181,34,64,.15)',border:'#8b1a2e'},danya:{name:'Danya',role:'Head of Marketing',initials:'DM',color:'#6090ff',bg:'rgba(64,128,255,.1)',border:'#1a3060'}}
 const AUTO_STATUS_LOCKED=['Proliw','Perezaliw']
 var db,CURRENT_USER=null
+var CURRENT_REGION=localStorage.getItem('jdl_region')||'PL'
 var ZALIVS=[],DOMAINS=[],TASKS=[],METRICS=[],SALES_DATA=[],TEMPLATES=[]
 const SCLS={Check:'sc',Scale:'ss',OFF:'so',Test:'st',Proliw:'sp',Perezaliw:'sz'}
 var expZ=null,dragId=null,moGeo='',moScore=0,domGeoSel=[],deGeoSel=[],deEditId=null
@@ -313,6 +314,10 @@ html,body{height:100%;overflow:hidden;max-width:100vw;font-family:var(--sans);ba
 .creo-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}.creo-stat{background:var(--bg4);border-radius:7px;padding:10px 12px;text-align:center}.creo-stat-val{font-size:20px;font-weight:800;color:#fff;font-family:var(--mono)}.creo-stat-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
 .creo-actions{display:flex;gap:8px;margin-top:8px}.creo-dl{padding:6px 14px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;cursor:pointer;font-family:var(--sans)}.creo-dl:hover{border-color:var(--border3);color:var(--text)}
 .auto-badge{font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(144,96,208,.15);color:var(--purple);border:1px solid rgba(144,96,208,.3);margin-left:6px;font-weight:700;letter-spacing:.3px}
+.region-tog{display:flex;gap:2px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:2px;margin-left:10px}
+.rt-btn{padding:4px 10px;border:none;background:transparent;color:var(--text3);font-size:11px;font-weight:700;border-radius:6px;cursor:pointer;transition:all .15s;font-family:var(--sans)}
+.rt-btn:hover{color:var(--text2)}
+.rt-btn.active{background:var(--bord2);color:#fff}
 
 /* ══════════════════ MOBILE ADAPTIVE ══════════════════ */
 @media (max-width:768px){
@@ -404,6 +409,10 @@ document.getElementById('root').innerHTML=`
 <div id="app">
   <div class="topbar">
     <div class="logo">JDL <em>·</em> CRM</div>
+    <div class="region-tog" id="region-tog">
+      <button class="rt-btn" data-region="PL" onclick="switchRegion('PL')">🇵🇱 PL</button>
+      <button class="rt-btn" data-region="CZ" onclick="switchRegion('CZ')">🇨🇿 CZ</button>
+    </div>
     <nav class="nav">
       <div class="nb active" id="nb-dash"><span class="dot"></span>Dashboard</div>
       <div class="nb" id="nb-tasks"><span class="dot"></span>Tasks</div>
@@ -905,11 +914,31 @@ function doLogout(){localStorage.removeItem('jdl_user');CURRENT_USER=null;docume
 // ── INIT ──
 async function init(){
   setSS('syncing','Загрузка...')
+  // Set active region toggle
+  document.querySelectorAll('.rt-btn').forEach(b=>b.classList.toggle('active',b.dataset.region===CURRENT_REGION))
   const today=new Date().toISOString().split('T')[0]
   ;['pd-from','pd-to','sp-from','sp-to'].forEach(id=>document.getElementById(id).value=today)
   try{db=supabase.createClient(SB_URL,SB_ANON)}catch(e){console.error(e)}
   await Promise.all([loadZ(),loadD(),loadT(),loadJ(),loadM(),loadSales(),loadTemplates(),loadCreoReports(),loadCreoLib(),loadRkAnalyses(),loadInsights()])
   rdash();setupRT();setSS('ok','Данные загружены')
+}
+
+async function switchRegion(region){
+  if(region===CURRENT_REGION)return
+  CURRENT_REGION=region
+  localStorage.setItem('jdl_region',region)
+  document.querySelectorAll('.rt-btn').forEach(b=>b.classList.toggle('active',b.dataset.region===region))
+  setSS('syncing','Переключение на '+region+'...')
+  // Reload all region-scoped data
+  await Promise.all([loadZ(),loadD(),loadT(),loadCreoReports(),loadCreoLib(),loadRkAnalyses(),loadInsights()])
+  // Re-render whatever page is active
+  rdash()
+  if(typeof rzalivs==='function')rzalivs()
+  if(typeof rtasks==='function')rtasks()
+  if(typeof renderCreoPage==='function')renderCreoPage()
+  if(typeof rdomains==='function')rdomains()
+  if(typeof initAnalysisPage==='function')initAnalysisPage()
+  setSS('ok',region+' · данные загружены')
 }
 function setSS(s,t){document.getElementById('sdot').className='sdot '+s;document.getElementById('stxt').textContent=t}
 async function manualSync(){
@@ -938,9 +967,9 @@ function setupRT(){
 }
 
 // ── LOAD ──
-async function loadZ(){if(!db)return;const{data}=await db.from('zalivs').select('*').order('created_at',{ascending:false});ZALIVS=data||[]}
-async function loadD(){if(!db)return;const{data}=await db.from('domains').select('*').order('created_at',{ascending:false});DOMAINS=data||[]}
-async function loadT(){if(!db)return;const{data}=await db.from('tasks').select('*').order('sort_order',{ascending:true});TASKS=data||[]}
+async function loadZ(){if(!db)return;const{data}=await db.from('zalivs').select('*').eq('region',CURRENT_REGION).order('created_at',{ascending:false});ZALIVS=data||[]}
+async function loadD(){if(!db)return;const{data}=await db.from('domains').select('*').eq('region',CURRENT_REGION).order('created_at',{ascending:false});DOMAINS=data||[]}
+async function loadT(){if(!db)return;const{data}=await db.from('tasks').select('*').eq('region',CURRENT_REGION).order('sort_order',{ascending:true});TASKS=data||[]}
 async function loadM(){
   if(!db)return;const{data}=await db.from('metrics_daily').select('*').order('day',{ascending:true});METRICS=data||[]
   if(METRICS.length>0){const l=METRICS[METRICS.length-1];const m=Math.round((Date.now()-new Date(l.synced_at))/60000);setSS('ok','Синк '+m+'м назад')}
@@ -1409,7 +1438,7 @@ async function fetchCampaignMetrics(z){
     const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
       method:'POST',
       headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
-      body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since,until})
+      body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since,until,region:CURRENT_REGION})
     })
     const d=await r.json()
     if(!d.ok||d.error){
@@ -1562,7 +1591,7 @@ async function svz(){
   const creos=[...document.querySelectorAll('.mcreo-input')].map(i=>i.value.trim()).filter(Boolean)
   const goals=[...document.querySelectorAll('.mgoal-input')].map(i=>i.value.trim()).filter(Boolean)
   const today=new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
-  const{data,error}=await db.from('zalivs').insert({geo:moGeo,name,ad_budget:parseFloat(document.getElementById('ma').value)||0,rk_budget:parseFloat(document.getElementById('mr').value)||0,domain:document.getElementById('md').value,creos,goals,ind:'profit',status:scoreToAutoStatus(moScore),insights:'',buyer:document.getElementById('mb').value,funnel:document.getElementById('mf').value,score:moScore,date:today}).select().single()
+  const{data,error}=await db.from('zalivs').insert({geo:moGeo,name,ad_budget:parseFloat(document.getElementById('ma').value)||0,rk_budget:parseFloat(document.getElementById('mr').value)||0,domain:document.getElementById('md').value,creos,goals,ind:'profit',status:scoreToAutoStatus(moScore),insights:'',buyer:document.getElementById('mb').value,funnel:document.getElementById('mf').value,score:moScore,date:today,region:CURRENT_REGION}).select().single()
   if(!error&&data){ZALIVS.unshift(data);document.getElementById('mo-zaliv').classList.remove('open');toast('Залив создан','ok');rzalivs()}
   else toast('Ошибка: '+JSON.stringify(error),'err')
 }
@@ -1639,7 +1668,7 @@ async function saveDomain(){
   const url=document.getElementById('dm-url').value.trim().replace(/^https?:\/\//,'')
   if(!url){toast('Введи URL','err');return}
   if(!domGeoSel.length){toast('Выбери GEO','err');return}
-  const{data,error}=await db.from('domains').insert({url,description:document.getElementById('dm-desc').value.trim(),geos:[...domGeoSel],funnel:document.getElementById('dm-funnel').value,active:true}).select().single()
+  const{data,error}=await db.from('domains').insert({url,description:document.getElementById('dm-desc').value.trim(),geos:[...domGeoSel],funnel:document.getElementById('dm-funnel').value,active:true,region:CURRENT_REGION}).select().single()
   if(!error&&data){DOMAINS.push(data);document.getElementById('mo-domain').classList.remove('open');domGeoSel=[];document.querySelectorAll('[data-dgeo]').forEach(b=>b.classList.remove('sel'));toast('Домен добавлен','ok');rdomains()}
   else toast('Ошибка','err')
 }
@@ -1700,7 +1729,7 @@ function rdomains(){
 async function saveTk(title,col,who){
   if(!title.trim())return
   const maxSo=TASKS.filter(t=>t.col===col).reduce((mx,t)=>Math.max(mx,t.sort_order||0),0)
-  const{data,error}=await db.from('tasks').insert({title:title.trim(),col,assignee:who||'',priority:'mid',deadline:null,sort_order:maxSo+10}).select().single()
+  const{data,error}=await db.from('tasks').insert({title:title.trim(),col,assignee:who||'',priority:'mid',deadline:null,sort_order:maxSo+10,region:CURRENT_REGION}).select().single()
   if(!error&&data){TASKS.push(data);rtasks()}
 }
 
@@ -2117,7 +2146,7 @@ async function importCampaignsFromMeta(){
     const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
       method:'POST',
       headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
-      body:'{}'
+      body:JSON.stringify({action:'get_campaigns',region:CURRENT_REGION})
     })
     if(!r.ok){
       // Edge Function не задеплоена — показываем инструкцию
@@ -2180,7 +2209,8 @@ async function importCampaignsFromMeta(){
         ind:'profit',status:'Check',insights:'',
         buyer,funnel,score:3,
         campaign_id:String(camp.id),
-        date:date||new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
+        date:date||new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'}),
+        region:CURRENT_REGION
       }).select().single()
       if(!error&&zData){
         ZALIVS.unshift(zData)
@@ -2240,7 +2270,7 @@ function parseDateFromCampName(name){
 // ══════════════════════════════════════════
 async function loadCreoReports(){
   if(!db)return
-  const{data}=await db.from('creo_reports').select('*').order('archived_at',{ascending:false})
+  const{data}=await db.from('creo_reports').select('*').eq('region',CURRENT_REGION).order('archived_at',{ascending:false})
   CREO_REPORTS=data||[]
 }
 
@@ -2440,7 +2470,7 @@ async function fetchCreoAddMetrics(z){
     const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
       method:'POST',
       headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
-      body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since,until})
+      body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since,until,region:CURRENT_REGION})
     })
     const d=await r.json()
     if(d.ok)return d
@@ -2555,7 +2585,7 @@ function creoAddSave(){
     cr:parseFloat(document.getElementById('ca-cr-'+i)?.value)||0,
     cpl:parseFloat(document.getElementById('ca-cpl-'+i)?.value)||0,
     cql:parseFloat(document.getElementById('ca-cql-'+i)?.value)||0,
-    notes:document.getElementById('ca-notes-'+i)?.value||''
+    notes:document.getElementById('ca-notes-'+i)?.value||'',region:CURRENT_REGION
   }))
   db.from('creo_reports').insert(rows).then(({error})=>{
     if(!error){
@@ -2576,7 +2606,7 @@ function creoAddSave(){
 
 async function loadCreoLib(){
   if(!db)return
-  const{data,error}=await db.from('creo_library').select('*').order('created_at',{ascending:false})
+  const{data,error}=await db.from('creo_library').select('*').eq('region',CURRENT_REGION).order('created_at',{ascending:false})
   if(error&&error.message?.includes('does not exist')){
     console.log('creo_library table missing — run SQL to create it')
     CREO_LIB=[]
@@ -2802,7 +2832,7 @@ async function saveCreoLib(){
     if(!error){const cr=CREO_LIB.find(x=>x.id===clEditId);if(cr)Object.assign(cr,payload);toast('Обновлено','ok')}
     else{toast('Ошибка: '+error.message,'err');return}
   }else{
-    const{data,error}=await db.from('creo_library').insert(payload).select().single()
+    const{data,error}=await db.from('creo_library').insert({...payload,region:CURRENT_REGION}).select().single()
     if(!error&&data){CREO_LIB.unshift(data);toast('Крео добавлено','ok')}
     else{toast('Ошибка: '+(error?.message||'unknown'),'err');return}
   }
@@ -2907,7 +2937,7 @@ function creoAddSave(){
     cr:parseFloat(document.getElementById('ca-cr-'+i)?.value)||0,
     cpl:parseFloat(document.getElementById('ca-cpl-'+i)?.value)||0,
     cql:parseFloat(document.getElementById('ca-cql-'+i)?.value)||0,
-    notes:document.getElementById('ca-notes-'+i)?.value||''
+    notes:document.getElementById('ca-notes-'+i)?.value||'',region:CURRENT_REGION
   }))
 
   db.from('creo_reports').insert(rows).then(({error})=>{
@@ -3181,7 +3211,7 @@ async function autoMatchCampaignIds(){
     const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
       method:'POST',
       headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
-      body:'{}'
+      body:JSON.stringify({action:'get_campaigns',region:CURRENT_REGION})
     })
     const d=await r.json()
     if(!d.campaigns?.length){setSS('ok','—');return}
@@ -3231,7 +3261,7 @@ var _anSelMonth = null
 
 async function loadRkAnalyses(){
   if(!db)return
-  const{data}=await db.from('rk_analyses').select('*').order('created_at',{ascending:false})
+  const{data}=await db.from('rk_analyses').select('*').eq('region',CURRENT_REGION).order('created_at',{ascending:false})
   RK_ANALYSES=data||[]
 }
 
@@ -3498,7 +3528,7 @@ async function generateAnalysis(){
   try{
     const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
       method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
-      body:JSON.stringify({action:'get_adsets',campaign_id:z.campaign_id})
+      body:JSON.stringify({action:'get_adsets',campaign_id:z.campaign_id,region:CURRENT_REGION})
     })
     const d=await r.json()
     if(d.ok)adsets=d.adsets||[]
@@ -3541,14 +3571,14 @@ async function loadAdsetResult(adsetId,z,from,to,adsets){
     try{
       const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
         method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
-        body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since:from,until:to})
+        body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since:from,until:to,region:CURRENT_REGION})
       })
       const d=await r.json();if(d.ok)meta=d
     }catch(e){}
     try{
       const r2=await fetch(SB_URL+'/functions/v1/get-campaigns',{
         method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
-        body:JSON.stringify({action:'get_campaign_video',campaign_id:z.campaign_id,since:from,until:to})
+        body:JSON.stringify({action:'get_campaign_video',campaign_id:z.campaign_id,since:from,until:to,region:CURRENT_REGION})
       })
       const d2=await r2.json()
       if(d2.ok&&meta){meta.frequency=d2.frequency;meta.avg_view_time=d2.avg_view_time}
@@ -3558,7 +3588,7 @@ async function loadAdsetResult(adsetId,z,from,to,adsets){
     try{
       const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
         method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
-        body:JSON.stringify({action:'get_adset_insights',adset_id:adsetId,since:from,until:to})
+        body:JSON.stringify({action:'get_adset_insights',adset_id:adsetId,since:from,until:to,region:CURRENT_REGION})
       })
       const d=await r.json();if(d.ok)meta=d
     }catch(e){}
@@ -3680,6 +3710,7 @@ async function saveCurrentAnalysis(zid,spendArg,clicksArg,reachArg,ctrArg,cpcArg
     clicks,cpc,ctr,spend,leads,quals,cr,cpl,ar,cql,
     buyer:buyer||CURRENT_USER?.name||'',geo,funnel,notes,
     month_key:periodMonthKey,
+    region:CURRENT_REGION,
     adset_id:adsetId&&adsetId!=='all'&&adsetId!=='undefined'?adsetId:null,
     adset_name:adsetName&&adsetName!=='Вся кампания'?adsetName:null
   }
@@ -3813,7 +3844,7 @@ async function saveEditedAnalysis(id){
 async function loadInsights(){
   if(!db)return
   try{
-    const{data}=await db.from('creo_insights').select('*').order('created_at',{ascending:false})
+    const{data}=await db.from('creo_insights').select('*').eq('region',CURRENT_REGION).order('created_at',{ascending:false})
     INSIGHTS=data||[]
   }catch(e){
     // Fallback to localStorage
@@ -3829,7 +3860,7 @@ async function addInsightInline(){
     const buyer=CURRENT_USER?.name||'Unknown'
     const newInsight={tag,text,buyer,created_at:new Date().toISOString()}
     // Save to Supabase
-    const{data,error}=await db.from('creo_insights').insert({tag,text,buyer}).select().single()
+    const{data,error}=await db.from('creo_insights').insert({tag,text,buyer,region:CURRENT_REGION}).select().single()
     if(!error&&data){
       INSIGHTS.unshift(data)
     }else{
@@ -3931,7 +3962,7 @@ async function rdashBuyer(buyer){
     try{
       const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
         method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
-        body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since:from,until:to})
+        body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since:from,until:to,region:CURRENT_REGION})
       })
       const d=await r.json()
       return d.ok?{z,d}:null
