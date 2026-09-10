@@ -18,6 +18,10 @@ const USERS={illia:{name:'Illia',role:'Junior Buyer',initials:'IB',color:'#b5224
 const AUTO_STATUS_LOCKED=['Proliw','Perezaliw']
 var db,CURRENT_USER=null
 var CURRENT_REGION=localStorage.getItem('jdl_region')||'PL'
+var REGION_GEOS={
+  PL:{main:'PL',ua:'PLUA',flag:'🇵🇱',creoMain:'PL',creoUa:'UAPL'},
+  CZ:{main:'CZ',ua:'CZUA',flag:'🇨🇿',creoMain:'CZ',creoUa:'UACZ'}
+}
 var ZALIVS=[],DOMAINS=[],TASKS=[],METRICS=[],SALES_DATA=[],TEMPLATES=[]
 const SCLS={Check:'sc',Scale:'ss',OFF:'so',Test:'st',Proliw:'sp',Perezaliw:'sz'}
 var expZ=null,dragId=null,moGeo='',moScore=0,domGeoSel=[],deGeoSel=[],deEditId=null
@@ -324,6 +328,8 @@ html,body{height:100%;overflow:hidden;max-width:100vw;font-family:var(--sans);ba
   /* Topbar: two rows — row 1 = logo+status+user, row 2 = full-width scrollable nav */
   .topbar{padding:6px 8px 0;height:auto;min-height:unset;flex-wrap:wrap;gap:6px;align-items:center}
   .logo{font-size:13px;order:1;flex-shrink:0}
+  .region-tog{order:1;margin-left:6px;padding:1px}
+  .rt-btn{padding:3px 7px;font-size:10px}
   .sync-area{order:2;margin-left:auto;gap:5px}
   .sync-area .stxt{display:none}
   .search-btn{display:none!important}
@@ -471,7 +477,7 @@ document.getElementById('root').innerHTML=`
           <button class="pb" id="zf-ind-d" data-ind="drop" style="padding:3px 10px;border-radius:4px;font-size:10px;font-weight:700;border:none;color:var(--yellow)">D</button>
           <button class="pb" id="zf-ind-o" data-ind="off" style="padding:3px 10px;border-radius:4px;font-size:10px;font-weight:700;border:none;color:var(--red)">O</button>
         </div>
-        <select class="fsel" id="zf-geo"><option value="">🌐 GEO</option><option value="PL">🇵🇱 PL</option><option value="PLUA">🇵🇱🇺🇦 PLUA</option></select>
+        <select class="fsel" id="zf-geo"><option value="">🌐 GEO</option></select>
         <select class="fsel" id="zf-status"><option value="">🏷 Статус</option><option value="Check">Check</option><option value="Scale">Scale</option><option value="OFF">OFF</option><option value="Test">Test</option><option value="Proliw">Proliw</option><option value="Perezaliw">Perezaliw</option></select>
         <select class="fsel" id="zf-sort"><option value="new">📅 Новые сначала</option><option value="old">📅 Старые сначала</option><option value="score">⭐ По score</option><option value="budget">💰 По бюджету</option></select>
         <select class="fsel" id="zf-buyer"><option value="">👤 Все баеры</option><option value="Illia">Illia</option><option value="Danya">Danya</option></select>
@@ -490,7 +496,7 @@ document.getElementById('root').innerHTML=`
     </div>
     <div class="page" id="page-domains">
       <div class="fhdr"><span class="fhtit">Домены</span><span class="fhcnt" id="d-count">(0)</span></div>
-      <div class="fbar"><select class="fsel" id="df-geo"><option value="">🌐 GEO</option><option value="PL">PL</option><option value="PLUA">PLUA</option></select><input class="fsrch" id="df-q" placeholder="🔍 Поиск..."><button class="badd" id="btn-new-domain">+ Добавить домен</button></div>
+      <div class="fbar"><select class="fsel" id="df-geo"><option value="">🌐 GEO</option></select><input class="fsrch" id="df-q" placeholder="🔍 Поиск..."><button class="badd" id="btn-new-domain">+ Добавить домен</button></div>
       <div class="dgr" id="dom-grid"><div class="empty">Загрузка...</div></div>
     </div>
     <div class="page" id="page-sales">
@@ -627,7 +633,7 @@ document.getElementById('root').innerHTML=`
 <div id="mo-search"><div class="srch-box"><div class="srch-inp-wrap"><span style="font-size:16px;color:var(--text3)">🔍</span><input class="srch-inp" id="srch-inp" placeholder="Поиск по заливам, доменам, задачам, журналу..."><span class="srch-esc">ESC</span></div><div class="srch-results" id="srch-results"><div class="srch-empty">Начни вводить для поиска</div></div></div></div>
 <div class="mo" id="mo-zaliv"><div class="mob">
   <div class="motit">+ Новый залив <button class="mox" data-close="mo-zaliv">×</button></div>
-  <div class="fl"><label>GEO</label><div class="gowrap"><div class="go" data-geo="PL">🇵🇱 PL</div><div class="go" data-geo="PLUA">🇵🇱🇺🇦 PLUA</div></div></div>
+  <div class="fl"><label>GEO</label><div class="gowrap" id="mo-geos"></div></div>
   <div class="fl"><label>Название РК</label><input class="fi" id="mn" placeholder="D{дата}PL/PH1./garno/kalk"></div>
   <div class="fl2"><div class="fl" style="margin-bottom:0"><label>AD Budget $</label><input class="fi" id="ma" type="number" placeholder="10"></div><div class="fl" style="margin-bottom:0"><label>RK Budget $</label><input class="fi" id="mr" type="number" placeholder="10"></div></div>
   <div class="fl2"><div class="fl" style="margin-bottom:0"><label>Баер</label><select class="fi" id="mb"><option value="Illia">Illia</option><option value="Danya">Danya</option></select></div><div class="fl" style="margin-bottom:0"><label>Воронка</label><select class="fi" id="mf"><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div></div>
@@ -653,7 +659,7 @@ document.getElementById('root').innerHTML=`
   <div class="motit">✏️ Редактировать домен <button class="mox" data-close="mo-domain-edit">×</button></div>
   <div class="fl"><label>URL</label><input class="fi" id="de-url"></div>
   <div class="fl"><label>Описание</label><input class="fi" id="de-desc"></div>
-  <div class="fl"><label>GEO</label><div class="gowrap" id="de-geos"><div class="go" data-degeo="PL">🇵🇱 PL</div><div class="go" data-degeo="PLUA">🇵🇱🇺🇦 PLUA</div></div></div>
+  <div class="fl"><label>GEO</label><div class="gowrap" id="de-geos"></div></div>
   <div class="fl"><label>Воронка</label><select class="fi" id="de-funnel"><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div>
   <div class="fl"><label>Статус</label><div style="display:flex;gap:16px;margin-top:4px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)"><input type="radio" name="de-active" value="true" id="de-active-y"> Активный</label><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)"><input type="radio" name="de-active" value="false" id="de-active-n"> Неактивный</label></div></div>
   <div class="mofoot"><button class="sbdl" onclick="if(deEditId)delDomain(deEditId)">🗑 Удалить</button><button class="bcn" data-close="mo-domain-edit">Отмена</button><button class="bsv" onclick="saveDomainEdit()">Сохранить</button></div>
@@ -685,7 +691,7 @@ document.getElementById('root').innerHTML=`
   <div class="motit">+ Добавить домен <button class="mox" data-close="mo-domain">×</button></div>
   <div class="fl"><label>URL домена</label><input class="fi" id="dm-url" placeholder="garnofurniture.com/kalkulator"></div>
   <div class="fl"><label>Описание</label><input class="fi" id="dm-desc" placeholder="PL калькулятор кухни"></div>
-  <div class="fl"><label>GEO</label><div class="gowrap" id="dm-geos"><div class="go" data-dgeo="PL">🇵🇱 PL</div><div class="go" data-dgeo="PLUA">🇵🇱🇺🇦 PLUA</div></div></div>
+  <div class="fl"><label>GEO</label><div class="gowrap" id="dm-geos"></div></div>
   <div class="fl"><label>Воронка</label><select class="fi" id="dm-funnel"><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div>
   <div class="mofoot"><button class="bcn" data-close="mo-domain">Отмена</button><button class="bsv" id="btn-create-domain">Добавить</button></div>
 </div></div>
@@ -819,9 +825,60 @@ document.getElementById('btn-new-domain').addEventListener('click',()=>document.
 document.getElementById('tf-u').addEventListener('change',rtasks)
 document.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',function(){document.getElementById(this.dataset.close).classList.remove('open')}))
 document.querySelectorAll('.mo').forEach(mo=>mo.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open')}))
-document.querySelectorAll('[data-geo]').forEach(btn=>btn.addEventListener('click',function(){
-  document.querySelectorAll('[data-geo]').forEach(b=>b.classList.remove('sel'));this.classList.add('sel');moGeo=this.dataset.geo;updDomains();updPrev()
-}))
+// ── GEO selectors are region-dependent: render + bind here ──
+function populateGeoSelectors(){
+  const cfg=regionCfg()
+  const geos=regionGeos()
+  const flagOf=g=>isUaGeo(g)?cfg.flag+'🇺🇦':cfg.flag
+  // Filter selects (zalivs + domains)
+  ;['zf-geo','df-geo'].forEach(id=>{
+    const sel=document.getElementById(id);if(!sel)return
+    const cur=sel.value
+    sel.innerHTML='<option value="">🌐 GEO</option>'+geos.map(g=>`<option value="${g}">${flagOf(g)} ${g}</option>`).join('')
+    if(geos.includes(cur))sel.value=cur;else sel.value=''
+  })
+  // Zaliv modal GEO buttons (single select)
+  const mo=document.getElementById('mo-geos')
+  if(mo){
+    mo.innerHTML=geos.map(g=>`<div class="go" data-geo="${g}">${flagOf(g)} ${g}</div>`).join('')
+    mo.querySelectorAll('[data-geo]').forEach(btn=>btn.addEventListener('click',function(){
+      mo.querySelectorAll('[data-geo]').forEach(b=>b.classList.remove('sel'));this.classList.add('sel');moGeo=this.dataset.geo;updDomains();updPrev()
+    }))
+  }
+  // Domain add GEO buttons (multi select)
+  const dm=document.getElementById('dm-geos')
+  if(dm){
+    dm.innerHTML=geos.map(g=>`<div class="go" data-dgeo="${g}">${flagOf(g)} ${g}</div>`).join('')
+    dm.querySelectorAll('[data-dgeo]').forEach(btn=>btn.addEventListener('click',function(){
+      if(domGeoSel.includes(this.dataset.dgeo)){domGeoSel=domGeoSel.filter(x=>x!==this.dataset.dgeo);this.classList.remove('sel')}
+      else{domGeoSel.push(this.dataset.dgeo);this.classList.add('sel')}
+    }))
+  }
+  // Domain edit GEO buttons (multi select)
+  const de=document.getElementById('de-geos')
+  if(de){
+    de.innerHTML=geos.map(g=>`<div class="go" data-degeo="${g}">${flagOf(g)} ${g}</div>`).join('')
+    de.querySelectorAll('[data-degeo]').forEach(btn=>btn.addEventListener('click',function(){
+      if(deGeoSel.includes(this.dataset.degeo)){deGeoSel=deGeoSel.filter(x=>x!==this.dataset.degeo);this.classList.remove('sel')}
+      else{deGeoSel.push(this.dataset.degeo);this.classList.add('sel')}
+    }))
+  }
+  // Creo library GEO select + filter
+  const clGeo=document.getElementById('cl-geo')
+  if(clGeo){
+    const cur=clGeo.value
+    clGeo.innerHTML=`<option value="${cfg.creoMain}">${cfg.flag} ${cfg.creoMain}</option><option value="${cfg.creoUa}">${cfg.flag}🇺🇦 ${cfg.creoUa}</option>`
+    if([cfg.creoMain,cfg.creoUa].includes(cur))clGeo.value=cur
+  }
+  const clfGeo=document.getElementById('clf-geo')
+  if(clfGeo){
+    const cur=clfGeo.value
+    clfGeo.innerHTML=`<option value="">GEO</option><option value="${cfg.creoMain}">${cfg.creoMain}</option><option value="${cfg.creoUa}">${cfg.creoUa}</option>`
+    if([cfg.creoMain,cfg.creoUa].includes(cur))clfGeo.value=cur;else clfGeo.value=''
+  }
+}
+populateGeoSelectors()
+
 document.querySelectorAll('#mo-score .spb').forEach(btn=>btn.addEventListener('click',function(){
   moScore=parseInt(this.dataset.score);document.querySelectorAll('#mo-score .spb').forEach(b=>b.className='spb');this.className='spb s'+moScore
 }))
@@ -831,15 +888,7 @@ document.getElementById('btn-add-creo').addEventListener('click',()=>addCreoFiel
 document.getElementById('btn-add-goal').addEventListener('click',()=>addGoalField())
 document.getElementById('btn-create-zaliv').addEventListener('click',svz)
 document.getElementById('btn-save-as-tpl').addEventListener('click',saveAsTemplate)
-document.querySelectorAll('[data-dgeo]').forEach(btn=>btn.addEventListener('click',function(){
-  if(domGeoSel.includes(this.dataset.dgeo)){domGeoSel=domGeoSel.filter(x=>x!==this.dataset.dgeo);this.classList.remove('sel')}
-  else{domGeoSel.push(this.dataset.dgeo);this.classList.add('sel')}
-}))
 document.getElementById('btn-create-domain').addEventListener('click',saveDomain)
-document.querySelectorAll('[data-degeo]').forEach(btn=>btn.addEventListener('click',function(){
-  if(deGeoSel.includes(this.dataset.degeo)){deGeoSel=deGeoSel.filter(x=>x!==this.dataset.degeo);this.classList.remove('sel')}
-  else{deGeoSel.push(this.dataset.degeo);this.classList.add('sel')}
-}))
 // de-save-btn and de-del-btn use onclick
 document.getElementById('topbar-search').addEventListener('click',openSearch)
 document.getElementById('srch-inp').addEventListener('input',function(){
@@ -928,6 +977,7 @@ async function switchRegion(region){
   CURRENT_REGION=region
   localStorage.setItem('jdl_region',region)
   document.querySelectorAll('.rt-btn').forEach(b=>b.classList.toggle('active',b.dataset.region===region))
+  populateGeoSelectors()
   setSS('syncing','Переключение на '+region+'...')
   // Reload all region-scoped data
   await Promise.all([loadZ(),loadD(),loadT(),loadCreoReports(),loadCreoLib(),loadRkAnalyses(),loadInsights()])
@@ -1088,9 +1138,9 @@ function rdash(){
   setCompare('d-roi', roi, pRoi, true)
   countUp(document.getElementById('d-ctr'),avgCtr,'','%')
   setCompare('d-ctr', parseFloat(avgCtr), pCtr, true)
-  document.getElementById('d-zalivs').innerHTML=ZALIVS.slice(0,5).map(z=>`<div class="zrow"><div class="zdot" style="background:${z.ind==='profit'?'var(--green)':z.ind==='drop'?'var(--yellow)':'var(--red)'}"></div><span class="zgeo ${z.geo==='PL'?'gpl':'gplua'}">${z.geo}</span><div class="zname">${z.name}</div><div class="zbud">$${z.rk_budget}/d</div></div>`).join('')||'<div class="empty">Нет заливов</div>'
+  document.getElementById('d-zalivs').innerHTML=ZALIVS.slice(0,5).map(z=>`<div class="zrow"><div class="zdot" style="background:${z.ind==='profit'?'var(--green)':z.ind==='drop'?'var(--yellow)':'var(--red)'}"></div><span class="zgeo ${geoClass(z.geo)}">${z.geo}</span><div class="zname">${z.name}</div><div class="zbud">$${z.rk_budget}/d</div></div>`).join('')||'<div class="empty">Нет заливов</div>'
   const mx=Math.max(tPL,tPLUA,1)
-  document.getElementById('d-geo').innerHTML=`<div class="brow"><div class="bhdr"><span class="zgeo gpl">PL</span><span style="font-weight:700;color:var(--yellow);font-family:var(--mono)">$${Math.round(tPL)}</span></div><div class="btrk"><div class="bfill" style="width:${Math.round(tPL/mx*100)}%;background:#4080ff"></div></div></div><div class="brow"><div class="bhdr"><span class="zgeo gplua">PLUA</span><span style="font-weight:700;color:var(--yellow);font-family:var(--mono)">$${Math.round(tPLUA)}</span></div><div class="btrk"><div class="bfill" style="width:${Math.round(tPLUA/mx*100)}%;background:#9060d0"></div></div></div>`
+  document.getElementById('d-geo').innerHTML=`<div class="brow"><div class="bhdr"><span class="zgeo gpl">${regionCfg().main}</span><span style="font-weight:700;color:var(--yellow);font-family:var(--mono)">$${Math.round(tPL)}</span></div><div class="btrk"><div class="bfill" style="width:${Math.round(tPL/mx*100)}%;background:#4080ff"></div></div></div><div class="brow"><div class="bhdr"><span class="zgeo gplua">${regionCfg().ua}</span><span style="font-weight:700;color:var(--yellow);font-family:var(--mono)">$${Math.round(tPLUA)}</span></div><div class="btrk"><div class="bfill" style="width:${Math.round(tPLUA/mx*100)}%;background:#9060d0"></div></div></div>`
   document.getElementById('d-tasks').innerHTML=TASKS.filter(t=>t.col!=='done').slice(0,4).map(t=>`<div class="tmini"><div class="tpb" style="background:${t.priority==='high'?'var(--red)':t.priority==='mid'?'var(--yellow)':'var(--green)'}"></div><div class="tmt">${t.title}</div><span class="tms ${t.col==='process'?'ts-proc':'ts-todo'}">${t.col==='process'?'In Progress':'TO DO'}</span>${t.assignee?`<span class="tma">${t.assignee}</span>`:''}</div>`).join('')||'<div class="empty">Нет задач</div>'
   const sf=SALES_DATA.filter(s=>{const d=parseDt(s.createdAt);if(!d)return false;const day=d.toISOString().split('T')[0];return day>=from&&day<=to})
   const stotal=sf.reduce((s,r)=>s+(r.saleAmount||0),0),savg=sf.length?Math.round(stotal/sf.length):0
@@ -1287,7 +1337,7 @@ function chartMouseMove(e){
 }
 // ── ZALIVS ──
 function scoreToAutoStatus(s){return s<=2?'OFF':s<=4?'Check':'Scale'}
-function gchip(g){return`<span class="zgeo gchip ${g==='PL'?'gpl':'gplua'}">${g}</span>`}
+function gchip(g){return`<span class="zgeo gchip ${geoClass(g)}">${g}</span>`}
 function spbs(z){return Array.from({length:7},(_,i)=>`<button class="spb${z.score===i?' s'+i:''}" data-zid="${z.id}" data-sc="${i}">${i}</button>`).join('')}
 
 function rzalivs(){
@@ -1486,7 +1536,7 @@ function exRow(z){
             <div class="ef-creo-row" style="display:flex;gap:5px;align-items:center">
               <select class="efi ef-creo-sel" style="flex:1" data-zid="${z.id}" data-ci="${ci}">
                 <option value="${cr}">${cr||'— выбрать —'}</option>
-                ${CREO_LIB.filter(lib=>lib.geo===(z.geo==='PLUA'?'UAPL':z.geo)).map(lib=>`<option value="${lib.name}"${lib.name===cr?' selected':''}>${lib.name}${lib.status==='hall'?' 🏆':lib.status==='used'?' ⚡':' ✨'}</option>`).join('')}
+                ${CREO_LIB.filter(lib=>lib.geo===geoToCreoGeo(z.geo)).map(lib=>`<option value="${lib.name}"${lib.name===cr?' selected':''}>${lib.name}${lib.status==='hall'?' 🏆':lib.status==='used'?' ⚡':' ✨'}</option>`).join('')}
               </select>
               <button class="rmbtn" title="Удалить крео" style="color:var(--red);font-size:18px;flex-shrink:0;padding:0 6px" onclick="event.stopPropagation();delCreoFromExpand(${z.id},${ci});return false">×</button>
             </div>
@@ -1558,8 +1608,7 @@ async function saveEdit(id){
 async function delZaliv(id){if(!confirm('Удалить?'))return;await db.from('zalivs').delete().eq('id',id);ZALIVS=ZALIVS.filter(z=>z.id!==id);expZ=null;toast('Удалено','ok');rzalivs()}
 function addCreoInline(id){
   const z=ZALIVS.find(x=>x.id===id);if(!z||(z.creos||[]).length>=5)return
-  const geoMap={'PL':'PL','PLUA':'UAPL'}
-  const libGeo=geoMap[z.geo]||''
+  const libGeo=geoToCreoGeo(z.geo)||''
   const opts=CREO_LIB.filter(cr=>!libGeo||cr.geo===libGeo)
   const btn=document.querySelector('[data-zid="'+id+'"].cadd')
   if(!btn)return
@@ -1610,7 +1659,7 @@ function openTemplates(){renderTemplateList();document.getElementById('mo-templa
 async function renderTemplateList(){
   const list=document.getElementById('tpl-list')
   if(!TEMPLATES.length){list.innerHTML='<div class="empty">Нет шаблонов</div>';return}
-  list.innerHTML=TEMPLATES.map(t=>`<div class="tpl-item" data-tplid="${t.id}"><span class="zgeo gchip ${t.geo==='PL'?'gpl':'gplua'}">${t.geo}</span><div style="flex:1;min-width:0"><div class="tpl-name">${t.name}</div><div class="tpl-meta">${t.funnel} · $${t.ad_budget}/$${t.rk_budget}</div></div><button class="tpl-del" data-tplid="${t.id}">✕</button></div>`).join('')
+  list.innerHTML=TEMPLATES.map(t=>`<div class="tpl-item" data-tplid="${t.id}"><span class="zgeo gchip ${geoClass(t.geo)}">${t.geo}</span><div style="flex:1;min-width:0"><div class="tpl-name">${t.name}</div><div class="tpl-meta">${t.funnel} · $${t.ad_budget}/$${t.rk_budget}</div></div><button class="tpl-del" data-tplid="${t.id}">✕</button></div>`).join('')
   list.querySelectorAll('.tpl-item').forEach(item=>{item.addEventListener('click',e=>{if(e.target.closest('.tpl-del'))return;const tpl=TEMPLATES.find(t=>t.id===item.dataset.tplid);if(!tpl)return;document.getElementById('mo-templates').classList.remove('open');openMoZaliv(tpl)})})
   list.querySelectorAll('.tpl-del').forEach(btn=>{btn.addEventListener('click',async e=>{e.stopPropagation();const id=btn.dataset.tplid;TEMPLATES=TEMPLATES.filter(t=>t.id!==id);try{await db.from('zaliv_templates').delete().eq('id',id)}catch(e){}localStorage.setItem('jdl_templates',JSON.stringify(TEMPLATES));toast('Шаблон удалён','ok');renderTemplateList()})})
 }
@@ -1624,7 +1673,7 @@ async function openCreoGallery(zalivId,creoId){
   let imgUrl=null
   try{const{data}=db.storage.from('creo-screenshots').getPublicUrl(`${zalivId}/${creoId}.png`);const ch=await fetch(data.publicUrl,{method:'HEAD'});if(ch.ok)imgUrl=data.publicUrl}catch(e){}
   document.getElementById('creo-gallery-content').innerHTML=`
-    <div class="creo-header"><div><div class="creo-id">${creoId}</div><div class="creo-zaliv">${z?.name||'—'}</div></div><span class="zgeo gchip ${z?.geo==='PL'?'gpl':'gplua'}">${z?.geo||''}</span></div>
+    <div class="creo-header"><div><div class="creo-id">${creoId}</div><div class="creo-zaliv">${z?.name||'—'}</div></div><span class="zgeo gchip ${geoClass(z?.geo)}">${z?.geo||''}</span></div>
     <div class="creo-img-area" id="creo-drop-area">${imgUrl?`<img src="${imgUrl}?t=${Date.now()}" alt="Скрин крео">`:`<div class="creo-upload-hint"><strong>Нет скриншота</strong>Нажми «Загрузить скрин» или перетащи файл</div>`}</div>
     <input type="file" id="creo-file-inp" accept="image/*" style="display:none">
     <div class="creo-stats"><div class="creo-stat"><div class="creo-stat-val">—</div><div class="creo-stat-lbl">CPL</div></div><div class="creo-stat"><div class="creo-stat-val">—</div><div class="creo-stat-lbl">CTR</div></div><div class="creo-stat"><div class="creo-stat-val">—</div><div class="creo-stat-lbl">Leads</div></div></div>
@@ -1711,7 +1760,7 @@ function rdomains(){
       </div>
       <div class="ddsc">${d.description||''}</div>
       <div class="dftr">
-        ${(d.geos||[]).map(g=>`<span class="zgeo gchip ${g==='PL'?'gpl':'gplua'}">${g}</span>`).join('')}
+        ${(d.geos||[]).map(g=>`<span class="zgeo gchip ${geoClass(g)}">${g}</span>`).join('')}
         <span class="fchip">${d.funnel}</span>
         <span style="margin-left:auto;font-size:11px;font-weight:600;color:${d.active?'var(--green)':'var(--red)'}">${d.active?'● Активный':'○ Неактивный'}</span>
         <button style="background:none;border:1px solid var(--border);border-radius:4px;color:var(--text3);cursor:pointer;font-size:11px;padding:2px 7px" onclick="event.stopPropagation();openDomainEdit(${d.id})">✏️ Ред.</button>
@@ -2232,17 +2281,31 @@ async function importCampaignsFromMeta(){
   }
 }
 
+// ── REGION GEO helpers (config REGION_GEOS declared at top) ──
+function regionCfg(){return REGION_GEOS[CURRENT_REGION]||REGION_GEOS.PL}
+function regionGeos(){const c=regionCfg();return [c.main,c.ua]}
+// Is this GEO the "UA" variant of its region?
+function isUaGeo(g){return g==='PLUA'||g==='CZUA'}
+// GEO chip css class: main geo → gpl (blue), ua variant → gplua (purple)
+function geoClass(g){return isUaGeo(g)?'gplua':'gpl'}
+// Map zaliv GEO → creo library GEO (PL→PL, PLUA→UAPL, CZ→CZ, CZUA→UACZ)
+function geoToCreoGeo(g){
+  const m={PL:'PL',PLUA:'UAPL',CZ:'CZ',CZUA:'UACZ'}
+  return m[g]||g
+}
+
 function parseGeoFromName(name){
   const n=name.toUpperCase()
+  const c=regionCfg()
   const brIdx=n.indexOf('}')
   if(brIdx>=0){
     const after=n.substring(brIdx+1,brIdx+6)
-    if(after.startsWith('PLUA'))return'PLUA'
-    if(after.startsWith('UA'))return'PLUA'
-    if(after.startsWith('PL'))return'PL'
+    if(after.startsWith(c.ua))return c.ua
+    if(after.startsWith('UA'))return c.ua
+    if(after.startsWith(c.main))return c.main
   }
-  if(n.includes('UA'))return'PLUA'
-  return'PL'
+  if(n.includes('UA'))return c.ua
+  return c.main
 }
 
 function parseFunnelFromName(name){
@@ -2314,7 +2377,7 @@ function rcreo(){
     const cplColor=r.cpl>0&&r.cpl<10?'var(--green)':r.cpl<15?'var(--yellow)':r.cpl>0?'var(--red)':'var(--text3)'
     return`<tr>
       <td><span class="creo-id-tag">${r.creo_id}</span></td>
-      <td>${r.geo?`<span class="zgeo gchip ${r.geo==='PL'?'gpl':'gplua'}">${r.geo}</span>`:'—'}</td>
+      <td>${r.geo?`<span class="zgeo gchip ${geoClass(r.geo)}">${r.geo}</span>`:'—'}</td>
       <td><span style="font-size:11px;color:var(--text2)">${r.creator||'—'}</span></td>
       <td><span class="fchip">${r.funnel||'—'}</span></td>
       <td style="font-size:10px;color:var(--text3);font-family:var(--mono)">${r.date_start||'—'}${r.date_end?'→'+r.date_end:''}</td>
@@ -2377,7 +2440,7 @@ function interceptOFF(zalivId){
   const geo=z.geo,creator=z.buyer,funnel=z.funnel
   document.getElementById('off-creo-preview').innerHTML=`
     <div style="font-size:11px;color:var(--text3);margin-bottom:10px;display:flex;gap:16px">
-      <span>${geo?`<span class="zgeo gchip ${geo==='PL'?'gpl':'gplua'}">${geo}</span>`:''}</span>
+      <span>${geo?`<span class="zgeo gchip ${geoClass(geo)}">${geo}</span>`:''}</span>
       <span>👤 ${creator||'—'}</span>
       <span>🎯 ${funnel||'—'}</span>
     </div>
@@ -2500,8 +2563,9 @@ function _buildCreoAddModalFallback(z){
   const metrics=METRICS.filter(m=>(!dateStartISO||m.day>=dateStartISO)&&m.day<=dateEnd)
   let spend=0,totalLeads=0,totalQuals=0
   metrics.forEach(r=>{
-    if(z.geo==='PL'){spend+=parseFloat(r.spend_pl||0);totalLeads+=(r.leads_pl||0)}
-    else if(z.geo==='PLUA'){spend+=parseFloat(r.spend_plua||0);totalLeads+=(r.leads_plua||0)}
+    // METRICS columns are spend_pl/spend_plua — main geo → _pl, UA-variant → _plua
+    if(z.geo&&!isUaGeo(z.geo)){spend+=parseFloat(r.spend_pl||0);totalLeads+=(r.leads_pl||0)}
+    else if(isUaGeo(z.geo)){spend+=parseFloat(r.spend_plua||0);totalLeads+=(r.leads_plua||0)}
     else{spend+=parseFloat(r.spend_pl||0)+parseFloat(r.spend_plua||0);totalLeads+=(r.leads_pl||0)+(r.leads_plua||0)}
     totalQuals+=r.quals||0
   })
@@ -2525,7 +2589,7 @@ function _renderCreoAddForm(z,{spend,totalLeads,totalQuals,autoCpl,autoCql,avgCt
   document.getElementById('creo-add-fields').innerHTML=`
     <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:12px;margin-bottom:14px">
       <div style="display:flex;gap:16px;font-size:12px;flex-wrap:wrap;margin-bottom:8px">
-        <span>${z.geo?`<span class="zgeo gchip ${z.geo==='PL'?'gpl':'gplua'}">${z.geo}</span>`:''}</span>
+        <span>${z.geo?`<span class="zgeo gchip ${geoClass(z.geo)}">${z.geo}</span>`:''}</span>
         <span style="color:var(--text2)">👤 ${z.buyer||'—'}</span>
         <span style="color:var(--text2)">🎯 ${z.funnel||'—'}</span>
         <span style="color:var(--text3);font-family:var(--mono)">📅 ${dateStart} → ${dateEndFmt}</span>
@@ -2669,7 +2733,7 @@ function renderCreoTable(){
   tbody.innerHTML=f.map(cr=>{
     const statusColor=cr.status==='hall'?'#ffd700':cr.status==='used'?'var(--yellow)':'var(--blue)'
     const statusLabel=cr.status==='hall'?'🏆 MWP':cr.status==='used'?'⚡ Use':'✨ Clean'
-    const geoClass=cr.geo==='PL'?'gpl':'gplua'
+    const geoClass=geoClass(cr.geo)
     const ctrColor=cr.avg_ctr>2?'var(--green)':cr.avg_ctr>1?'var(--yellow)':cr.avg_ctr>0?'var(--red)':'var(--text3)'
     const cplColor=cr.avg_cpl>0&&cr.avg_cpl<10?'var(--green)':cr.avg_cpl<15?'var(--yellow)':cr.avg_cpl>0?'var(--red)':'var(--text3)'
     return`<tr>
@@ -2707,7 +2771,7 @@ function openAddCreoLib(){
   try{
     clEditId=null;_pastedImageFile=null
     document.getElementById('cl-name').value=''
-    document.getElementById('cl-geo').value='PL'
+    document.getElementById('cl-geo').value=regionCfg().creoMain
     document.getElementById('cl-funnel').value='Калькулятор'
     document.getElementById('cl-buyer').value=CURRENT_USER?.name||'Illia'
     document.getElementById('cl-status').value='ready'
@@ -2778,7 +2842,7 @@ async function openEditCreoLib(id){
   const cr=CREO_LIB.find(x=>x.id===id);if(!cr){toast('Крео не найден (id='+id+')','err');return}
   clEditId=id;_pastedImageFile=null
   document.getElementById('cl-name').value=cr.name||''
-  document.getElementById('cl-geo').value=cr.geo||'PL'
+  document.getElementById('cl-geo').value=cr.geo||regionCfg().creoMain
   document.getElementById('cl-funnel').value=cr.funnel||'Калькулятор'
   document.getElementById('cl-buyer').value=cr.buyer||'Illia'
   document.getElementById('cl-status').value=cr.status||'ready'
@@ -2904,8 +2968,7 @@ document.addEventListener('paste',e=>{
 function updCreoSelects(){
   // Refresh all creo selects in modal when GEO changes
   const geo=moGeo
-  const geoMap={'PL':'PL','PLUA':'UAPL'}
-  const libGeo=geoMap[geo]||''
+  const libGeo=geoToCreoGeo(geo)||''
   const libCreos=CREO_LIB.filter(cr=>!libGeo||cr.geo===libGeo)
   document.querySelectorAll('.mcreo-input').forEach(sel=>{
     if(sel.tagName!=='SELECT')return
@@ -2970,7 +3033,7 @@ function addCreoToExpand(zid){
   const sel=document.createElement('select');sel.className='efi ef-creo-sel';sel.style.flex='1'
   sel.setAttribute('data-zid',zid)
   sel.innerHTML='<option value="">— выбрать —</option>'+
-    CREO_LIB.filter(cr=>cr.geo===(z.geo==='PLUA'?'UAPL':z.geo)).map(cr=>`<option value="${cr.name}">${cr.name}${cr.status==='hall'?' 🏆':cr.status==='used'?' ⚡':' ✨'}</option>`).join('')
+    CREO_LIB.filter(cr=>cr.geo===geoToCreoGeo(z.geo)).map(cr=>`<option value="${cr.name}">${cr.name}${cr.status==='hall'?' 🏆':cr.status==='used'?' ⚡':' ✨'}</option>`).join('')
   div.appendChild(sel)
   // Insert before the + button
   const addBtn=list.querySelector('.addg')
@@ -3006,7 +3069,7 @@ function openCreoInfo(creoName){
 
   const statusColor=cr?.status==='hall'?'#ffd700':cr?.status==='used'?'var(--yellow)':'var(--blue)'
   const statusLabel=cr?.status==='hall'?'🏆 MWP':cr?.status==='used'?'⚡ Use':'✨ Clean'
-  const geoClass=cr?.geo==='PL'?'gpl':'gplua'
+  const geoClass=geoClass(cr?.geo)
 
   bodyEl.innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
@@ -3088,7 +3151,7 @@ function addCreoField(val=''){
   if(!l||l.children.length>=5)return
   const d=document.createElement('div');d.className='gr'
   const sel=document.createElement('select');sel.className='fi mcreo-input';sel.style.flex='1'
-  const geoMap={'PL':'PL','PLUA':'UAPL'};const libGeo=geoMap[moGeo]||''
+  const libGeo=geoToCreoGeo(moGeo)||''
   const opts=CREO_LIB.filter(cr=>!libGeo||cr.geo===libGeo)
   sel.innerHTML='<option value="">— выбрать крео —</option>'+
     opts.map(cr=>`<option value="${cr.name}"${cr.name===val?' selected':''}>${cr.name}${cr.status==='hall'?' 🏆':cr.status==='used'?' ⚡':' ✨'}</option>`).join('')
@@ -3331,7 +3394,7 @@ function renderAnTree(){
   Object.entries(geo_yr_month).sort().forEach(([geo,yrs])=>{
     Object.entries(yrs).sort((a,b)=>b[0]-a[0]).forEach(([yr,months])=>{
       html+=`<div class="an-tree-yr" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">
-        <span class="zgeo gchip ${geo==='PL'?'gpl':'gplua'}" style="font-size:9px;padding:1px 5px">${geo}</span>
+        <span class="zgeo gchip ${geoClass(geo)}" style="font-size:9px;padding:1px 5px">${geo}</span>
         <span style="font-weight:700;font-size:12px">RKFB ${geo} ${yr}</span>
         <span style="font-size:10px;color:var(--text3);margin-left:auto">${Object.values(months).reduce((s,m)=>s+Object.keys(m).length,0)} РК</span>
       </div>
@@ -3380,7 +3443,7 @@ function renderAnZalivHistory(zid){
       <button class="bsv" style="padding:5px 14px;font-size:11px;flex-shrink:0" onclick="showNewAnalysisPanelFor(${zid})">+ Анализ</button>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:-4px">
-      ${z?`<span class="zgeo gchip ${z.geo==='PL'?'gpl':'gplua'}" style="font-size:9px">${z.geo}</span>
+      ${z?`<span class="zgeo gchip ${geoClass(z.geo)}" style="font-size:9px">${z.geo}</span>
       <span style="font-size:11px;color:var(--text3)">${z.funnel||''}</span>
       <span style="font-size:11px;color:var(--text3)">· ${z.buyer||''}</span>
       <span style="font-size:11px;color:var(--text3)">· ${z.status||''}</span>`:''}
@@ -3623,7 +3686,7 @@ async function loadAdsetResult(adsetId,z,from,to,adsets){
     <div class="an-card">
       <div style="background:var(--bg3);padding:7px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
         <div style="display:flex;align-items:center;gap:8px">
-          <span class="zgeo gchip ${z.geo==='PL'?'gpl':'gplua'}" style="font-size:9px">${z.geo}</span>
+          <span class="zgeo gchip ${geoClass(z.geo)}" style="font-size:9px">${z.geo}</span>
           <span style="font-size:11px;font-weight:700;color:#fff">${adsetName}</span>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
