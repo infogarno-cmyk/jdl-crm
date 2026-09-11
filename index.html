@@ -14,6 +14,12 @@ const SB_URL='https://dkhkowkgiricjxkcngbf.supabase.co'
 const SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRraGtvd2tnaXJpY2p4a2NuZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MTY3NDEsImV4cCI6MjA5NjQ5Mjc0MX0.48HS8eJ6wLPfimRtiz6behWHG1G8xz5_zfrT0cxnGrE'
 const GARNO_URL='https://bnyjwjuejrfalbubdbcv.supabase.co'
 const GARNO_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJueWp3anVlanJmYWxidWJkYmN2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTcyNDQ2NSwiZXhwIjoyMDk1MzAwNDY1fQ.l9ka9b_PzKdu-gock8ZACqODicJDZYCc1laMw_HMBvA'
+// Czech GarnoCRM (pdyzzztwoinepyjprrse) — paste anon/service key here
+const GARNO_CZ_URL='https://pdyzzztwoinepyjprrse.supabase.co'
+const GARNO_CZ_KEY='sb_publishable_TlOfq2xdIytwVDYLCGMcMA_30cMUc_c'
+// Region → GarnoCRM source + currency
+function garnoForRegion(){return CURRENT_REGION==='CZ'?{url:GARNO_CZ_URL,key:GARNO_CZ_KEY}:{url:GARNO_URL,key:GARNO_KEY}}
+function cur(){return CURRENT_REGION==='CZ'?'Kč':'zł'}
 const USERS={illia:{name:'Illia',role:'Junior Buyer',initials:'IB',color:'#b52240',bg:'rgba(181,34,64,.15)',border:'#8b1a2e'},danya:{name:'Danya',role:'Head of Marketing',initials:'DM',color:'#6090ff',bg:'rgba(64,128,255,.1)',border:'#1a3060'}}
 const AUTO_STATUS_LOCKED=['Proliw','Perezaliw']
 var db,CURRENT_USER=null
@@ -980,13 +986,14 @@ async function switchRegion(region){
   populateGeoSelectors()
   setSS('syncing','Переключение на '+region+'...')
   // Reload all region-scoped data
-  await Promise.all([loadZ(),loadD(),loadT(),loadCreoReports(),loadCreoLib(),loadRkAnalyses(),loadInsights()])
+  await Promise.all([loadZ(),loadD(),loadT(),loadM(),loadSales(),loadCreoReports(),loadCreoLib(),loadRkAnalyses(),loadInsights()])
   // Re-render whatever page is active
   rdash()
   if(typeof rzalivs==='function')rzalivs()
   if(typeof rtasks==='function')rtasks()
   if(typeof renderCreoPage==='function')renderCreoPage()
   if(typeof rdomains==='function')rdomains()
+  if(typeof rsales==='function')rsales()
   if(typeof initAnalysisPage==='function')initAnalysisPage()
   setSS('ok',region+' · данные загружены')
 }
@@ -1021,7 +1028,7 @@ async function loadZ(){if(!db)return;const{data}=await db.from('zalivs').select(
 async function loadD(){if(!db)return;const{data}=await db.from('domains').select('*').eq('region',CURRENT_REGION).order('created_at',{ascending:false});DOMAINS=data||[]}
 async function loadT(){if(!db)return;const{data}=await db.from('tasks').select('*').eq('region',CURRENT_REGION).order('sort_order',{ascending:true});TASKS=data||[]}
 async function loadM(){
-  if(!db)return;const{data}=await db.from('metrics_daily').select('*').order('day',{ascending:true});METRICS=data||[]
+  if(!db)return;const{data}=await db.from('metrics_daily').select('*').eq('region',CURRENT_REGION).order('day',{ascending:true});METRICS=data||[]
   if(METRICS.length>0){const l=METRICS[METRICS.length-1];const m=Math.round((Date.now()-new Date(l.synced_at))/60000);setSS('ok','Синк '+m+'м назад')}
 }
 async function loadJ(){
@@ -1034,7 +1041,8 @@ async function loadJ(){
 }
 async function loadSales(){
   try{
-    const r=await fetch(GARNO_URL+'/rest/v1/garnocrm?select=data&id=eq.1',{headers:{'apikey':GARNO_KEY,'Authorization':'Bearer '+GARNO_KEY}})
+    const g=garnoForRegion();if(!g.key||g.key.startsWith('PASTE_')){SALES_DATA=[];return}
+    const r=await fetch(g.url+'/rest/v1/garnocrm?select=data&id=eq.1',{headers:{'apikey':g.key,'Authorization':'Bearer '+g.key}})
     if(!r.ok)return;const arr=await r.json()
     if(arr&&arr[0]&&arr[0].data&&arr[0].data.sales){
       SALES_DATA=arr[0].data.sales.filter(s=>{const src=(s.source||'').toLowerCase();return!src.includes('шоу')&&!src.includes('showroom')&&!src.includes('salon')&&!src.includes('show')})
@@ -1145,8 +1153,8 @@ function rdash(){
   const sf=SALES_DATA.filter(s=>{const d=parseDt(s.createdAt);if(!d)return false;const day=d.toISOString().split('T')[0];return day>=from&&day<=to})
   const stotal=sf.reduce((s,r)=>s+(r.saleAmount||0),0),savg=sf.length?Math.round(stotal/sf.length):0
   document.getElementById('d-sales-kpi').innerHTML=`
-    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#2ea043,#40c060)"></div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">TOTAL REVENUE</div><div style="font-size:28px;font-weight:800;color:var(--yellow);font-family:var(--mono)">${stotal.toLocaleString('ru')} zł</div><div style="font-size:11px;color:var(--text3);margin-top:4px">${sf.length} продаж</div></div>
-    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#4080ff,#60a0ff)"></div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">AVG DEAL</div><div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--mono)">${savg.toLocaleString('ru')} zł</div><div style="font-size:11px;color:var(--text3);margin-top:4px">средний чек</div></div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#2ea043,#40c060)"></div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">TOTAL REVENUE</div><div style="font-size:28px;font-weight:800;color:var(--yellow);font-family:var(--mono)">${stotal.toLocaleString('ru')} ${cur()}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">${sf.length} продаж</div></div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#4080ff,#60a0ff)"></div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">AVG DEAL</div><div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--mono)">${savg.toLocaleString('ru')} ${cur()}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">средний чек</div></div>
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--bord),var(--bord2))"></div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">КОЛ-ВО ПРОДАЖ</div><div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--mono)">${sf.length}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">за период</div></div>`
   drawChart(rows)
 }
@@ -1705,11 +1713,11 @@ function rsales(){
   const f=SALES_DATA.filter(s=>{const d=parseDt(s.createdAt);if(!d)return false;const day=d.toISOString().split('T')[0];return day>=from&&day<=to})
   document.getElementById('sales-count').textContent='('+f.length+')'
   const total=f.reduce((s,r)=>s+(r.saleAmount||0),0),avg=f.length?Math.round(total/f.length):0
-  document.getElementById('sales-kpi').innerHTML=`<div class="skc"><div class="sklb">Total Revenue</div><div class="skvl" id="sk-total">0 zł</div><div class="sksb">${f.length} продаж</div></div><div class="skc"><div class="sklb">Avg Deal</div><div class="skvl" id="sk-avg">0 zł</div><div class="sksb">средний чек</div></div><div class="skc"><div class="sklb">Кол-во продаж</div><div class="skvl" id="sk-cnt">0</div><div class="sksb">за период</div></div>`
-  setTimeout(()=>{countUp(document.getElementById('sk-total'),total.toLocaleString('ru'),'','  zł',1000);countUp(document.getElementById('sk-avg'),avg.toLocaleString('ru'),'','  zł',800);countUp(document.getElementById('sk-cnt'),f.length,'','',600)},50)
+  document.getElementById('sales-kpi').innerHTML=`<div class="skc"><div class="sklb">Total Revenue</div><div class="skvl" id="sk-total">0 ${cur()}</div><div class="sksb">${f.length} продаж</div></div><div class="skc"><div class="sklb">Avg Deal</div><div class="skvl" id="sk-avg">0 ${cur()}</div><div class="sksb">средний чек</div></div><div class="skc"><div class="sklb">Кол-во продаж</div><div class="skvl" id="sk-cnt">0</div><div class="sksb">за период</div></div>`
+  setTimeout(()=>{countUp(document.getElementById('sk-total'),total.toLocaleString('ru'),'','  '+cur(),1000);countUp(document.getElementById('sk-avg'),avg.toLocaleString('ru'),'','  '+cur(),800);countUp(document.getElementById('sk-cnt'),f.length,'','',600)},50)
   const sm={};f.forEach(s=>{const src=s.source||'Неизвестно';if(!sm[src])sm[src]={count:0,amount:0};sm[src].count++;sm[src].amount+=s.saleAmount||0})
-  document.getElementById('sales-sources').innerHTML=Object.entries(sm).sort((a,b)=>b[1].amount-a[1].amount).map(([src,v])=>`<div class="ssrc"><div class="sstop"><span class="ssn">${src}</span><span class="sscnt">${v.count} пр.</span></div><div class="ssamt">${v.amount.toLocaleString('ru')} zł</div><div class="sssub">avg ${Math.round(v.amount/v.count).toLocaleString('ru')} zł</div></div>`).join('')||'<div class="empty">Нет продаж</div>'
-  document.getElementById('sales-list').innerHTML=[...f].sort((a,b)=>{const da=parseDt(a.createdAt)||new Date(0),db2=parseDt(b.createdAt)||new Date(0);return db2-da}).map(s=>`<div class="slrow"><div class="slava">${(s.name||'?').substring(0,2).toUpperCase()}</div><div><div class="slnm">${s.name||'—'}</div><div style="font-size:10px;color:var(--text3)">${s.phone||''}</div></div><span class="slsr">${s.source||'—'}</span><span class="sldt">${s.createdAt||'—'}</span><span class="slam">${(s.saleAmount||0).toLocaleString('ru')} zł</span></div>`).join('')||'<div class="empty">Нет продаж</div>'
+  document.getElementById('sales-sources').innerHTML=Object.entries(sm).sort((a,b)=>b[1].amount-a[1].amount).map(([src,v])=>`<div class="ssrc"><div class="sstop"><span class="ssn">${src}</span><span class="sscnt">${v.count} пр.</span></div><div class="ssamt">${v.amount.toLocaleString('ru')} ${cur()}</div><div class="sssub">avg ${Math.round(v.amount/v.count).toLocaleString('ru')} ${cur()}</div></div>`).join('')||'<div class="empty">Нет продаж</div>'
+  document.getElementById('sales-list').innerHTML=[...f].sort((a,b)=>{const da=parseDt(a.createdAt)||new Date(0),db2=parseDt(b.createdAt)||new Date(0);return db2-da}).map(s=>`<div class="slrow"><div class="slava">${(s.name||'?').substring(0,2).toUpperCase()}</div><div><div class="slnm">${s.name||'—'}</div><div style="font-size:10px;color:var(--text3)">${s.phone||''}</div></div><span class="slsr">${s.source||'—'}</span><span class="sldt">${s.createdAt||'—'}</span><span class="slam">${(s.saleAmount||0).toLocaleString('ru')} ${cur()}</span></div>`).join('')||'<div class="empty">Нет продаж</div>'
 }
 
 // ── DOMAINS — с редактированием и кликом по URL ──
@@ -2385,7 +2393,7 @@ function rcreo(){
       <td><input class="creo-edit-inp" style="width:60px" data-rid="${r.id}" data-field="cr" value="${r.cr||0}"></td>
       <td><input class="creo-edit-inp" style="color:${cplColor};width:65px" data-rid="${r.id}" data-field="cpl" value="${r.cpl||0}"></td>
       <td><input class="creo-edit-inp" style="width:65px" data-rid="${r.id}" data-field="cql" value="${r.cql||0}"></td>
-      <td style="color:var(--yellow);font-family:var(--mono);font-weight:700">${r.total_zl>0?r.total_zl+' zł':'—'}</td>
+      <td style="color:var(--yellow);font-family:var(--mono);font-weight:700">${r.total_zl>0?r.total_zl+' '+cur():'—'}</td>
       <td><input class="creo-notes-inp" data-rid="${r.id}" data-field="notes" value="${(r.notes||'').replace(/"/g,'&quot;')}" placeholder="Инсайты..."></td>
       <td style="display:flex;gap:4px;align-items:center">
         <button class="cbtn-save" data-rid="${r.id}">💾</button>
