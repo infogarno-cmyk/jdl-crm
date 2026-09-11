@@ -1234,8 +1234,13 @@ function renderChart(animate=false){
       }
     }
     if(segStart>=0)drawSeg(segStart,n-1)
-    // dots only where data exists
-    for(let i=0;i<n;i++){if(s.d[i]!=null){ctx.beginPath();ctx.arc(px(i),py(s.d[i],s),3,0,Math.PI*2);ctx.fillStyle=s.c;ctx.fill()}}
+    // dots only where data exists; isolated points (no neighbours) get a bigger ringed dot so they're visible
+    for(let i=0;i<n;i++){
+      if(s.d[i]==null)continue
+      const isolated=(i===0||s.d[i-1]==null)&&(i===n-1||s.d[i+1]==null)
+      ctx.beginPath();ctx.arc(px(i),py(s.d[i],s),isolated?4.5:3,0,Math.PI*2);ctx.fillStyle=s.c;ctx.fill()
+      if(isolated){ctx.beginPath();ctx.arc(px(i),py(s.d[i],s),7,0,Math.PI*2);ctx.strokeStyle=s.c;ctx.lineWidth=1.5;ctx.globalAlpha=.5;ctx.stroke();ctx.globalAlpha=1}
+    }
     ctx.restore()
   })
   ctx.fillStyle='rgba(144,144,168,.6)';ctx.font='10px Manrope,sans-serif';ctx.textAlign='center'
@@ -1302,17 +1307,20 @@ function renderChart(animate=false){
           ctx.strokeStyle=s.c;ctx.lineWidth=2;ctx.shadowColor=s.c;ctx.shadowBlur=8;ctx.stroke();ctx.shadowBlur=0
         })
 
-        // Dots fade in as line passes them
+        // Dots fade in as line passes them; isolated points get a bigger ringed dot
         for(let i=0;i<n;i++){
           if(s.d[i]==null)continue
           const dotX=px(i)
           if(dotX>clipX)continue
           const dotProgress=Math.min(1,(clipX-dotX)/20)
+          const isolated=(i===0||s.d[i-1]==null)&&(i===n-1||s.d[i+1]==null)
+          const dy=py(s.d[i],s)
           ctx.beginPath()
-          ctx.arc(dotX,py(s.d[i],s),2.5*dotProgress,0,Math.PI*2)
+          ctx.arc(dotX,dy,(isolated?4.5:2.5)*dotProgress,0,Math.PI*2)
           ctx.fillStyle=s.c
           ctx.globalAlpha=dotProgress
           ctx.fill()
+          if(isolated){ctx.beginPath();ctx.arc(dotX,dy,7*dotProgress,0,Math.PI*2);ctx.strokeStyle=s.c;ctx.lineWidth=1.5;ctx.globalAlpha=dotProgress*.5;ctx.stroke()}
           ctx.globalAlpha=1
         }
 
