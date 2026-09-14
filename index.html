@@ -29,7 +29,7 @@ var REGION_GEOS={
   PL:{main:'PL',ua:'PLUA',flag:'🇵🇱',creoMain:'PL',creoUa:'UAPL'},
   CZ:{main:'CZ',ua:'CZUA',flag:'🇨🇿',creoMain:'CZ',creoUa:'UACZ'}
 }
-var ZALIVS=[],DOMAINS=[],TASKS=[],METRICS=[],SALES_DATA=[],TEMPLATES=[]
+var ZALIVS=[],DOMAINS=[],TASKS=[],METRICS=[],SALES_DATA=[],TEMPLATES=[],SRC_DAILY=[],ADSET_SRC=[]
 const SCLS={Check:'sc',Scale:'ss',OFF:'so',Test:'st',Proliw:'sp',Perezaliw:'sz'}
 var expZ=null,dragId=null,moGeo='',moScore=0,domGeoSel=[],deGeoSel=[],deEditId=null
 var CREO_REPORTS=[]
@@ -357,7 +357,7 @@ html,body{height:100%;overflow:hidden;max-width:100vw;font-family:var(--sans);ba
 .rkpick .rki.on{background:rgba(181,34,64,.12);color:#fff}
 .rkpick .rki .d{font:500 10px var(--mono);color:var(--text3);flex-shrink:0}
 .rkpick .rki .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.kanban.v8{grid-template-columns:repeat(4,1fr) 1.15fr}
+.kanban.v8{grid-template-columns:repeat(4,1fr)}
 .kcol.grind{background:linear-gradient(180deg,var(--bg2),var(--bg));border-color:rgba(212,160,23,.25)}
 .gtabs{display:flex;gap:3px;margin-bottom:8px}
 .gtabs button{flex:1;padding:5px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text3);font:700 10px var(--sans);cursor:pointer;letter-spacing:.3px}
@@ -422,6 +422,14 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
 body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.035;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 #root{position:relative;z-index:1}
 .gold{background:linear-gradient(135deg,#F7E7B3 0%,#D4AF37 38%,#A8811A 58%,#F0D98A 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.holo-wrap{--mx:50%;--my:50%;--ang:135deg;position:relative;cursor:default;transition:transform .15s ease-out;transform:perspective(900px) rotateX(var(--rx,0)) rotateY(var(--ry,0))}
+.holo{position:relative;background:
+  radial-gradient(circle at var(--mx) var(--my),rgba(255,255,255,.95) 0%,rgba(255,255,255,0) 18%),
+  conic-gradient(from var(--ang) at var(--mx) var(--my),#F7E7B3,#D4AF37 12%,#8C6A18 24%,#F0D98A 36%,#FFF6D6 44%,#D4AF37 56%,#A8811A 68%,#F7E7B3 80%,#D4AF37 92%,#F7E7B3);
+  -webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 18px rgba(212,175,55,.25))}
+.holo::after{display:none}
+.holo-wrap:hover .holo{filter:drop-shadow(0 0 28px rgba(212,175,55,.45)) saturate(1.2)}
+.holo-wrap::before{display:none}
 /* topbar */
 .topbar{height:56px;background:linear-gradient(180deg,rgba(255,255,255,.025),transparent),var(--bg3);border-bottom:1px solid var(--border);padding:0 14px;gap:8px}
 .logo{font-size:15px;font-weight:700;letter-spacing:.02em;margin-right:6px;display:flex;align-items:baseline;gap:6px}.logo em{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--bord2);transform:translateY(-3px);font-size:0}
@@ -494,7 +502,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opac
 .klab{font-size:11.5px;color:var(--text3);text-transform:none;letter-spacing:0;font-weight:500;margin-bottom:6px}
 .kval{font-size:30px;font-weight:500;letter-spacing:-.03em}
 .kpi-prev{color:#3E4457}
-.karr{animation:none;font-size:12px;padding:2px 7px;border-radius:6px;font-family:var(--mono);font-weight:500}
+.karr{font-size:12px;padding:2px 7px;border-radius:6px;font-family:var(--mono);font-weight:500;display:inline-block;animation:dlarr .55s cubic-bezier(.2,.8,.2,1) both}.karr.dn-good,.karr.dn-bad{animation-name:dlarrd}
 .karr.up-good,.karr.dn-good{background:var(--green-bg)}.karr.up-bad,.karr.dn-bad{background:var(--red-bg)}
 /* chart */
 .chleg{font-weight:500;color:var(--text);padding:4px 9px;border-radius:7px;font-size:11.5px}.chleg::before{box-shadow:0 0 8px var(--cc)}.chleg:hover{background:var(--bg2)}
@@ -521,7 +529,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opac
 .tcard{background:var(--bg2);border-radius:9px;border:1px solid var(--border);border-left-width:2px}.tcard:hover{border-color:var(--border2)}
 .tnm{font-weight:500}
 /* zalivs split view */
-.zsplit{display:grid;grid-template-columns:1fr 400px;gap:14px;align-items:start}
+.zsplit{display:grid;grid-template-columns:1fr 380px;gap:14px;align-items:start}
 .zdp{position:sticky;top:12px;max-height:calc(100vh - 90px);display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(180deg,var(--bg4),var(--bg3));border:1px solid var(--border);border-radius:14px;box-shadow:0 1px 0 var(--hi) inset,0 20px 50px -30px rgba(0,0,0,.8)}
 .zdp .dh{padding:16px 18px 12px;border-bottom:1px solid var(--border)}
 .zdp .dh .t{font-size:14px;font-weight:600;line-height:1.3;word-break:break-all}
@@ -592,6 +600,10 @@ tr.zr2:hover .qa{opacity:1;transform:translateY(-50%);pointer-events:auto}tr.zr2
 .qa button{border:1px solid var(--border2);background:var(--bg5);color:var(--text);font:600 10.5px var(--sans);padding:4px 8px;border-radius:6px;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.5)}
 .qa button.on{background:var(--green);border-color:var(--green);color:#041}.qa button.on.off{background:var(--bord2);border-color:var(--bord2);color:#fff}.qa button:hover{filter:brightness(1.15)}
 .sc6 i{width:7px;height:12px;border-radius:2px}.sc6 i:hover{background:var(--gold2)!important;opacity:1}
+.zctl{display:flex;align-items:center;gap:6px}
+.stpill{font:600 9.5px var(--mono);padding:2px 6px;border-radius:4px;letter-spacing:.3px;cursor:pointer;border:1px solid var(--border);background:var(--bg2);color:var(--text3)}
+.stpill.sc{color:var(--yellow);border-color:rgba(212,175,55,.3)}.stpill.ss{color:var(--green);border-color:rgba(61,190,139,.3)}.stpill.so{color:var(--red);border-color:rgba(240,58,85,.3)}.stpill.st{color:var(--purple);border-color:rgba(160,124,245,.3)}.stpill.sp{color:var(--green)}.stpill.sz{color:var(--blue)}
+.stpill:hover{border-color:var(--border3);color:var(--text)}
 /* ── zalivs v2 rows (как в артефакте) ── */
 .zt2 th{font-size:10.5px}
 tr.zgrp td{padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
@@ -600,10 +612,10 @@ tr.zgrp td{padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--
 .zgh i{width:7px;height:7px;border-radius:50%;display:inline-block}
 .zgh .gn{color:#3E4457;font-family:var(--mono)}
 .zgh .gsum{margin-left:auto;font:500 11px var(--mono);color:var(--text3);display:flex;gap:14px}.zgh .gsum b{color:var(--gold);font-weight:500}
-tr.zr2 td{padding:9px 12px;vertical-align:middle}
+tr.zr2 td{padding:8px 9px;vertical-align:middle}
 tr.zr2.zsel td{background:linear-gradient(90deg,rgba(212,175,55,.07),transparent 60%)}tr.zr2.zsel td:first-child{box-shadow:inset 2px 0 0 var(--gold)}
 .zst{width:9px;height:9px;border-radius:50%;display:inline-block;cursor:pointer;position:relative}.zst::after{content:'';position:absolute;inset:-6px}
-.znm{min-width:0;max-width:300px}.znm .rkn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;font-size:12.5px}
+.znm{min-width:0;max-width:240px}.znm .rkn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;font-size:12.5px}
 .zsub{display:flex;gap:6px;margin-top:3px;font-size:10.5px;color:var(--text3);align-items:center;flex-wrap:wrap}
 .zsub .tg{font:500 10px var(--mono);padding:0 5px;border-radius:4px;background:var(--bg2);border:1px solid var(--border);color:var(--text3)}.zsub .tg.b{color:var(--blue)}
 .zsub .zcat{margin:0}.zsub .zd{color:#3E4457}
@@ -613,6 +625,7 @@ tr.zr2.zsel td{background:linear-gradient(90deg,rgba(212,175,55,.07),transparent
 .sc6{display:flex;gap:2px;justify-content:flex-end}.sc6 i{width:5px;height:9px;border-radius:1px;background:var(--bg5);cursor:pointer;display:block}.sc6 i.f{background:var(--gold)}.sc6:hover i{opacity:.7}
 .th{display:flex;gap:3px;justify-content:flex-end}.th i{width:22px;height:28px;border-radius:4px;border:1px solid var(--border2);display:block;cursor:pointer;transition:transform .12s;font-style:normal}.th i:hover{transform:scale(1.4);z-index:3;position:relative}
 .th i.n{background:var(--bg2);color:#3E4457;font:500 10px var(--mono);display:grid;place-items:center;border-style:dashed}
+.srcsel{margin-top:4px;width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font:11px var(--sans);padding:3px 6px;outline:0}.srcsel:focus{border-color:var(--border3)}
 .zad{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px}.zad:last-child{border:0}
 .zad .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.zad .n small{display:block;color:var(--text3);font-size:10.5px}
 .sw{width:30px;height:16px;border-radius:8px;background:var(--bg5);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}.sw::after{content:'';position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--text2);transition:all .2s}.sw.on{background:var(--green)}.sw.on::after{left:16px;background:#fff}
@@ -622,8 +635,8 @@ tr.zr2.zsel td{background:linear-gradient(90deg,rgba(212,175,55,.07),transparent
 .indmenu{position:fixed;background:var(--bg5);border:1px solid var(--border2);border-radius:9px;padding:5px;z-index:500;box-shadow:0 14px 40px rgba(0,0,0,.6);display:none;min-width:140px}.indmenu.on{display:block}
 .indmenu div{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:6px;font-size:12px;cursor:pointer}.indmenu div:hover{background:var(--bg4)}.indmenu i{width:8px;height:8px;border-radius:50%}
 /* split-view table compaction */
-.zsplit .zt td:nth-child(5){min-width:120px;padding-right:14px}
-.zsplit .lc{min-width:104px}
+.zsplit .zt td:nth-child(6){min-width:120px;padding-right:14px}
+.zsplit .lc{min-width:96px}
 .zsplit .spb{width:16px;height:16px;font-size:9px;padding:0;border-radius:4px}
 .zsplit .ssel{font-size:10.5px;padding:2px 6px;max-width:92px}
 .zsplit .auto-badge{display:none}
@@ -761,7 +774,7 @@ document.getElementById('root').innerHTML=`
       <div class="hero">
         <div>
           <div class="lbl"><i class="live"></i> Спенд за период · <span id="hero-reg">Польша</span> · <span id="hero-per"></span></div>
-          <div class="big"><span class="cur">$</span><span id="hero-tick" class="gold">0</span><span class="dl big n" id="hero-dl"></span></div>
+          <div class="big holo-wrap" id="holo-wrap"><span class="cur">$</span><span id="hero-tick" class="holo">0</span><span class="dl big n" id="hero-dl"></span></div>
         </div>
         <div class="side">
           <div><div class="k">Активных РК</div><div class="v"><span id="hero-rk">0</span><small>из <span id="hero-rkall">0</span></small></div></div>
@@ -791,7 +804,7 @@ document.getElementById('root').innerHTML=`
       <div class="dgrid">
         <div class="card"><div class="chdr"><span class="ctit">Последние заливы</span><span class="clnk" id="lnk-zalivs">Все →</span></div><div id="d-zalivs"><div class="empty">Загрузка...</div></div></div>
         <div class="card"><div class="chdr"><span class="ctit">Что случилось</span><span class="clnk" onclick="openDrawer()">→ алерты</span></div><div id="d-feed"></div><div id="d-geo" style="margin-top:10px"></div></div>
-        <div class="card"><div class="chdr"><span class="ctit">Grind</span><span class="clnk" id="lnk-grind" onclick="gp('tasks',document.getElementById('nb-tasks'))">Все →</span></div><div class="gtabs" id="d-gtabs" style="margin:0 16px 8px"><button class="i on" data-dg="insight">INSIGHT</button><button class="p" data-dg="plan">PLAN</button><button class="t" data-dg="test">TEST</button></div><div id="d-grind"></div></div>
+        <div class="card"><div class="chdr"><span class="ctit">Grind</span><span class="clnk" id="lnk-grind" onclick="gp('tasks',document.getElementById('nb-tasks'))">Все →</span></div><div class="gtabs" id="d-gtabs" style="margin:0 16px 8px"><button class="i on" data-dg="insight">INSIGHT</button><button class="p" data-dg="plan">PLAN</button><button class="t" data-dg="test">TEST</button></div><div style="margin:0 16px 8px"><textarea class="ginp" id="d-grind-inp" style="min-height:52px" placeholder="Записать… (Enter — сохранить)"></textarea></div><div id="d-grind"></div></div>
       </div>
       <div class="card" style="margin-bottom:12px"><div class="chdr"><span class="ctit">Sales</span><span class="clnk" id="lnk-sales">Все →</span></div><div id="d-sales-kpi" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"></div></div>
       <div class="card" style="margin-bottom:12px"><div class="chdr"><span class="ctit">Активные задачи</span><span class="clnk" id="lnk-tasks">Все →</span></div><div id="d-tasks"></div></div>
@@ -819,6 +832,7 @@ document.getElementById('root').innerHTML=`
         <input class="fsrch" id="zf-q" placeholder="🔍 Поиск...">
         <button class="btpl" id="btn-open-templates">📋 Шаблоны</button>
         <button class="btpl" id="btn-import-meta" style="border-color:var(--blue-bg);color:var(--blue)">⬇ Импорт из Meta</button>
+        <button class="btpl" onclick="loadBulkMeta(true)" style="border-color:rgba(212,175,55,.35);color:var(--gold)" title="Спенд и CTR за сегодня по всем активным РК">⚡ Метрики</button>
         <button class="btpl" onclick="autoMatchCampaignIds()" style="border-color:rgba(144,96,208,.4);color:var(--purple)" title="Автоматически сопоставить campaign IDs по названию">🔗 Матч IDs</button>
         <button class="badd" id="btn-new-zaliv">+ Новый залив</button>
       </div>
@@ -827,9 +841,9 @@ document.getElementById('root').innerHTML=`
       <button class="zbulk-del" onclick="bulkDeleteZalivs()">🗑 Удалить выбранные</button>
       <button class="zbulk-clr" onclick="clearBulkSelect()">✕ Снять выделение</button>
     </div>
-    <div class="zviews" id="zviews"><span class="v on" data-zv="mine">Мои активные<span class="n"></span></span><span class="v" data-zv="all">Все<span class="n"></span></span><span class="v" data-zv="noan">Ждут анализа<span class="n"></span></span><span class="v" data-zv="bad">CPL выше цели<span class="n"></span></span><span class="v" data-zv="test">Тесты<span class="n"></span></span><span class="v" data-zv="togo" style="color:var(--purple)">⏳ TOGO<span class="n"></span></span></div>
+    <div class="zviews" id="zviews"><span class="v on" data-zv="mine">Мои активные<span class="n"></span></span><span class="v" data-zv="all">Все<span class="n"></span></span><span class="v" data-zv="noan">Ждут анализа<span class="n"></span></span><span class="v" data-zv="test">Тесты<span class="n"></span></span><span class="v" data-zv="togo" style="color:var(--purple)">⏳ TOGO<span class="n"></span></span></div>
     <div class="zsplit">
-      <div class="ztwrap"><table class="zt zt2"><thead><tr><th style="width:26px"><input type="checkbox" class="zcheck" id="zcheck-all"></th><th style="width:16px"></th><th style="width:44px">GEO</th><th>РК · воронка · баер</th><th style="width:120px">Цикл 1DC → K</th><th style="width:64px;text-align:right">Спенд</th><th style="width:60px;text-align:right">CPL</th><th style="width:56px;text-align:right">CTR</th><th style="width:52px;text-align:right">Score</th><th style="width:84px;text-align:right">Крео</th></tr></thead><tbody id="zt-body"></tbody></table></div>
+      <div class="ztwrap"><table class="zt zt2"><thead><tr><th style="width:26px"><input type="checkbox" class="zcheck" id="zcheck-all"></th><th style="width:14px"></th><th style="width:80px">Вкл · статус</th><th style="width:40px">GEO</th><th>РК · воронка · баер</th><th style="width:108px">Цикл</th><th style="width:56px;text-align:right">Спенд</th><th style="width:56px;text-align:right">Л·кв</th><th style="width:52px;text-align:right">CTR</th><th style="width:48px;text-align:right">Score</th><th style="width:76px;text-align:right">Крео</th></tr></thead><tbody id="zt-body"></tbody></table></div>
       <div class="zdp" id="zdp"><div class="empty">Выбери РК<br><span style="font-size:11px;color:#3E4457">клик по строке · ↑↓ листать</span></div></div>
     </div>
     </div>
@@ -1331,11 +1345,23 @@ async function init(){
   const today=new Date().toISOString().split('T')[0]
   ;['pd-from','pd-to','sp-from','sp-to'].forEach(id=>document.getElementById(id).value=today)
   try{db=supabase.createClient(SB_URL,SB_ANON)}catch(e){console.error(e)}
-  await Promise.all([loadZ(),loadD(),loadT(),loadJ(),loadM(),loadSales(),loadTemplates(),loadCreoReports(),loadCreoLib(),loadRkAnalyses(),loadInsights(),loadGrind(),loadAllZalivs()])
+  await Promise.all([loadZ(),loadD(),loadT(),loadJ(),loadM(),loadSales(),loadTemplates(),loadCreoReports(),loadCreoLib(),loadRkAnalyses(),loadInsights(),loadGrind(),loadAllZalivs(),loadSrcDaily(),loadAdsetSrc()])
   rolloverTodayTasks();scheduleRollover()
   if(localStorage.getItem('jdl_buyer')===null&&CURRENT_USER)CURRENT_BUYER=CURRENT_USER.name
   setBuyer(CURRENT_BUYER);setupRT();setSS('ok','Данные загружены');maybeJdlToday()
 }
+async function loadSrcDaily(){if(!db)return;const since=new Date(Date.now()-90*864e5).toISOString().split('T')[0];const{data}=await db.from('source_daily').select('*').eq('region',CURRENT_REGION).gte('day',since);SRC_DAILY=data||[]}
+async function loadAdsetSrc(){if(!db)return;const{data}=await db.from('adset_sources').select('*').eq('region',CURRENT_REGION);ADSET_SRC=data||[]}
+function allSources(){const s=new Set(SRC_DAILY.map(r=>r.source));return [...s].filter(x=>x&&x!=='(none)').sort()}
+// leads/quals from GarnoCRM for a zaliv (or one adset) over a period, via mapped sources
+function srcStats(zid,adsetId,from,to){const maps=ADSET_SRC.filter(m=>m.zaliv_id===zid&&(adsetId?m.adset_id===adsetId:true));const srcs=new Set(maps.map(m=>m.source));if(!srcs.size)return null
+  let leads=0,quals=0;SRC_DAILY.forEach(r=>{if(srcs.has(r.source)&&(!from||r.day>=from)&&(!to||r.day<=to)){leads+=r.leads||0;quals+=r.quals||0}});return{leads,quals,sources:[...srcs]}}
+function zSrcStats(z){const d=z.date||parseDateFromCampName(z.name);let from=null;if(d){const p=d.split('.');if(p.length===2)from=`${new Date().getFullYear()}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`}return srcStats(z.id,null,from,null)}
+async function setAdsetSource(zid,adsetId,adsetName,source){const ex=ADSET_SRC.find(m=>m.zaliv_id===zid&&m.adset_id===adsetId)
+  if(!source){if(ex){await db.from('adset_sources').delete().eq('id',ex.id);ADSET_SRC=ADSET_SRC.filter(m=>m.id!==ex.id)}}
+  else if(ex){await db.from('adset_sources').update({source}).eq('id',ex.id);ex.source=source}
+  else{const{data}=await db.from('adset_sources').insert({zaliv_id:zid,adset_id:adsetId,adset_name:adsetName,source,region:CURRENT_REGION}).select().single();if(data)ADSET_SRC.push(data)}
+  toast(source?'Источник привязан: '+source:'Привязка снята','ok');selZaliv(zid);rzalivs()}
 async function loadAllZalivs(){if(!db)return;const{data}=await db.from('zalivs').select('id,name,geo,buyer,region,created_at').order('created_at',{ascending:false});window._ALL_ZALIVS=data||[]}
 
 async function switchRegion(region){
@@ -1346,7 +1372,7 @@ async function switchRegion(region){
   populateGeoSelectors()
   setSS('syncing','Переключение на '+region+'...')
   // Reload all region-scoped data
-  await Promise.all([loadZ(),loadD(),loadM(),loadSales(),loadCreoReports(),loadCreoLib(),loadRkAnalyses(),loadInsights(),loadAllZalivs()])
+  await Promise.all([loadZ(),loadD(),loadM(),loadSales(),loadCreoReports(),loadCreoLib(),loadRkAnalyses(),loadInsights(),loadAllZalivs(),loadSrcDaily(),loadAdsetSrc()])
   // Re-render whatever page is active
   rdash()
   _zSel=null;const _dp=document.getElementById('zdp');if(_dp)_dp.innerHTML='<div class="empty">Выбери РК</div>'
@@ -1377,7 +1403,7 @@ function setupRT(){
       loadT().then(rtasks)
     })
     .on('postgres_changes',{event:'*',schema:'public',table:'domains'},()=>loadD().then(rdomains))
-    .on('postgres_changes',{event:'*',schema:'public',table:'grind'},()=>loadGrind().then(rtasks))
+    .on('postgres_changes',{event:'*',schema:'public',table:'grind'},()=>loadGrind().then(renderDGrind))
     .on('postgres_changes',{event:'*',schema:'public',table:'journal_docs'},()=>loadJ().then(rtree))
     .on('postgres_changes',{event:'*',schema:'public',table:'metrics_daily'},()=>loadM().then(()=>{rdash();if(expZ){const el=document.getElementById('ex-metrics-'+expZ);if(el){const z=ZALIVS.find(x=>x.id===expZ);if(z)el.innerHTML=getZalivMetrics(z)}}}))
     .on('postgres_changes',{event:'*',schema:'public',table:'creo_reports'},()=>loadCreoReports().then(rcreo))
@@ -1429,6 +1455,7 @@ function gp(id,el){
   };if(id==='sales')rsales()
   if(id==='journal'){rtree();if(curDoc)loadDocById(curDoc)};if(id==='dash')rdash()
   if(id==='creo'){renderCreoPage()}
+  if(id==='zalivs'){loadBulkMeta(false)}
   if(id==='analysis'){initAnalysisPage()}
 }
 
@@ -1458,7 +1485,6 @@ function buildEvents(){
   const mine=z=>!me||z.buyer===me
   // bad CPL (last analysis per RK)
   const seen=new Set();RK_ANALYSES.forEach(a=>{if(seen.has(a.zaliv_id))return;seen.add(a.zaliv_id);const z=ZALIVS.find(x=>x.id===a.zaliv_id);if(!z||z.ind==='off'||!mine(z))return
-    if(a.cpl>15){ev.push(['#F03A55','CPL выше цели',`${z.name.slice(0,40)}: $${a.cpl} при цели $12`,[['Анализ',`gp('analysis',document.getElementById('nb-analysis'));setTimeout(()=>selectAnZaliv(${z.id}),300)`],['Off',`setInd(${z.id},'off')`]]]);al.push(['r','↗','CPL выше цели',`${z.name.slice(0,44)} — $${a.cpl} при цели $12`,z.id])}
     if(a.frequency>2.5){ev.push(['#D4AF37','Частота '+a.frequency,`${z.name.slice(0,40)} — аудитория выгорает`,[['В Крео',"gp('creo',document.getElementById('nb-creo'))"]]]);al.push(['y','◔','Частота '+a.frequency,z.name.slice(0,44),z.id])}})
   // needs analysis
   const need=ZALIVS.filter(z=>mine(z)&&zNeedsAn(z));if(need.length){ev.push(['#D4AF37','Ждут анализа: '+need.length,need.slice(0,3).map(z=>z.name.slice(0,28)).join(' · '),[['Открыть',"document.querySelector('[data-zv=\\'noan\\']')?.click();gp('zalivs',document.getElementById('nb-zalivs'))"]]]);al.push(['b','◷','Ждут анализа: '+need.length,need.slice(0,3).map(z=>z.name.slice(0,30)).join(' · '),need[0].id])}
@@ -1474,8 +1500,9 @@ function buildEvents(){
 }
 var _dGrind='insight'
 function renderDGrind(){const el=document.getElementById('d-grind');if(!el)return;document.querySelectorAll('#d-gtabs button').forEach(b=>b.classList.toggle('on',b.dataset.dg===_dGrind));const items=GRIND.filter(g=>g.gtype===_dGrind&&(!CURRENT_BUYER||g.buyer===CURRENT_BUYER)).slice(0,5)
-  el.innerHTML=items.map(g=>`<div class="gcard" style="margin:0 0 6px"><div class="gm"><span>${g.buyer||''}</span><span>${(g.created_at||'').slice(5,10).split('-').reverse().join('.')}</span></div>${g.text.replace(/</g,'&lt;')}</div>`).join('')||'<div class="empty" style="padding:14px;font-size:11px">Пусто</div>'}
-document.getElementById('d-gtabs')?.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;_dGrind=b.dataset.dg;renderDGrind()})
+  el.innerHTML=items.map(g=>`<div class="gcard" style="margin:0 0 6px"><div class="gm"><span>${g.buyer||''}</span><span>${(g.created_at||'').slice(5,10).split('-').reverse().join('.')}</span></div>${g.text.replace(/</g,'&lt;')}<span class="gx" onclick="delGrind(${g.id})">✕</span></div>`).join('')||'<div class="empty" style="padding:14px;font-size:11px">Пусто</div>'}
+document.getElementById('d-gtabs')?.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;_dGrind=b.dataset.dg;_grindTab=_dGrind;renderDGrind()})
+document.getElementById('d-grind-inp')?.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();_grindTab=_dGrind;addGrind(e.target.value);e.target.value=''}})
 function renderFeed(){renderDGrind();const el=document.getElementById('d-feed');if(!el)return;const{ev,al}=buildEvents()
   el.innerHTML=ev.slice(0,6).map(e=>`<div class="ev" style="--cc:${e[0]}"><i></i><div><b>${e[1]}</b><p>${e[2]}</p>${e[3].length?`<div class="a">${e[3].map(a=>`<button onclick="${a[1].replace(/"/g,'&quot;')}">${a[0]}</button>`).join('')}</div>`:''}</div></div>`).join('')||'<div class="empty" style="padding:14px">Тихо. Ничего важного.</div>'
   const n=document.getElementById('bell-n');if(n){n.textContent=al.length;n.style.display=al.length?'grid':'none'}}
@@ -1494,12 +1521,18 @@ function heroRender(spend,leads,quals,daily,from,to){
   // tape: recent events
   const ev=[]
   ZALIVS.slice(0,3).forEach(z=>ev.push(['#6E9BFF',z.name.slice(0,28),'новая РК']))
-  RK_ANALYSES.slice(0,3).forEach(a=>ev.push([a.cpl>15?'#F03A55':'#3DBE8B',(a.zaliv_name||'').slice(0,28),'CPL $'+(a.cpl||0)]))
+  RK_ANALYSES.slice(0,3).forEach(a=>ev.push(['#3DBE8B',(a.zaliv_name||'').slice(0,28),'анализ · $'+(a.spend||0)]))
   ZALIVS.filter(zNeedsAn).slice(0,2).forEach(z=>ev.push(['#D4AF37',z.name.slice(0,28),'ждёт анализа']))
   const m=METRICS.slice(-1)[0];if(m)ev.push(['#D4AF37','вчера','$'+Math.round((+m.spend_pl||0)+(+m.spend_plua||0))+' · '+((m.leads_pl||0)+(m.leads_plua||0))+' лидов'])
   TASKS.filter(t=>t.col==='process').slice(0,2).forEach(t=>ev.push(['#A07CF5',t.title.slice(0,28),'в работе '+fmtDur(taskElapsed(t))]))
   const s=ev.map(e=>`<span><i style="background:${e[0]}"></i>${e[1]} <b>${e[2]}</b></span>`).join('');$('hero-tape').innerHTML=s+s
 }
+;(function(){const w=document.getElementById('holo-wrap');if(!w)return
+  w.addEventListener('mousemove',e=>{const r=w.getBoundingClientRect();const x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height
+    w.style.setProperty('--mx',(x*100).toFixed(1)+'%');w.style.setProperty('--my',(y*100).toFixed(1)+'%');w.style.setProperty('--ang',(90+x*180).toFixed(0)+'deg');w.style.setProperty('--shine',((x*200)-100).toFixed(0)+'%')
+    w.style.setProperty('--rx',((0.5-y)*6).toFixed(2)+'deg');w.style.setProperty('--ry',((x-0.5)*8).toFixed(2)+'deg')})
+  w.addEventListener('mouseleave',()=>{['--rx','--ry'].forEach(k=>w.style.setProperty(k,'0deg'));w.style.setProperty('--mx','50%');w.style.setProperty('--my','50%');w.style.setProperty('--ang','135deg');w.style.setProperty('--shine','-100%')})
+})()
 function heroDelta(cur,prev){const el=document.getElementById('hero-dl');if(!el)return;if(!prev||!document.getElementById('cmp-tgl')?.classList.contains('on')){el.className='dl big n';el.innerHTML='';return}const d=(cur-prev)/prev*100;const cls=Math.abs(d)<.5?'n':d>0?'g':'r';el.className='dl big '+cls;el.innerHTML=`<span class="ar">${d>0?'↑':d<0?'↓':'→'}</span>${Math.abs(d).toFixed(0)}% к прошлому периоду`}
 
 function rdash(){
@@ -1540,6 +1573,7 @@ function rdash(){
     const prevEl = document.getElementById(id+'-prev')
     if(!arrEl||!prevEl) return
     if(!document.getElementById('cmp-tgl')?.classList.contains('on')||!prev){arrEl.textContent='';prevEl.textContent='';return}
+    arrEl.style.animation='none';void arrEl.offsetWidth;arrEl.style.animation=''
     const diff = cur - prev
     const pct = prev !== 0 ? Math.round(Math.abs(diff)/Math.abs(prev)*100) : 0
     const isUp = diff > 0
@@ -1785,11 +1819,19 @@ function chartMouseMove(e){
 }
 
 // ── ind menu on status dot ──
+async function loadBulkMeta(force){if(!force&&Date.now()-_zBulkAt<5*60000)return;const ids=ZALIVS.filter(z=>z.campaign_id&&z.ind!=='off'&&!z.togo).map(z=>String(z.campaign_id));if(!ids.length)return
+  const td=new Date().toISOString().split('T')[0];setSS('syncing','Метрики из Meta…')
+  try{for(let i=0;i<ids.length;i+=50){const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+50),since:td,until:td,region:CURRENT_REGION})});const d=await r.json();if(d.ok)Object.assign(_zBulk,d.data||{})}
+    _zBulkAt=Date.now();rzalivs();setSS('ok','Метрики обновлены');}catch(e){setSS('ok','—');toast('Meta недоступна','err')}}
+function stMenu(e,zid){let m=document.getElementById('stmenu');if(!m){m=document.createElement('div');m.id='stmenu';m.className='indmenu';document.body.appendChild(m)}
+  m.innerHTML=['Check','Scale','Test','Proliw','Perezaliw','OFF'].map(s=>`<div onclick="setStatusQuick(${zid},'${s}')"><span class="stpill ${SCLS[s]||''}">${s}</span></div>`).join('')
+  m.classList.add('on');m.style.left=Math.min(e.clientX,innerWidth-170)+'px';m.style.top=(e.clientY+8)+'px';const off=()=>{m.classList.remove('on');document.removeEventListener('click',off)};setTimeout(()=>document.addEventListener('click',off),0)}
+async function setStatusQuick(zid,s){const z=ZALIVS.find(x=>x.id===zid);if(!z)return;z.status=s;const upd={status:s,updated_at:new Date().toISOString()};if(s==='OFF'){z.ind='off';upd.ind='off'}await db.from('zalivs').update(upd).eq('id',zid);rzalivs();if(_zSel===zid)selZaliv(zid);toast('Статус: '+s,'ok')}
 function indMenu(e,zid){let m=document.getElementById('indmenu');if(!m){m=document.createElement('div');m.id='indmenu';m.className='indmenu';document.body.appendChild(m)}
   m.innerHTML=[['profit','Profit','var(--green)'],['drop','Drop','var(--yellow)'],['off','Off','#3E4457']].map(x=>`<div onclick="setInd(${zid},'${x[0]}')"><i style="background:${x[2]}"></i>${x[1]}</div>`).join('')
   m.classList.add('on');m.style.left=Math.min(e.clientX,innerWidth-160)+'px';m.style.top=(e.clientY+8)+'px';const off=()=>{m.classList.remove('on');document.removeEventListener('click',off)};setTimeout(()=>document.addEventListener('click',off),0)}
 // ── ZALIV DETAIL PANEL (split view) ──
-var _zLiveCache={},_zAdsCache={}
+var _zLiveCache={},_zAdsCache={},_zBulk={},_zBulkAt=0
 async function selZaliv(zid){
   _zSel=zid;document.querySelectorAll('#zt-body tr[data-zid]').forEach(tr=>tr.classList.toggle('zsel',+tr.dataset.zid===zid))
   const z=ZALIVS.find(x=>x.id===zid);const dp=document.getElementById('zdp');if(!z||!dp)return
@@ -1810,7 +1852,8 @@ async function selZaliv(zid){
         <div class="lvg">${live?lv('Спенд сегодня','$'+live.spend,'var(--gold)')+lv('CPL',live.cpl?'$'+live.cpl:'—',cplC(live.cpl))+lv('CTR',live.ctr+'%')+lv('Частота',live.frequency||'—',live.frequency>2.5?'var(--red)':live.frequency>2?'var(--yellow)':'inherit')+lv('Охват',(live.reach||0).toLocaleString('ru'))+lv('Клики',live.clicks):lv('Спенд','$'+(last.spend||0),'var(--gold)')+lv('CPL',last.cpl?'$'+last.cpl:'—',cplC(last.cpl))+lv('CTR',(last.ctr||0)+'%')+lv('Частота',last.frequency||'—')+lv('Охват',(last.reach||0).toLocaleString('ru'))+lv('Лиды / кв.',(last.leads||0)+' <span style="color:var(--text3)">/</span> <span style="color:var(--green)">'+(last.quals||0)+'</span>')}</div>
         ${!live&&last.period_from?`<div style="font-size:10.5px;color:var(--text3);margin-top:6px">из последнего анализа · ${last.period_from}→${last.period_to}</div>`:''}</div>
       <div class="blk"><h4>Анализы <span>${keys.size} из 4</span></h4><div class="anh">${LCM.map(m=>{const a=an.find(x=>zAnKeyOf(x,z)===m[2]);if(a)return`<div class="an" onclick="gp('analysis',document.getElementById('nb-analysis'));setTimeout(()=>selectAnZaliv(${zid}),300)"><b>${m[1]}</b><span>$${a.cpl||0}</span><small>CPL · ${a.leads||0} л / ${a.quals||0} кв</small></div>`;if(z.ind!=='off'&&d>=m[0])return`<div class="an due" onclick="gp('analysis',document.getElementById('nb-analysis'));setTimeout(()=>{showNewAnalysisPanelFor(${zid});setTimeout(()=>document.querySelector('[data-apreset=\\'${m[2]}\\']')?.click(),150)},300)"><b>${m[1]} · пора</b><span style="color:var(--text3)">создать</span><small>метрики из Meta</small></div>`;return`<div class="an next"><b>${m[1]}</b><span style="color:#3E4457">—</span><small>${z.ind==='off'?'выкл.':'через '+(m[0]-d)+' дн.'}</small></div>`}).join('')}</div></div>
-      <div class="blk"><h4>Адсеты <span id="zdp-ads-n">${_zAdsCache[zid]?_zAdsCache[zid].length:''}</span></h4><div id="zdp-ads">${_zAdsCache[zid]?_zAdsCache[zid].map(a=>`<div class="zad"><div class="sw ${a.status==='ACTIVE'?'on':''}" onclick="toggleAdset(${zid},'${a.id}',this)"></div><div class="n">${a.name}<small>${a.status==='ACTIVE'?'активен':'выключен'}${a.daily_budget?' · $'+(a.daily_budget/100).toFixed(0)+'/д':''}</small></div></div>`).join('')||'<span style="font-size:11px;color:var(--text3)">нет адсетов</span>':z.campaign_id?'<span class="clnk" onclick="loadZalivAdsets('+zid+')">⚡ загрузить адсеты</span>':'<span style="font-size:11px;color:var(--text3)">нет campaign_id</span>'}</div></div>
+      <div class="blk"><h4>Адсеты <span id="zdp-ads-n">${_zAdsCache[zid]?_zAdsCache[zid].length:''}</span></h4><div id="zdp-ads">${_zAdsCache[zid]?_zAdsCache[zid].map(a=>{const m=ADSET_SRC.find(x=>x.zaliv_id===zid&&x.adset_id===a.id);const st=srcStats(zid,a.id);return`<div class="zad"><div class="sw ${a.status==='ACTIVE'?'on':''}" onclick="toggleAdset(${zid},'${a.id}',this)"></div><div class="n">${a.name}<small>${a.status==='ACTIVE'?'активен':'выключен'}${a.daily_budget?' · $'+(a.daily_budget/100).toFixed(0)+'/д':''}${st?` · <span style="color:var(--green)">${st.leads} л / ${st.quals} кв</span>`:''}</small><select class="srcsel" onchange="setAdsetSource(${zid},'${a.id}','${a.name.replace(/'/g,'')}',this.value)"><option value="">— источник GarnoCRM —</option>${allSources().map(s=>`<option value="${s}"${m?.source===s?' selected':''}>${s}</option>`).join('')}</select></div></div>`}).join('')||'<span style="font-size:11px;color:var(--text3)">нет адсетов</span>':z.campaign_id?'<span class="clnk" onclick="loadZalivAdsets('+zid+')">⚡ загрузить адсеты</span>':'<span style="font-size:11px;color:var(--text3)">нет campaign_id</span>'}</div>
+        ${(()=>{const s=zSrcStats(z);return s?`<div style="margin-top:10px;font-size:11px;color:var(--text3)">Из GarnoCRM по привязкам: <b style="color:var(--text)">${s.leads}</b> лидов · <b style="color:var(--green)">${s.quals}</b> квалов · ${s.sources.join(', ')}</div>`:'<div style="margin-top:10px;font-size:11px;color:#3E4457">Привяжи источники к адсетам — лиды и квалы будут считаться сами</div>'})()}</div>
       <div class="blk"><h4>Крео <span>${(z.creos||[]).length}</span></h4><div class="crs">${(z.creos||[]).slice(0,6).map((cn,j)=>{const lib=CREO_LIB.find(x=>x.name===cn);const g=['linear-gradient(160deg,#4a3a1a,#8a6a24)','linear-gradient(160deg,#1f3a5a,#3c6a9a)','linear-gradient(160deg,#3a2456,#6a44a0)','linear-gradient(160deg,#1e4a3a,#2f7a5a)'][j%4];return`<div class="cr" onclick="openCreoInfo('${cn.replace(/'/g,'')}')"><i style="background:${lib?.screenshot_url?'url('+lib.screenshot_url+') center/cover':g}"></i><div><b>${cn}</b><span>${lib?'CTR '+(lib.avg_ctr||0)+'% · CPL $'+(lib.avg_cpl||0):'—'}</span></div></div>`}).join('')||'<span style="font-size:11px;color:var(--text3)">нет</span>'}</div></div>
       <div class="blk"><h4>Домен</h4>${z.domain?`<a class="dlnk" href="https://${z.domain}" target="_blank">${z.domain}</a>`:'<span style="font-size:11px;color:var(--text3)">—</span>'}${z.campaign_id?`<div style="font:10.5px var(--mono);color:var(--text3);margin-top:6px">campaign_id ${z.campaign_id}</div>`:''}</div>
       <div class="blk"><h4>Инсайты</h4><textarea class="note" id="zdp-ins" onchange="db.from('zalivs').update({insights:this.value}).eq('id',${zid});const zz=ZALIVS.find(x=>x.id===${zid});if(zz)zz.insights=this.value;toast('Сохранено','ok')" placeholder="Что видишь по этой РК…">${(z.insights||'').replace(/</g,'&lt;')}</textarea></div>
@@ -1840,7 +1883,7 @@ function zAnKeys(z){const set=new Set();RK_ANALYSES.filter(a=>a.zaliv_id===z.id)
 function zLifecycle(z){const d=zDays(z),an=zAnKeys(z),pos=x=>Math.min(100,x/LCT*100),on=z.ind!=='off';return`<div class="lc" title="день ${d}"><div class="tr"></div><div class="fl2" style="width:${pos(d)}%"></div>${LCM.map(m=>`<div class="m ${an.has(m[2])?'d':(d>=m[0]&&on?'w':'')}" style="left:${pos(m[0])}%" data-l="${m[1]}"></div>`).join('')}<div class="now" style="left:${pos(d)}%"></div></div>`}
 function zNeedsAn(z){if(z.ind==='off'||z.togo)return false;const d=zDays(z),an=zAnKeys(z);return LCM.some(m=>d>=m[0]&&!an.has(m[2]))}
 function zCpl(z){const a=RK_ANALYSES.filter(x=>x.zaliv_id===z.id).sort((p,q)=>(q.created_at||'').localeCompare(p.created_at||''))[0];return a?+a.cpl||0:0}
-function zViewFilter(z){const me=CURRENT_BUYER||'';if(_zView==='togo')return !!z.togo;if(z.togo)return false;switch(_zView){case'mine':return z.ind!=='off'&&(!me||z.buyer===me);case'noan':return zNeedsAn(z);case'bad':return z.ind!=='off'&&zCpl(z)>12;case'test':return z.cat==='test';default:return true}}
+function zViewFilter(z){const me=CURRENT_BUYER||'';if(_zView==='togo')return !!z.togo;if(z.togo)return false;switch(_zView){case'mine':return z.ind!=='off'&&(!me||z.buyer===me);case'noan':return zNeedsAn(z);case'test':return z.cat==='test';default:return true}}
 function spbs(z){return Array.from({length:7},(_,i)=>`<button class="spb${z.score===i?' s'+i:''}" data-zid="${z.id}" data-sc="${i}">${i}</button>`).join('')}
 
 function rzalivs(){
@@ -1879,29 +1922,29 @@ function rzalivs(){
   const GN={profit:'Profit',drop:'Drop',off:'Off',togo:'TOGO · ждут своего времени'},GC={profit:'var(--green)',drop:'var(--yellow)',off:'#3E4457',togo:'var(--purple)'}
   ;['togo','profit','drop','off'].forEach(gk=>{
     const g=groups[gk];if(!g.length)return
-    const sp=g.reduce((s,z)=>s+(z.rk_budget||0),0),cpls=g.map(z=>+lastAn(z).cpl||0).filter(Boolean),av=cpls.length?(cpls.reduce((a,b)=>a+b,0)/cpls.length).toFixed(1):'—'
-    html+=`<tr class="zgrp${gk==='off'?' zcl':''}" data-grp="${gk}"><td colspan="10"><span class="zgh"><span class="car">▾</span><i style="background:${GC[gk]}"></i>${GN[gk]} <span class="gn">${g.length}</span><span class="gsum">Σ <b>$${sp}</b><span>CPL ${av}</span></span></span></td></tr>`
+    const sp=g.reduce((s,z)=>s+(_zBulk[z.campaign_id]?_zBulk[z.campaign_id].spend:(z.ind!=='off'?z.rk_budget||0:0)),0),ctrs=g.map(z=>_zBulk[z.campaign_id]?.ctr||0).filter(Boolean),av=ctrs.length?(ctrs.reduce((a,b)=>a+b,0)/ctrs.length).toFixed(2)+'%':'—'
+    html+=`<tr class="zgrp${gk==='off'?' zcl':''}" data-grp="${gk}"><td colspan="11"><span class="zgh"><span class="car">▾</span><i style="background:${GC[gk]}"></i>${GN[gk]} <span class="gn">${g.length}</span><span class="gsum">Σ <b>$${Math.round(sp)}</b><span>CTR ${av}</span></span></span></td></tr>`
     g.forEach(z=>{
       const a=lastAn(z),cpl=+a.cpl||0,ctr=+a.ctr||0,d=zDays(z)
       const cplC=cpl?(cpl<12?'var(--green)':cpl<15?'var(--yellow)':'var(--red)'):'var(--text3)',ctrC=ctr>2?'var(--green)':ctr>1.3?'inherit':'var(--red)'
       const rc=`zr2 g-${gk}${expZ===z.id?' rex':''}${_zSel===z.id?' zsel':''}`
       html+=`<tr class="${rc}" data-zid="${z.id}" style="cursor:pointer">
       <td><input type="checkbox" class="zcheck zrow-check" data-zid="${z.id}" onclick="event.stopPropagation()"></td>
-      <td><span class="zst" style="background:${GC[gk]};${gk!=='off'?'box-shadow:0 0 8px '+GC[gk]:''}" onclick="event.stopPropagation();indMenu(event,${z.id})" title="Статус — клик меняет"></span></td>
+      <td><span class="zst" style="background:${GC[gk]};${gk!=='off'?'box-shadow:0 0 8px '+GC[gk]:''}" onclick="event.stopPropagation();indMenu(event,${z.id})" title="P / D / O"></span></td>
+      <td><div class="zctl">${z.togo?'':`<div class="sw ${z.ind!=='off'?'on':''}" onclick="event.stopPropagation();setInd(${z.id},'${z.ind==='off'?'profit':'off'}')" title="${z.ind==='off'?'Включить':'Выключить'}"></div>`}<span class="stpill ${SCLS[z.status]||''}" onclick="event.stopPropagation();stMenu(event,${z.id})" title="Статус">${z.status||'—'}</span></div></td>
       <td>${gchip(z.geo)}</td>
-      <td class="znm"><div class="rkn">${z.name}</div><div class="zsub"><span class="tg">${z.funnel||'—'}</span><span class="tg b">${(z.buyer||'?')[0]}</span>${z.cat?`<span class="zcat ${z.cat}" onclick="event.stopPropagation();cycleZcat(${z.id})">${z.cat.toUpperCase()}</span>`:''}<span class="zd">${d} дн.</span><span class="tgs ${SCLS[z.status]||''}">${z.status||''}</span></div></td>
+      <td class="znm"><div class="rkn">${z.name}</div><div class="zsub"><span class="tg">${z.funnel||'—'}</span><span class="tg b">${(z.buyer||'?')[0]}</span>${z.cat?`<span class="zcat ${z.cat}" onclick="event.stopPropagation();cycleZcat(${z.id})">${z.cat.toUpperCase()}</span>`:''}<span class="zd">${d} дн.</span></div></td>
       <td>${z.togo?`<button class="zrk-add" style="color:var(--purple);border-color:rgba(160,124,245,.4)" onclick="event.stopPropagation();activateTogo(${z.id})">→ В работу</button>`:zLifecycle(z)}</td>
-      <td class="m" style="color:var(--gold)">${z.ind!=='off'?'$'+(z.rk_budget||0):'—'}</td>
-      <td class="m" style="color:${cplC}">${cpl?'$'+cpl:'—'}</td>
-      <td class="m" style="color:${ctrC}">${ctr?ctr.toFixed(2)+'%':'—'}</td>
+      <td class="m" style="color:var(--gold)">${(()=>{const lv=_zBulk[z.campaign_id];return lv?'$'+Math.round(lv.spend):z.ind!=='off'?'$'+(z.rk_budget||0):'—'})()}</td>
+      <td class="m">${(()=>{const s=zSrcStats(z);return s?`${s.leads} <span style="color:#3E4457">/</span> <span style="color:var(--green)">${s.quals}</span>`:'—'})()}</td>
+      <td class="m" style="color:${(()=>{const lv=_zBulk[z.campaign_id];const v=lv?lv.ctr:ctr;return v>2?'var(--green)':v>1.3?'inherit':v?'var(--red)':'inherit'})()}">${(()=>{const lv=_zBulk[z.campaign_id];const v=lv?lv.ctr:ctr;return v?(+v).toFixed(2)+'%':'—'})()}</td>
       <td><div class="sc6">${[1,2,3,4,5,6].map(s=>`<i class="${s<=(z.score||0)?'f':''}" data-zid="${z.id}" data-sc="${s}" onclick="event.stopPropagation();setScore(${z.id},${s})"></i>`).join('')}</div></td>
-      <td style="position:relative"><div class="th">${(z.creos||[]).slice(0,3).map((cn,j)=>`<i style="background:${CRCOL[j]}" class="ctag" data-zid="${z.id}" data-creo="${cn}" title="${cn}"></i>`).join('')}${(z.creos||[]).length>3?`<i class="n">+${z.creos.length-3}</i>`:(z.creos||[]).length<5?`<i class="n cadd" data-zid="${z.id}">+</i>`:''}</div>
-        ${z.togo?'':`<div class="qa"><button class="${z.ind==='profit'?'on':''}" onclick="event.stopPropagation();setInd(${z.id},'profit')">P</button><button class="${z.ind==='drop'?'on':''}" onclick="event.stopPropagation();setInd(${z.id},'drop')">D</button><button class="${z.ind==='off'?'on off':''}" onclick="event.stopPropagation();setInd(${z.id},'${z.ind==='off'?'profit':'off'}')">${z.ind==='off'?'⏻ On':'⏻ Off'}</button></div>`}</td>
+      <td><div class="th">${(z.creos||[]).slice(0,3).map((cn,j)=>`<i style="background:${CRCOL[j]}" class="ctag" data-zid="${z.id}" data-creo="${cn}" title="${cn}"></i>`).join('')}${(z.creos||[]).length>3?`<i class="n">+${z.creos.length-3}</i>`:(z.creos||[]).length<5?`<i class="n cadd" data-zid="${z.id}">+</i>`:''}</div></td>
       </tr>`
       if(expZ===z.id)html+=exRow(z)
     })
   })
-  document.getElementById('zt-body').innerHTML=html||`<tr><td colspan="10" class="empty">Нет заливов</td></tr>`
+  document.getElementById('zt-body').innerHTML=html||`<tr><td colspan="11" class="empty">Нет заливов</td></tr>`
   document.querySelectorAll('tr.zgrp').forEach(tr=>tr.addEventListener('click',()=>{tr.classList.toggle('zcl');const g=tr.dataset.grp;document.querySelectorAll('tr.g-'+g).forEach(r=>r.style.display=tr.classList.contains('zcl')?'none':'')}))
   document.querySelectorAll('tr.zgrp.zcl').forEach(tr=>document.querySelectorAll('tr.g-'+tr.dataset.grp).forEach(r=>r.style.display='none'))
   document.querySelectorAll('#zt-body tr[data-zid]').forEach(tr=>{
@@ -2035,7 +2078,7 @@ async function fetchCampaignMetrics(z){
 }
 
 function exRow(z){/*colspan handled below*/
-  return`<tr class="exrow ${z.ind==='profit'?'rp':z.ind==='drop'?'rd':'ro'} rex"><td colspan="10"><div class="exin">
+  return`<tr class="exrow ${z.ind==='profit'?'rp':z.ind==='drop'?'rd':'ro'} rex"><td colspan="11"><div class="exin">
     <div class="exbl"><div class="exlb">Редактировать</div>
       <div style="margin-bottom:8px"><div class="elb">Название</div><input class="efi" id="ef-name-${z.id}" value="${(z.name||'').replace(/"/g,'&quot;')}"></div>
       <div class="erow"><div><div class="elb">AD $</div><input class="efi" id="ef-ad-${z.id}" type="number" value="${z.ad_budget}"></div><div><div class="elb">RK $</div><input class="efi" id="ef-rk-${z.id}" type="number" value="${z.rk_budget}"></div></div>
@@ -2334,7 +2377,7 @@ async function moveTask(t,newCol){
   const now=new Date().toISOString();const upd={col:newCol,updated_at:now}
   if(newCol==='process'){upd.started_at=now}
   else if(t.col==='process'&&t.started_at){upd.time_spent=(t.time_spent||0)+Math.round((Date.now()-new Date(t.started_at).getTime())/1000);upd.started_at=null}
-  if(newCol==='done'){upd.done_at=now}
+  if(newCol==='done'){upd.done_at=now;dollarConfetti()}
   Object.assign(t,upd)
   await db.from('tasks').update(upd).eq('id',t.id)
 }
@@ -2436,6 +2479,11 @@ async function clearDone(){
 }
 
 // ── 00:00 rollover: today's tasks → TO DO ──
+function dollarConfetti(){const N=70;const box=document.createElement('div');box.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:9999;overflow:hidden';document.body.appendChild(box)
+  for(let i=0;i<N;i++){const s=document.createElement('span');const x=50+(Math.random()-.5)*30,dx=(Math.random()-.5)*60,rot=Math.random()*720-360,dur=1600+Math.random()*1200,sz=14+Math.random()*16,g=Math.random()<.5
+    s.textContent='$';s.style.cssText=`position:absolute;left:${x}vw;top:45vh;font:800 ${sz}px var(--mono);color:${g?'#3DBE8B':'#F0D98A'};text-shadow:0 0 10px ${g?'rgba(61,190,139,.8)':'rgba(212,175,55,.8)'};transform:translate(-50%,-50%);will-change:transform,opacity`
+    s.animate([{transform:`translate(-50%,-50%) rotate(0deg)`,opacity:1},{transform:`translate(calc(-50% + ${dx}vw),calc(-50% - ${20+Math.random()*25}vh)) rotate(${rot/2}deg)`,opacity:1,offset:.35},{transform:`translate(calc(-50% + ${dx*1.4}vw),calc(-50% + 60vh)) rotate(${rot}deg)`,opacity:0}],{duration:dur,easing:'cubic-bezier(.2,.7,.3,1)',fill:'forwards'});box.appendChild(s)}
+  setTimeout(()=>box.remove(),3200)}
 function rolloverTodayTasks(){
   const td=todayISO();let n=0
   TASKS.forEach(t=>{if(t.col==='all'&&t.deadline&&t.deadline<=td){t.col='todo';db.from('tasks').update({col:'todo',updated_at:new Date().toISOString()}).eq('id',t.id);n++}})
@@ -2448,9 +2496,9 @@ async function loadGrind(){if(!db)return;try{const{data}=await db.from('grind').
 async function addGrind(text){
   if(!text.trim())return
   const{data,error}=await db.from('grind').insert({text:text.trim(),gtype:_grindTab,buyer:CURRENT_USER?.name||'',region:CURRENT_REGION}).select().single()
-  if(!error&&data){GRIND.unshift(data);rtasks()}else toast('Ошибка: '+(error?.message||''),'err')
+  if(!error&&data){GRIND.unshift(data);renderDGrind();toast('Записано','ok')}else toast('Ошибка: '+(error?.message||''),'err')
 }
-async function delGrind(id){await db.from('grind').delete().eq('id',id);GRIND=GRIND.filter(g=>g.id!==id);rtasks()}
+async function delGrind(id){await db.from('grind').delete().eq('id',id);GRIND=GRIND.filter(g=>g.id!==id);renderDGrind()}
 
 // ── STATS ──
 function taskStats(){
@@ -2541,7 +2589,6 @@ function buildJdlToday(){
   const newAn=RK_ANALYSES.filter(a=>a.created_at>=sinceISO)
   if(newAn.length)ev.push(['#3DBE8B','Анализов сделано: '+newAn.length,newAn.slice(0,4).map(a=>(a.zaliv_name||'').slice(0,30)+' — CPL $'+(a.cpl||0)).join(' · ')])
   // bad CPL from analyses last 24h
-  const bad=newAn.filter(a=>a.cpl>15);if(bad.length)ev.push(['#F03A55','CPL выше $15: '+bad.length+' РК',bad.slice(0,3).map(a=>(a.zaliv_name||'').slice(0,30)+' $'+a.cpl).join(' · ')])
   // metrics today/yesterday
   const m=METRICS.slice(-2);if(m.length===2){const[y,t]=m;const sp=x=>+(x.spend_pl||0)+(+x.spend_plua||0);const dl=y.leads_pl+y.leads_plua;ev.push(['#D4AF37','Вчера · '+CURRENT_REGION,'спенд $'+Math.round(sp(y))+' · лиды '+dl+' · квалы '+(y.quals||0)+' · CPL $'+(y.cpl||0)+' · CQL $'+(y.cql||0)])}
   // tasks
@@ -4208,6 +4255,7 @@ async function loadAdsetResult(adsetId,z,from,to,adsets){
     }catch(e){}
   }
 
+  const autoSrc=srcStats(z.id,adsetId==='all'?null:adsetId,from,to)
   const spend=meta?meta.spend:0
   const clicks=meta?meta.clicks:0
   const reach=meta?(meta.reach||meta.impressions||0):0
@@ -4248,7 +4296,7 @@ async function loadAdsetResult(adsetId,z,from,to,adsets){
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr">
         ${ecell('Охват','an-i-reach',reach,true)}
         ${ecell('Клики','an-i-clicks',clicks,true)}
-        ${ecell('Лиды','an-i-leads',0,false,'#2ea043')}
+        ${ecell('Лиды','an-i-leads',autoSrc?autoSrc.leads:0,!!autoSrc,'#2ea043')}
         ${ecell('AmFreq (ввод)','an-i-amfreq',0,false)}
         ${ecell('CPC $','an-i-cpc',cpc,true)}
         ${ccell('CR %','an-v-cr','= Лиды/Клики×100')}
@@ -4258,7 +4306,7 @@ async function loadAdsetResult(adsetId,z,from,to,adsets){
         ${ecell('CPM $','an-i-cpm',cpm,true)}
         ${ecell('Ср.вр (с)','an-i-viewtime',avgView,true)}
         ${ccell('AR %','an-v-ar','= Квалы/Лиды×100')}
-        ${ecell('Квалы','an-i-quals',0,false)}
+        ${ecell('Квалы','an-i-quals',autoSrc?autoSrc.quals:0,!!autoSrc)}
         <div style="padding:6px 9px;border-bottom:1px solid var(--border)"></div>
         ${ccell('CQL $','an-v-cql','= Spend/Квалы')}
       </div>
@@ -4267,6 +4315,7 @@ async function loadAdsetResult(adsetId,z,from,to,adsets){
         <button class="bsv" style="width:100%;padding:7px" onclick="saveCurrentAnalysis(${z.id},${spend},${clicks},${reach},${ctr},${cpc},${cpm},${freq},${avgView},'${(z.buyer||'').replace(/'/g,'')}','${z.geo||''}','${(z.funnel||'').replace(/'/g,'')}','${from}','${to}','${adsetId==='all'?'':adsetId}','${adsetName.replace(/'/g,'').slice(0,50)}')">💾 Сохранить</button>
       </div>
     </div>`
+  setTimeout(recalcAnalysis,0)
 }
 
 
