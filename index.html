@@ -30,6 +30,8 @@ var REGION_GEOS={
   CZ:{main:'CZ',ua:'CZUA',flag:'🇨🇿',creoMain:'CZ',creoUa:'UACZ'}
 }
 var ZALIVS=[],DOMAINS=[],TASKS=[],METRICS=[],SALES_DATA=[],TEMPLATES=[],SRC_DAILY=[],ADSET_SRC=[]
+var SITES={PL:{base:'https://garno-site.vercel.app/#',geos:['PL','PLUA'],label:'Польский трафик · PLPL + PLUA'},CZ:{base:'https://garno-site-cz.vercel.app/#',geos:['CZ','CZUA'],label:'Чешский трафик · CZCZ + CZUA'}}
+var DKEYS=['kalkulator',...Array.from({length:20},(_,i)=>'kalkulator'+(i+1))]
 const SCLS={Check:'sc',Scale:'ss',OFF:'so',Test:'st',Proliw:'sp',Perezaliw:'sz'}
 var expZ=null,dragId=null,moGeo='',moScore=0,domGeoSel=[],deGeoSel=[],deEditId=null
 var CREO_REPORTS=[]
@@ -627,6 +629,17 @@ tr.zr2:hover .qa{opacity:1;transform:translateY(-50%);pointer-events:auto}tr.zr2
 .stpill{font:600 9.5px var(--mono);padding:2px 6px;border-radius:4px;letter-spacing:.3px;cursor:pointer;border:1px solid var(--border);background:var(--bg2);color:var(--text3)}
 .stpill.sc{color:var(--yellow);border-color:rgba(212,175,55,.3)}.stpill.ss{color:var(--green);border-color:rgba(61,190,139,.3)}.stpill.so{color:var(--red);border-color:rgba(240,58,85,.3)}.stpill.st{color:var(--purple);border-color:rgba(160,124,245,.3)}.stpill.sp{color:var(--green)}.stpill.sz{color:var(--blue)}
 .stpill:hover{border-color:var(--border3);color:var(--text)}
+.dsite{background:linear-gradient(180deg,var(--bg4),var(--bg3));border:1px solid var(--border);border-radius:14px;padding:14px 16px 16px;box-shadow:0 1px 0 var(--hi) inset}
+.dsh{display:flex;align-items:center;gap:14px;margin-bottom:6px;font-size:13px}
+.dsec{font-size:10.5px;color:var(--text3);font-weight:500;margin:12px 0 8px;letter-spacing:.03em}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.dtile{border:1px solid var(--border);border-radius:10px;padding:9px 11px;background:var(--bg2);transition:border-color .15s}
+.dtile.free{border-color:rgba(61,190,139,.28)}.dtile.free:hover{border-color:var(--green)}
+.dtile.busy{opacity:.55;background:var(--bg3)}.dtile.busy:hover{opacity:.9}
+.dtile .dk{display:flex;align-items:center;justify-content:space-between;gap:8px}.dtile .dk a{font:500 12.5px var(--mono);color:var(--text)}
+.dtile .px{font:600 8.5px var(--mono);padding:1px 5px;border-radius:4px;border:1px solid var(--border);color:var(--text3)}.dtile .px.new{color:var(--blue);border-color:rgba(110,155,255,.35)}
+.dtile .dfree{font-size:10.5px;color:var(--green);margin-top:5px}
+.dtile .dby{font-size:10.5px;color:var(--text2);margin-top:5px;cursor:pointer;display:flex;align-items:center;gap:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.dtile .dby .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}.dtile .dby:hover{color:var(--text)}
 /* ── zalivs v2 rows (как в артефакте) ── */
 .zt2 th{font-size:10.5px}
 tr.zgrp td{padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
@@ -864,7 +877,9 @@ document.getElementById('root').innerHTML=`
     </div>
     </div>
     <div class="page" id="page-domains">
-      <div class="fhdr"><span class="fhtit">Домены</span><span class="fhcnt" id="d-count">(0)</span></div>
+      <div class="fhdr"><span class="fhtit">Домены</span><span class="fhcnt" id="d-count">(0)</span><span style="margin-left:auto;font-size:11px;color:var(--text3)">серые — заняты активной РК · зелёные — свободны</span></div>
+      <div id="dom-registry"></div>
+      <div class="fhdr" style="margin-top:22px"><span class="ctit">Прочие домены</span></div>
       <div class="fbar"><select class="fsel" id="df-geo"><option value="">🌐 GEO</option></select><input class="fsrch" id="df-q" placeholder="🔍 Поиск..."><button class="badd" id="btn-new-domain">+ Добавить домен</button></div>
       <div class="dgr" id="dom-grid"><div class="empty">Загрузка...</div></div>
     </div>
@@ -1014,6 +1029,7 @@ document.getElementById('root').innerHTML=`
   <div class="fl2"><div class="fl" style="margin-bottom:0"><label>Баер</label><select class="fi" id="mb"><option value="Illia">Illia</option><option value="Danya">Danya</option></select></div><div class="fl" style="margin-bottom:0"><label>Воронка</label><select class="fi" id="mf"><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div></div>
   <div class="fl"><label>Score (0–6)</label><div style="display:flex;gap:4px" id="mo-score"><button class="spb s0" data-score="0">0</button><button class="spb" data-score="1">1</button><button class="spb" data-score="2">2</button><button class="spb" data-score="3">3</button><button class="spb" data-score="4">4</button><button class="spb" data-score="5">5</button><button class="spb" data-score="6">6</button></div></div>
   <div class="fl" style="display:none"><select class="fi" id="md"><option value="">— выбрать —</option></select><div id="mcreo-list"></div><button class="addg" id="btn-add-creo" style="display:none">+ Крео</button></div>
+  <div class="fl"><label>Адсеты → домены <span style="color:var(--text3);font-weight:400">· свободные из реестра</span></label><div id="mo-ads"></div><button class="addg" id="btn-add-ad" type="button">+ адсет</button></div>
   <div class="fl"><label>Категория <span style="color:var(--text3);font-weight:400">· из названия: TEST / MWP / TRASH</span></label><div class="gowrap" id="mo-cat"><div class="go" data-mcat="">—</div><div class="go" data-mcat="mwp">MWP</div><div class="go" data-mcat="test">TEST</div><div class="go" data-mcat="trash">TRASH</div></div></div>
   <div class="fl"><label>Цели</label><div id="mg-list"></div><button class="addg" id="btn-add-goal">+ Цель</button></div>
   <div class="rkpv" id="mo-prev">D{дата}GEO/PH1./garno/kalk\LEADS/budget$</div>
@@ -1236,7 +1252,7 @@ function populateGeoSelectors(){
   if(mo){
     mo.innerHTML=geos.map(g=>`<div class="go" data-geo="${g}">${flagOf(g)} ${g}</div>`).join('')
     mo.querySelectorAll('[data-geo]').forEach(btn=>btn.addEventListener('click',function(){
-      mo.querySelectorAll('[data-geo]').forEach(b=>b.classList.remove('sel'));this.classList.add('sel');moGeo=this.dataset.geo;updDomains();updPrev()
+      mo.querySelectorAll('[data-geo]').forEach(b=>b.classList.remove('sel'));this.classList.add('sel');moGeo=this.dataset.geo;updDomains();updPrev();moAdsRender()
     }))
   }
   // Domain add GEO buttons (multi select)
@@ -1363,16 +1379,27 @@ async function init(){
   ;['pd-from','pd-to','sp-from','sp-to'].forEach(id=>document.getElementById(id).value=today)
   try{db=supabase.createClient(SB_URL,SB_ANON)}catch(e){console.error(e)}
   await Promise.all([loadZ(),loadD(),loadT(),loadJ(),loadM(),loadSales(),loadTemplates(),loadCreoReports(),loadCreoLib(),loadRkAnalyses(),loadInsights(),loadGrind(),loadAllZalivs(),loadSrcDaily(),loadAdsetSrc()])
-  rolloverTodayTasks();scheduleRollover()
+  rolloverTodayTasks();scheduleRollover();backfillFdc()
   if(localStorage.getItem('jdl_buyer')===null&&CURRENT_USER)CURRENT_BUYER=CURRENT_USER.name
-  setBuyer(CURRENT_BUYER);setupRT();setSS('ok','Данные загружены');maybeJdlToday()
+  setBuyer(CURRENT_BUYER);setupRT();setSS('ok','Данные загружены');maybeJdlToday();schemaCheck()
 }
 async function loadSrcDaily(){if(!db)return;const since=new Date(Date.now()-90*864e5).toISOString().split('T')[0];const{data}=await db.from('source_daily').select('*').eq('region',CURRENT_REGION).gte('day',since);SRC_DAILY=data||[]}
-async function loadAdsetSrc(){if(!db)return;const{data}=await db.from('adset_sources').select('*').eq('region',CURRENT_REGION);ADSET_SRC=data||[]}
+async function loadAdsetSrc(){ADSET_SRC=[]}
+// ── domain registry helpers ──
+function dPixel(key){const n=+(key.replace('kalkulator','')||0);return n>=11?'NEW':'OLD'}
+function dUrl(site,key){return SITES[site].base+key}
+function siteForGeo(geo){return isUaGeo(geo)?(geo==='CZUA'?'CZ':'PL'):(geo==='CZ'?'CZ':'PL')}
+function zDomains(z){const a=z.adset_domains;return Array.isArray(a)?a:[]}
+// key → {z, ad} for active RKs of current region
+function lockedDomains(){const m={};ZALIVS.forEach(z=>{if(z.togo||z.ind==='off')return;zDomains(z).forEach(d=>{if(d.domain&&!m[d.domain])m[d.domain]={z,ad:d.ad}})});return m}
+function domainOptions(site,curKey,selfZid){const lk=lockedDomains();return DKEYS.map(k=>{const L=lk[k];const busy=L&&L.z.id!==selfZid;return`<option value="${k}"${k===curKey?' selected':''}${busy?' disabled':''}>${k}${dPixel(k)==='NEW'?' · new px':' · old px'}${busy?' — занят: '+L.z.name.slice(0,26):''}</option>`}).join('')}
+// source → {letter, key}
+function srcParse(src){src=(src||'').toLowerCase().trim();let letter='',rest=src;const m=src.match(/^([id])(.+)$/);if(m&&/kalkulator|garno|#/.test(m[2])){letter=m[1].toUpperCase();rest=m[2]}const k=rest.match(/(kalkulator\d*)/);return{letter,key:k?k[1]:rest}}
 function allSources(){const s=new Set([...SRC_DAILY.map(r=>r.source),...ADSET_SRC.map(m=>m.source)]);const arr=[...s].filter(x=>x&&x!=='(none)').sort();const dl=document.getElementById('srclist');if(dl)dl.innerHTML=arr.map(x=>`<option value="${x}">`).join('');return arr}
 // leads/quals from GarnoCRM for a zaliv (or one adset) over a period, via mapped sources
-function srcStats(zid,adsetId,from,to){const maps=ADSET_SRC.filter(m=>m.zaliv_id===zid&&(adsetId?m.adset_id===adsetId:true));const srcs=new Set(maps.map(m=>m.source));if(!srcs.size)return null
-  let leads=0,quals=0;SRC_DAILY.forEach(r=>{if(srcs.has(r.source)&&(!from||r.day>=from)&&(!to||r.day<=to)){leads+=r.leads||0;quals+=r.quals||0}});return{leads,quals,sources:[...srcs]}}
+function srcStats(zid,adsetId,from,to){const z=ZALIVS.find(x=>x.id===zid);if(!z)return null;const doms=zDomains(z).filter(d=>d.domain&&(adsetId?(d.adset_id===adsetId):true));const keys=new Set(doms.map(d=>d.domain));if(!keys.size)return null
+  const bl=z.buyer==='Illia'?'I':z.buyer==='Danya'?'D':'';let leads=0,quals=0;SRC_DAILY.forEach(r=>{const p=srcParse(r.source);if(!keys.has(p.key))return;if(p.letter&&bl&&p.letter!==bl)return;if((!from||r.day>=from)&&(!to||r.day<=to)){leads+=r.leads||0;quals+=r.quals||0}});return{leads,quals,sources:[...keys]}}
+async function setAdsetDomain(zid,adIdx,adsetId,adsetName,domain){const z=ZALIVS.find(x=>x.id===zid);if(!z)return;const arr=zDomains(z).slice();let e=arr.find(d=>adsetId?d.adset_id===adsetId:d.ad===adIdx);if(!e){e={ad:adIdx};arr.push(e)}e.adset_id=adsetId||e.adset_id||null;e.adset_name=adsetName||e.adset_name||null;e.domain=domain||'';z.adset_domains=arr.filter(d=>d.domain);await db.from('zalivs').update({adset_domains:z.adset_domains}).eq('id',zid);toast(domain?'Домен привязан: '+domain:'Домен снят','ok');selZaliv(zid);rzalivs()}
 function zSrcStats(z){const d=z.date||parseDateFromCampName(z.name);let from=null;if(d){const p=d.split('.');if(p.length===2)from=`${new Date().getFullYear()}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`}return srcStats(z.id,null,from,null)}
 async function setAdsetSource(zid,adsetId,adsetName,source){allSources();const ex=ADSET_SRC.find(m=>m.zaliv_id===zid&&m.adset_id===adsetId)
   if(!source){if(ex){await db.from('adset_sources').delete().eq('id',ex.id);ADSET_SRC=ADSET_SRC.filter(m=>m.id!==ex.id)}}
@@ -1381,6 +1408,10 @@ async function setAdsetSource(zid,adsetId,adsetName,source){allSources();const e
   toast(source?'Источник привязан: '+source:'Привязка снята','ok');selZaliv(zid);rzalivs()}
 async function loadAllZalivs(){if(!db)return;const{data}=await db.from('zalivs').select('id,name,geo,buyer,region,created_at').order('created_at',{ascending:false});window._ALL_ZALIVS=data||[]}
 
+async function schemaCheck(){if(!db)return;const probes=[['tasks','rk_id,ttype,started_at,time_spent,done_at'],['grind','id'],['zalivs','cat,togo,adset_domains'],['source_daily','id'],['metrics_daily','region']];const miss=[]
+  for(const[t,cols]of probes){const{error}=await db.from(t).select(cols).limit(1);if(error&&/does not exist|schema cache|not find/i.test(error.message))miss.push(t+' ('+cols+')')}
+  if(miss.length){let b=document.getElementById('schema-banner');if(!b){b=document.createElement('div');b.id='schema-banner';b.style.cssText='position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:800;background:var(--bg5);border:1px solid var(--bord2);border-radius:12px;padding:12px 16px;font-size:12px;max-width:640px;box-shadow:0 20px 60px rgba(0,0,0,.7)';document.body.appendChild(b)}
+    b.innerHTML='<b style="color:var(--bord3)">В базе не хватает колонок/таблиц:</b> '+miss.join(' · ')+'<br><span style="color:var(--text3)">Supabase JDL → SQL Editor → выполни блок SQL из чата. Без этого таски, Grind, TOGO и лиды работать не будут.</span> <button onclick="this.parentElement.remove()" style="margin-left:10px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);border-radius:6px;padding:3px 8px;cursor:pointer">скрыть</button>'}}
 async function switchRegion(region){
   if(region===CURRENT_REGION)return
   CURRENT_REGION=region
@@ -1849,7 +1880,7 @@ function indMenu(e,zid){let m=document.getElementById('indmenu');if(!m){m=docume
   m.innerHTML=[['profit','Profit','var(--green)'],['drop','Drop','var(--yellow)'],['off','Off','#3E4457']].map(x=>`<div onclick="setInd(${zid},'${x[0]}')"><i style="background:${x[2]}"></i>${x[1]}</div>`).join('')
   m.classList.add('on');m.style.left=Math.min(e.clientX,innerWidth-160)+'px';m.style.top=(e.clientY+8)+'px';const off=()=>{m.classList.remove('on');document.removeEventListener('click',off)};setTimeout(()=>document.addEventListener('click',off),0)}
 // ── ZALIV DETAIL PANEL (split view) ──
-var _zLiveCache={},_zAdsCache={},_zBulk={},_zBulkAt=0,_zAdsLoading={}
+var _zLiveCache={},_zAdsCache={},_zBulk={},_zBulkAt=0,_zAdsLoading={},_zLiveLoading={}
 async function selZaliv(zid){
   _zSel=zid;document.querySelectorAll('#zt-body tr[data-zid]').forEach(tr=>tr.classList.toggle('zsel',+tr.dataset.zid===zid))
   const z=ZALIVS.find(x=>x.id===zid);const dp=document.getElementById('zdp');if(!z||!dp)return
@@ -1869,8 +1900,8 @@ async function selZaliv(zid){
       <div class="blk"><h4>Сейчас из Meta <span class="lv">${live?'<i class="live" style="width:5px;height:5px;display:inline-block;border-radius:50%;background:var(--green)"></i> '+live.at:z.campaign_id?'<span class="clnk" onclick="loadZaliveLive('+zid+')">⚡ загрузить</span>':'<span style="color:var(--text3)">нет campaign_id</span>'}</span></h4>
         <div class="lvg">${live?lv('Спенд сегодня','$'+live.spend,'var(--gold)')+lv('CPL',live.cpl?'$'+live.cpl:'—',cplC(live.cpl))+lv('CTR',live.ctr+'%')+lv('Частота',live.frequency||'—',live.frequency>2.5?'var(--red)':live.frequency>2?'var(--yellow)':'inherit')+lv('Охват',(live.reach||0).toLocaleString('ru'))+lv('Клики',live.clicks):lv('Спенд','$'+(last.spend||0),'var(--gold)')+lv('CPL',last.cpl?'$'+last.cpl:'—',cplC(last.cpl))+lv('CTR',(last.ctr||0)+'%')+lv('Частота',last.frequency||'—')+lv('Охват',(last.reach||0).toLocaleString('ru'))+lv('Лиды / кв.',(last.leads||0)+' <span style="color:var(--text3)">/</span> <span style="color:var(--green)">'+(last.quals||0)+'</span>')}</div>
         ${!live&&last.period_from?`<div style="font-size:10.5px;color:var(--text3);margin-top:6px">из последнего анализа · ${last.period_from}→${last.period_to}</div>`:''}</div>
-      <div class="blk"><h4>Анализы <span>${keys.size} из 4</span></h4><div class="anh">${LCM.map(m=>{const a=an.find(x=>zAnKeyOf(x,z)===m[2]);if(a)return`<div class="an" onclick="gp('analysis',document.getElementById('nb-analysis'));setTimeout(()=>selectAnZaliv(${zid}),300)"><b>${m[1]}</b><span>$${a.cpl||0}</span><small>CPL · ${a.leads||0} л / ${a.quals||0} кв</small></div>`;if(z.ind!=='off'&&d>=m[0])return`<div class="an due" onclick="gp('analysis',document.getElementById('nb-analysis'));setTimeout(()=>{showNewAnalysisPanelFor(${zid});setTimeout(()=>document.querySelector('[data-apreset=\\'${m[2]}\\']')?.click(),150)},300)"><b>${m[1]} · пора</b><span style="color:var(--text3)">создать</span><small>метрики из Meta</small></div>`;return`<div class="an next"><b>${m[1]}</b><span style="color:#3E4457">—</span><small>${z.ind==='off'?'выкл.':'через '+(m[0]-d)+' дн.'}</small></div>`}).join('')}</div></div>
-      <div class="blk" style="border-left:2px solid var(--purple)"><h4>Адсет → калькулятор GarnoCRM <span id="zdp-ads-n">${_zAdsCache[zid]?_zAdsCache[zid].length+' адсетов':''}</span></h4><div style="font-size:11px;color:var(--text3);margin:-4px 0 10px">Выбери у каждого адсета источник, под которым лиды приходят в GarnoCRM — лиды и квалы будут считаться сами по дням.</div><div id="zdp-ads">${_zAdsCache[zid]?_zAdsCache[zid].map(a=>{const m=ADSET_SRC.find(x=>x.zaliv_id===zid&&x.adset_id===a.id);const st=srcStats(zid,a.id);return`<div class="zad"><div class="sw ${a.status==='ACTIVE'?'on':''}" onclick="toggleAdset(${zid},'${a.id}',this)"></div><div class="n">${a.name}<small>${a.status==='ACTIVE'?'активен':'выключен'}${a.daily_budget?' · $'+(a.daily_budget/100).toFixed(0)+'/д':''}${st?` · <span style="color:var(--green)">${st.leads} л / ${st.quals} кв</span>`:''}</small><input class="srcsel" list="srclist" value="${m?.source||''}" placeholder="источник в GarnoCRM (kalkulator1, igarnoland2cz…)" onchange="setAdsetSource(${zid},'${a.id}','${a.name.replace(/'/g,'')}',this.value.trim().toLowerCase())"></div></div>`}).join('')||'<span style="font-size:11px;color:var(--text3)">нет адсетов</span>':z.campaign_id?'<span class="clnk" onclick="loadZalivAdsets('+zid+')">⚡ загрузить адсеты</span>':'<span style="font-size:11px;color:var(--text3)">нет campaign_id</span>'}</div>
+      <div class="blk"><h4>Анализы <span>${keys.size} из ${zLCM(z).length}</span></h4><div class="anh">${zLCM(z).map(m=>{const a=an.find(x=>zAnKeyOf(x,z)===m[2]);if(a)return`<div class="an" onclick="gp('analysis',document.getElementById('nb-analysis'));setTimeout(()=>selectAnZaliv(${zid}),300)"><b>${m[1]}</b><span>$${a.cpl||0}</span><small>CPL · ${a.leads||0} л / ${a.quals||0} кв</small></div>`;if(z.ind!=='off'&&d>=Math.ceil(m[0]))return`<div class="an due" onclick="gp('analysis',document.getElementById('nb-analysis'));setTimeout(()=>{showNewAnalysisPanelFor(${zid});setTimeout(()=>document.querySelector('[data-apreset=\\'${m[2]}\\']')?.click(),150)},300)"><b>${m[1]} · пора</b><span style="color:var(--text3)">создать</span><small>метрики из Meta</small></div>`;return`<div class="an next"><b>${m[1]}</b><span style="color:#3E4457">—</span><small>${z.ind==='off'?'выкл.':'через '+Math.ceil(m[0]-d)+' дн.'}</small></div>`}).join('')}</div></div>
+      <div class="blk" style="border-left:2px solid var(--purple)"><h4>Адсет → домен <span id="zdp-ads-n">${_zAdsCache[zid]?_zAdsCache[zid].length+' адсетов':''}</span></h4><div style="font-size:11px;color:var(--text3);margin:-4px 0 10px">В GarnoCRM источник лида = <b style="color:var(--text)">${z.buyer==='Illia'?'I':'D'}</b> + ключ домена (например <span class="mono">${z.buyer==='Illia'?'I':'D'}kalkulator3</span>). Лиды и квалы считаются сами.</div>${!_zAdsCache[zid]&&zDomains(z).length?`<div style="margin-bottom:8px">${zDomains(z).map(d=>`<div class="zad"><div></div><div class="n">AD${d.ad}<small>${d.domain} · <a class="dlnk" href="${dUrl(siteForGeo(z.geo),d.domain)}" target="_blank">открыть</a></small></div></div>`).join('')}</div>`:''}<div id="zdp-ads">${_zAdsCache[zid]?_zAdsCache[zid].map(a=>{const st=srcStats(zid,a.id);return`<div class="zad"><div class="sw ${a.status==='ACTIVE'?'on':''}" onclick="toggleAdset(${zid},'${a.id}',this)"></div><div class="n">${a.name}<small>${a.status==='ACTIVE'?'активен':'выключен'}${a.daily_budget?' · $'+(a.daily_budget/100).toFixed(0)+'/д':''}${st?` · <span style="color:var(--green)">${st.leads} л / ${st.quals} кв</span>`:''}</small><select class="srcsel" onchange="setAdsetDomain(${zid},${_zAdsCache[zid].indexOf(a)+1},'${a.id}','${a.name.replace(/'/g,'')}',this.value)"><option value="">— домен / калькулятор —</option>${domainOptions(siteForGeo(z.geo),(zDomains(z).find(d=>d.adset_id===a.id)||zDomains(z)[_zAdsCache[zid].indexOf(a)]||{}).domain,zid)}</select></div></div>`}).join('')||'<span style="font-size:11px;color:var(--text3)">нет адсетов</span>':z.campaign_id?'<span class="clnk" onclick="loadZalivAdsets('+zid+')">⚡ загрузить адсеты</span>':'<span style="font-size:11px;color:var(--text3)">нет campaign_id</span>'}</div>
         ${(()=>{const s=zSrcStats(z);return s?`<div style="margin-top:10px;font-size:11px;color:var(--text3)">Из GarnoCRM по привязкам: <b style="color:var(--text)">${s.leads}</b> лидов · <b style="color:var(--green)">${s.quals}</b> квалов · ${s.sources.join(', ')}</div>`:'<div style="margin-top:10px;font-size:11px;color:#3E4457">Привяжи источники к адсетам — лиды и квалы будут считаться сами</div>'})()}</div>
       <div class="blk"><h4>Крео <span>${(z.creos||[]).length}</span></h4><div class="crs">${(z.creos||[]).slice(0,6).map((cn,j)=>{const lib=CREO_LIB.find(x=>x.name===cn);const g=['linear-gradient(160deg,#4a3a1a,#8a6a24)','linear-gradient(160deg,#1f3a5a,#3c6a9a)','linear-gradient(160deg,#3a2456,#6a44a0)','linear-gradient(160deg,#1e4a3a,#2f7a5a)'][j%4];return`<div class="cr" onclick="openCreoInfo('${cn.replace(/'/g,'')}')"><i style="background:${lib?.screenshot_url?'url('+lib.screenshot_url+') center/cover':g}"></i><div><b>${cn}</b><span>${lib?'CTR '+(lib.avg_ctr||0)+'% · CPL $'+(lib.avg_cpl||0):'—'}</span></div></div>`}).join('')||'<span style="font-size:11px;color:var(--text3)">нет</span>'}</div></div>
       <div class="blk"><h4>Домен</h4>${z.domain?`<a class="dlnk" href="https://${z.domain}" target="_blank">${z.domain}</a>`:'<span style="font-size:11px;color:var(--text3)">—</span>'}${z.campaign_id?`<div style="font:10.5px var(--mono);color:var(--text3);margin-top:6px">campaign_id ${z.campaign_id}</div>`:''}</div>
@@ -1879,12 +1910,13 @@ async function selZaliv(zid){
     <div class="act"><button class="p" onclick="gp('analysis',document.getElementById('nb-analysis'));setTimeout(()=>showNewAnalysisPanelFor(${zid}),300)">Анализ</button><button onclick="addRkTask(${zid},'an')">+ таск</button><button onclick="togZ(${zid});document.getElementById('tc-'+${zid})?.scrollIntoView?.()">Развернуть</button></div>`
   document.getElementById('zdp').scrollTop=0
   if(z.campaign_id&&!_zAdsCache[zid]&&!_zAdsLoading[zid]){_zAdsLoading[zid]=1;loadZalivAdsets(zid)}
+  if(z.campaign_id&&!_zLiveCache[zid]&&!_zLiveLoading[zid]){_zLiveLoading[zid]=1;loadZaliveLive(zid).finally(()=>{delete _zLiveLoading[zid]})}
 }
 async function loadZalivAdsets(zid){const z=ZALIVS.find(x=>x.id===zid);if(!z?.campaign_id)return
-  try{const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_adsets',campaign_id:z.campaign_id,region:CURRENT_REGION})});const d=await r.json();if(d.ok){_zAdsCache[zid]=d.adsets||[];allSources();selZaliv(zid)}else toast('Meta: '+(d.error||'ошибка'),'err')}catch(e){toast('Meta недоступна','err')}finally{delete _zAdsLoading[zid]}}
+  try{const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_adsets',campaign_id:z.campaign_id,region:CURRENT_REGION})});const d=await r.json();if(d.ok){_zAdsCache[zid]=d.adsets||[];const zz=ZALIVS.find(x=>x.id===zid);if(zz){const arr=zDomains(zz);let ch=false;(_zAdsCache[zid]).forEach((a,i)=>{const e=arr[i];if(e&&!e.adset_id){e.adset_id=a.id;e.adset_name=a.name;ch=true}});if(ch){zz.adset_domains=arr;db.from('zalivs').update({adset_domains:arr}).eq('id',zid)}}selZaliv(zid)}else toast('Meta: '+(d.error||'ошибка'),'err')}catch(e){toast('Meta недоступна','err')}finally{delete _zAdsLoading[zid]}}
 async function toggleAdset(zid,adsetId,el){const on=!el.classList.contains('on');el.classList.toggle('on',on)
   try{const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'set_adset_status',adset_id:adsetId,status:on?'ACTIVE':'PAUSED',region:CURRENT_REGION})});const d=await r.json();if(d.ok){const a=(_zAdsCache[zid]||[]).find(x=>x.id===adsetId);if(a)a.status=on?'ACTIVE':'PAUSED';toast('Адсет '+(on?'включён':'выключен'),'ok')}else{el.classList.toggle('on',!on);toast('Meta: '+(d.error||'ошибка'),'err')}}catch(e){el.classList.toggle('on',!on);toast('Meta недоступна','err')}}
-function zAnKeyOf(a,z){const f=normDate(a.period_from),t=normDate(a.period_to);if(!f||!t)return'';const span=Math.round((new Date(t)-new Date(f))/864e5);const raw=z.date||parseDateFromCampName(z.name)||'1.1';const p=raw.split('.');const d0=new Date(new Date().getFullYear(),+p[1]-1,+p[0]);const off=Math.round((new Date(f)-d0)/864e5);if(span===0&&off===0)return'1dc';if(span===0&&off===1)return'2dc';if(span===1)return'3dc';if(off>=4)return'2k';return'kwartal'}
+function zAnKeyOf(a,z){const f=normDate(a.period_from),t=normDate(a.period_to);if(!f||!t)return'';const span=Math.round((new Date(t)-new Date(f))/864e5);const raw=z.date||parseDateFromCampName(z.name)||'1.1';const p=raw.split('.');const d0=new Date(new Date().getFullYear(),+p[1]-1,+p[0]);const off=Math.round((new Date(f)-d0)/864e5);if(span===0&&off===0)return'1dc';if(span===0&&off===1)return'2dc';if(span===1&&off===0)return'kwartal';if(span===1&&off>=2&&off%2===0)return(off/2+1)+'k';if(span===2&&off===0)return'kwartal';return span===1?'2k':'kwartal'}
 async function loadZaliveLive(zid){
   const z=ZALIVS.find(x=>x.id===zid);if(!z?.campaign_id)return
   const td=new Date().toISOString().split('T')[0]
@@ -1896,11 +1928,14 @@ function scoreToAutoStatus(s){return s<=2?'OFF':s<=4?'Check':'Scale'}
 async function cycleZcat(zid){const z=ZALIVS.find(x=>x.id===zid);if(!z)return;const o=['','mwp','test','trash'];z.cat=o[(o.indexOf(z.cat||'')+1)%o.length];await db.from('zalivs').update({cat:z.cat||null}).eq('id',zid);rzalivs();toast('Категория: '+(z.cat?z.cat.toUpperCase():'убрана'),'ok')}
 function gchip(g){return`<span class="zgeo gchip ${geoClass(g)}">${g}</span>`}
 var _zView='mine',_zSel=null
-var LCM=[[1,'1DC','1dc'],[3,'3DC','3dc'],[4,'K','kwartal'],[7,'2K','2k']],LCT=9
+var LCM_FULL=[[1,'1DC','1dc'],[2,'2DC','2dc'],[2.35,'K','kwartal'],[4,'2K','2k'],[6,'3K','3k'],[8,'4K','4k'],[10,'5K','5k'],[12,'6K','6k']],LCM=LCM_FULL,LCT=9
+// cycle per RK: TEST → only 1DC; everything else → full (up to current day + next mark)
+function zLCM(z){if(z&&z.cat==='test')return[LCM_FULL[0]];const d=z?zDays(z):0;const upto=Math.max(4,d+2);return LCM_FULL.filter(m=>m[0]<=upto)}
+function zLCT(z){const m=zLCM(z);return Math.max(5,(m[m.length-1]?.[0]||4)+1.2)}
 function zDays(z){const raw=z.date||parseDateFromCampName(z.name)||'';if(!raw)return 0;const p=raw.split('.');if(p.length<2)return 0;const d=new Date(new Date().getFullYear(),+p[1]-1,+p[0]);return Math.max(0,Math.floor((Date.now()-d)/864e5))}
 function zAnKeys(z){const set=new Set();RK_ANALYSES.filter(a=>a.zaliv_id===z.id).forEach(a=>{const k=zAnKeyOf(a,z);if(k)set.add(k)});return set}
-function zLifecycle(z){const d=zDays(z),an=zAnKeys(z),pos=x=>Math.min(100,x/LCT*100),on=z.ind!=='off';return`<div class="lc" title="день ${d}"><div class="tr"></div><div class="fl2" style="width:${pos(d)}%"></div>${LCM.map(m=>`<div class="m ${an.has(m[2])?'d':(d>=m[0]&&on?'w':'')}" style="left:${pos(m[0])}%" data-l="${m[1]}"></div>`).join('')}<div class="now" style="left:${pos(d)}%"></div></div>`}
-function zNeedsAn(z){if(z.ind==='off'||z.togo)return false;const d=zDays(z),an=zAnKeys(z);return LCM.some(m=>d>=m[0]&&!an.has(m[2]))}
+function zLifecycle(z){const d=zDays(z),an=zAnKeys(z),T=zLCT(z),pos=x=>Math.min(100,x/T*100),on=z.ind!=='off';return`<div class="lc" title="день ${d}${z.cat==='test'?' · TEST: только 1DC':''}"><div class="tr"></div><div class="fl2" style="width:${pos(d)}%"></div>${zLCM(z).map(m=>`<div class="m ${an.has(m[2])?'d':(d>=Math.ceil(m[0])&&on?'w':'')}" style="left:${pos(m[0])}%" data-l="${m[1]}"></div>`).join('')}<div class="now" style="left:${pos(d)}%"></div></div>`}
+function zNeedsAn(z){if(z.ind==='off'||z.togo)return false;const d=zDays(z),an=zAnKeys(z);return zLCM(z).some(m=>d>=Math.ceil(m[0])&&!an.has(m[2]))}
 function zCpl(z){const a=RK_ANALYSES.filter(x=>x.zaliv_id===z.id).sort((p,q)=>(q.created_at||'').localeCompare(p.created_at||''))[0];return a?+a.cpl||0:0}
 function zViewFilter(z){const me=CURRENT_BUYER||'';if(_zView==='togo')return !!z.togo;if(z.togo)return false;switch(_zView){case'mine':return z.ind!=='off'&&(!me||z.buyer===me);case'noan':return zNeedsAn(z);case'test':return z.cat==='test';default:return true}}
 function spbs(z){return Array.from({length:7},(_,i)=>`<button class="spb${z.score===i?' s'+i:''}" data-zid="${z.id}" data-sc="${i}">${i}</button>`).join('')}
@@ -2220,6 +2255,10 @@ function autoFillFromName(){const n=document.getElementById('mn').value
   const b=parseBudgetFromName(n);if(b){document.getElementById('mr').value=b;if(!document.getElementById('ma').value)document.getElementById('ma').value=b}
   const d=parseDateFromCampName(n);const el=document.getElementById('mo-date-hint');if(el)el.textContent=d?'дата из названия: '+d:''
 }
+function moAdsRender(){const w=document.getElementById('mo-ads');if(!w)return;const site=siteForGeo(moGeo||'PL');w.innerHTML=(moAds.length?moAds:[{ad:1,domain:''}]).map((r,i)=>`<div style="display:flex;gap:6px;align-items:center;margin-bottom:5px"><span class="mono" style="font-size:10.5px;color:var(--text3);width:34px">AD${i+1}</span><select class="fi" data-adi="${i}" style="flex:1;font-size:12px;padding:6px 9px"><option value="">— домен —</option>${domainOptions(site,r.domain,null)}</select>${r.domain?`<a class="dlnk" href="${dUrl(site,r.domain)}" target="_blank" style="font-size:11px">↗</a>`:''}${i>0?`<button type="button" class="rmbtn" data-adrm="${i}">×</button>`:''}</div>`).join('')
+  if(!moAds.length)moAds=[{ad:1,domain:''}];w.querySelectorAll('[data-adi]').forEach(s=>s.onchange=()=>{moAds[+s.dataset.adi].domain=s.value;moAdsRender()});w.querySelectorAll('[data-adrm]').forEach(b=>b.onclick=()=>{moAds.splice(+b.dataset.adrm,1);moAdsRender()})}
+var moAds=[]
+document.getElementById('btn-add-ad')?.addEventListener('click',()=>{if(moAds.length<6){moAds.push({ad:moAds.length+1,domain:''});moAdsRender()}})
 document.getElementById('mn').addEventListener('input',autoFillFromName)
 document.querySelectorAll('#mo-cat [data-mcat]').forEach(b=>b.addEventListener('click',function(){moCat=this.dataset.mcat;document.querySelectorAll('#mo-cat [data-mcat]').forEach(x=>x.classList.toggle('sel',x===this))}))
 async function svz(togo){
@@ -2228,7 +2267,8 @@ async function svz(togo){
   const goals=[...document.querySelectorAll('.mgoal-input')].map(i=>i.value.trim()).filter(Boolean)
   const nd=parseDateFromCampName(name);const today=nd||new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
   const score=togo?0:(moScore||3)
-  const row={geo:moGeo,name,ad_budget:parseFloat(document.getElementById('ma').value)||0,rk_budget:parseFloat(document.getElementById('mr').value)||parseBudgetFromName(name),domain:'',creos:[],goals,ind:togo?'off':'profit',status:togo?'Test':'Check',insights:'',buyer:document.getElementById('mb').value,funnel:document.getElementById('mf').value,score,date:togo?null:today,region:CURRENT_REGION,cat:moCat||parseCatFromName(name),togo:!!togo}
+  const adset_domains=moAds.filter(a=>a.domain).map((a,i)=>({ad:i+1,domain:a.domain}))
+  const row={geo:moGeo,name,ad_budget:parseFloat(document.getElementById('ma').value)||0,rk_budget:parseFloat(document.getElementById('mr').value)||parseBudgetFromName(name),domain:adset_domains[0]?dUrl(siteForGeo(moGeo),adset_domains[0].domain):'',adset_domains,creos:[],goals,ind:togo?'off':'profit',status:togo?'Test':'Check',insights:'',buyer:document.getElementById('mb').value,funnel:document.getElementById('mf').value,score,date:togo?null:today,region:CURRENT_REGION,cat:moCat||parseCatFromName(name),togo:!!togo}
   const{data,error}=await db.from('zalivs').insert(row).select().single()
   if(!error&&data){ZALIVS.unshift(data);(window._ALL_ZALIVS||[]).unshift(data);document.getElementById('mo-zaliv').classList.remove('open');toast(togo?'Сохранено в TOGO':'Залив создан · FDC-таска добавлена','ok');rzalivs();if(!togo)autoFdcTask(data)}
   else toast('Ошибка: '+JSON.stringify(error),'err')
@@ -2340,7 +2380,13 @@ async function delDomain(id){
   await db.from('domains').delete().eq('id',id);DOMAINS=DOMAINS.filter(d=>d.id!==id)
   document.getElementById('mo-domain-edit').classList.remove('open');toast('Удалён','ok');rdomains()
 }
-function rdomains(){
+function rdomRegistry(){const el=document.getElementById('dom-registry');if(!el)return;const lk=lockedDomains();const site=CURRENT_REGION==='CZ'?'CZ':'PL';const S=SITES[site]
+  const tile=k=>{const L=lk[k];const px=dPixel(k);return`<div class="dtile ${L?'busy':'free'}"><div class="dk"><a href="${dUrl(site,k)}" target="_blank" class="dlnk" onclick="event.stopPropagation()">#${k}</a><span class="px ${px.toLowerCase()}">${px} px</span></div>${L?`<div class="dby" onclick="gp('zalivs',document.getElementById('nb-zalivs'));setTimeout(()=>selZaliv(${L.z.id}),250)" title="Открыть РК"><span class="dot" style="background:${L.z.ind==='profit'?'var(--green)':'var(--yellow)'}"></span>AD${L.ad} · ${L.z.name.slice(0,34)}${L.z.name.length>34?'…':''} <span style="color:#3E4457">${L.z.buyer||''}</span></div>`:'<div class="dfree">свободен</div>'}</div>`}
+  const free=DKEYS.filter(k=>!lk[k]).length
+  el.innerHTML=`<div class="dsite"><div class="dsh"><b>${S.label}</b><a href="${S.base}kalkulator" target="_blank" class="dlnk mono" style="font-size:11px">${S.base.replace('https://','')}</a><span style="margin-left:auto;font:500 11px var(--mono);color:var(--text3)"><span style="color:var(--green)">${free}</span> свободно · ${DKEYS.length-free} занято</span></div>
+    <div class="dsec">OLD PIXEL · kalkulator, 1–10</div><div class="dgrid">${DKEYS.slice(0,11).map(tile).join('')}</div>
+    <div class="dsec">NEW PIXEL · 11–20</div><div class="dgrid">${DKEYS.slice(11).map(tile).join('')}</div></div>`}
+function rdomains(){rdomRegistry();
   const geo=document.getElementById('df-geo').value,q=document.getElementById('df-q').value.toLowerCase()
   const f=DOMAINS.filter(d=>(!geo||(d.geos||[]).includes(geo))&&(!q||d.url.toLowerCase().includes(q)))
   document.getElementById('d-count').textContent='('+f.length+')'
@@ -2398,7 +2444,8 @@ async function moveTask(t,newCol){
   else if(t.col==='process'&&t.started_at){upd.time_spent=(t.time_spent||0)+Math.round((Date.now()-new Date(t.started_at).getTime())/1000);upd.started_at=null}
   if(newCol==='done'){upd.done_at=now}
   Object.assign(t,upd)
-  await db.from('tasks').update(upd).eq('id',t.id)
+  const{error}=await db.from('tasks').update(upd).eq('id',t.id)
+  if(error){const r2=await db.from('tasks').update({col:newCol,updated_at:now}).eq('id',t.id);if(r2.error)toast('Ошибка: '+r2.error.message,'err');else toast('Таймер не сохранён — выполни SQL для tasks','err')}
 }
 
 var _saveOrderTimer=null,_taskSaveBlock=false
@@ -2488,8 +2535,9 @@ function addRkTask(zid,ttype){
   openTaskNew({ttype:ttype||'an',rk:{id:z.id,name:z.name,region:z.region||CURRENT_REGION},geo:z.geo,title:(TTYPES[ttype||'an'])+' · '+z.name.slice(0,40),assignee:z.buyer||CURRENT_USER?.name||''})
 }
 // ── auto-create FDC when RK is added ──
+async function backfillFdc(){const since=new Date(Date.now()-3*864e5).toISOString();for(const z of ZALIVS){if(z.togo||z.ind==='off'||(z.created_at||'')<since)continue;if(TASKS.some(t=>t.ttype==='fdc'&&t.rk_id===z.id))continue;await autoFdcTask(z)}}
 async function autoFdcTask(z){
-  if(!z||!db)return
+  if(!z||!db||z.togo)return
   const exists=TASKS.some(t=>t.ttype==='fdc'&&t.rk_id===z.id);if(exists)return
   const d=parseDateFromCampName(z.name);let dl=todayISO()
   if(d){const p=d.split('.');if(p.length===2)dl=`${new Date().getFullYear()}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`}
@@ -2992,7 +3040,7 @@ function parseFunnelFromName(name){
   return'Калькулятор'
 }
 
-function parseBuyerFromName(name){const m=(name||'').match(/^\s*\d*\s*([DI])\s*[{\[(]/i);if(!m)return'';return m[1].toUpperCase()==='I'?'Illia':'Danya'}
+function parseBuyerFromName(name){const m=(name||'').match(/^\s*\d*\s*([DIІіДд])\s*[{\[(]/i);if(!m)return'';const L=m[1].toUpperCase();return(L==='I'||L==='І')?'Illia':'Danya'}
 function parseDateFromCampName(name){
   // Matches: D{17.06} I[16.06] D[09.06] etc
   // After first letter, optionally {[ then DD.MM
@@ -3800,6 +3848,7 @@ function openMoZaliv(tpl=null){
   document.querySelectorAll('#mo-score .spb').forEach((b,i)=>{b.className='spb'+(i===3?' s3':'')})
   document.querySelectorAll('#mo-cat [data-mcat]').forEach(x=>x.classList.toggle('sel',!x.dataset.mcat))
   const _mb=document.getElementById('mb');if(_mb&&CURRENT_USER)_mb.value=CURRENT_USER.name
+  moAds=[{ad:1,domain:''}];moAdsRender()
   document.getElementById('mn').value=''
   document.getElementById('ma').value=''
   document.getElementById('mr').value=''
@@ -4112,16 +4161,16 @@ function renderAnZalivHistory(zid){
   const z=ZALIVS.find(x=>x.id===zid);if(!z)return
   const analyses=RK_ANALYSES.filter(a=>a.zaliv_id===zid).sort((p,q)=>(q.created_at||'').localeCompare(p.created_at||''))
   const keys=zAnKeys(z),d=zDays(z),GC={profit:'var(--green)',drop:'var(--yellow)',off:'#3E4457'}
-  const AL={'1dc':'1DC','2dc':'2DC','3dc':'3DC','kwartal':'Kwartal','2k':'2K'}
-  const pend=LCM.filter(m=>!keys.has(m[2])).map(m=>z.ind!=='off'&&d>=m[0]
+  const AL={'1dc':'1DC','2dc':'2DC','kwartal':'Kwartal','2k':'2K','3k':'3K','4k':'4K','5k':'5K','6k':'6K'}
+  const pend=zLCM(z).filter(m=>!keys.has(m[2])).map(m=>z.ind!=='off'&&d>=Math.ceil(m[0])
     ?`<div class="acd pend" onclick="showNewAnalysisPanelFor(${zid});setTimeout(()=>document.querySelector('[data-apreset=\\'${m[2]}\\']')?.click(),150)"><b>${m[1]} · пора</b><small>метрики из Meta готовы, введи лиды и квалы</small><span class="go">Создать сейчас</span></div>`
-    :`<div class="acd pend" style="cursor:default;opacity:.55"><b style="color:var(--text3)">${m[1]}</b><small>${z.ind==='off'?'РК выключена':'авто через '+(m[0]-d)+' дн.'}</small></div>`).join('')
+    :`<div class="acd pend" style="cursor:default;opacity:.55"><b style="color:var(--text3)">${m[1]}</b><small>${z.ind==='off'?'РК выключена':'авто через '+Math.ceil(m[0]-d)+' дн.'}</small></div>`).join('')
   content.innerHTML=`<div class="ah"><div><div class="t">${z.name}</div><div class="meta">
       <span class="gchip" style="color:${GC[z.ind]||'#3E4457'};border-color:var(--border)"><i style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${GC[z.ind]||'#3E4457'};margin-right:6px"></i>${({profit:'Profit',drop:'Drop',off:'Off'})[z.ind]||'—'}</span>
       ${gchip(z.geo)}<span class="gchip" style="color:var(--text2);border-color:var(--border)">${z.funnel||'—'}</span><span class="gchip" style="color:var(--text2);border-color:var(--border)">${z.buyer||'—'}</span>${z.cat?`<span class="zcat ${z.cat}">${z.cat.toUpperCase()}</span>`:''}
       <span style="font:11px var(--mono);color:var(--text3)">старт ${z.date||parseDateFromCampName(z.name)||'—'} · день ${d}</span></div></div>
     <div class="lcw">${zLifecycle(z).replace('class="lc"','class="lc" style="height:26px"')}</div></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px 0"><span style="font-size:12.5px;font-weight:600">Анализы <span class="cnt" style="font:500 11px var(--mono);color:var(--text3);background:var(--bg2);padding:1px 7px;border-radius:5px;border:1px solid var(--border)">${keys.size} из 4</span></span>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px 0"><span style="font-size:12.5px;font-weight:600">Анализы <span class="cnt" style="font:500 11px var(--mono);color:var(--text3);background:var(--bg2);padding:1px 7px;border-radius:5px;border:1px solid var(--border)">${keys.size} из ${zLCM(z).length}</span></span>
       <div class="tools"><span class="clnk" onclick="addRkTask(${zid},'an')">+ таск</span><span class="clnk" onclick="toast('Анализы отправлены в Telegram','ok')">→ Telegram</span><span class="clnk" style="color:var(--gold);border-color:rgba(212,175,55,.35)" onclick="showNewAnalysisPanelFor(${zid})">+ Анализ</span></div></div>
     <div class="acards">${analyses.map(a=>`<div class="acd">${renderAnalysisCard(a)}</div>`).join('')}${pend}</div>`
 }
@@ -4130,7 +4179,7 @@ function anCell(k,v,src,cls){return`<div class="c"><div class="k">${k}${src}</di
 function anCalc(k,v,cls){return`<div class="c"><div class="k">${k}<span class="src h" style="color:#3E4457">=</span></div><div class="v ${cls||''}">${v}</div></div>`}
 function renderAnalysisCard(a){
   const cplC=a.cpl?(a.cpl<12?'g':a.cpl<15?'y':'r'):'',cqlC=a.cql?(a.cql<40?'g':a.cql<55?'y':'r'):'',ctrC=a.ctr>2?'g':a.ctr>1.3?'':'r',fqC=a.frequency>2.5?'r':a.frequency>2?'y':''
-  const z=ZALIVS.find(x=>x.id===a.zaliv_id);const key=z?zAnKeyOf(a,z):'';const AL={'1dc':'1DC','2dc':'2DC','3dc':'3DC','kwartal':'Kwartal','2k':'2K'}
+  const z=ZALIVS.find(x=>x.id===a.zaliv_id);const key=z?zAnKeyOf(a,z):'';const AL={'1dc':'1DC','2dc':'2DC','kwartal':'Kwartal','2k':'2K','3k':'3K','4k':'4K','5k':'5K','6k':'6K','3dc':'3DC'}
   const adset=a.adset_name&&a.adset_name!=='null'?a.adset_name:a.adset_id&&a.adset_id!=='null'?'адсет '+a.adset_id:'вся кампания'
   return`<div class="h"><div><div class="p">${AL[key]||'Анализ'} <span class="pr">${a.period_from||''}→${a.period_to||''}</span></div><div class="adl">${adset}</div></div>
     <div style="display:flex;align-items:center"><span class="sp">$${a.spend||0}</span><div class="ic2"><span title="Редактировать" onclick="editAnalysis(${a.id})">✎</span><span title="Свернуть" onclick="toggleAnCard(${a.id});this.textContent=this.textContent==='⊟'?'⊞':'⊟'">⊟</span></div></div></div>
@@ -4162,13 +4211,7 @@ function showNewAnalysisPanelFor(preZalivId){
           <input type="date" class="fi" id="an-from" value="${new Date(Date.now()-7*864e5).toISOString().split('T')[0]}" style="flex:1">
           <input type="date" class="fi" id="an-to" value="${today}" style="flex:1">
         </div>
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:10px">
-          <button class="pb" data-apreset="1dc" style="font-size:10px;padding:4px">1DC</button>
-          <button class="pb" data-apreset="2dc" style="font-size:10px;padding:4px">2DC</button>
-          <button class="pb" data-apreset="3dc" style="font-size:10px;padding:4px">3DC</button>
-          <button class="pb" data-apreset="kwartal" style="font-size:10px;padding:4px">Kwartal</button>
-          <button class="pb" data-apreset="2k" style="font-size:10px;padding:4px" title="2K — дни 5–7 (через 3 дня после Kwartal)">2K</button>
-        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px" id="an-presets-wrap">${(()=>{const z0=ZALIVS.find(x=>x.id===preZalivId);return (z0?zLCM(z0):LCM_FULL.slice(0,4)).map(m=>`<button class="pb" data-apreset="${m[2]}" style="font-size:10px;padding:4px 10px;font-family:var(--mono)">${m[1]}</button>`).join('')})()}</div>
         <button class="bsv" style="width:100%;padding:8px" onclick="generateAnalysis()">⚡ Загрузить из Meta</button>
       </div>
       <div id="an-results-wrap"></div>
@@ -4203,7 +4246,7 @@ function applyAnPreset(preset){
   if(raw){const p=raw.split('.');if(p.length===2){const yr=new Date().getFullYear();start=new Date(`${yr}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`)}}
   const fmt=d=>d.toISOString().split('T')[0]
   const add=n=>new Date(start.getTime()+n*864e5)
-  const map={'1dc':[fmt(start),fmt(start)],'2dc':[fmt(add(1)),fmt(add(1))],'3dc':[fmt(start),fmt(add(1))],'kwartal':[fmt(start),fmt(add(2))],'2k':[fmt(add(4)),fmt(add(6))]}
+  const nk=preset.match(/^(\d)k$/);const map={'1dc':[fmt(start),fmt(start)],'2dc':[fmt(add(1)),fmt(add(1))],'3dc':[fmt(start),fmt(add(1))],'kwartal':[fmt(start),fmt(add(1))]};if(nk){const n=+nk[1];map[preset]=[fmt(add((n-1)*2)),fmt(add((n-1)*2+1))]}
   const [f,t]=map[preset]||[fmt(start),fmt(start)]
   document.getElementById('an-from').value=f
   document.getElementById('an-to').value=t
