@@ -1411,6 +1411,7 @@ function domainOptions(site,curKey,selfZid,buyer){const lk=lockedDomains();const
 function srcParse(src){src=(src||'').toLowerCase().trim().replace(/\s+/g,' ');const keys=new Set(allDKeys());if(keys.has(src))return{letter:'',key:src}
   const pre=src.match(/^([id])(.+)$/);if(pre&&keys.has(pre[2]))return{letter:pre[1].toUpperCase(),key:pre[2]}
   const suf=src.match(/^(.+)([id])$/);if(suf&&keys.has(suf[1]))return{letter:suf[2].toUpperCase(),key:suf[1]}
+  const pk=src.match(/^([id])(kalkulator\d*)$/);if(pk)return{letter:pk[1].toUpperCase(),key:pk[2]}
   const k=src.match(/^(kalkulator\d*)$/);if(k)return{letter:'',key:k[1]};return{letter:'',key:src}}
 function allSources(){const s=new Set([...SRC_DAILY.map(r=>r.source),...ADSET_SRC.map(m=>m.source)]);const arr=[...s].filter(x=>x&&x!=='(none)').sort();const dl=document.getElementById('srclist');if(dl)dl.innerHTML=arr.map(x=>`<option value="${x}">`).join('');return arr}
 // leads/quals from GarnoCRM for a zaliv (or one adset) over a period, via mapped sources
@@ -4702,10 +4703,11 @@ async function rdashBuyer(buyer){
   const rks=ZALIVS.filter(z=>!z.togo&&parseBuyerFromName(z.name)===buyer)
   const ids=rks.filter(z=>z.campaign_id).map(z=>String(z.campaign_id))
   $('hero-rk').textContent=rks.filter(z=>z.ind!=='off').length;$('hero-rkall').textContent=rks.length
-  // leads/quals: domain tracking first, analyses fallback
-  let leads=0,quals=0,tracked=0
-  rks.forEach(z=>{const s=srcStats(z.id,null,from,to);if(s){leads+=s.leads;quals+=s.quals;tracked++}})
-  if(!tracked){const seen=new Set();RK_ANALYSES.filter(a=>a.buyer===buyer&&normDate(a.period_from)>=from&&normDate(a.period_from)<=to).forEach(a=>{if(seen.has(a.zaliv_id))return;seen.add(a.zaliv_id);leads+=a.leads||0;quals+=a.quals||0})}
+  // leads/quals by buyer LETTER in GarnoCRM source (dkalkulator8 → Danya); letterless sources via RK domains; analyses as last fallback
+  const bl=buyer==='Illia'?'I':'D';const doms=new Set();rks.forEach(z=>zDomains(z).forEach(d=>d.domain&&doms.add(d.domain)))
+  let leads=0,quals=0,any=false
+  SRC_DAILY.forEach(r=>{if((from&&r.day<from)||(to&&r.day>to))return;const p=srcParse(r.source);if(p.letter===bl||(!p.letter&&doms.has(p.key))){leads+=r.leads||0;quals+=r.quals||0;any=true}})
+  if(!any){const seen=new Set();RK_ANALYSES.filter(a=>a.buyer===buyer&&normDate(a.period_from)>=from&&normDate(a.period_from)<=to).forEach(a=>{if(seen.has(a.zaliv_id))return;seen.add(a.zaliv_id);leads+=a.leads||0;quals+=a.quals||0})}
   heroCountUp($('hero-l'),leads,v=>Math.round(v));heroCountUp($('hero-q'),quals,v=>Math.round(v))
   setKpi('d-daily',leads,'#2ea043');setKpi('d-roi',quals,'#4080ff')
   if(!ids.length){setKpi('d-spend','$0','var(--yellow)');setKpi('d-cpl','—');setKpi('d-cql','—');setKpi('d-ctr','—');heroCountUp($('hero-tick'),0,v=>'0.00');heroDelta(0,0);return}
