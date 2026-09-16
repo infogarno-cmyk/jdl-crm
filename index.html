@@ -395,20 +395,32 @@ html,body{height:100%;overflow:hidden;max-width:100vw;font-family:var(--sans);ba
 .tstat .tsbar i{display:block;height:100%}
 .tstat.hid{display:none}
 /* JDL TODAY */
-.mo.jt .mob{max-width:640px}
-.jt-h{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px}
-.jt-h b{font-size:16px;color:#fff}
-.jt-h span{font-size:11px;color:var(--text3);font-family:var(--mono)}
-.jt-sec{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin:12px 0 6px}
-.jt-ev{display:grid;grid-template-columns:3px 1fr;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}
-.jt-ev:last-child{border:0}
-.jt-ev i{border-radius:1px}
-.jt-ev b{color:#fff;font-weight:600}
-.jt-ev p{color:var(--text2);margin-top:1px}
-.jt-ev .a{margin-top:4px;display:flex;gap:5px}
-.jt-ev .a button{border:1px solid var(--border2);background:transparent;color:var(--text2);font:500 10px var(--sans);padding:2px 8px;border-radius:5px;cursor:pointer}
-.jt-foot{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text3)}
-.jt-foot label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.mo.jt .mob{max-width:760px;width:92vw;padding:30px 32px}
+.jt-h{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:6px;gap:16px}
+.jt-h b{font-family:var(--display);font-weight:400;font-size:26px;color:#fff;letter-spacing:.01em;line-height:1.1}
+.jt-h span{font-size:13px;color:var(--text3);font-family:var(--mono);white-space:nowrap}
+.jt-sub{font-size:13px;color:var(--text3);margin-bottom:20px}
+.jt-sec{font-family:var(--display);font-weight:400;font-size:13px;color:var(--gold2);text-transform:uppercase;letter-spacing:.12em;margin:26px 0 12px;display:flex;align-items:center;gap:10px}
+.jt-sec:first-of-type{margin-top:4px}
+.jt-sec::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border2),transparent)}
+.jt-ev{display:grid;grid-template-columns:4px 1fr;gap:16px;padding:14px 16px;margin-bottom:8px;border-radius:11px;background:var(--bg2);border:1px solid var(--border);font-size:14px;transition:border-color .15s}
+.jt-ev:hover{border-color:var(--border3)}
+.jt-ev i{border-radius:2px;box-shadow:0 0 10px currentColor}
+.jt-ev b{color:#fff;font-weight:700;font-size:16px;display:block;margin-bottom:4px;letter-spacing:-.005em}
+.jt-ev p{color:var(--text2);margin-top:2px;font-size:14px;line-height:1.55}
+.jt-ev .a{margin-top:10px;display:flex;gap:8px}
+.jt-ev .a button{border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font:600 12px var(--sans);padding:6px 13px;border-radius:7px;cursor:pointer;transition:all .15s}
+.jt-ev .a button:hover{color:#fff;border-color:var(--border3);background:var(--bg4)}
+.jt-gc{padding:13px 16px;margin-bottom:8px;border-radius:11px;background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--cc,var(--gold));font-size:14px}
+.jt-gc .gh{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+.jt-gc .gt{font:700 11px var(--mono);letter-spacing:.06em;padding:2px 8px;border-radius:5px;color:var(--cc);background:color-mix(in srgb,var(--cc) 16%,transparent)}
+.jt-gc .gb{font-size:12.5px;color:var(--text3);font-family:var(--mono)}
+.jt-gc p{color:var(--text2);font-size:14.5px;line-height:1.6}
+.jt-foot{display:flex;justify-content:space-between;align-items:center;margin-top:26px;padding-top:16px;border-top:1px solid var(--border);font-size:13px;color:var(--text3)}
+.jt-foot label{display:flex;align-items:center;gap:8px;cursor:pointer}
+.jt-foot input[type=checkbox]{width:15px;height:15px;accent-color:var(--gold)}
+.jt-foot button{padding:9px 18px;font-size:13px;font-weight:600}
+.jt-empty{padding:20px 16px;text-align:center;color:var(--text3);font-size:14px;background:var(--bg2);border:1px dashed var(--border2);border-radius:11px}
 .nb-jt{font-size:11px;font-weight:600;color:var(--gold);cursor:pointer;padding:4px 8px;display:flex;align-items:center;gap:5px;border:1px solid rgba(212,175,55,.3);border-radius:8px;background:rgba(212,175,55,.08);white-space:nowrap;margin-right:4px}
 .nb-jt:hover{color:#fff}
 .zrk-add{background:none;border:1px solid var(--border);color:var(--text3);font-size:11px;padding:3px 8px;border-radius:5px;cursor:pointer;margin-left:6px}
@@ -1451,6 +1463,18 @@ async function switchRegion(region){
   setSS('ok',region+' · данные загружены')
 }
 function setSS(s,t){document.getElementById('sdot').className='sdot '+s;document.getElementById('stxt').textContent=t}
+// Open a specific RK in Заливы, switching region first if the RK lives in another region
+async function openRk(zid,region){
+  if(!zid)return
+  if(region&&region!==CURRENT_REGION)await switchRegion(region)
+  gp('zalivs',document.getElementById('nb-zalivs'))
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    selZaliv(zid)
+    const row=document.querySelector(`#zt-body tr[data-zid="${zid}"]`)
+    if(row)row.scrollIntoView({behavior:'smooth',block:'center'})
+    else document.getElementById('zdp')?.scrollIntoView({behavior:'smooth',block:'start'})
+  }))
+}
 async function manualSync(){
   setSS('syncing','Синхронизация...')
   try{
@@ -1578,7 +1602,7 @@ document.getElementById('d-grind-inp')?.addEventListener('keydown',e=>{if(e.key=
 function renderFeed(){renderDGrind();const el=document.getElementById('d-feed');if(!el)return;const{ev,al}=buildEvents()
   el.innerHTML=ev.slice(0,6).map(e=>`<div class="ev" style="--cc:${e[0]}"><i></i><div><b>${e[1]}</b><p>${e[2]}</p>${e[3].length?`<div class="a">${e[3].map(a=>`<button onclick="${a[1].replace(/"/g,'&quot;')}">${a[0]}</button>`).join('')}</div>`:''}</div></div>`).join('')||'<div class="empty" style="padding:14px">Тихо. Ничего важного.</div>'
   const n=document.getElementById('bell-n');if(n){n.textContent=al.length;n.style.display=al.length?'grid':'none'}}
-function openDrawer(){const{al}=buildEvents();document.getElementById('drawer-ls').innerHTML=al.map(a=>`<div class="al"><div class="ic ${a[0]}">${a[1]}</div><div><b>${a[2]}</b><p>${a[3]}</p>${a[4]?`<div class="act"><button class="p" onclick="document.getElementById('drawer').classList.remove('open');gp('zalivs',document.getElementById('nb-zalivs'));setTimeout(()=>selZaliv(${a[4]}),300)">Открыть РК</button></div>`:''}</div></div>`).join('')||'<div class="empty" style="padding:30px">Алертов нет</div>';document.getElementById('drawer').classList.add('open')}
+function openDrawer(){const{al}=buildEvents();document.getElementById('drawer-ls').innerHTML=al.map(a=>`<div class="al"><div class="ic ${a[0]}">${a[1]}</div><div><b>${a[2]}</b><p>${a[3]}</p>${a[4]?`<div class="act"><button class="p" onclick="document.getElementById('drawer').classList.remove('open');openRk(${a[4]})">Открыть РК</button></div>`:''}</div></div>`).join('')||'<div class="empty" style="padding:30px">Алертов нет</div>';document.getElementById('drawer').classList.add('open')}
 document.getElementById('bell')?.addEventListener('click',openDrawer)
 
 // ── HERO (dashboard top) ──
@@ -1681,11 +1705,11 @@ function rdash(){
   countUp(document.getElementById('d-ctr'),avgCtr,'','%')
   setCompare('d-ctr', parseFloat(avgCtr), pCtr, true)
   }else{['d-cpl','d-cql','d-roi','d-ctr','d-daily','d-spend'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.textShadow=''})}
-  document.getElementById('d-zalivs').innerHTML=ZALIVS.filter(z=>!z.togo&&z.ind!=='off'&&(!CURRENT_BUYER||z.buyer===CURRENT_BUYER)).slice(0,6).map(z=>{const lv=_zBulk[z.campaign_id];const s=zSrcStats(z);return`<div class="zrow" style="cursor:pointer" onclick="gp('zalivs',document.getElementById('nb-zalivs'));setTimeout(()=>selZaliv(${z.id}),250)" title="Открыть РК"><div class="zdot" style="background:${z.ind==='profit'?'var(--green)':z.ind==='drop'?'var(--yellow)':'var(--red)'};box-shadow:0 0 8px ${z.ind==='profit'?'var(--green)':z.ind==='drop'?'var(--yellow)':'transparent'}"></div><span class="zgeo ${geoClass(z.geo)}">${z.geo}</span><div class="zname">${z.name}<div style="font-size:10px;color:var(--text3);margin-top:2px">${z.funnel||''} · ${z.buyer||''} · ${zDays(z)} дн.</div></div><div class="zbud">${lv?'$'+Math.round(lv.spend):'$'+(z.rk_budget||0)+'/d'}</div><div class="m" style="font-family:var(--mono);font-size:11px;min-width:44px;text-align:right;color:${s?'var(--text)':'#3E4457'}">${s?s.leads+' <span style="color:#3E4457">/</span> <span style="color:var(--green)">'+s.quals+'</span>':'—'}</div><span style="color:#3E4457;margin-left:8px">→</span></div>`}).join('')||'<div class="empty">Нет активных заливов</div>'
+  document.getElementById('d-zalivs').innerHTML=ZALIVS.filter(z=>!z.togo&&z.ind!=='off'&&(!CURRENT_BUYER||z.buyer===CURRENT_BUYER)).slice(0,6).map(z=>{const lv=_zBulk[z.campaign_id];const s=zSrcStats(z);return`<div class="zrow" style="cursor:pointer" onclick="openRk(${z.id})" title="Открыть РК"><div class="zdot" style="background:${z.ind==='profit'?'var(--green)':z.ind==='drop'?'var(--yellow)':'var(--red)'};box-shadow:0 0 8px ${z.ind==='profit'?'var(--green)':z.ind==='drop'?'var(--yellow)':'transparent'}"></div><span class="zgeo ${geoClass(z.geo)}">${z.geo}</span><div class="zname">${z.name}<div style="font-size:10px;color:var(--text3);margin-top:2px">${z.funnel||''} · ${z.buyer||''} · ${zDays(z)} дн.</div></div><div class="zbud">${lv?'$'+Math.round(lv.spend):'$'+(z.rk_budget||0)+'/d'}</div><div class="m" style="font-family:var(--mono);font-size:11px;min-width:44px;text-align:right;color:${s?'var(--text)':'#3E4457'}">${s?s.leads+' <span style="color:#3E4457">/</span> <span style="color:var(--green)">'+s.quals+'</span>':'—'}</div><span style="color:#3E4457;margin-left:8px">→</span></div>`}).join('')||'<div class="empty">Нет активных заливов</div>'
   const mx=Math.max(tPL,tPLUA,1)
   renderFeed()
   document.getElementById('d-geo').innerHTML=`<div class="brow"><div class="bhdr"><span class="zgeo gpl">${regionCfg().main}</span><span style="font-weight:700;color:var(--yellow);font-family:var(--mono)">$${Math.round(tPL)}</span></div><div class="btrk"><div class="bfill" style="width:${Math.round(tPL/mx*100)}%;background:#4080ff"></div></div></div><div class="brow"><div class="bhdr"><span class="zgeo gplua">${regionCfg().ua}</span><span style="font-weight:700;color:var(--yellow);font-family:var(--mono)">$${Math.round(tPLUA)}</span></div><div class="btrk"><div class="bfill" style="width:${Math.round(tPLUA/mx*100)}%;background:#9060d0"></div></div></div>`
-  document.getElementById('d-tasks').innerHTML=TASKS.filter(t=>t.col==='process'&&(!CURRENT_BUYER||t.assignee===CURRENT_BUYER)).slice(0,6).map(t=>`<div class="tmini" style="cursor:pointer" onclick="gp('tasks',document.getElementById('nb-tasks'))"><div class="tpb" style="background:${TTCOL[t.ttype||'other']}"></div><div class="tmt">${t.title}${t.rk_name?` <span class="trk" style="margin-left:6px">${t.rk_name.slice(0,30)}</span>`:''}</div><span class="ttm run" data-tid="${t.id}">${fmtDur(taskElapsed(t))}</span>${t.assignee?`<span class="tma">${t.assignee}</span>`:''}</div>`).join('')||'<div class="empty">Ничего не в работе</div>'
+  document.getElementById('d-tasks').innerHTML=TASKS.filter(t=>t.col==='process'&&(!CURRENT_BUYER||t.assignee===CURRENT_BUYER)).slice(0,6).map(t=>`<div class="tmini" style="cursor:pointer" onclick="gp('tasks',document.getElementById('nb-tasks'))"><div class="tpb" style="background:${TTCOL[t.ttype||'other']}"></div><div class="tmt">${t.title}${t.rk_name?` <span class="trk" data-zid="${t.rk_id||0}" data-region="${t.rk_region||''}" style="margin-left:6px" onclick="event.stopPropagation();if(${t.rk_id||0})openRk(${t.rk_id||0},'${t.rk_region||''}')">${t.rk_name.slice(0,30)}</span>`:''}</div><span class="ttm run" data-tid="${t.id}">${fmtDur(taskElapsed(t))}</span>${t.assignee?`<span class="tma">${t.assignee}</span>`:''}</div>`).join('')||'<div class="empty">Ничего не в работе</div>'
   const sf=SALES_DATA.filter(s=>{const d=parseDt(s.createdAt);if(!d)return false;const day=d.toISOString().split('T')[0];return day>=from&&day<=to})
   const stotal=sf.reduce((s,r)=>s+(r.saleAmount||0),0),savg=sf.length?Math.round(stotal/sf.length):0
   document.getElementById('d-sales-kpi').innerHTML=`
@@ -2407,7 +2431,7 @@ async function delDomain(id){
 }
 function rdomRegistry(){const el=document.getElementById('dom-registry');if(!el)return;const lk=lockedDomains();const site=CURRENT_REGION==='CZ'?'CZ':'PL';const S=SITES[site]
   const bchip=k=>{const b=dMeta(k).buyer;return`<span class="dbuy ${b==='Illia'?'i':b==='Danya'?'d':''}" onclick="event.stopPropagation();dBuyerMenu(event,'${k}')" title="Назначить баера">${b?b[0]:'—'}</span>`}
-  const tile=k=>{const L=lk[k];const m=dMeta(k);const px=m.custom?'':dPixel(k);return`<div class="dtile ${L?'busy':'free'}"><div class="dk"><a href="${dUrl(site,k)}" target="_blank" class="dlnk" onclick="event.stopPropagation()">${m.custom?'':'#'}${k}</a><span style="display:flex;gap:4px;align-items:center">${px?`<span class="px ${px.toLowerCase()}">${px} px</span>`:''}${bchip(k)}<span class="dnote" onclick="event.stopPropagation();setDomainNote('${k}')" title="${m.note?m.note.replace(/"/g,'&quot;'):'Заметка'}">${m.note?'✎':'·'}</span>${m.custom?`<span class="dnote" onclick="event.stopPropagation();delCustomDomain('${k}')" title="Удалить">✕</span>`:''}</span></div>${L?`<div class="dby" onclick="gp('zalivs',document.getElementById('nb-zalivs'));setTimeout(()=>selZaliv(${L.z.id}),250)" title="Открыть РК"><span class="dot" style="background:${L.z.ind==='profit'?'var(--green)':'var(--yellow)'}"></span>AD${L.ad} · ${L.z.name.slice(0,34)}${L.z.name.length>34?'…':''} <span style="color:#3E4457">${L.z.buyer||''}</span></div>`:`<div class="dfree">свободен${m.note?' · <span style="color:var(--text3)">'+m.note.slice(0,30)+'</span>':''}</div>`}</div>`}
+  const tile=k=>{const L=lk[k];const m=dMeta(k);const px=m.custom?'':dPixel(k);return`<div class="dtile ${L?'busy':'free'}"><div class="dk"><a href="${dUrl(site,k)}" target="_blank" class="dlnk" onclick="event.stopPropagation()">${m.custom?'':'#'}${k}</a><span style="display:flex;gap:4px;align-items:center">${px?`<span class="px ${px.toLowerCase()}">${px} px</span>`:''}${bchip(k)}<span class="dnote" onclick="event.stopPropagation();setDomainNote('${k}')" title="${m.note?m.note.replace(/"/g,'&quot;'):'Заметка'}">${m.note?'✎':'·'}</span>${m.custom?`<span class="dnote" onclick="event.stopPropagation();delCustomDomain('${k}')" title="Удалить">✕</span>`:''}</span></div>${L?`<div class="dby" onclick="openRk(${L.z.id})" title="Открыть РК"><span class="dot" style="background:${L.z.ind==='profit'?'var(--green)':'var(--yellow)'}"></span>AD${L.ad} · ${L.z.name.slice(0,34)}${L.z.name.length>34?'…':''} <span style="color:#3E4457">${L.z.buyer||''}</span></div>`:`<div class="dfree">свободен${m.note?' · <span style="color:var(--text3)">'+m.note.slice(0,30)+'</span>':''}</div>`}</div>`}
   const keys=allDKeys(),free=keys.filter(k=>!lk[k]).length,custom=DOMAIN_META.filter(m=>m.custom).map(m=>m.key)
   const known=new Set(keys),unk={};SRC_DAILY.forEach(r=>{const p=srcParse(r.source);if(known.has(p.key))return;unk[r.source]=(unk[r.source]||0)+(r.leads||0)})
   const unkHtml=Object.keys(unk).length?`<div class="dsite" style="margin-top:12px;border-color:rgba(212,175,55,.25)"><div class="dsh"><b style="color:var(--gold)">Источники из GarnoCRM без домена</b><span style="font-size:11px;color:var(--text3)">лиды есть, но привязать не к чему — добавь как домен, ключ совпадёт</span></div><div class="dgrid">${Object.entries(unk).sort((a,b)=>b[1]-a[1]).map(([s,n])=>`<div class="dtile"><div class="dk"><span class="mono" style="font-size:12px">${s}</span><span style="font:500 10.5px var(--mono);color:var(--text3)">${n} л.</span></div><div style="margin-top:6px"><button class="clnk" onclick="quickAddDomain('${s.replace(/'/g,'')}')" style="font-size:11px">+ добавить как домен</button></div></div>`).join('')}</div></div>`:''
@@ -2661,7 +2685,7 @@ function rtasks(){
     w.querySelector('.kqdi').onchange=()=>w.querySelectorAll('.kqd').forEach(x=>x.classList.remove('on'))
   })
   document.querySelectorAll('.tdone[data-id]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();doneTask(+b.dataset.id)}))
-  document.querySelectorAll('.trk[data-zid]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const zid=+b.dataset.zid;gp('zalivs',document.getElementById('nb-zalivs'));setTimeout(()=>selZaliv(zid),250)}))
+  document.querySelectorAll('.trk[data-zid]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const zid=+b.dataset.zid;if(zid)openRk(zid,b.dataset.region||null)}))
   document.querySelectorAll('.kqcn').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.full){const inp=document.querySelector(`#kq-${b.dataset.col} .kqinp`);hideQA(b.dataset.col);openTaskNew({title:inp?.value||''})}else hideQA(b.dataset.col)}))
   document.querySelectorAll('.tdel[data-id]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();document.querySelectorAll('.tdel-confirm.show').forEach(c=>c.classList.remove('show'));btn.nextElementSibling?.classList.add('show')}))
   document.querySelectorAll('.tdel-yes').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();delTkConfirmed(parseInt(btn.dataset.id))}))
@@ -2689,7 +2713,7 @@ function tcard(t){
   const el=taskElapsed(t),tt=t.ttype||'other'
   return`<div class="tcard ${ov?'tdue':isT?'ttoday':''}" draggable="true" id="tc-${t.id}" data-id="${t.id}">
     <div class="tnm">${t.title}</div>
-    ${t.rk_name?`<div style="margin-bottom:6px"><span class="trk" data-zid="${t.rk_id||0}" title="Открыть РК" style="cursor:pointer">${t.rk_region?t.rk_region+' · ':''}${t.rk_name} →</span></div>`:''}
+    ${t.rk_name?`<div style="margin-bottom:6px"><span class="trk" data-zid="${t.rk_id||0}" data-region="${t.rk_region||''}" title="Открыть РК" style="cursor:pointer">${t.rk_region?t.rk_region+' · ':''}${t.rk_name} →</span></div>`:''}
     <div class="tft">
       <span class="ttype ${tt}">${TTYPES[tt]}</span>
       ${t.assignee?`<span class="two">${t.assignee}</span>`:''}
@@ -2728,9 +2752,11 @@ function buildJdlToday(){
 }
 function openJdlToday(){
   const{ev,ins}=buildJdlToday();const b=document.getElementById('jt-body')
-  b.innerHTML=`<div class="jt-h"><b>Последние 24 часа · ${CURRENT_USER?.name||''}</b><span>${new Date().toLocaleString('ru',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span></div>
-  <div class="jt-sec">События</div>${ev.map(e=>`<div class="jt-ev"><i style="background:${e[0]}"></i><div><b>${e[1]}</b><p>${e[2]}</p></div></div>`).join('')||'<div class="empty" style="padding:12px">Тихо. Ничего важного.</div>'}
-  <div class="jt-sec">Grind за сутки${ins.length?' · '+ins.length:''}</div>${ins.map(g=>`<div class="jt-ev"><i style="background:${({insight:'#D4AF37',plan:'#6E9BFF',test:'#A07CF5'})[g.gtype]}"></i><div><b>${g.gtype.toUpperCase()} · ${g.buyer||''}</b><p>${g.text.replace(/</g,'&lt;')}</p></div></div>`).join('')||'<div style="font-size:12px;color:var(--text3);padding:6px 0">Пока пусто — записи из колонки Grind появятся здесь</div>'}
+  const now=new Date()
+  b.innerHTML=`<div class="jt-h"><b>☀ JDL TODAY</b><span>${now.toLocaleString('ru',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span></div>
+  <div class="jt-sub">Последние 24 часа · ${CURRENT_USER?.name||''} · ${CURRENT_REGION==='CZ'?'Чехия':'Польша'}</div>
+  <div class="jt-sec">События</div>${ev.map(e=>`<div class="jt-ev"><i style="background:${e[0]};color:${e[0]}"></i><div><b style="color:${e[0]}">${e[1]}</b><p>${e[2]}</p></div></div>`).join('')||'<div class="jt-empty">Тихо. Ничего важного.</div>'}
+  <div class="jt-sec">Grind за сутки${ins.length?' · '+ins.length:''}</div>${ins.map(g=>{const cc=({insight:'#D4AF37',plan:'#6E9BFF',test:'#A07CF5'})[g.gtype];return`<div class="jt-gc" style="--cc:${cc}"><div class="gh"><span class="gt">${g.gtype.toUpperCase()}</span><span class="gb">${g.buyer||''} · ${(g.created_at||'').slice(5,16).replace('T',' ')}</span></div><p>${g.text.replace(/</g,'&lt;')}</p></div>`}).join('')||'<div class="jt-empty">Пока пусто — записи из колонки Grind на дашборде появятся здесь</div>'}
   <div class="jt-foot"><label><input type="checkbox" id="jt-nomore" ${localStorage.getItem('jdl_jt_off')?'checked':''}> не показывать при входе</label><button class="fsel" style="cursor:pointer" onclick="document.getElementById('nb-tasks').click();document.getElementById('mo-jt').classList.remove('open')">→ Таски</button></div>`
   document.getElementById('jt-nomore').onchange=e=>{if(e.target.checked)localStorage.setItem('jdl_jt_off','1');else localStorage.removeItem('jdl_jt_off')}
   document.getElementById('mo-jt').classList.add('open')
