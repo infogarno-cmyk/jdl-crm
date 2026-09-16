@@ -1382,7 +1382,7 @@ async function init(){
   ;['pd-from','pd-to','sp-from','sp-to'].forEach(id=>document.getElementById(id).value=today)
   try{db=supabase.createClient(SB_URL,SB_ANON)}catch(e){console.error(e)}
   await Promise.all([loadZ(),loadD(),loadT(),loadJ(),loadM(),loadSales(),loadTemplates(),loadCreoReports(),loadCreoLib(),loadRkAnalyses(),loadInsights(),loadGrind(),loadAllZalivs(),loadSrcDaily(),loadAdsetSrc(),loadDomainMeta()])
-  rolloverTodayTasks();scheduleRollover();backfillFdc()
+  rolloverTodayTasks();scheduleRollover();repairRegions().then(backfillFdc)
   if(localStorage.getItem('jdl_buyer')===null&&CURRENT_USER)CURRENT_BUYER=CURRENT_USER.name
   setBuyer(CURRENT_BUYER);setupRT();setSS('ok','Данные загружены');maybeJdlToday();schemaCheck()
 }
@@ -1475,6 +1475,11 @@ function setupRT(){
 
 // ── LOAD ──
 async function loadZ(){if(!db)return;const{data}=await db.from('zalivs').select('*').eq('region',CURRENT_REGION).order('created_at',{ascending:false});ZALIVS=data||[];repairBuyers()}
+async function repairRegions(){const bad=ZALIVS.filter(z=>nameRegion(z.name)!==CURRENT_REGION);if(!bad.length)return;const all=window._ALL_ZALIVS||[];let moved=0,dropped=0
+  for(const z of bad){const tr=nameRegion(z.name);const dup=all.find(x=>x.id!==z.id&&(x.region||'PL')===tr&&(x.name||'').trim().toLowerCase()===(z.name||'').trim().toLowerCase())
+    const hasData=RK_ANALYSES.some(a=>a.zaliv_id===z.id)||TASKS.some(t=>t.rk_id===z.id)
+    if(dup&&!hasData){await db.from('zalivs').delete().eq('id',z.id);dropped++}else{await db.from('zalivs').update({region:tr}).eq('id',z.id);moved++}}
+  ZALIVS=ZALIVS.filter(z=>nameRegion(z.name)===CURRENT_REGION);console.log('regions repaired: moved',moved,'dropped',dropped);if(moved||dropped){toast(`Регионы РК исправлены: ${moved} перенесено, ${dropped} дублей убрано`,'ok');rzalivs()}}
 async function repairBuyers(){const fixed=[];for(const z of ZALIVS){const b=parseBuyerFromName(z.name);if(b&&z.buyer!==b){z.buyer=b;fixed.push(z.id);db.from('zalivs').update({buyer:b}).eq('id',z.id)}}if(fixed.length)console.log('buyers repaired:',fixed.length)}
 async function loadD(){if(!db)return;const{data}=await db.from('domains').select('*').eq('region',CURRENT_REGION).order('created_at',{ascending:false});DOMAINS=data||[]}
 async function loadT(){if(!db)return;const{data}=await db.from('tasks').select('*').order('sort_order',{ascending:true});TASKS=data||[]}
@@ -1684,7 +1689,7 @@ function rdash(){
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#4080ff,#60a0ff)"></div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">AVG DEAL</div><div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--mono)">${savg.toLocaleString('ru')} ${cur()}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">средний чек</div></div>
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--bord),var(--bord2))"></div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">КОЛ-ВО ПРОДАЖ</div><div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--mono)">${sf.length}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">за период</div></div>`
   drawChart(rows)
-  if(buyer)rdashBuyer(buyer)
+  if(buyer)rdashBuyer(buyer);else heroAllMeta(from,to)
 }
 
 // ── CHART ──
@@ -2955,6 +2960,7 @@ async function importCampaignsFromMeta(){
 
     let added=0,replaced=0
     for(const camp of d.campaigns){
+      if(nameRegion(camp.name)!==CURRENT_REGION)continue
       const buyer=parseBuyerFromName(camp.name)||'Danya'
       const geo=parseGeoFromName(camp.name)
       const funnel=parseFunnelFromName(camp.name)
@@ -3065,6 +3071,7 @@ function parseFunnelFromName(name){
   return'Калькулятор'
 }
 
+function nameRegion(name){const n=(name||'').replace(/\\/g,'').toUpperCase();const i=n.search(/[}\])]/);const after=i>=0?n.slice(i+1,i+8):n.slice(0,8);if(/^\s*(CZ|UACZ|CZUA)/.test(after))return'CZ';if(/^\s*(PL|UAPL|PLUA|UA)/.test(after))return'PL';return/\bCZ\b|UACZ/.test(n)?'CZ':'PL'}
 function parseBuyerFromName(name){const m=(name||'').match(/^\s*\d*\s*([DIІіДд])\s*[{\[(]?\s*\d/i);if(!m)return'';const L=m[1].toUpperCase();return(L==='I'||L==='І')?'Illia':'Danya'}
 function parseDateFromCampName(name){
   // Matches: D{17.06} I[16.06] D[09.06] etc
@@ -4670,6 +4677,13 @@ function normDate(d){
 var _buyerCache={}
 async function bulkInsights(ids,from,to){const out={};for(let i=0;i<ids.length;i+=50){try{const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+50),since:from,until:to,region:CURRENT_REGION})});const d=await r.json();if(d.ok)Object.assign(out,d.data||{})}catch(e){}}return out}
 function sumIns(map,ids){let spend=0,clicks=0,imp=0,reach=0;ids.forEach(id=>{const v=map[id];if(!v||v.error)return;spend+=+v.spend||0;clicks+=+v.clicks||0;imp+=+v.impressions||0;reach+=+v.reach||0});return{spend:Math.round(spend*100)/100,clicks,imp,reach,ctr:imp?Math.round(clicks/imp*10000)/100:0}}
+async function heroAllMeta(from,to){const $=id=>document.getElementById(id);const rks=ZALIVS.filter(z=>!z.togo&&z.campaign_id);const ids=rks.map(z=>String(z.campaign_id));if(!ids.length)return
+  const days=Math.max(1,Math.round((new Date(to)-new Date(from))/864e5)+1),pTo=new Date(new Date(from)-864e5).toISOString().slice(0,10),pFrom=new Date(new Date(from)-days*864e5).toISOString().slice(0,10)
+  const key='ALL|'+from+'|'+to+'|'+CURRENT_REGION;let cc=_buyerCache[key]
+  if(!cc||Date.now()-cc.at>5*60000){const[cur,prev]=await Promise.all([bulkInsights(ids,from,to),document.getElementById('cmp-tgl')?.classList.contains('on')?bulkInsights(ids,pFrom,pTo):Promise.resolve({})]);cc=_buyerCache[key]={at:Date.now(),cur:sumIns(cur,ids),prev:sumIns(prev,ids)};if(CURRENT_BUYER)return}
+  const S=cc.cur,P=cc.prev
+  heroCountUp($('hero-tick'),S.spend,v=>v.toLocaleString('ru',{minimumFractionDigits:2,maximumFractionDigits:2}).replace(',','.'));heroDelta(S.spend,P.spend);heroCountUp($('hero-daily'),S.spend/days,v=>'$'+Math.round(v))
+  const lbl=$('hero-per');if(lbl)lbl.textContent=days+' дн. · Meta live'}
 async function rdashBuyer(buyer){
   const from=document.getElementById('pd-from')?.value,to=document.getElementById('pd-to')?.value
   const $=id=>document.getElementById(id)
