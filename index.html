@@ -1649,6 +1649,7 @@ function rdash(){
     prevEl.textContent = typeof prev === 'number' && prev > 0 ? (id.includes('roi')?prev+'%':'$'+Math.round(prev)) + (pct&&!flat?' ('+pct+'%)':'') : ''
   }
 
+  if(!buyer){
   countUp(document.getElementById('d-spend'),Math.round(tS),'$')
   countUp(document.getElementById('d-daily'),spD,'$')
   setCompare('d-spend', tS, pS, true)
@@ -1670,6 +1671,7 @@ function rdash(){
   setCompare('d-roi', roi, pRoi, true)
   countUp(document.getElementById('d-ctr'),avgCtr,'','%')
   setCompare('d-ctr', parseFloat(avgCtr), pCtr, true)
+  }else{['d-cpl','d-cql','d-roi','d-ctr','d-daily','d-spend'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.textShadow=''})}
   document.getElementById('d-zalivs').innerHTML=ZALIVS.filter(z=>!z.togo&&z.ind!=='off'&&(!CURRENT_BUYER||z.buyer===CURRENT_BUYER)).slice(0,6).map(z=>{const lv=_zBulk[z.campaign_id];const s=zSrcStats(z);return`<div class="zrow" style="cursor:pointer" onclick="gp('zalivs',document.getElementById('nb-zalivs'));setTimeout(()=>selZaliv(${z.id}),250)" title="Открыть РК"><div class="zdot" style="background:${z.ind==='profit'?'var(--green)':z.ind==='drop'?'var(--yellow)':'var(--red)'};box-shadow:0 0 8px ${z.ind==='profit'?'var(--green)':z.ind==='drop'?'var(--yellow)':'transparent'}"></div><span class="zgeo ${geoClass(z.geo)}">${z.geo}</span><div class="zname">${z.name}<div style="font-size:10px;color:var(--text3);margin-top:2px">${z.funnel||''} · ${z.buyer||''} · ${zDays(z)} дн.</div></div><div class="zbud">${lv?'$'+Math.round(lv.spend):'$'+(z.rk_budget||0)+'/d'}</div><div class="m" style="font-family:var(--mono);font-size:11px;min-width:44px;text-align:right;color:${s?'var(--text)':'#3E4457'}">${s?s.leads+' <span style="color:#3E4457">/</span> <span style="color:var(--green)">'+s.quals+'</span>':'—'}</div><span style="color:#3E4457;margin-left:8px">→</span></div>`}).join('')||'<div class="empty">Нет активных заливов</div>'
   const mx=Math.max(tPL,tPLUA,1)
   renderFeed()
@@ -4665,121 +4667,47 @@ function normDate(d){
   return d
 }
 
+var _buyerCache={}
+async function bulkInsights(ids,from,to){const out={};for(let i=0;i<ids.length;i+=50){try{const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+50),since:from,until:to,region:CURRENT_REGION})});const d=await r.json();if(d.ok)Object.assign(out,d.data||{})}catch(e){}}return out}
+function sumIns(map,ids){let spend=0,clicks=0,imp=0,reach=0;ids.forEach(id=>{const v=map[id];if(!v||v.error)return;spend+=+v.spend||0;clicks+=+v.clicks||0;imp+=+v.impressions||0;reach+=+v.reach||0});return{spend:Math.round(spend*100)/100,clicks,imp,reach,ctr:imp?Math.round(clicks/imp*10000)/100:0}}
 async function rdashBuyer(buyer){
-  const from=document.getElementById('pd-from')?.value
-  const to=document.getElementById('pd-to')?.value
-  // Buyer → letter prefix in RK name (D=Danya, I=Illia)
-  const letter=buyer==='Danya'?'D':buyer==='Illia'?'I':''
-
-  // Analyses for leads/quals (deduped per RK)
-  const analyses=RK_ANALYSES.filter(a=>{
-    if(a.buyer!==buyer)return false
-    const pf=normDate(a.period_from)
-    if(from&&pf&&pf<from)return false
-    if(to&&pf&&pf>to)return false
-    return true
-  })
-
-  // Relabel KPI cards for buyer view
+  const from=document.getElementById('pd-from')?.value,to=document.getElementById('pd-to')?.value
+  const $=id=>document.getElementById(id)
   const setLabel=(idx,txt)=>{const labs=document.querySelectorAll('#page-dash .krow .klab');if(labs[idx])labs[idx].textContent=txt}
-  setLabel(0,'SPEND '+buyer.toUpperCase())
-  setLabel(1,'ЛИДЫ')
-  setLabel(2,'CPL')
-  setLabel(3,'CQL')
-  setLabel(4,'КВАЛЫ')
-  setLabel(5,'CTR AVG')
-
-  const setKpi=(id,val,color)=>{const el=document.getElementById(id);if(el){el.textContent=val;if(color)el.style.color=color;el.style.textShadow=''}}
-
-  // ── LEADS/QUALS from analyses (deduped per RK) ──
-  function pickOnePerRK(list){
-    const byZaliv={}
-    list.forEach(a=>{
-      const zid=a.zaliv_id
-      if(!byZaliv[zid]){byZaliv[zid]=a;return}
-      const cur=byZaliv[zid]
-      const aC=!a.adset_id, curC=!cur.adset_id
-      if(aC&&!curC){byZaliv[zid]=a;return}
-      if(!aC&&curC)return
-      const span=x=>{const f=normDate(x.period_from),t=normDate(x.period_to);return f&&t?new Date(t)-new Date(f):0}
-      const sa=span(a),sc=span(cur)
-      if(sa>sc){byZaliv[zid]=a;return}
-      if(sa<sc)return
-      if((a.created_at||'')>(cur.created_at||''))byZaliv[zid]=a
-    })
-    return Object.values(byZaliv)
-  }
-  const dedup=pickOnePerRK(analyses)
-  const totLeads=dedup.reduce((s,a)=>s+(a.leads||0),0)
-  const totQuals=dedup.reduce((s,a)=>s+(a.quals||0),0)
-
-  // ── SPEND/METRICS live from Meta for ALL buyer RK (letter D/I) with campaign_id ──
-  const buyerZalivs=ZALIVS.filter(z=>parseBuyerFromName(z.name)===buyer&&z.campaign_id)
-
-  // Loading state
-  setKpi('d-spend','⏳','var(--yellow)');setKpi('d-cpl','⏳','var(--text3)');setKpi('d-cql','⏳','var(--text3)');setKpi('d-ctr','⏳','var(--text3)')
-  setKpi('d-daily',totLeads,'#2ea043')
-  setKpi('d-roi',totQuals,'#4080ff')
-
-  let totSpend=0,totClicks=0,totReach=0,ctrSum=0,ctrN=0
-  const spendByDate={}
-
-  // Fetch Meta insights for each buyer RK in parallel
-  const results=await Promise.all(buyerZalivs.map(async z=>{
-    try{
-      const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
-        method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
-        body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since:from,until:to,region:CURRENT_REGION})
-      })
-      const d=await r.json()
-      return d.ok?{z,d}:null
-    }catch(e){return null}
-  }))
-
-  results.forEach(res=>{
-    if(!res)return
-    const{d}=res
-    totSpend+=d.spend||0
-    totClicks+=d.clicks||0
-    totReach+=d.reach||d.impressions||0
-    if(d.ctr>0){ctrSum+=d.ctr;ctrN++}
-  })
-
-  totSpend=Math.round(totSpend*100)/100
-  const avgCpl=totLeads>0?Math.round(totSpend/totLeads*100)/100:0
-  const avgCql=totQuals>0?Math.round(totSpend/totQuals*100)/100:0
-  const avgCtr=ctrN>0?Math.round(ctrSum/ctrN*100)/100:0
-
-  setKpi('d-spend','$'+totSpend,'var(--yellow)')
-  setKpi('d-daily',totLeads,'#2ea043')
-  const cplC=avgCpl>0&&avgCpl<10?'var(--green)':avgCpl<=13?'var(--yellow)':avgCpl>0?'var(--red)':'var(--text)'
-  setKpi('d-cpl','$'+avgCpl,cplC)
-  const cqlC=avgCql>0&&avgCql<25?'var(--green)':avgCql<=35?'var(--yellow)':avgCql>0?'var(--red)':'var(--text)'
-  setKpi('d-cql','$'+avgCql,cqlC)
-  setKpi('d-roi',totQuals,'#4080ff')
-  setKpi('d-ctr',avgCtr+'%','#fff')
-
-  // Clear comparison arrows
-  ;['d-spend','d-daily','d-cpl','d-cql','d-roi','d-ctr'].forEach(id=>{
-    const p=document.getElementById(id+'-prev');if(p)p.textContent=''
-    const a=document.getElementById(id+'-arr');if(a)a.textContent=''
-  })
-
-  // ── CHART: spend from Meta by date is not available per-day here (single period fetch),
-  // so build chart from analyses (CPL/CQL/CTR) using deduped set for leads/quals ──
-  const byDate={}
-  dedup.forEach(a=>{
-    const d=normDate(a.period_from||a.period_to)
-    if(!d)return
-    if(!byDate[d])byDate[d]={spend:0,leads:0,quals:0,ctrSum:0,ctrN:0}
-    byDate[d].spend+=a.spend||0
-    byDate[d].leads+=a.leads||0
-    byDate[d].quals+=a.quals||0
-    if(a.ctr>0){byDate[d].ctrSum+=a.ctr;byDate[d].ctrN++}
-  })
-
-  const ctit=document.getElementById('chart-title')
-  if(ctit)ctit.textContent='Динамика · '+buyer+' ('+buyerZalivs.length+' РК из Meta)'
+  setLabel(0,'SPEND '+buyer.toUpperCase());setLabel(1,'ЛИДЫ');setLabel(2,'CPL');setLabel(3,'CQL');setLabel(4,'КВАЛЫ');setLabel(5,'CTR AVG')
+  const setKpi=(id,val,color)=>{const el=$(id);if(el){el.textContent=val;if(color)el.style.color=color;el.style.textShadow=''}}
+  ;['d-spend','d-daily','d-cpl','d-cql','d-roi','d-ctr'].forEach(id=>{const p=$(id+'-prev');if(p)p.textContent='';const a=$(id+'-arr');if(a)a.textContent=''})
+  const ctit=$('chart-title');if(ctit)ctit.textContent='Динамика · '+buyer
+  // buyer RKs (by letter in name), all regions loaded for this region
+  const rks=ZALIVS.filter(z=>!z.togo&&parseBuyerFromName(z.name)===buyer)
+  const ids=rks.filter(z=>z.campaign_id).map(z=>String(z.campaign_id))
+  $('hero-rk').textContent=rks.filter(z=>z.ind!=='off').length;$('hero-rkall').textContent=rks.length
+  // leads/quals: domain tracking first, analyses fallback
+  let leads=0,quals=0,tracked=0
+  rks.forEach(z=>{const s=srcStats(z.id,null,from,to);if(s){leads+=s.leads;quals+=s.quals;tracked++}})
+  if(!tracked){const seen=new Set();RK_ANALYSES.filter(a=>a.buyer===buyer&&normDate(a.period_from)>=from&&normDate(a.period_from)<=to).forEach(a=>{if(seen.has(a.zaliv_id))return;seen.add(a.zaliv_id);leads+=a.leads||0;quals+=a.quals||0})}
+  heroCountUp($('hero-l'),leads,v=>Math.round(v));heroCountUp($('hero-q'),quals,v=>Math.round(v))
+  setKpi('d-daily',leads,'#2ea043');setKpi('d-roi',quals,'#4080ff')
+  if(!ids.length){setKpi('d-spend','$0','var(--yellow)');setKpi('d-cpl','—');setKpi('d-cql','—');setKpi('d-ctr','—');heroCountUp($('hero-tick'),0,v=>'0.00');heroDelta(0,0);return}
+  // spend etc from Meta (bulk), cached 5 min
+  const days=Math.max(1,Math.round((new Date(to)-new Date(from))/864e5)+1)
+  const pTo=new Date(new Date(from)-864e5).toISOString().slice(0,10),pFrom=new Date(new Date(from)-days*864e5).toISOString().slice(0,10)
+  const key=buyer+'|'+from+'|'+to+'|'+CURRENT_REGION;let cc=_buyerCache[key]
+  if(!cc||Date.now()-cc.at>5*60000){setKpi('d-spend','⏳','var(--yellow)');setKpi('d-cpl','⏳','var(--text3)');setKpi('d-cql','⏳','var(--text3)');setKpi('d-ctr','⏳','var(--text3)')
+    const[cur,prev]=await Promise.all([bulkInsights(ids,from,to),document.getElementById('cmp-tgl')?.classList.contains('on')?bulkInsights(ids,pFrom,pTo):Promise.resolve({})])
+    cc=_buyerCache[key]={at:Date.now(),cur:sumIns(cur,ids),prev:sumIns(prev,ids)}
+    if(CURRENT_BUYER!==buyer)return}
+  const S=cc.cur,P=cc.prev
+  heroCountUp($('hero-tick'),S.spend,v=>v.toLocaleString('ru',{minimumFractionDigits:2,maximumFractionDigits:2}).replace(',','.'))
+  heroDelta(S.spend,P.spend);heroCountUp($('hero-daily'),S.spend/days,v=>'$'+Math.round(v))
+  const cpl=leads?Math.round(S.spend/leads*100)/100:0,cql=quals?Math.round(S.spend/quals*100)/100:0
+  setKpi('d-spend','$'+S.spend,'var(--yellow)')
+  setKpi('d-cpl',cpl?'$'+cpl:'—',cpl?(cpl<12?'var(--green)':cpl<=15?'var(--yellow)':'var(--red)'):'var(--text3)')
+  setKpi('d-cql',cql?'$'+cql:'—',cql?(cql<40?'var(--green)':cql<=55?'var(--yellow)':'var(--red)'):'var(--text3)')
+  setKpi('d-ctr',S.ctr+'%','#fff')
+  const cmpOn=document.getElementById('cmp-tgl')?.classList.contains('on')
+  if(cmpOn&&P.spend){const p=$('d-spend-prev'),a=$('d-spend-arr');if(p)p.textContent='$'+P.spend;if(a){const d=(S.spend-P.spend)/P.spend*100;a.className='karr '+(d>=0?'up-good':'dn-bad');a.textContent=(d>=0?'↑':'↓')+' '+Math.abs(d).toFixed(0)+'%';a.style.animation='none';void a.offsetWidth;a.style.animation=''}
+    if(P.ctr){const p2=$('d-ctr-prev'),a2=$('d-ctr-arr');if(p2)p2.textContent=P.ctr+'%';if(a2){const d=(S.ctr-P.ctr)/P.ctr*100;a2.className='karr '+(d>=0?'up-good':'dn-bad');a2.textContent=(d>=0?'↑':'↓')+' '+Math.abs(d).toFixed(0)+'%'}}}
 }
 
 function resetDashLabels(){
