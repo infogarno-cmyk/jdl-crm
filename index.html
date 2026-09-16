@@ -1893,7 +1893,7 @@ function chartMouseMove(e){
 }
 
 // ── ind menu on status dot ──
-async function loadBulkMeta(force){if(!force&&Date.now()-_zBulkAt<5*60000)return;const ids=ZALIVS.filter(z=>z.campaign_id&&z.ind!=='off'&&!z.togo).map(z=>String(z.campaign_id));if(!ids.length)return
+async function loadBulkMeta(force){if(!force&&Date.now()-_zBulkAt<5*60000)return;const ids=[...new Set(ZALIVS.filter(z=>z.campaign_id&&z.ind!=='off'&&!z.togo).map(z=>String(z.campaign_id)))];if(!ids.length)return
   const td=new Date().toISOString().split('T')[0];setSS('syncing','Метрики из Meta…')
   try{for(let i=0;i<ids.length;i+=50){const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+50),since:td,until:td,region:CURRENT_REGION})});const d=await r.json();if(d.ok)Object.assign(_zBulk,d.data||{})}
     _zBulkAt=Date.now();rzalivs();setSS('ok','Метрики обновлены');}catch(e){setSS('ok','—');toast('Meta недоступна','err')}}
@@ -3078,7 +3078,7 @@ function parseFunnelFromName(name){
   return'Калькулятор'
 }
 
-function nameRegion(name){const n=(name||'').replace(/\\/g,'').toUpperCase();const i=n.search(/[}\])]/);const after=i>=0?n.slice(i+1,i+8):n.slice(0,8);if(/^\s*(CZ|UACZ|CZUA)/.test(after))return'CZ';if(/^\s*(PL|UAPL|PLUA|UA)/.test(after))return'PL';return/\bCZ\b|UACZ/.test(n)?'CZ':'PL'}
+function nameRegion(name){const n=(name||'').replace(/\\/g,'').toUpperCase();return /(^|[^A-Z])(CZ|UACZ|CZUA)([^A-Z]|$)/.test(n)?'CZ':'PL'}
 function parseBuyerFromName(name){const m=(name||'').match(/^\s*\d*\s*([DIІіДд])\s*[{\[(]?\s*\d/i);if(!m)return'';const L=m[1].toUpperCase();return(L==='I'||L==='І')?'Illia':'Danya'}
 function parseDateFromCampName(name){
   // Matches: D{17.06} I[16.06] D[09.06] etc
@@ -4684,7 +4684,7 @@ function normDate(d){
 var _buyerCache={}
 async function bulkInsights(ids,from,to){const out={};for(let i=0;i<ids.length;i+=50){try{const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+50),since:from,until:to,region:CURRENT_REGION})});const d=await r.json();if(d.ok)Object.assign(out,d.data||{})}catch(e){}}return out}
 function sumIns(map,ids){let spend=0,clicks=0,imp=0,reach=0;ids.forEach(id=>{const v=map[id];if(!v||v.error)return;spend+=+v.spend||0;clicks+=+v.clicks||0;imp+=+v.impressions||0;reach+=+v.reach||0});return{spend:Math.round(spend*100)/100,clicks,imp,reach,ctr:imp?Math.round(clicks/imp*10000)/100:0}}
-async function heroAllMeta(from,to){const $=id=>document.getElementById(id);const rks=ZALIVS.filter(z=>!z.togo&&z.campaign_id);const ids=rks.map(z=>String(z.campaign_id));if(!ids.length)return
+async function heroAllMeta(from,to){const $=id=>document.getElementById(id);const rks=ZALIVS.filter(z=>!z.togo&&z.campaign_id);const ids=[...new Set(rks.map(z=>String(z.campaign_id)))];if(!ids.length)return
   const days=Math.max(1,Math.round((new Date(to)-new Date(from))/864e5)+1),pTo=new Date(new Date(from)-864e5).toISOString().slice(0,10),pFrom=new Date(new Date(from)-days*864e5).toISOString().slice(0,10)
   const key='ALL|'+from+'|'+to+'|'+CURRENT_REGION;let cc=_buyerCache[key]
   if(!cc||Date.now()-cc.at>5*60000){const[cur,prev]=await Promise.all([bulkInsights(ids,from,to),document.getElementById('cmp-tgl')?.classList.contains('on')?bulkInsights(ids,pFrom,pTo):Promise.resolve({})]);cc=_buyerCache[key]={at:Date.now(),cur:sumIns(cur,ids),prev:sumIns(prev,ids)};if(CURRENT_BUYER)return}
@@ -4701,7 +4701,7 @@ async function rdashBuyer(buyer){
   const ctit=$('chart-title');if(ctit)ctit.textContent='Динамика · '+buyer
   // buyer RKs (by letter in name), all regions loaded for this region
   const rks=ZALIVS.filter(z=>!z.togo&&parseBuyerFromName(z.name)===buyer)
-  const ids=rks.filter(z=>z.campaign_id).map(z=>String(z.campaign_id))
+  const ids=[...new Set(rks.filter(z=>z.campaign_id).map(z=>String(z.campaign_id)))]
   $('hero-rk').textContent=rks.filter(z=>z.ind!=='off').length;$('hero-rkall').textContent=rks.length
   // leads/quals by buyer LETTER in GarnoCRM source (dkalkulator8 → Danya); letterless sources via RK domains; analyses as last fallback
   const bl=buyer==='Illia'?'I':'D';const doms=new Set();rks.forEach(z=>zDomains(z).forEach(d=>d.domain&&doms.add(d.domain)))
