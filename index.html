@@ -31,7 +31,7 @@ var REGION_GEOS={
 }
 var ZALIVS=[],DOMAINS=[],TASKS=[],METRICS=[],SALES_DATA=[],TEMPLATES=[],SRC_DAILY=[],ADSET_SRC=[]
 var SITES={PL:{base:'https://garno-site.vercel.app/#',geos:['PL','PLUA'],label:'Польский трафик · PLPL + PLUA'},CZ:{base:'https://garno-site-cz.vercel.app/#',geos:['CZ','CZUA'],label:'Чешский трафик · CZCZ + CZUA'}}
-var DKEYS=['kalkulator',...Array.from({length:20},(_,i)=>'kalkulator'+(i+1))]
+var DKEYS=['kalkulator',...Array.from({length:20},(_,i)=>'kalkulator'+(i+1))],DOMAIN_META=[]
 const SCLS={Check:'sc',Scale:'ss',OFF:'so',Test:'st',Proliw:'sp',Perezaliw:'sz'}
 var expZ=null,dragId=null,moGeo='',moScore=0,domGeoSel=[],deGeoSel=[],deEditId=null
 var CREO_REPORTS=[]
@@ -639,6 +639,8 @@ tr.zr2:hover .qa{opacity:1;transform:translateY(-50%);pointer-events:auto}tr.zr2
 .dtile .dk{display:flex;align-items:center;justify-content:space-between;gap:8px}.dtile .dk a{font:500 12.5px var(--mono);color:var(--text)}
 .dtile .px{font:600 8.5px var(--mono);padding:1px 5px;border-radius:4px;border:1px solid var(--border);color:var(--text3)}.dtile .px.new{color:var(--blue);border-color:rgba(110,155,255,.35)}
 .dtile .dfree{font-size:10.5px;color:var(--green);margin-top:5px}
+.dbuy{font:700 9.5px var(--mono);width:18px;height:18px;border-radius:5px;display:grid;place-items:center;border:1px solid var(--border);color:#3E4457;cursor:pointer}.dbuy.d{color:var(--blue);border-color:rgba(110,155,255,.4)}.dbuy.i{color:var(--purple);border-color:rgba(160,124,245,.4)}.dbuy:hover{border-color:var(--border3)}
+.dnote{font-size:11px;color:#3E4457;cursor:pointer;width:16px;text-align:center}.dnote:hover{color:var(--text)}
 .dtile .dby{font-size:10.5px;color:var(--text2);margin-top:5px;cursor:pointer;display:flex;align-items:center;gap:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.dtile .dby .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}.dtile .dby:hover{color:var(--text)}
 /* ── zalivs v2 rows (как в артефакте) ── */
 .zt2 th{font-size:10.5px}
@@ -1294,6 +1296,7 @@ document.querySelectorAll('#mo-score .spb').forEach(btn=>btn.addEventListener('c
 }))
 document.getElementById('mr').addEventListener('input',updPrev)
 document.getElementById('mf').addEventListener('change',updCreoSelects)
+document.getElementById('mb').addEventListener('change',()=>moAdsRender())
 document.getElementById('btn-add-creo').addEventListener('click',()=>addCreoField())
 document.getElementById('btn-add-goal').addEventListener('click',()=>addGoalField())
 document.getElementById('btn-create-zaliv').addEventListener('click',()=>svz(false))
@@ -1378,21 +1381,32 @@ async function init(){
   const today=new Date().toISOString().split('T')[0]
   ;['pd-from','pd-to','sp-from','sp-to'].forEach(id=>document.getElementById(id).value=today)
   try{db=supabase.createClient(SB_URL,SB_ANON)}catch(e){console.error(e)}
-  await Promise.all([loadZ(),loadD(),loadT(),loadJ(),loadM(),loadSales(),loadTemplates(),loadCreoReports(),loadCreoLib(),loadRkAnalyses(),loadInsights(),loadGrind(),loadAllZalivs(),loadSrcDaily(),loadAdsetSrc()])
+  await Promise.all([loadZ(),loadD(),loadT(),loadJ(),loadM(),loadSales(),loadTemplates(),loadCreoReports(),loadCreoLib(),loadRkAnalyses(),loadInsights(),loadGrind(),loadAllZalivs(),loadSrcDaily(),loadAdsetSrc(),loadDomainMeta()])
   rolloverTodayTasks();scheduleRollover();backfillFdc()
   if(localStorage.getItem('jdl_buyer')===null&&CURRENT_USER)CURRENT_BUYER=CURRENT_USER.name
   setBuyer(CURRENT_BUYER);setupRT();setSS('ok','Данные загружены');maybeJdlToday();schemaCheck()
 }
+async function loadDomainMeta(){if(!db)return;try{const{data}=await db.from('domain_meta').select('*').eq('region',CURRENT_REGION);DOMAIN_META=data||[]}catch(e){DOMAIN_META=[]}}
+function dMeta(key){return DOMAIN_META.find(m=>m.key===key)||{}}
+function allDKeys(){return[...DKEYS,...DOMAIN_META.filter(m=>m.custom&&!DKEYS.includes(m.key)).map(m=>m.key)]}
+async function setDomainBuyer(key,buyer){const m=DOMAIN_META.find(x=>x.key===key);const row={region:CURRENT_REGION,key,buyer:buyer||null,updated_at:new Date().toISOString()}
+  if(m){await db.from('domain_meta').update(row).eq('id',m.id);Object.assign(m,row)}else{const{data,error}=await db.from('domain_meta').insert(row).select().single();if(error){toast('Ошибка: '+error.message,'err');return}DOMAIN_META.push(data)}
+  rdomRegistry();toast(buyer?key+' → '+buyer:key+': баер снят','ok')}
+async function setDomainNote(key){const m=DOMAIN_META.find(x=>x.key===key);const note=prompt('Заметка к '+key,m?.note||'');if(note===null)return;const row={region:CURRENT_REGION,key,note,updated_at:new Date().toISOString()}
+  if(m){await db.from('domain_meta').update(row).eq('id',m.id);Object.assign(m,row)}else{const{data}=await db.from('domain_meta').insert(row).select().single();if(data)DOMAIN_META.push(data)}rdomRegistry()}
+async function addCustomDomain(){const key=(prompt('Ключ домена (как в источнике GarnoCRM), напр. landing5')||'').trim().toLowerCase();if(!key)return;if(allDKeys().includes(key)){toast('Такой уже есть','err');return}const url=(prompt('Ссылка (полная)','https://')||'').trim()
+  const{data,error}=await db.from('domain_meta').insert({region:CURRENT_REGION,key,custom:true,url,updated_at:new Date().toISOString()}).select().single();if(error){toast('Ошибка: '+error.message,'err');return}DOMAIN_META.push(data);rdomRegistry();toast('Домен добавлен: '+key,'ok')}
+async function delCustomDomain(key){const m=DOMAIN_META.find(x=>x.key===key&&x.custom);if(!m)return;if(!confirm('Удалить '+key+'?'))return;await db.from('domain_meta').delete().eq('id',m.id);DOMAIN_META=DOMAIN_META.filter(x=>x.id!==m.id);rdomRegistry()}
 async function loadSrcDaily(){if(!db)return;const since=new Date(Date.now()-90*864e5).toISOString().split('T')[0];const{data}=await db.from('source_daily').select('*').eq('region',CURRENT_REGION).gte('day',since);SRC_DAILY=data||[]}
 async function loadAdsetSrc(){ADSET_SRC=[]}
 // ── domain registry helpers ──
 function dPixel(key){const n=+(key.replace('kalkulator','')||0);return n>=11?'NEW':'OLD'}
-function dUrl(site,key){return SITES[site].base+key}
+function dUrl(site,key){const m=dMeta(key);return m.custom&&m.url?m.url:SITES[site].base+key}
 function siteForGeo(geo){return isUaGeo(geo)?(geo==='CZUA'?'CZ':'PL'):(geo==='CZ'?'CZ':'PL')}
 function zDomains(z){const a=z.adset_domains;return Array.isArray(a)?a:[]}
 // key → {z, ad} for active RKs of current region
 function lockedDomains(){const m={};ZALIVS.forEach(z=>{if(z.togo||z.ind==='off')return;zDomains(z).forEach(d=>{if(d.domain&&!m[d.domain])m[d.domain]={z,ad:d.ad}})});return m}
-function domainOptions(site,curKey,selfZid){const lk=lockedDomains();return DKEYS.map(k=>{const L=lk[k];const busy=L&&L.z.id!==selfZid;return`<option value="${k}"${k===curKey?' selected':''}${busy?' disabled':''}>${k}${dPixel(k)==='NEW'?' · new px':' · old px'}${busy?' — занят: '+L.z.name.slice(0,26):''}</option>`}).join('')}
+function domainOptions(site,curKey,selfZid,buyer){const lk=lockedDomains();const me=buyer||document.getElementById('mb')?.value||CURRENT_BUYER||'';const keys=allDKeys().slice().sort((a,b)=>{const ma=dMeta(a).buyer,mb=dMeta(b).buyer;const sa=ma===me?0:ma?2:1,sb=mb===me?0:mb?2:1;return sa-sb});return keys.map(k=>{const L=lk[k];const busy=L&&L.z.id!==selfZid;const m=dMeta(k);const own=m.buyer?(m.buyer===me?' · мой':' · '+m.buyer):'';return`<option value="${k}"${k===curKey?' selected':''}${busy?' disabled':''}>${k}${m.custom?'':(dPixel(k)==='NEW'?' · new px':' · old px')}${own}${busy?' — занят: '+L.z.name.slice(0,24):''}</option>`}).join('')}
 // source → {letter, key}
 function srcParse(src){src=(src||'').toLowerCase().trim();let letter='',rest=src;const m=src.match(/^([id])(.+)$/);if(m&&/kalkulator|garno|#/.test(m[2])){letter=m[1].toUpperCase();rest=m[2]}const k=rest.match(/(kalkulator\d*)/);return{letter,key:k?k[1]:rest}}
 function allSources(){const s=new Set([...SRC_DAILY.map(r=>r.source),...ADSET_SRC.map(m=>m.source)]);const arr=[...s].filter(x=>x&&x!=='(none)').sort();const dl=document.getElementById('srclist');if(dl)dl.innerHTML=arr.map(x=>`<option value="${x}">`).join('');return arr}
@@ -1420,7 +1434,7 @@ async function switchRegion(region){
   populateGeoSelectors()
   setSS('syncing','Переключение на '+region+'...')
   // Reload all region-scoped data
-  await Promise.all([loadZ(),loadD(),loadM(),loadSales(),loadCreoReports(),loadCreoLib(),loadRkAnalyses(),loadInsights(),loadAllZalivs(),loadSrcDaily(),loadAdsetSrc()])
+  await Promise.all([loadZ(),loadD(),loadM(),loadSales(),loadCreoReports(),loadCreoLib(),loadRkAnalyses(),loadInsights(),loadAllZalivs(),loadSrcDaily(),loadAdsetSrc(),loadDomainMeta()])
   // Re-render whatever page is active
   rdash()
   _zSel=null;const _dp=document.getElementById('zdp');if(_dp)_dp.innerHTML='<div class="empty">Выбери РК</div>'
@@ -1585,8 +1599,7 @@ function heroRender(spend,leads,quals,daily,from,to){
 function heroDelta(cur,prev){const el=document.getElementById('hero-dl');if(!el)return;if(!prev||!document.getElementById('cmp-tgl')?.classList.contains('on')){el.className='dl big n';el.innerHTML='';return}const d=(cur-prev)/prev*100;const cls=Math.abs(d)<.5?'n':d>0?'g':'r';el.className='dl big '+cls;el.innerHTML=`<span class="ar">${d>0?'↑':d<0?'↓':'→'}</span>${Math.abs(d).toFixed(0)}% к прошлому периоду`}
 
 function rdash(){
-  const buyer=document.getElementById('df-buyer')?.value||''
-  if(buyer){rdashBuyer(buyer);return}
+  const buyer=CURRENT_BUYER||''
   resetDashLabels()
   const from=document.getElementById('pd-from').value,to=document.getElementById('pd-to').value
   const rows=METRICS.filter(m=>m.day>=from&&m.day<=to)
@@ -1669,6 +1682,7 @@ function rdash(){
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#4080ff,#60a0ff)"></div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">AVG DEAL</div><div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--mono)">${savg.toLocaleString('ru')} ${cur()}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">средний чек</div></div>
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--bord),var(--bord2))"></div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">КОЛ-ВО ПРОДАЖ</div><div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--mono)">${sf.length}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">за период</div></div>`
   drawChart(rows)
+  if(buyer)rdashBuyer(buyer)
 }
 
 // ── CHART ──
@@ -2255,7 +2269,7 @@ function autoFillFromName(){const n=document.getElementById('mn').value
   const b=parseBudgetFromName(n);if(b){document.getElementById('mr').value=b;if(!document.getElementById('ma').value)document.getElementById('ma').value=b}
   const d=parseDateFromCampName(n);const el=document.getElementById('mo-date-hint');if(el)el.textContent=d?'дата из названия: '+d:''
 }
-function moAdsRender(){const w=document.getElementById('mo-ads');if(!w)return;const site=siteForGeo(moGeo||'PL');w.innerHTML=(moAds.length?moAds:[{ad:1,domain:''}]).map((r,i)=>`<div style="display:flex;gap:6px;align-items:center;margin-bottom:5px"><span class="mono" style="font-size:10.5px;color:var(--text3);width:34px">AD${i+1}</span><select class="fi" data-adi="${i}" style="flex:1;font-size:12px;padding:6px 9px"><option value="">— домен —</option>${domainOptions(site,r.domain,null)}</select>${r.domain?`<a class="dlnk" href="${dUrl(site,r.domain)}" target="_blank" style="font-size:11px">↗</a>`:''}${i>0?`<button type="button" class="rmbtn" data-adrm="${i}">×</button>`:''}</div>`).join('')
+function moAdsRender(){const w=document.getElementById('mo-ads');if(!w)return;const site=siteForGeo(moGeo||'PL');w.innerHTML=(moAds.length?moAds:[{ad:1,domain:''}]).map((r,i)=>`<div style="display:flex;gap:6px;align-items:center;margin-bottom:5px"><span class="mono" style="font-size:10.5px;color:var(--text3);width:34px">AD${i+1}</span><select class="fi" data-adi="${i}" style="flex:1;font-size:12px;padding:6px 9px"><option value="">— домен —</option>${domainOptions(site,r.domain,null,document.getElementById('mb')?.value)}</select>${r.domain?`<a class="dlnk" href="${dUrl(site,r.domain)}" target="_blank" style="font-size:11px">↗</a>`:''}${i>0?`<button type="button" class="rmbtn" data-adrm="${i}">×</button>`:''}</div>`).join('')
   if(!moAds.length)moAds=[{ad:1,domain:''}];w.querySelectorAll('[data-adi]').forEach(s=>s.onchange=()=>{moAds[+s.dataset.adi].domain=s.value;moAdsRender()});w.querySelectorAll('[data-adrm]').forEach(b=>b.onclick=()=>{moAds.splice(+b.dataset.adrm,1);moAdsRender()})}
 var moAds=[]
 document.getElementById('btn-add-ad')?.addEventListener('click',()=>{if(moAds.length<6){moAds.push({ad:moAds.length+1,domain:''});moAdsRender()}})
@@ -2381,11 +2395,13 @@ async function delDomain(id){
   document.getElementById('mo-domain-edit').classList.remove('open');toast('Удалён','ok');rdomains()
 }
 function rdomRegistry(){const el=document.getElementById('dom-registry');if(!el)return;const lk=lockedDomains();const site=CURRENT_REGION==='CZ'?'CZ':'PL';const S=SITES[site]
-  const tile=k=>{const L=lk[k];const px=dPixel(k);return`<div class="dtile ${L?'busy':'free'}"><div class="dk"><a href="${dUrl(site,k)}" target="_blank" class="dlnk" onclick="event.stopPropagation()">#${k}</a><span class="px ${px.toLowerCase()}">${px} px</span></div>${L?`<div class="dby" onclick="gp('zalivs',document.getElementById('nb-zalivs'));setTimeout(()=>selZaliv(${L.z.id}),250)" title="Открыть РК"><span class="dot" style="background:${L.z.ind==='profit'?'var(--green)':'var(--yellow)'}"></span>AD${L.ad} · ${L.z.name.slice(0,34)}${L.z.name.length>34?'…':''} <span style="color:#3E4457">${L.z.buyer||''}</span></div>`:'<div class="dfree">свободен</div>'}</div>`}
-  const free=DKEYS.filter(k=>!lk[k]).length
-  el.innerHTML=`<div class="dsite"><div class="dsh"><b>${S.label}</b><a href="${S.base}kalkulator" target="_blank" class="dlnk mono" style="font-size:11px">${S.base.replace('https://','')}</a><span style="margin-left:auto;font:500 11px var(--mono);color:var(--text3)"><span style="color:var(--green)">${free}</span> свободно · ${DKEYS.length-free} занято</span></div>
+  const bchip=k=>{const b=dMeta(k).buyer;return`<span class="dbuy ${b==='Illia'?'i':b==='Danya'?'d':''}" onclick="event.stopPropagation();dBuyerMenu(event,'${k}')" title="Назначить баера">${b?b[0]:'—'}</span>`}
+  const tile=k=>{const L=lk[k];const m=dMeta(k);const px=m.custom?'':dPixel(k);return`<div class="dtile ${L?'busy':'free'}"><div class="dk"><a href="${dUrl(site,k)}" target="_blank" class="dlnk" onclick="event.stopPropagation()">${m.custom?'':'#'}${k}</a><span style="display:flex;gap:4px;align-items:center">${px?`<span class="px ${px.toLowerCase()}">${px} px</span>`:''}${bchip(k)}<span class="dnote" onclick="event.stopPropagation();setDomainNote('${k}')" title="${m.note?m.note.replace(/"/g,'&quot;'):'Заметка'}">${m.note?'✎':'·'}</span>${m.custom?`<span class="dnote" onclick="event.stopPropagation();delCustomDomain('${k}')" title="Удалить">✕</span>`:''}</span></div>${L?`<div class="dby" onclick="gp('zalivs',document.getElementById('nb-zalivs'));setTimeout(()=>selZaliv(${L.z.id}),250)" title="Открыть РК"><span class="dot" style="background:${L.z.ind==='profit'?'var(--green)':'var(--yellow)'}"></span>AD${L.ad} · ${L.z.name.slice(0,34)}${L.z.name.length>34?'…':''} <span style="color:#3E4457">${L.z.buyer||''}</span></div>`:`<div class="dfree">свободен${m.note?' · <span style="color:var(--text3)">'+m.note.slice(0,30)+'</span>':''}</div>`}</div>`}
+  const keys=allDKeys(),free=keys.filter(k=>!lk[k]).length,custom=DOMAIN_META.filter(m=>m.custom).map(m=>m.key)
+  el.innerHTML=`<div class="dsite"><div class="dsh"><b>${S.label}</b><a href="${S.base}kalkulator" target="_blank" class="dlnk mono" style="font-size:11px">${S.base.replace('https://','')}</a><span style="margin-left:auto;font:500 11px var(--mono);color:var(--text3)"><span style="color:var(--green)">${free}</span> свободно · ${keys.length-free} занято</span><button class="clnk" onclick="addCustomDomain()" style="margin-left:10px">+ свой домен</button></div>
     <div class="dsec">OLD PIXEL · kalkulator, 1–10</div><div class="dgrid">${DKEYS.slice(0,11).map(tile).join('')}</div>
-    <div class="dsec">NEW PIXEL · 11–20</div><div class="dgrid">${DKEYS.slice(11).map(tile).join('')}</div></div>`}
+    <div class="dsec">NEW PIXEL · 11–20</div><div class="dgrid">${DKEYS.slice(11).map(tile).join('')}</div>${custom.length?`<div class="dsec">СВОИ</div><div class="dgrid">${custom.map(tile).join('')}</div>`:''}</div>`}
+function dBuyerMenu(e,key){let m=document.getElementById('dbmenu');if(!m){m=document.createElement('div');m.id='dbmenu';m.className='indmenu';document.body.appendChild(m)}m.innerHTML=[['Danya','var(--blue)'],['Illia','var(--purple)'],['','#3E4457']].map(x=>`<div onclick="setDomainBuyer('${key}','${x[0]}')"><i style="background:${x[1]}"></i>${x[0]||'— снять'}</div>`).join('');m.classList.add('on');m.style.left=Math.min(e.clientX,innerWidth-160)+'px';m.style.top=(e.clientY+8)+'px';const off=()=>{m.classList.remove('on');document.removeEventListener('click',off)};setTimeout(()=>document.addEventListener('click',off),0)}
 function rdomains(){rdomRegistry();
   const geo=document.getElementById('df-geo').value,q=document.getElementById('df-q').value.toLowerCase()
   const f=DOMAINS.filter(d=>(!geo||(d.geos||[]).includes(geo))&&(!q||d.url.toLowerCase().includes(q)))
@@ -2535,13 +2551,20 @@ function addRkTask(zid,ttype){
   openTaskNew({ttype:ttype||'an',rk:{id:z.id,name:z.name,region:z.region||CURRENT_REGION},geo:z.geo,title:(TTYPES[ttype||'an'])+' · '+z.name.slice(0,40),assignee:z.buyer||CURRENT_USER?.name||''})
 }
 // ── auto-create FDC when RK is added ──
-async function backfillFdc(){const since=new Date(Date.now()-3*864e5).toISOString();for(const z of ZALIVS){if(z.togo||z.ind==='off'||(z.created_at||'')<since)continue;if(TASKS.some(t=>t.ttype==='fdc'&&t.rk_id===z.id))continue;await autoFdcTask(z)}}
+async function backfillFdc(){const y=new Date(Date.now()-864e5).toISOString().slice(0,10)
+  // fix assignee of existing FDC tasks by RK letter
+  for(const t of TASKS){if(t.ttype!=='fdc'||!t.rk_name)continue;const who=parseBuyerFromName(t.rk_name);if(who&&t.assignee!==who){t.assignee=who;db.from('tasks').update({assignee:who}).eq('id',t.id)}}
+  for(const z of ZALIVS){if(z.togo||z.ind==='off')continue;const d=parseDateFromCampName(z.name);if(!d)continue;const p=d.split('.');const dl=`${new Date().getFullYear()}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;if(dl<y)continue;await autoFdcTask(z)}}
 async function autoFdcTask(z){
-  if(!z||!db||z.togo)return
-  const exists=TASKS.some(t=>t.ttype==='fdc'&&t.rk_id===z.id);if(exists)return
+  if(!z||!db||z.togo||z.ind==='off')return
+  const nm=(z.name||'').trim().toLowerCase()
+  if(TASKS.some(t=>t.ttype==='fdc'&&(t.rk_id===z.id||(t.rk_name||'').trim().toLowerCase()===nm)))return
   const d=parseDateFromCampName(z.name);let dl=todayISO()
   if(d){const p=d.split('.');if(p.length===2)dl=`${new Date().getFullYear()}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`}
-  await saveTk('FDC · '+z.name.slice(0,44),dl===todayISO()?'todo':'all',z.buyer||'',{deadline:dl,ttype:'fdc',rk_id:z.id,rk_name:z.name,rk_region:z.region||CURRENT_REGION})
+  const who=parseBuyerFromName(z.name)||z.buyer||''
+  // scheduled: lands in TO DO at 09:00 on its day (see rollover)
+  const col=(dl<todayISO()||(dl===todayISO()&&new Date().getHours()>=9))?'todo':'all'
+  await saveTk('FDC · '+z.name.slice(0,44),col,who,{deadline:dl,ttype:'fdc',rk_id:z.id,rk_name:z.name,rk_region:z.region||CURRENT_REGION})
 }
 
 // ── clear done ──
@@ -2559,11 +2582,11 @@ function moneyRain(){const box=document.createElement('div');box.style.cssText='
   setTimeout(()=>{box.style.transition='opacity .6s';box.style.opacity='0';setTimeout(()=>box.remove(),700)},T)}
 async function doneTask(id){const t=TASKS.find(x=>x.id===id);if(!t)return;await moveTask(t,'done');moneyRain();rtasks()}
 function rolloverTodayTasks(){
-  const td=todayISO();let n=0
-  TASKS.forEach(t=>{if(t.col==='all'&&t.deadline&&t.deadline<=td){t.col='todo';db.from('tasks').update({col:'todo',updated_at:new Date().toISOString()}).eq('id',t.id);n++}})
-  if(n)rtasks();return n
+  const td=todayISO(),h=new Date().getHours();let n=0
+  TASKS.forEach(t=>{if(t.col!=='all'||!t.deadline||t.deadline>td)return;if(t.ttype==='fdc'&&t.deadline===td&&h<9)return;t.col='todo';db.from('tasks').update({col:'todo',updated_at:new Date().toISOString()}).eq('id',t.id);n++})
+  if(n){rtasks();if(typeof rdash==='function')rdash();toast('В TO DO: '+n+' задач на сегодня','ok')}return n
 }
-function scheduleRollover(){const now=new Date();const next=new Date(now);next.setHours(24,0,5,0);setTimeout(()=>{rolloverTodayTasks();scheduleRollover()},next-now)}
+function scheduleRollover(){const now=new Date();const t0=new Date(now);t0.setHours(24,0,5,0);const t9=new Date(now);t9.setHours(9,0,5,0);if(t9<=now)t9.setDate(t9.getDate()+1);const next=Math.min(t0-now,t9-now);setTimeout(()=>{rolloverTodayTasks();scheduleRollover()},next)}
 
 // ── GRIND ──
 async function loadGrind(){if(!db)return;try{const{data}=await db.from('grind').select('*').order('created_at',{ascending:false});GRIND=data||[]}catch(e){GRIND=[]}}
@@ -3040,11 +3063,11 @@ function parseFunnelFromName(name){
   return'Калькулятор'
 }
 
-function parseBuyerFromName(name){const m=(name||'').match(/^\s*\d*\s*([DIІіДд])\s*[{\[(]/i);if(!m)return'';const L=m[1].toUpperCase();return(L==='I'||L==='І')?'Illia':'Danya'}
+function parseBuyerFromName(name){const m=(name||'').match(/^\s*\d*\s*([DIІіДд])\s*[{\[(]?\s*\d/i);if(!m)return'';const L=m[1].toUpperCase();return(L==='I'||L==='І')?'Illia':'Danya'}
 function parseDateFromCampName(name){
   // Matches: D{17.06} I[16.06] D[09.06] etc
   // After first letter, optionally {[ then DD.MM
-  const m=name.match(/^[A-Za-z][{\[(]?(\d{2}[.,]\d{2})/)
+  const m=name.match(/^\s*\d*\s*[A-Za-zІіДд][{\[(]?\s*(\d{2}[.,]\d{2})/)
   if(m)return m[1].replace(',','.')
   // fallback: any DD.MM pattern
   const m2=name.match(/(\d{2}[.,]\d{2})/)
@@ -4694,7 +4717,7 @@ async function rdashBuyer(buyer){
   const buyerZalivs=ZALIVS.filter(z=>parseBuyerFromName(z.name)===buyer&&z.campaign_id)
 
   // Loading state
-  setKpi('d-spend','⏳','var(--yellow)')
+  setKpi('d-spend','⏳','var(--yellow)');setKpi('d-cpl','⏳','var(--text3)');setKpi('d-cql','⏳','var(--text3)');setKpi('d-ctr','⏳','var(--text3)')
   setKpi('d-daily',totLeads,'#2ea043')
   setKpi('d-roi',totQuals,'#4080ff')
 
@@ -4754,14 +4777,6 @@ async function rdashBuyer(buyer){
     byDate[d].quals+=a.quals||0
     if(a.ctr>0){byDate[d].ctrSum+=a.ctr;byDate[d].ctrN++}
   })
-  const chartRows=Object.entries(byDate).sort().map(([d,v])=>({
-    day:d,
-    cpl:v.leads>0?Math.round(v.spend/v.leads*100)/100:0,
-    cql:v.quals>0?Math.round(v.spend/v.quals*100)/100:0,
-    ctr:v.ctrN>0?Math.round(v.ctrSum/v.ctrN*100)/100:0,
-    spend_pl:v.spend, spend_plua:0
-  }))
-  drawChart(chartRows)
 
   const ctit=document.getElementById('chart-title')
   if(ctit)ctit.textContent='Динамика · '+buyer+' ('+buyerZalivs.length+' РК из Meta)'
