@@ -2967,23 +2967,27 @@ function doSearch(q){
 // ══════════════════════════════════════════
 // MODULE 1: AUTO-IMPORT РК ИЗ META
 // ══════════════════════════════════════════
+// Shared fuzzy signature for campaign-name matching — stable prefix (buyer+date+geo code),
+// tolerant of trailing decorations added in Meta ("— 1-2-1", extra spaces, etc.)
+function campKey(name){return(name||'').toLowerCase().replace(/\s+/g,'').slice(0,25)}
+function fuzzyMatchZaliv(campName,pool){
+  const nk=campKey(campName)
+  return pool.find(z=>{
+    const zk=campKey(z.name)
+    return zk===nk||zk.includes(nk.slice(0,15))||nk.includes(zk.slice(0,15))
+  })
+}
 async function importCampaignsFromMeta(){
   if(!db)return
   setSS('syncing','Импорт РК из Meta...')
   try{
-    // Получаем уже импортированные кампании
-    const{data:imported}=await db.from('imported_campaigns').select('campaign_id')
-    const importedIds=new Set((imported||[]).map(x=>x.campaign_id))
-
     // Читаем кампании напрямую из FB API
-    // Токен берём из Edge Function через специальный endpoint
     const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
       method:'POST',
       headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
       body:JSON.stringify({action:'get_campaigns',region:CURRENT_REGION})
     })
     if(!r.ok){
-      // Edge Function не задеплоена — показываем инструкцию
       toast('Нужно задеплоить get-campaigns функцию. Пока добавь РК вручную.','info')
       setSS('ok','—')
       return
@@ -2991,76 +2995,65 @@ async function importCampaignsFromMeta(){
     const d=await r.json()
     if(!d.campaigns||!d.campaigns.length){setSS('ok','Нет новых РК');toast('Нет новых кампаний в Meta','info');return}
 
-    let added=0,replaced=0
+    const normName=n=>n.trim().replace(/\s+/g,' ').toLowerCase()
+    const usedCampIds=new Set(ZALIVS.filter(z=>z.campaign_id).map(z=>z.campaign_id))
+    let added=0,linked=0,skipped=0
+
     for(const camp of d.campaigns){
       if(nameRegion(camp.name)!==CURRENT_REGION)continue
+      const campIdStr=String(camp.id)
+      if(usedCampIds.has(campIdStr)){skipped++;continue} // already attached to some RK
+
+      // 1) exact name match — same RK, just wire up the ID, don't touch anything the person set (cat, budget, tags...)
+      let target=ZALIVS.find(z=>!z.campaign_id&&normName(z.name)===normName(camp.name))
+      // 2) fuzzy prefix match — RK created in CRM before Meta, name got extra suffix ("— 1-2-1") once actually launched in Ads Manager
+      if(!target)target=fuzzyMatchZaliv(camp.name,ZALIVS.filter(z=>!z.campaign_id))
+
+      if(target){
+        // Only attach the ID + budget (for live spend pulls) — never overwrite cat/togo/score/buyer/tags the person already set
+        const upd={campaign_id:campIdStr,updated_at:new Date().toISOString()}
+        if(!target.ad_budget)upd.ad_budget=parseFloat(camp.daily_budget||0)/100||0
+        if(!target.rk_budget)upd.rk_budget=upd.ad_budget??target.rk_budget
+        const{error}=await db.from('zalivs').update(upd).eq('id',target.id)
+        if(!error){
+          Object.assign(target,upd)
+          usedCampIds.add(campIdStr)
+          await db.from('imported_campaigns').upsert({campaign_id:campIdStr,zaliv_id:target.id},{onConflict:'campaign_id'})
+          linked++
+          console.log('Linked ID to existing RK:',target.name,'→',campIdStr)
+        }
+        continue
+      }
+
+      // Truly new campaign — no RK for it in CRM yet, create one
       const buyer=parseBuyerFromName(camp.name)||'Danya'
       const geo=parseGeoFromName(camp.name)
       const funnel=parseFunnelFromName(camp.name)
       const date=parseDateFromCampName(camp.name)
       const budget=parseFloat(camp.daily_budget||0)/100||0
-
-      // Check if zaliv with exact same name already exists
-      // Normalize names for comparison
-      const normName=n=>n.trim().replace(/\s+/g,' ').toLowerCase()
-      // Find match but ensure campaign_id not already used by another zaliv
-      const campIdStr=String(camp.id)
-      const alreadyAssigned=ZALIVS.find(z=>z.campaign_id===campIdStr&&z.name.trim()!==camp.name.trim())
-      if(alreadyAssigned){
-        console.log('campaign_id already assigned to different zaliv:',alreadyAssigned.name)
-        replaced++; continue
-      }
-      const existing=ZALIVS.find(z=>normName(z.name)===normName(camp.name))
-
-      if(existing){
-        // Replace: update existing zaliv with fresh data + campaign_id
-        const upd={
-          campaign_id:String(camp.id),
-          ad_budget:budget,
-          rk_budget:budget,
-          geo,funnel,buyer,
-          date:date||existing.date,
-          updated_at:new Date().toISOString()
-        }
-        const{error}=await db.from('zalivs').update(upd).eq('id',existing.id)
-        if(!error){
-          Object.assign(existing,upd)
-          // Update imported_campaigns
-          await db.from('imported_campaigns').upsert({campaign_id:String(camp.id),zaliv_id:existing.id},{onConflict:'campaign_id'})
-          replaced++
-          console.log('Replaced:',camp.name)
-        }
-        continue
-      }
-
-      // Skip if already imported by campaign_id
-      if(importedIds.has(String(camp.id)))continue
-
-      // New zaliv
       const{data:zData,error}=await db.from('zalivs').insert({
         geo,name:camp.name,
         ad_budget:budget,rk_budget:budget,
         domain:'',creos:[],goals:[],
         ind:'profit',status:'Check',insights:'',
         buyer,funnel,score:3,
-        campaign_id:String(camp.id),
+        campaign_id:campIdStr,
         date:date||new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'}),
         region:CURRENT_REGION
       }).select().single()
       if(!error&&zData){
         ZALIVS.unshift(zData);(window._ALL_ZALIVS||[]).unshift(zData);autoFdcTask(zData)
-        await db.from('imported_campaigns').insert({campaign_id:String(camp.id),zaliv_id:zData.id})
+        await db.from('imported_campaigns').insert({campaign_id:campIdStr,zaliv_id:zData.id})
+        usedCampIds.add(campIdStr)
         added++
       }
     }
-    setSS('ok',(added+replaced)>0?`Импорт: +${added} новых, ${replaced} обновлено`:'Нет изменений')
-    if(typeof autoMatchCampaignIds==='function')autoMatchCampaignIds()
-    if(added>0||replaced>0){
-      toast(`Импорт Meta: +${added} новых, ${replaced} обновлено`,'ok')
+    const total=added+linked
+    setSS('ok',total>0?`Импорт: ${linked} привязано, +${added} новых`:'Нет изменений')
+    if(total>0){
+      toast(`Импорт Meta: ${linked} РК привязано по ID, +${added} новых`,'ok')
       rzalivs()
-    }else toast('Нет новых кампаний за последние 3 дня','info')
-    // Auto-match campaign IDs for existing zalivs
-    setTimeout(autoMatchCampaignIds,500)
+    }else toast('Нет новых кампаний — всё уже привязано','info')
   }catch(e){
     setSS('','Ошибка импорта')
     toast('Нужно задеплоить функцию get-campaigns в Supabase','err')
@@ -4079,13 +4072,8 @@ async function autoMatchCampaignIds(){
       // Skip if this campaign_id already assigned to any zaliv
       if(usedCampIds.has(String(camp.id)))continue
 
-      // Find first zaliv without campaign_id that matches this campaign name
-      const normCamp=camp.name.toLowerCase().replace(/\s+/g,'').slice(0,25)
-      const match=ZALIVS.find(z=>{
-        if(z.campaign_id)return false // already has ID
-        const normZ=z.name.toLowerCase().replace(/\s+/g,'').slice(0,25)
-        return normZ===normCamp||normZ.includes(normCamp.slice(0,15))||normCamp.includes(normZ.slice(0,15))
-      })
+      // Find first zaliv without campaign_id that matches this campaign name (same fuzzy logic as import)
+      const match=fuzzyMatchZaliv(camp.name,ZALIVS.filter(z=>!z.campaign_id))
       if(match){
         await db.from('zalivs').update({campaign_id:String(camp.id)}).eq('id',match.id)
         match.campaign_id=String(camp.id)
