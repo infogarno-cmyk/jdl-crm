@@ -1782,7 +1782,7 @@ function renderChartFocused(focusKey){
   const allS=[
     {k:'cpl',d:rows.map(r=>nz(r.cpl)),c:'#4080ff'},
     {k:'cql',d:rows.map(r=>nz(r.cql)),c:'#d4a017'},
-    {k:'ctr',d:rows.map(r=>parseFloat(r.ctr)||0),c:'#2ea043'},
+    {k:'ctr',d:rows.map(r=>nz(r.ctr)),c:'#2ea043'},
     {k:'spend',d:rows.map(r=>parseFloat(r.spend_pl||0)+parseFloat(r.spend_plua||0)),c:'#e04050'}
   ]
   allS.forEach(s=>{const vals=s.d.filter(v=>v!=null);s.mn=vals.length?Math.min(...vals):0;s.mx=vals.length?Math.max(...vals):1;if(s.mx===s.mn)s.mx=s.mn+1})
@@ -1824,10 +1824,13 @@ async function liveChart(from,to,seq){
   const rows=[]
   for(let t=new Date(from+'T00:00:00');t<=new Date(to+'T00:00:00');t=new Date(+t+864e5)){
     const day=t.toISOString().slice(0,10),m=mByDay[day]||{}
-    const sp=cc.byDay[day]||0
+    const b=cc.byDay[day]||{spend:0,imp:0,clicks:0}
+    const sp=b.spend||0
+    // CTR тоже живой: из metrics_daily дни без строки давали 0 и линия ложилась на дно
+    const ctr=b.imp>0?b.clicks/b.imp*100:(parseFloat(m.ctr)||0)
     const leads=(m.leads_pl||0)+(m.leads_plua||0),quals=m.quals||0
     rows.push({day,spend_pl:sp,spend_plua:0,leads_pl:leads,leads_plua:0,quals,
-      cpl:leads>0?sp/leads:0,cql:quals>0?sp/quals:0,ctr:parseFloat(m.ctr||0)})
+      cpl:leads>0?sp/leads:0,cql:quals>0?sp/quals:0,ctr})
   }
   drawChart(rows)
 }
@@ -1843,12 +1846,12 @@ function renderChart(animate=false){
   const allS=[
     {k:'cpl',d:rows.map(r=>nz(r.cpl)),c:'#6E9BFF',l:'CPL',gap:true},
     {k:'cql',d:rows.map(r=>nz(r.cql)),c:'#D4AF37',l:'CQL',gap:true},
-    {k:'ctr',d:rows.map(r=>parseFloat(r.ctr)||0),c:'#3DBE8B',l:'CTR'},
+    {k:'ctr',d:rows.map(r=>nz(r.ctr)),c:'#3DBE8B',l:'CTR',gap:true},
     {k:'spend',d:rows.map(r=>parseFloat(r.spend_pl||0)+parseFloat(r.spend_plua||0)),c:'#F03A55',l:'Spend'}
   ]
   const S=allS.filter(s=>activeMets.size===0||activeMets.has(s.k))
   // ghost (prev period) series
-  const GH=(window._chartPrev&&document.getElementById('chleg-ghost')?.classList.contains('active'))?allS.filter(s=>activeMets.size===0||activeMets.has(s.k)).map(s=>({k:s.k,c:s.c,d:window._chartPrev.map(r=>s.k==='cpl'?nz(r.cpl):s.k==='cql'?nz(r.cql):s.k==='ctr'?(parseFloat(r.ctr)||0):(parseFloat(r.spend_pl||0)+parseFloat(r.spend_plua||0)))})):[]
+  const GH=(window._chartPrev&&document.getElementById('chleg-ghost')?.classList.contains('active'))?allS.filter(s=>activeMets.size===0||activeMets.has(s.k)).map(s=>({k:s.k,c:s.c,d:window._chartPrev.map(r=>s.k==='cpl'?nz(r.cpl):s.k==='cql'?nz(r.cql):s.k==='ctr'?nz(r.ctr):(parseFloat(r.spend_pl||0)+parseFloat(r.spend_plua||0)))})):[]
   S.forEach((s,i)=>{const g=GH.find(x=>x.k===s.k);const vals=[...s.d,...(g?g.d:[])].filter(v=>v!=null);s.mn=vals.length?Math.min(...vals):0;s.mx=vals.length?Math.max(...vals):1;if(s.mx===s.mn)s.mx=s.mn+1;if(g){g.mn=s.mn;g.mx=s.mx}})
   const n=rows.length,xs=n>1?cw/(n-1):0,px=i=>P.l+i*xs,py=(v,s)=>P.t+ch*(1-(v-s.mn)/(s.mx-s.mn))
   ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1
@@ -3185,7 +3188,10 @@ function parseFunnelFromName(name){
   return'Калькулятор'
 }
 
-function nameRegion(name){const n=(name||'').replace(/\\/g,'').toUpperCase();return /(^|[^A-Z])(CZ|UACZ|CZUA)([^A-Z]|$)/.test(n)?'CZ':'PL'}
+// ВАЖНО: правило должно быть идентично nameRegion() в get-campaigns и sync Edge Functions.
+// Раньше здесь стояла проверка по границам слова, из-за чего "cloadczua1" считалась польской
+// в CRM и чешской в Edge Function — РК застревала не в том регионе и завышала спенд.
+function nameRegion(name){return (name||'').replace(/\\/g,'').toUpperCase().includes('CZ')?'CZ':'PL'}
 function parseBuyerFromName(name){const m=(name||'').match(/^\s*\d*\s*([DIІіДд])\s*[{\[(]?\s*\d/i);if(!m)return'';const L=m[1].toUpperCase();return(L==='I'||L==='І')?'Illia':'Danya'}
 function parseDateFromCampName(name){
   // Matches: D{17.06} I[16.06] D[09.06] etc
