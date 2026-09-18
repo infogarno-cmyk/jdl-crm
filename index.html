@@ -4826,6 +4826,18 @@ async function checkSpend(from,to){
     console.log('%cНе попало в CRM ('+missing.length+' РК, $'+Math.round(missing.reduce((s,c)=>s+c.spend,0)*100)/100+'):','color:#E04050;font-weight:bold')
     console.table(missing.map(c=>({spend:c.spend,name:c.name,причина:reason(c),campaign_id:c.campaign_id})))
   }else console.log('%c✓ Все кампании Meta учтены в CRM','color:#3DBE8B')
+  // один campaign_id на нескольких заливах — дубли РК после импорта/привязки
+  const byCid={};ZALIVS.filter(z=>z.campaign_id).forEach(z=>{const k=String(z.campaign_id);(byCid[k]=byCid[k]||[]).push(z)})
+  const dups=Object.entries(byCid).filter(([,arr])=>arr.length>1)
+  if(dups.length){console.log('%cДУБЛИ: один campaign_id на нескольких РК ('+dups.length+'):','color:#E04050;font-weight:bold')
+    console.table(dups.flatMap(([cid,arr])=>arr.map(z=>({campaign_id:cid,id:z.id,name:z.name,region:z.region,togo:!!z.togo}))))}
+
+  // РК, которые CRM считает своими, но Meta их в этом регионе не показывает
+  const metaIds=new Set(d.campaigns.map(c=>String(c.campaign_id)))
+  const alien=mine.filter(z=>!metaIds.has(String(z.campaign_id)))
+  if(alien.length){console.log('%cВ CRM есть, но Meta не относит их к '+CURRENT_REGION+' ('+alien.length+') — возможная причина завышения:','color:#E04050;font-weight:bold')
+    console.table(alien.map(z=>({name:z.name,campaign_id:z.campaign_id,region:z.region})))}
+
   const noId=ZALIVS.filter(z=>!z.togo&&!z.campaign_id)
   if(noId.length){console.log('%cРК в CRM без campaign_id ('+noId.length+') — их спенд не считается:','color:#D4AF37');console.table(noId.map(z=>({name:z.name,date:z.date})))
     console.log('%c→ выполни linkRks("'+from+'","'+to+'") чтобы привязать их автоматически','color:#6E9BFF;font-weight:bold')}
