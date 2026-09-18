@@ -2252,6 +2252,7 @@ function jvParse(raw){
 async function jvCommand(raw){
   const p=jvParse(raw)
   if(!p)return
+  _jvNoVoice=false
   switch(p.cmd){
     case 'stop':
       jvStop();return
@@ -2808,6 +2809,20 @@ async function jv11Speak(text){
   }catch(e){_jv11Fail++;return false}
 }
 let _jvCurAudio=null
+// Chrome не даёт сайту заговорить, пока пользователь ничего не нажал. Первый же клик
+// «распечатывает» синтез пустой репликой — иначе автозапуск отвечает молча.
+let _jvSpeechUnlocked=false
+function jvUnlockSpeech(){
+  if(_jvSpeechUnlocked||!window.speechSynthesis)return
+  try{
+    const u=new SpeechSynthesisUtterance(' ');u.volume=0
+    speechSynthesis.speak(u);speechSynthesis.resume()
+    _jvSpeechUnlocked=true
+  }catch(e){}
+}
+['pointerdown','keydown','touchstart'].forEach(ev=>
+  window.addEventListener(ev,jvUnlockSpeech,{once:false,capture:true}))
+
 // ── Голос ──
 // Предпочитаем мужской русский голос — женский по умолчанию звучит как навигатор.
 const JV_MALE=/male|мужск|dmitr|дмитр|yuri|юри|pavel|павел|artem|артем|maxim|максим|alexander|александр|george|daniel/i
@@ -2823,9 +2838,22 @@ function jvVoice(){
 }
 // время, за которое реплику комфортно прочитать глазами (если голоса нет)
 function jvReadMs(text){return Math.min(5200,Math.max(1200,text.length*58))}
-let _jvNoVoice=false
+// Флаг «синтез недоступен». Раньше он выставлялся навсегда после первой осечки —
+// а осечка почти гарантирована на старте, пока браузер не догрузил список голосов.
+// Теперь он сбрасывается и сам, и перед каждым брифингом/командой.
+let _jvNoVoice=false,_jvVoicesReady=false
+async function jvEnsureVoices(){
+  if(_jvVoicesReady)return true
+  if(!window.speechSynthesis)return false
+  for(let i=0;i<12;i++){
+    if((speechSynthesis.getVoices()||[]).length){_jvVoicesReady=true;return true}
+    await new Promise(r=>setTimeout(r,150))
+  }
+  return (speechSynthesis.getVoices()||[]).length>0
+}
 async function jvSpeak(text){
   if(_jvAbort||!text)return
+  await jvEnsureVoices()
   if(await jv11Speak(text))return          // ElevenLabs, если настроен
   return jvSpeakLocal(text)
 }
@@ -2969,20 +2997,27 @@ function jvUtter(text,opt){
       u.rate=Math.max(.6,Math.min(1.6,(opt&&opt.rate)||jvRate()))
       u.pitch=Math.max(.5,Math.min(1.5,(opt&&opt.pitch)||jvPitch()))
       u.volume=1
-      const t0=Date.now();let done=false,keep=null
+      const t0=Date.now();let done=false,keep=null,started=false
       const fin=()=>{
         if(done)return;done=true
         clearInterval(keep)
-        // мгновенный «конец» = синтез недоступен, дальше идём по времени чтения
-        if(Date.now()-t0<250){_jvNoVoice=true;return setTimeout(res,jvReadMs(text))}
+        if(!started){
+          // речь так и не зазвучала — браузер её заблокировал
+          console.log('JARVIS: синтез не стартовал (нужен клик по странице)')
+          if(!_jvSpeechUnlocked)toast('Нажми в любом месте страницы — браузер блокирует голос','info')
+          return setTimeout(res,jvReadMs(text))
+        }
         res()
       }
+      u.onstart=()=>{started=true;_jvSpeechUnlocked=true}
       u.onend=fin;u.onerror=fin
       // Chrome глушит длинную речь примерно через 15 секунд и не присылает onend —
       // периодический resume() не даёт ему уснуть, иначе между фразами возникают провалы.
-      keep=setInterval(()=>{try{if(speechSynthesis.speaking)speechSynthesis.resume();else fin()}catch(e){}},2000)
-      // страховка пропорциональна длине: короткая фраза не должна ждать секундами
-      setTimeout(fin,1200+text.length*70)
+      keep=setInterval(()=>{try{
+        if(speechSynthesis.speaking){speechSynthesis.resume();return}
+        if(started)fin()          // закончил и не прислал onend
+      }catch(e){}},1500)
+      setTimeout(fin,1500+text.length*75)
       speechSynthesis.speak(u)
     }catch(e){_jvNoVoice=true;setTimeout(res,jvReadMs(text))}
   })
@@ -3085,9 +3120,9 @@ function jvQuipDelta(d){
 const JV_LINK=['Далее.','Идём дальше.','Смотрим дальше.','Так.','Теперь вот что.']
 const JV_NEXT=['Что касается цены.','По цене.','Теперь цифры по цене.']
 // Ударения проставлены знаком U+0301 прямо в тексте: зали́ва, ха́сла
-const JV_BYE=['Хорошего вам зали́ва, сэр.','Удачной охоты, сэр.','Ровного ха́сла, сэр.',
-  'Хорошего зали́ва, сэр. Я присмотрю за цифрами.','Удачной охоты. Буду на связи, сэр.',
-  'Ровного ха́сла, сэр. И пощадите бюджет.','Лёгкого зали́ва, сэр.','Пусть кабинет будет к вам добр, сэр.']
+const JV_BYE=['Удачной охоты, сэр.','Ровного ха́сла, сэр.','Удачной охоты. Буду на связи, сэр.',
+  'Ровного ха́сла, сэр. И пощадите бюджет.','Пусть кабинет будет к вам добр, сэр.',
+  'Лёгкой открутки, сэр.','Хорошего дня, сэр. Я присмотрю за цифрами.','Удачи, сэр. Цифры на мне.']
 // Комментарий к количеству новых РК
 function jvQuipRk(n){
   if(n>=8)return JV_PICK(['Восемь и больше за сутки. Кто-то сегодня не жалел ни себя, ни рекламный кабинет.','Темп впечатляющий, сэр. Надеюсь, креативов хватило на всех.'])
@@ -3133,6 +3168,34 @@ async function jvWaitLive(ms){
   return false
 }
 
+// ── Данные сводки в том же порядке, в каком их проговаривает JARVIS ──
+// Один источник для текста на экране и для речи, чтобы они не расходились.
+async function jvTodayData(){
+  const since=Date.now()-864e5, me=(CURRENT_USER&&CURRENT_USER.name)||''
+  const pdt=s=>{if(!s)return null;if(s.includes('-'))return new Date(s);const p=s.split('.');return p.length===3?new Date(p[2]+'-'+p[1]+'-'+p[0]):null}
+
+  // 1. продажи и источники
+  const sales=(SALES_DATA||[]).filter(s=>{const d=pdt(s.createdAt);return d&&d.getTime()>=since})
+  const bySrc={}
+  sales.forEach(s=>{const k=(srcParse(s.source||'').key)||(s.source||'без источника');bySrc[k]=(bySrc[k]||0)+1})
+
+  // 2. вчера по обоим регионам
+  const yest=await jvBothYesterday()
+
+  // 3. инсайты — только счётчики
+  const ins=(GRIND||[]).filter(g=>g.created_at>=new Date(since).toISOString())
+  const byType={};ins.forEach(g=>{const t=g.gtype||'insight';byType[t]=(byType[t]||0)+1})
+
+  // 4. активные РК вошедшего баера по гео
+  const mine=(window._ALL_ZALIVS||ZALIVS).filter(z=>!z.togo&&z.buyer===me)
+  const byGeo={};mine.forEach(z=>{const g=z.geo||z.region||'—';byGeo[g]=(byGeo[g]||0)+1})
+
+  // 5. задачи на сегодня — только на экран, голосом здесь не читаются
+  const todo=TASKS.filter(t=>t.col==='todo'&&(!me||t.assignee===me))
+  const due=TASKS.filter(t=>t.deadline&&t.deadline<todayISO()&&t.col!=='done'&&t.col!=='archived'&&(!me||t.assignee===me))
+
+  return{me,sales,bySrc,yest,ins,byType,mine,byGeo,todo,due}
+}
 // ── Данные по обоим регионам сразу ──
 // METRICS хранит только активный регион, поэтому за вчера тянем оба напрямую.
 async function jvBothYesterday(){
@@ -3176,67 +3239,65 @@ function jvTrendWords(t,regName){
 }
 
 // ── Сцена 1: сводка за сутки ──
+// Всё, что он произносит, одновременно подсвечивается в открытой модалке TODAY.
 async function jvPhaseToday(){
   const nb=document.getElementById('nb-dash');if(nb)nb.click()
-  await jvWait(300)
+  await jvWait(250)
   await jvSay('Сводка за последние сутки.')
-  if(typeof openJdlToday==='function'){openJdlToday();await jvWait(500)}
-  const me=(CURRENT_USER&&CURRENT_USER.name)||''
-  const since=Date.now()-864e5
+  const S=await openJdlToday()
+  await jvWait(300)
+  const at=sel=>document.querySelector(`#jt-body [data-jt="${sel}"]`)
 
-  // 1) Продажи и с каких калькуляторов
-  const pdt=s=>{if(!s)return null;if(s.includes('-'))return new Date(s);const p=s.split('.');return p.length===3?new Date(p[2]+'-'+p[1]+'-'+p[0]):null}
-  const sales=(SALES_DATA||[]).filter(s=>{const d=pdt(s.createdAt);return d&&d.getTime()>=since})
-  if(sales.length){
-    const sum=sales.reduce((a,s)=>a+(+s.saleAmount||0),0)
-    await jvSay(`Продаж за сутки ${sales.length}, на сумму ${Math.round(sum).toLocaleString('ru')} ${cur()==='Kč'?'крон':'злотых'}.`)
-    // из каких источников пришли
-    const bySrc={}
-    sales.forEach(s=>{const k=(srcParse(s.source||'').key)||(s.source||'без источника');bySrc[k]=(bySrc[k]||0)+1})
-    const top=Object.entries(bySrc).sort((a,b)=>b[1]-a[1]).slice(0,4)
-    if(top.length)await jvSay('Источники: '+top.map(([k,n])=>`${k} — ${n}`).join(', ')+'.')
-  }else await jvSay('Продаж за сутки нет.')
+  // 1) Продажи
+  if(S.sales.n){
+    let s=`Продаж за сутки ${S.sales.n}, на сумму ${Math.round(S.sales.sum).toLocaleString('ru')} ${cur()==='Kč'?'крон':'злотых'}.`
+    if(S.sales.src.length)s+=' Источники: '+S.sales.src.slice(0,4).map(([k,n])=>`${k} — ${n}`).join(', ')+'.'
+    await jvSay(s,at('sales'),null)
+  }else await jvSay('Продаж за сутки нет.',at('sales'),null)
 
   // 2) Вчера по обоим регионам
-  const both=await jvBothYesterday()
   for(const[r,nm]of[['PL','Польша'],['CZ','Чехия']]){
-    const m=both[r]
-    if(!m||!m.spend){await jvSay(`${nm} вчера: данных нет.`);continue}
+    const m=S.yday[r]
+    if(!m||!m.spend){await jvSay(`${nm} вчера: данных нет.`,at('yday-'+nm),null);continue}
     let s=`${nm} вчера: открут ${Math.round(m.spend)} долларов, лидов ${m.leads}, квалов ${m.quals}.`
     if(m.cpl)s+=` Цена лида ${Math.round(m.cpl)}.`
-    await jvSay(s)
+    await jvSay(s,at('yday-'+nm),null)
   }
 
-  // 3) Инсайты — не зачитываем, только отмечаем
-  const ins=(GRIND||[]).filter(g=>g.created_at>=new Date(since).toISOString())
-  if(ins.length){
+  // 3) Grind — только упоминаем, не зачитываем
+  if(S.grind.length){
     const byType={}
-    ins.forEach(g=>{const t=g.gtype||'insight';byType[t]=(byType[t]||0)+1})
-    await jvSay(`Записей в Grind ${ins.length}: `+Object.entries(byType).map(([t,n])=>`${t==='insight'?'инсайтов':t==='plan'?'планов':'тестов'} ${n}`).join(', ')+'. Рекомендую ознакомиться, сэр.')
+    S.grind.forEach(g=>{const t=g.gtype||'insight';byType[t]=(byType[t]||0)+1})
+    await jvSay(`Записей в Grind ${S.grind.length}: `+Object.entries(byType)
+      .map(([t,n])=>`${t==='insight'?'инсайтов':t==='plan'?'планов':'тестов'} ${n}`).join(', ')
+      +'. Рекомендую ознакомиться, сэр.', at('grind'),null)
   }
 
-  // 4) Что сейчас в работе у вошедшего баера, с разбивкой по гео
-  const all=(window._ALL_ZALIVS||ZALIVS)
-  const mine=all.filter(z=>!z.togo&&(z.buyer===me))
-  if(mine.length){
-    const byGeo={}
-    mine.forEach(z=>{const g=z.geo||z.region||'—';byGeo[g]=(byGeo[g]||0)+1})
-    const parts=Object.entries(byGeo).sort((a,b)=>b[1]-a[1]).map(([g,n])=>`${g} — ${n}`)
-    await jvSay(`В работе у вас ${mine.length} ${jvPlural(mine.length,'кампания','кампании','кампаний')}: ${parts.join(', ')}.`)
-  }else await jvSay('Активных кампаний за вами сейчас нет, сэр.')
+  // 4) Что в работе у вошедшего баера
+  if(S.rk.n){
+    await jvSay(`Так, ${S.rk.buyer}. В работе ${S.rk.n} ${jvPlural(S.rk.n,'кампания','кампании','кампаний')}: `
+      +S.rk.geo.map(([g,n])=>`${g} — ${n}`).join(', ')+'.', at('rk'),null)
+  }else await jvSay('Активных кампаний за вами сейчас нет, сэр.',at('rk'),null)
 
-  // 5) Задачи здесь не озвучиваем — они идут отдельной сценой в конце
+  // 5) Задачи в модалке есть, но голосом здесь не читаем — они идут отдельной сценой
+  jvClearSpot()
   document.getElementById('mo-jt')?.classList.remove('open')
-  await jvWait(120)
+  await jvWait(150)
 
-  // Тенденция по трёхдневному графику
+  // ── Тенденция: открываем график на трёх днях и показываем ──
+  if(nb)nb.click()
+  const d3=document.querySelector('.pbtns .pb[data-days="3"]')
+  if(d3)d3.click()
+  await jvWait(700);await jvWaitLive(8000)
   const t1=await jvTrend3('PL'),t2=await jvTrend3('CZ')
   const w1=jvTrendWords(t1,'Польша'),w2=jvTrendWords(t2,'Чехия')
+  const chart=document.getElementById('dyn-chart')||document.querySelector('.chart-wrap')
   if(w1||w2){
-    await jvSay('Тенденция за три дня.')
-    if(w1)await jvSay(w1)
-    if(w2)await jvSay(w2)
+    await jvSay('Тенденция за три дня.',chart,'ГРАФИК · 3 ДНЯ')
+    if(w1)await jvSay(w1,chart,'ГРАФИК · 3 ДНЯ')
+    if(w2)await jvSay(w2,chart,'ГРАФИК · 3 ДНЯ')
   }
+  jvClearSpot()
 }
 
 // ── Сцена 2: статистика по региону ──
@@ -3315,8 +3376,9 @@ function jvPlural(n,a,b,c){const n1=n%10,n2=n%100
 async function jarvisBrief(){
   if(!jvAllowed())return
   if(_jvRunning)return
-  _jvAbort=false;_jvRunning=true
+  _jvAbort=false;_jvRunning=true;_jvNoVoice=false
   try{speechSynthesis.cancel()}catch(e){}
+  await jvEnsureVoices()
   const startRegion=CURRENT_REGION
   const own=await jvTrackStart()
   if(!own)jvMusicStart()
@@ -4387,16 +4449,92 @@ function buildJdlToday(){
   const ins=GRIND.filter(g=>g.created_at>=sinceISO)
   return{ev,ins}
 }
-function openJdlToday(){
-  const{ev,ins}=buildJdlToday();const b=document.getElementById('jt-body')
+// ── Содержимое сводки TODAY ──
+// Тот же порядок, в котором Джарвис её проговаривает: продажи, вчера по обоим регионам,
+// Grind, РК в работе, задачи. Секции помечены data-jt, чтобы подсветка попадала точно.
+async function jtSections(){
+  const since=Date.now()-864e5, sinceISO=new Date(since).toISOString()
+  const me=(CURRENT_USER&&CURRENT_USER.name)||''
+  const S={}
+
+  // 1) Продажи и с каких калькуляторов
+  const pdt=s=>{if(!s)return null;if(s.includes('-'))return new Date(s);const p=s.split('.');return p.length===3?new Date(p[2]+'-'+p[1]+'-'+p[0]):null}
+  const sales=(SALES_DATA||[]).filter(s=>{const d=pdt(s.createdAt);return d&&d.getTime()>=since})
+  const bySrc={}
+  sales.forEach(s=>{const k=(srcParse(s.source||'').key)||(s.source||'без источника');bySrc[k]=(bySrc[k]||0)+1})
+  S.sales={n:sales.length,sum:sales.reduce((a,s)=>a+(+s.saleAmount||0),0),
+           src:Object.entries(bySrc).sort((a,b)=>b[1]-a[1])}
+
+  // 2) Вчера по обоим регионам
+  S.yday=await jvBothYesterday()
+
+  // 3) Grind
+  S.grind=(GRIND||[]).filter(g=>g.created_at>=sinceISO)
+
+  // 4) РК в работе у вошедшего баера, по гео
+  const all=(window._ALL_ZALIVS||ZALIVS)
+  const mine=all.filter(z=>!z.togo&&z.buyer===me)
+  const byGeo={}
+  mine.forEach(z=>{const g=z.geo||z.region||'—';byGeo[g]=(byGeo[g]||0)+1})
+  S.rk={n:mine.length,geo:Object.entries(byGeo).sort((a,b)=>b[1]-a[1]),buyer:me}
+
+  // 5) Задачи на сегодня (в модалке пишем, голосом не читаем)
+  const td=todayISO()
+  S.tasks={
+    todo:TASKS.filter(t=>t.col==='todo'&&(!me||t.assignee===me)),
+    due:TASKS.filter(t=>t.deadline&&t.deadline<td&&t.col!=='done'&&t.col!=='archived'&&(!me||t.assignee===me))
+  }
+  return S
+}
+
+async function openJdlToday(){
+  const b=document.getElementById('jt-body');if(!b)return
   const now=new Date()
-  b.innerHTML=`<div class="jt-h"><b>☀ JDL TODAY</b><span>${now.toLocaleString('ru',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span></div>
-  <div class="jt-sub">Последние 24 часа · ${CURRENT_USER?.name||''} · ${CURRENT_REGION==='CZ'?'Чехия':'Польша'}</div>
-  <div class="jt-sec">События</div>${ev.map(e=>`<div class="jt-ev"><i style="background:${e[0]};color:${e[0]}"></i><div><b style="color:${e[0]}">${e[1]}</b><p>${e[2]}</p></div></div>`).join('')||'<div class="jt-empty">Тихо. Ничего важного.</div>'}
-  <div class="jt-sec">Grind за сутки${ins.length?' · '+ins.length:''}</div>${ins.map(g=>{const cc=({insight:'#D4AF37',plan:'#6E9BFF',test:'#A07CF5'})[g.gtype];return`<div class="jt-gc" style="--cc:${cc}"><div class="gh"><span class="gt">${g.gtype.toUpperCase()}</span><span class="gb">${g.buyer||''} · ${(g.created_at||'').slice(5,16).replace('T',' ')}</span></div><p>${g.text.replace(/</g,'&lt;')}</p></div>`}).join('')||'<div class="jt-empty">Пока пусто — записи из колонки Grind на дашборде появятся здесь</div>'}
-  <div class="jt-foot"><label><input type="checkbox" id="jt-nomore" ${localStorage.getItem('jdl_jt_off')?'checked':''}> не показывать при входе</label><button class="fsel" style="cursor:pointer" onclick="document.getElementById('nb-tasks').click();document.getElementById('mo-jt').classList.remove('open')">→ Таски</button></div>`
-  document.getElementById('jt-nomore').onchange=e=>{if(e.target.checked)localStorage.setItem('jdl_jt_off','1');else localStorage.removeItem('jdl_jt_off')}
   document.getElementById('mo-jt').classList.add('open')
+  b.innerHTML=`<div class="jt-h"><b>☀ JDL TODAY</b><span>${now.toLocaleString('ru',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span></div>
+    <div class="jt-sub">Последние 24 часа · ${CURRENT_USER?.name||''}</div><div class="jt-empty">Собираю данные…</div>`
+  const S=await jtSections()
+  const money=v=>Math.round(v).toLocaleString('ru')
+  const regRow=(nm,m)=>m&&m.spend
+    ? `<div class="jt-ev" data-jt="yday-${nm}"><i style="background:#D4AF37;color:#D4AF37"></i><div><b style="color:#D4AF37">${nm} вчера</b>
+        <p>спенд $${Math.round(m.spend)} · лиды ${m.leads} · квалы ${m.quals} · CPL $${Math.round(m.cpl||0)} · CQL $${Math.round(m.cql||0)}</p></div></div>`
+    : `<div class="jt-ev" data-jt="yday-${nm}"><i style="background:#6b7280;color:#6b7280"></i><div><b style="color:#9aa4b2">${nm} вчера</b><p>данных нет</p></div></div>`
+
+  b.innerHTML=`<div class="jt-h"><b>☀ JDL TODAY</b><span>${now.toLocaleString('ru',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span></div>
+  <div class="jt-sub">Последние 24 часа · ${CURRENT_USER?.name||''}</div>
+
+  <div class="jt-sec">1 · Продажи</div>
+  <div class="jt-ev" data-jt="sales"><i style="background:#3DBE8B;color:#3DBE8B"></i><div>
+    <b style="color:#3DBE8B">${S.sales.n?`Продаж ${S.sales.n} — ${money(S.sales.sum)} ${cur()}`:'Продаж за сутки нет'}</b>
+    ${S.sales.src.length?`<p>${S.sales.src.map(([k,n])=>`${k} — ${n}`).join(' · ')}</p>`:''}</div></div>
+
+  <div class="jt-sec">2 · Вчера по регионам</div>
+  ${regRow('Польша',S.yday.PL)}${regRow('Чехия',S.yday.CZ)}
+
+  <div class="jt-sec">3 · Grind${S.grind.length?' · '+S.grind.length:''}</div>
+  ${S.grind.length?S.grind.map(g=>{const cc=({insight:'#D4AF37',plan:'#6E9BFF',test:'#A07CF5'})[g.gtype||'insight']
+    return `<div class="jt-gc" data-jt="grind" style="--cc:${cc}"><div class="gh"><span class="gt">${(g.gtype||'insight').toUpperCase()}</span>
+      <span class="gb">${g.buyer||''} · ${(g.created_at||'').slice(5,16).replace('T',' ')}</span></div>
+      <p>${String(g.text||'').replace(/</g,'&lt;')}</p></div>`}).join('')
+    :'<div class="jt-empty">Записей нет</div>'}
+
+  <div class="jt-sec">4 · РК в работе${S.rk.buyer?' · '+S.rk.buyer:''}</div>
+  <div class="jt-ev" data-jt="rk"><i style="background:#6E9BFF;color:#6E9BFF"></i><div>
+    <b style="color:#6E9BFF">${S.rk.n?`${S.rk.n} ${jvPlural(S.rk.n,'кампания','кампании','кампаний')}`:'Активных кампаний нет'}</b>
+    ${S.rk.geo.length?`<p>${S.rk.geo.map(([g,n])=>`${g} — ${n}`).join(' · ')}</p>`:''}</div></div>
+
+  <div class="jt-sec">5 · Задачи на сегодня</div>
+  ${S.tasks.due.length?`<div class="jt-ev" data-jt="tasks-due"><i style="background:#F03A55;color:#F03A55"></i><div>
+    <b style="color:#F03A55">Просрочено ${S.tasks.due.length}</b><p>${S.tasks.due.slice(0,4).map(t=>String(t.title).slice(0,44)).join(' · ')}</p></div></div>`:''}
+  ${S.tasks.todo.length?`<div class="jt-ev" data-jt="tasks"><i style="background:#6E9BFF;color:#6E9BFF"></i><div>
+    <b style="color:#6E9BFF">На сегодня ${S.tasks.todo.length}</b><p>${S.tasks.todo.slice(0,5).map(t=>String(t.title).slice(0,44)).join(' · ')}</p></div></div>`
+    :(S.tasks.due.length?'':'<div class="jt-empty">Задач на сегодня нет</div>')}
+
+  <div class="jt-foot"><label><input type="checkbox" id="jt-nomore" ${localStorage.getItem('jdl_jt_off')?'checked':''}> не показывать при входе</label>
+    <button class="fsel" style="cursor:pointer" onclick="document.getElementById('nb-tasks').click();document.getElementById('mo-jt').classList.remove('open')">→ Таски</button></div>`
+  const cb=document.getElementById('jt-nomore')
+  if(cb)cb.onchange=e=>{if(e.target.checked)localStorage.setItem('jdl_jt_off','1');else localStorage.removeItem('jdl_jt_off')}
+  return S
 }
 document.getElementById('nb-jt')?.addEventListener('click',openJdlToday)
 function maybeJdlToday(){if(localStorage.getItem('jdl_jt_off'))return;const k='jdl_jt_'+todayISO();if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');setTimeout(openJdlToday,800)}
