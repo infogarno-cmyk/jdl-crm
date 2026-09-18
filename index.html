@@ -4754,6 +4754,36 @@ function normDate(d){
 }
 
 var _buyerCache={}
+// ── Починить дубли campaign_id ──
+// Оставляет ID у того залива, чьё название реально совпадает с кампанией в Meta,
+// у остальных ID снимает (сами РК не удаляются — данные остаются).
+async function fixDupes(from,to){
+  from=from||'2026-06-01';to=to||new Date().toISOString().slice(0,10)
+  const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'reconcile',region:CURRENT_REGION,since:from,until:to})})
+  const d=await r.json();if(!d.ok){toast('Сверка: '+(d.error||'ошибка'),'err');return}
+  const metaName={};[...(d.campaigns||[]),...(d.other||[])].forEach(c=>{metaName[String(c.campaign_id)]=c.name})
+  const byCid={};ZALIVS.filter(z=>z.campaign_id).forEach(z=>{const k=String(z.campaign_id);(byCid[k]=byCid[k]||[]).push(z)})
+  let cleared=0
+  for(const[cid,arr]of Object.entries(byCid)){
+    if(arr.length<2)continue
+    const mn=metaName[cid]
+    // кого оставляем: точное совпадение имени с Meta → иначе совпадение по ядру → иначе самый старый залив
+    let keep=null
+    if(mn){
+      const n=s=>s.trim().replace(/\s+/g,' ').toLowerCase()
+      keep=arr.find(z=>n(z.name)===n(mn))||arr.find(z=>campCore(z.name)===campCore(mn))
+    }
+    keep=keep||arr.slice().sort((a,b)=>a.id-b.id)[0]
+    for(const z of arr){
+      if(z.id===keep.id)continue
+      const{error}=await db.from('zalivs').update({campaign_id:null,updated_at:new Date().toISOString()}).eq('id',z.id)
+      if(!error){z.campaign_id=null;cleared++;console.log('− снят ID у: '+z.name.slice(0,52)+(mn&&campCore(z.name)!==campCore(mn)?'  (не та кампания)':'  (дубль строки)'))}
+    }
+    if(mn)console.log('%c✓ '+cid+' закреплён за: '+keep.name.slice(0,52),'color:#3DBE8B')
+  }
+  if(cleared){toast('Снято лишних привязок: '+cleared,'ok');rzalivs();rdash()}else toast('Дублей не найдено','info')
+  return cleared
+}
 // ── Привязать campaign_id к заливам по данным сверки ──
 // Надёжнее импорта: берёт ВСЕ кампании со спендом за период, а не только созданные за 3 дня.
 async function linkRks(from,to){
@@ -4829,18 +4859,27 @@ async function checkSpend(from,to){
   // один campaign_id на нескольких заливах — дубли РК после импорта/привязки
   const byCid={};ZALIVS.filter(z=>z.campaign_id).forEach(z=>{const k=String(z.campaign_id);(byCid[k]=byCid[k]||[]).push(z)})
   const dups=Object.entries(byCid).filter(([,arr])=>arr.length>1)
-  if(dups.length){console.log('%cДУБЛИ: один campaign_id на нескольких РК ('+dups.length+'):','color:#E04050;font-weight:bold')
+  if(dups.length){console.log('%cДУБЛИ: один campaign_id на нескольких РК ('+dups.length+') — выполни fixDupes()','color:#E04050;font-weight:bold')
     console.table(dups.flatMap(([cid,arr])=>arr.map(z=>({campaign_id:cid,id:z.id,name:z.name,region:z.region,togo:!!z.togo}))))}
 
-  // РК, которые CRM считает своими, но Meta их в этом регионе не показывает
-  const metaIds=new Set(d.campaigns.map(c=>String(c.campaign_id)))
-  const alien=mine.filter(z=>!metaIds.has(String(z.campaign_id)))
-  if(alien.length){console.log('%cВ CRM есть, но Meta не относит их к '+CURRENT_REGION+' ('+alien.length+') — возможная причина завышения:','color:#E04050;font-weight:bold')
-    console.table(alien.map(z=>({name:z.name,campaign_id:z.campaign_id,region:z.region})))}
+  // Настоящий misroute: Meta относит кампанию к ДРУГОМУ региону, а CRM держит её здесь.
+  // (отсутствие в d.campaigns само по себе ничего не значит — у РК просто мог быть нулевой спенд за период)
+  const otherMap={};(d.other||[]).forEach(c=>{otherMap[String(c.campaign_id)]=c})
+  const alien=mine.filter(z=>otherMap[String(z.campaign_id)])
+  if(alien.length){console.log('%cMeta относит их к другому региону, а CRM держит в '+CURRENT_REGION+' ('+alien.length+') — завышает итог:','color:#E04050;font-weight:bold')
+    console.table(alien.map(z=>({name:z.name,campaign_id:z.campaign_id,spend:otherMap[String(z.campaign_id)].spend,'регион_meta':otherMap[String(z.campaign_id)].region})))}
 
   const noId=ZALIVS.filter(z=>!z.togo&&!z.campaign_id)
   if(noId.length){console.log('%cРК в CRM без campaign_id ('+noId.length+') — их спенд не считается:','color:#D4AF37');console.table(noId.map(z=>({name:z.name,date:z.date})))
     console.log('%c→ выполни linkRks("'+from+'","'+to+'") чтобы привязать их автоматически','color:#6E9BFF;font-weight:bold')}
+  // ── ИТОГ последней строкой: чтобы он попадал в скопированный хвост вывода ──
+  console.log('%c━━━ ИТОГ '+CURRENT_REGION+' · '+from+' → '+to+' ━━━','font-weight:bold;color:#888')
+  console.log('%cMeta: $'+d.total+'  |  CRM: $'+crmTotal+'  |  разница: $'+(Math.round((d.total-crmTotal)*100)/100)
+    +'\nне попало в CRM: '+missing.length+' РК ($'+Math.round(missing.reduce((s,x)=>s+x.spend,0)*100)/100+')'
+    +'  ·  дублей campaign_id: '+dups.length
+    +'  ·  чужих для региона: '+alien.length
+    +'  ·  без campaign_id: '+noId.length,
+    'font-size:13px;font-weight:bold;color:'+(Math.abs(d.total-crmTotal)<0.5?'#3DBE8B':'#E04050'))
   toast('Meta $'+d.total+' · CRM $'+crmTotal,'info')
   return d
 }
