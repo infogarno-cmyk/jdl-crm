@@ -1735,19 +1735,17 @@ function rdash(){
   }
 
   if(!buyer){
-  countUp(document.getElementById('d-spend'),Math.round(tS),'$')
-  countUp(document.getElementById('d-daily'),spD,'$')
-  setCompare('d-spend', tS, pS, true)
-  setCompare('d-daily', parseFloat(spD), pSpD, true)
+  // d-spend / d-daily / d-cpl / d-cql заполняет heroAllMeta() живыми данными Meta —
+  // здесь только заглушка, иначе анимация из metrics_daily перетирает живую цифру.
+  ;['d-spend','d-daily'].forEach(id=>{const e=document.getElementById(id);if(e&&!/^\$/.test(e.textContent))e.textContent='⏳'})
   const cplEl=document.getElementById('d-cpl'),cplN=parseFloat(cpl)
   cplEl.style.color=cplN>0&&cplN<10?'var(--green)':cplN<=13?'var(--yellow)':cplN>0?'var(--red)':'var(--text)'
   cplEl.style.textShadow=cplN>0&&cplN<10?'0 0 12px rgba(46,160,67,.7)':cplN<=13&&cplN>0?'0 0 12px rgba(212,160,23,.7)':cplN>0?'0 0 12px rgba(224,64,80,.6)':''
-  countUp(cplEl,cpl,'$')
   setCompare('d-cpl', parseFloat(cpl), pCpl, false)
   const cqlEl=document.getElementById('d-cql'),cqlN=parseFloat(cql)
   cqlEl.style.color=cqlN>0&&cqlN<25?'var(--green)':cqlN<=35?'var(--yellow)':cqlN>0?'var(--red)':'var(--text)'
   cqlEl.style.textShadow=cqlN>0&&cqlN<25?'0 0 12px rgba(46,160,67,.7)':cqlN<=35&&cqlN>0?'0 0 12px rgba(212,160,23,.7)':cqlN>0?'0 0 12px rgba(224,64,80,.6)':''
-  countUp(cqlEl,cql,'$')
+
   setCompare('d-cql', parseFloat(cql), pCql, false)
   const roiEl=document.getElementById('d-roi')
   roiEl.style.color=roi>=100?'var(--green)':roi>0?'var(--yellow)':roi<0?'var(--red)':'var(--text)'
@@ -4830,11 +4828,14 @@ async function checkSpend(from,to){
   toast('Meta $'+d.total+' · CRM $'+crmTotal,'info')
   return d
 }
+// Подпись набора кампаний — чтобы кэш сбрасывался сам, когда РК добавили/привязали/убрали
+function idsSig(ids){let h=0;const s=[...ids].sort().join(',');for(let i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))|0}return ids.length+':'+(h>>>0).toString(36)}
 async function bulkInsights(ids,from,to){const out={};for(let i=0;i<ids.length;i+=50){try{const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+50),since:from,until:to,region:CURRENT_REGION})});const d=await r.json();if(d.ok)Object.assign(out,d.data||{})}catch(e){}}return out}
 function sumIns(map,ids){let spend=0,clicks=0,imp=0,reach=0;ids.forEach(id=>{const v=map[id];if(!v||v.error)return;spend+=+v.spend||0;clicks+=+v.clicks||0;imp+=+v.impressions||0;reach+=+v.reach||0});return{spend:Math.round(spend*100)/100,clicks,imp,reach,ctr:imp?Math.round(clicks/imp*10000)/100:0}}
-async function heroAllMeta(from,to){const $=id=>document.getElementById(id);const rks=ZALIVS.filter(z=>!z.togo&&z.campaign_id);const ids=[...new Set(rks.map(z=>String(z.campaign_id)))];if(!ids.length)return
+async function heroAllMeta(from,to){const $=id=>document.getElementById(id);const rks=ZALIVS.filter(z=>!z.togo&&z.campaign_id);const ids=[...new Set(rks.map(z=>String(z.campaign_id)))]
+  if(!ids.length){['d-spend','d-daily'].forEach(id=>{const e=$(id);if(e)e.textContent='$0'});return}
   const days=Math.max(1,Math.round((new Date(to)-new Date(from))/864e5)+1),pTo=new Date(new Date(from)-864e5).toISOString().slice(0,10),pFrom=new Date(new Date(from)-days*864e5).toISOString().slice(0,10)
-  const key='ALL|'+from+'|'+to+'|'+CURRENT_REGION;let cc=_buyerCache[key]
+  const key='ALL|'+from+'|'+to+'|'+CURRENT_REGION+'|'+idsSig(ids);let cc=_buyerCache[key]
   if(!cc||Date.now()-cc.at>5*60000){const[cur,prev]=await Promise.all([bulkInsights(ids,from,to),document.getElementById('cmp-tgl')?.classList.contains('on')?bulkInsights(ids,pFrom,pTo):Promise.resolve({})]);cc=_buyerCache[key]={at:Date.now(),cur:sumIns(cur,ids),prev:sumIns(prev,ids)};if(CURRENT_BUYER)return}
   const S=cc.cur,P=cc.prev
   heroCountUp($('hero-tick'),S.spend,v=>v.toLocaleString('ru',{minimumFractionDigits:2,maximumFractionDigits:2}).replace(',','.'));heroDelta(S.spend,P.spend);heroCountUp($('hero-daily'),S.spend/days,v=>'$'+Math.round(v))
@@ -4880,7 +4881,7 @@ async function rdashBuyer(buyer){
   // spend etc from Meta (bulk), cached 5 min
   const days=Math.max(1,Math.round((new Date(to)-new Date(from))/864e5)+1)
   const pTo=new Date(new Date(from)-864e5).toISOString().slice(0,10),pFrom=new Date(new Date(from)-days*864e5).toISOString().slice(0,10)
-  const key=buyer+'|'+from+'|'+to+'|'+CURRENT_REGION;let cc=_buyerCache[key]
+  const key=buyer+'|'+from+'|'+to+'|'+CURRENT_REGION+'|'+idsSig(ids);let cc=_buyerCache[key]
   if(!cc||Date.now()-cc.at>5*60000){setKpi('d-spend','⏳','var(--yellow)');setKpi('d-cpl','⏳','var(--text3)');setKpi('d-cql','⏳','var(--text3)');setKpi('d-ctr','⏳','var(--text3)')
     const[cur,prev]=await Promise.all([bulkInsights(ids,from,to),document.getElementById('cmp-tgl')?.classList.contains('on')?bulkInsights(ids,pFrom,pTo):Promise.resolve({})])
     cc=_buyerCache[key]={at:Date.now(),cur:sumIns(cur,ids),prev:sumIns(prev,ids)}
