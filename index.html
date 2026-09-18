@@ -2891,19 +2891,26 @@ function ruCount(n,a,b,c){n=Math.round(n);return num2ru(n)+' '+ruPlural(n,a,b,c)
 // Синтез читает символы буквально ($, %, ·) — переводим их в слова заранее.
 function jvNorm(t){
   return String(t)
+    // аббревиатуры расшифровываем словами — «си кью эл» на слух не значит ничего
+    .replace(/CQL/gi,'цена квалифицированного лида').replace(/CPL/gi,'цена лида').replace(/CTR/gi,'си ти ар')
     // сначала суммы вместе со словом «долларов», иначе оно продублируется
-    .replace(/\$?\s?([\d\s.,]+)\s*долларов/gi,(m,n)=>ruMoney(parseFloat(n.replace(/\s/g,'').replace(',','.'))||0))
-    .replace(/\$\s?([\d\s.,]+)/g,(m,n)=>ruMoney(parseFloat(n.replace(/\s/g,'').replace(',','.'))||0))
+    // Пробел возвращаем в замене, иначе слова склеиваются («лидадвести»);
+    // лишние пробелы схлопываются последним правилом.
+    .replace(/\$?\s?([\d\s\u00A0.,]+?)\s*долларов/gi,(m,n)=>' '+ruMoney(parseFloat(String(n).replace(/[\s\u00A0]/g,'').replace(',','.'))||0))
+    .replace(/\$\s?([\d\s\u00A0.,]+)/g,(m,n)=>' '+ruMoney(parseFloat(String(n).replace(/[\s\u00A0]/g,'').replace(',','.'))||0))
     .replace(/([\d.,]+)\s?\$/g,(m,n)=>ruMoney(parseFloat(n.replace(',','.'))||0))
     .replace(/([\d.,]+)\s?%/g,(m,n)=>{const v=Math.round(parseFloat(n.replace(',','.'))||0);return num2ru(v)+' '+ruPlural(v,'процент','процента','процентов')})
+    // «55 000» и «55 000 zł» — это пятьдесят пять тысяч, а не «пятьдесят пять ноль».
+    // Разряды через пробел склеиваем ДО того, как числа разбираются поодиночке.
+    .replace(/(\d{1,3})(?:[\s\u00A0](\d{3}))+/g,m=>num2ru(parseInt(m.replace(/[\s\u00A0]/g,''))))
     // существительные женского рода требуют «одна», «две»
-    .replace(/\b(\d{1,7})\s+(задач\w*|заметк\w*|кампани\w*|минут\w*)/gi,(m,n,w)=>num2ru(parseInt(n),true)+' '+w)
-    .replace(/\b(\d{1,7})\b/g,(m,n)=>num2ru(parseInt(n)))
-    .replace(/CPL/gi,'си пи эл').replace(/CQL/gi,'си кью эл').replace(/CTR/gi,'си ти ар')
+    .replace(/(\d{1,9})\s+(задач\w*|заметк\w*|кампани\w*|минут\w*|тысяч\w*|крон\w*)/gi,(m,n,w)=>num2ru(parseInt(n),true)+' '+w)
+    .replace(/(^|[^\d])(\d{1,9})(?!\d)/g,(m,p,n)=>p+num2ru(parseInt(n)))
     .replace(/\bPL\b/g,'Польша').replace(/\bCZ\b/g,'Чехия').replace(/\bРК\b/g,'кампаний')
     .replace(/[·•|]/g,', ').replace(/[—–]/g,', ')
-    .replace(/\s{2,}/g,' ').trim()
+    .replace(/\s{2,}/g,' ').replace(/\s+([,.!?])/g,'$1').trim()
 }
+
 // Знак ударения U+0301 после гласной — движки читают слово правильно.
 // Без него «хасла» звучит как «хаслА», а «квалы» как «квалЫ».
 // \b в JS не работает с кириллицей (там только латиница), поэтому границы задаём вручную.
