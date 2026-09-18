@@ -1571,7 +1571,8 @@ async function init(){
   rolloverTodayTasks();scheduleRollover();repairRegions().then(backfillFdc)
   if(localStorage.getItem('jdl_buyer')===null&&CURRENT_USER)CURRENT_BUYER=CURRENT_USER.name
   setBuyer(CURRENT_BUYER);setupRT();setSS('ok','Данные загружены');dismissIntro();maybeJdlToday();schemaCheck()
-  if(typeof jvRemindersOnStart==='function')setTimeout(jvRemindersOnStart,2500);setTimeout(()=>{if(typeof jvRemindersOnStart==='function')jvRemindersOnStart()},2500)
+  if(typeof jvRemindersOnStart==='function')setTimeout(jvRemindersOnStart,2500)
+  if(typeof jvAutoListen==='function')setTimeout(jvAutoListen,3200);setTimeout(()=>{if(typeof jvRemindersOnStart==='function')jvRemindersOnStart()},2500)
 }
 async function loadDomainMeta(){if(!db)return;try{const{data}=await db.from('domain_meta').select('*').eq('region',CURRENT_REGION);DOMAIN_META=data||[]}catch(e){DOMAIN_META=[]}}
 function dMeta(key){return DOMAIN_META.find(m=>m.key===key)||{}}
@@ -2102,8 +2103,12 @@ async function jvRemindersOnStart(){
 // ── Постоянное прослушивание с обращением ──
 // Микрофон слушает всё время, но команды выполняет только после «Джарвис».
 // После обращения даётся окно в 20 секунд, внутри которого можно говорить без него.
-let _jvAwake=0,_jvRestart=null
-const JV_WAKE=/\b(джарвис|джарвиз|джарвес|jarvis|привет джарвис)\b/i
+let _jvAwake=0,_jvRestart=null,_jvMuted=false
+// Микрофон слышит колонки: без этого он реагирует на собственные реплики
+function jvMute(on){_jvMuted=!!on;if(!on)_jvMuteUntil=Date.now()+700}
+let _jvMuteUntil=0
+// \b в JS не работает с кириллицей — границы задаём явно, иначе «Джарвис» не совпадёт
+const JV_WAKE=/(^|[^а-яёa-z])(джарвис|джарвиз|джарвес|джарвиc|jarvis)(?![а-яёa-z])/i
 const JV_HELLO=['К вашим услугам, сэр.','Слушаю, сэр.','Да, сэр.','Я здесь, сэр.','Всегда к вашим услугам.']
 
 function jvAwakeNow(){return Date.now()<_jvAwake}
@@ -2127,10 +2132,12 @@ function jvListen(){
       if(tmp&&!fin)jvHud(true,(jvAwakeNow()?'« ':'… ')+tmp+' »')
       const said=fin.trim()
       if(!said)return
+      if(_jvMuted||Date.now()<_jvMuteUntil)return   // это наш собственный голос
+      console.log('🎤',said,'| обращение:',JV_WAKE.test(said)?'да':jvAwakeNow()?'активно':'нет')
       const hasWake=JV_WAKE.test(said)
       // пока не обратились — молчим, чтобы не реагировать на разговоры вокруг
       if(!hasWake&&!jvAwakeNow()){jvHud(true,'Скажите «Джарвис»…');return}
-      let cmd=said.replace(JV_WAKE,'').replace(/^[\s,.:;!?—-]+/,'').trim()
+      let cmd=said.replace(JV_WAKE,'$1').replace(/^[\s,.:;!?—-]+/,'').replace(/^(привет|слушай|эй)\s+/i,'').trim()
       jvWakeOn()
       if(hasWake&&!cmd){await jvReply(JV_PICK(JV_HELLO));jvHud(true,'Слушаю…');return}
       jvHud(true,'« '+cmd+' »')
@@ -2169,8 +2176,8 @@ function jvMicUI(on,mode){
 async function jvReply(text,sel,label){
   jvHud(true,text)
   if(sel)await jvSpotEl(sel,label)
-  await jvSpeak(text)
-  await jvWait(700);jvClearSpot()
+  jvMute(true);await jvSpeak(text);jvMute(false)   // не слушаем собственный голос
+  await jvWait(500);jvClearSpot()
   if(!_jvRunning)jvHud(false)
 }
 
@@ -2435,6 +2442,20 @@ async function jvCommand(raw){
   }
 }
 
+// ── Диагностика микрофона ──
+async function jarvisMicTest(){
+  console.log('%c🎤 Проверка микрофона','font-weight:bold;font-size:13px')
+  console.log('распознавание поддерживается:',jvRecSupported(),jvRecSupported()?'':'← нужен Chrome')
+  console.log('протокол:',location.protocol,location.protocol==='https:'?'':'← микрофон работает только по https')
+  try{
+    const st=await navigator.permissions.query({name:'microphone'})
+    console.log('разрешение:',st.state,st.state==='granted'?'':'← нажми кнопку микрофона и разреши доступ')
+  }catch(e){console.log('разрешение: не удалось проверить')}
+  console.log('режим слушания сейчас:',_jvListening?'ВКЛЮЧЁН':'выключен')
+  console.log('обращение активно:',jvAwakeNow()?'да':'нет (скажи «Джарвис»)')
+  console.log('%cГовори — всё распознанное будет здесь:','color:#6E9BFF')
+  if(!_jvListening)jvListen()
+}
 // ── Диагностика звука ──
 async function jarvisTest(){
   console.log('%c♪ Проверка звука JARVIS','font-weight:bold;font-size:13px')
@@ -2876,18 +2897,28 @@ function jvStress(t){
   })
   return s
 }
+// ── Смешок ──
+// Полноценный смех синтез не вытягивает, а короткий выдох перед ироничной фразой
+// читается как усмешка. Ставим изредка, иначе приедается.
+const JV_LAUGH=['Хм.','Ха.','Хех.','Кхм.']
+function jvMaybeLaugh(s){
+  if(!/(полагаю|позволю себе|надеюсь|если бы|классика|обед|фонд|смирени|шучу|спонсорство|метро)/i.test(s))return s
+  return Math.random()<.35?JV_PICK(JV_LAUGH)+' '+s:s
+}
 // ── Интонация по смыслу ──
 // Приветствие звучит теплее, предупреждение ниже и медленнее, подколка легче и быстрее,
 // вопрос идёт вверх. Без этого всё читается одной краской.
 function jvTone(s){
   const t=String(s)
-  if(/[?]\s*$/.test(t))                                   return{r:.02,p:.10,tag:'вопрос'}
+  if(/[?]\s*$/.test(t))                                   return{r:.03,p:.16,tag:'вопрос'}
   if(/^(внимание|просрочено|рекомендую|дорого|осторожно)/i.test(t)
-     ||/(дорого|из берегов|вмешаться|пересобрать|горит)/i.test(t)) return{r:-.07,p:-.07,tag:'тревога'}
-  if(/(отличн|прекрасн|дёшево|дешевле|масштабируйте|поздравляю|чисто)/i.test(t))  return{r:.03,p:.07,tag:'одобрение'}
-  if(/(полагаю|позволю себе|надеюсь|если бы|классика|обед|фонд|смирени)/i.test(t))return{r:.05,p:.03,tag:'ирония'}
-  if(/(сэр\.|доброе утро|добрый день|добрый вечер|доброй ночи|к вашим услугам)/i.test(t)) return{r:-.02,p:.05,tag:'тепло'}
-  if(/[!]\s*$/.test(t))                                   return{r:.04,p:.08,tag:'акцент'}
+     ||/(дорого|из берегов|вмешаться|пересобрать|горит|просроч)/i.test(t)) return{r:-.10,p:-.11,tag:'тревога'}
+  if(/(отличн|прекрасн|дёшево|дешевле|масштабируйте|поздравляю|чисто|впечатл)/i.test(t))return{r:.06,p:.13,tag:'одобрение'}
+  if(/(полагаю|позволю себе|надеюсь|если бы|классика|обед|фонд|смирени|шучу)/i.test(t))return{r:.08,p:.06,tag:'ирония'}
+  // перечисления читаются суше и чуть быстрее — это фон, а не главное
+  if(/[:,].*[,].*[,]/.test(t)&&/\d/.test(t))             return{r:.05,p:-.04,tag:'перечень'}
+  if(/(сэр\.|доброе утро|добрый день|добрый вечер|доброй ночи|к вашим услугам)/i.test(t)) return{r:-.03,p:.09,tag:'тепло'}
+  if(/[!]\s*$/.test(t))                                   return{r:.06,p:.12,tag:'акцент'}
   return{r:0,p:0,tag:''}
 }
 // ── Просодия ──
@@ -2913,7 +2944,7 @@ function jvChunks(text){
   return out
 }
 async function jvSpeakLocal(text){
-  const parts=jvChunks(text).map(jvStress)
+  const parts=jvChunks(text).map(s=>jvStress(jvMaybeLaugh(s)))
   for(let i=0;i<parts.length;i++){
     if(_jvAbort)return
     const s=parts[i]
@@ -3083,7 +3114,9 @@ function jvQuipDue(n){
 async function jvSay(t,sel,label){
   if(_jvAbort||!t)return
   if(sel)await jvSpotEl(sel,label); else jvClearSpot()
-  jvHud(true,t);await jvSpeak(t);await jvWait(70)
+  jvHud(true,t)
+  jvMute(true);await jvSpeak(t);jvMute(false)
+  await jvWait(70)
 }
 function jvNum(id){const e=document.getElementById(id);if(!e)return null
   const v=parseFloat(String(e.textContent).replace(/[^\d.,-]/g,'').replace(',','.'));return isFinite(v)?v:null}
@@ -3100,31 +3133,110 @@ async function jvWaitLive(ms){
   return false
 }
 
-// ── Сцена 1: что произошло за сутки ──
+// ── Данные по обоим регионам сразу ──
+// METRICS хранит только активный регион, поэтому за вчера тянем оба напрямую.
+async function jvBothYesterday(){
+  const y=new Date(Date.now()-864e5).toISOString().slice(0,10)
+  const out={}
+  for(const r of ['PL','CZ']){
+    try{
+      const{data}=await db.from('metrics_daily').select('*').eq('region',r).eq('day',y).limit(1)
+      const m=(data||[])[0]
+      out[r]=m?{spend:(+m.spend_pl||0)+(+m.spend_plua||0),leads:(+m.leads_pl||0)+(+m.leads_plua||0),
+                quals:+m.quals||0,cpl:+m.cpl||0,cql:+m.cql||0}:null
+    }catch(e){out[r]=null}
+  }
+  return out
+}
+// Тенденция за три дня — по спенду и цене лида
+async function jvTrend3(region){
+  try{
+    const from=new Date(Date.now()-3*864e5).toISOString().slice(0,10)
+    const{data}=await db.from('metrics_daily').select('*').eq('region',region).gte('day',from).order('day',{ascending:true})
+    const rows=(data||[]).slice(-3)
+    if(rows.length<2)return null
+    const sp=rows.map(r=>(+r.spend_pl||0)+(+r.spend_plua||0))
+    const cpl=rows.map(r=>+r.cpl||0).filter(x=>x>0)
+    const dS=sp[sp.length-1]-sp[0]
+    const dC=cpl.length>1?cpl[cpl.length-1]-cpl[0]:0
+    return{days:rows.length,spendDelta:dS,cplDelta:dC,
+      spendUp:dS>sp[0]*.15,spendDown:dS<-sp[0]*.15,
+      cplUp:dC>1.5,cplDown:dC<-1.5}
+  }catch(e){return null}
+}
+function jvTrendWords(t,regName){
+  if(!t)return ''
+  if(t.cplDown&&t.spendUp) return `${regName}: за три дня льём больше, а лид дешевеет. Это лучший из возможных раскладов, сэр.`
+  if(t.cplUp&&t.spendUp)   return `${regName}: за три дня и расход, и цена лида растут. Так делать не стоит, сэр.`
+  if(t.cplUp)              return `${regName}: лид за три дня дорожает. Стоит вмешаться, пока это не вошло в привычку.`
+  if(t.cplDown)            return `${regName}: лид за три дня дешевеет. Направление верное.`
+  if(t.spendDown)          return `${regName}: расход за три дня просел. Мы притормозили намеренно?`
+  if(t.spendUp)            return `${regName}: расход растёт, цена лида держится.`
+  return `${regName}: за три дня без заметных движений.`
+}
+
+// ── Сцена 1: сводка за сутки ──
 async function jvPhaseToday(){
   const nb=document.getElementById('nb-dash');if(nb)nb.click()
-  await jvWait(400)
-  await jvSay('Начнём с того, что произошло за последние сутки.')
-  if(typeof openJdlToday==='function'){openJdlToday();await jvWait(700)}
-  const{ev,ins}=buildJdlToday()
-  if(!ev.length)await jvSay('За сутки ничего примечательного. Тихо, как в хорошем сейфе.')
-  const cards=document.querySelectorAll('#jt-body .jt-ev')
-  for(let ei=0;ei<Math.min(ev.length,5);ei++){
-    if(_jvAbort)break
-    const e=ev[ei]
-    const head=String(e[1]).replace(/:/g,' —')
-    const body=String(e[2]||'')
-    const useBody=/\d/.test(body)&&!/[\\\/{}]/.test(body)&&body.length<90
-    // подсвечиваем ту карточку, которую сейчас читает
-    await jvSay(head+(useBody?', '+body+'.':'.'),cards[ei]||null,null)
-    // живой комментарий к событию, а не сухой список
-    const num=parseInt((head.match(/(\d+)/)||[])[1]||0)
-    if(/Новые РК/i.test(head)){const q=jvQuipRk(num);if(q)await jvSay(q)}
-    else if(/Просрочен/i.test(head)){const q=jvQuipDue(num);if(q)await jvSay(q)}
+  await jvWait(300)
+  await jvSay('Сводка за последние сутки.')
+  if(typeof openJdlToday==='function'){openJdlToday();await jvWait(500)}
+  const me=(CURRENT_USER&&CURRENT_USER.name)||''
+  const since=Date.now()-864e5
+
+  // 1) Продажи и с каких калькуляторов
+  const pdt=s=>{if(!s)return null;if(s.includes('-'))return new Date(s);const p=s.split('.');return p.length===3?new Date(p[2]+'-'+p[1]+'-'+p[0]):null}
+  const sales=(SALES_DATA||[]).filter(s=>{const d=pdt(s.createdAt);return d&&d.getTime()>=since})
+  if(sales.length){
+    const sum=sales.reduce((a,s)=>a+(+s.saleAmount||0),0)
+    await jvSay(`Продаж за сутки ${sales.length}, на сумму ${Math.round(sum).toLocaleString('ru')} ${cur()==='Kč'?'крон':'злотых'}.`)
+    // из каких источников пришли
+    const bySrc={}
+    sales.forEach(s=>{const k=(srcParse(s.source||'').key)||(s.source||'без источника');bySrc[k]=(bySrc[k]||0)+1})
+    const top=Object.entries(bySrc).sort((a,b)=>b[1]-a[1]).slice(0,4)
+    if(top.length)await jvSay('Источники: '+top.map(([k,n])=>`${k} — ${n}`).join(', ')+'.')
+  }else await jvSay('Продаж за сутки нет.')
+
+  // 2) Вчера по обоим регионам
+  const both=await jvBothYesterday()
+  for(const[r,nm]of[['PL','Польша'],['CZ','Чехия']]){
+    const m=both[r]
+    if(!m||!m.spend){await jvSay(`${nm} вчера: данных нет.`);continue}
+    let s=`${nm} вчера: открут ${Math.round(m.spend)} долларов, лидов ${m.leads}, квалов ${m.quals}.`
+    if(m.cpl)s+=` Цена лида ${Math.round(m.cpl)}.`
+    await jvSay(s)
   }
-  if(ins.length)await jvSay('Также записано заметок в Grind: '+ins.length+'.')
+
+  // 3) Инсайты — не зачитываем, только отмечаем
+  const ins=(GRIND||[]).filter(g=>g.created_at>=new Date(since).toISOString())
+  if(ins.length){
+    const byType={}
+    ins.forEach(g=>{const t=g.gtype||'insight';byType[t]=(byType[t]||0)+1})
+    await jvSay(`Записей в Grind ${ins.length}: `+Object.entries(byType).map(([t,n])=>`${t==='insight'?'инсайтов':t==='plan'?'планов':'тестов'} ${n}`).join(', ')+'. Рекомендую ознакомиться, сэр.')
+  }
+
+  // 4) Что сейчас в работе у вошедшего баера, с разбивкой по гео
+  const all=(window._ALL_ZALIVS||ZALIVS)
+  const mine=all.filter(z=>!z.togo&&(z.buyer===me))
+  if(mine.length){
+    const byGeo={}
+    mine.forEach(z=>{const g=z.geo||z.region||'—';byGeo[g]=(byGeo[g]||0)+1})
+    const parts=Object.entries(byGeo).sort((a,b)=>b[1]-a[1]).map(([g,n])=>`${g} — ${n}`)
+    await jvSay(`В работе у вас ${mine.length} ${jvPlural(mine.length,'кампания','кампании','кампаний')}: ${parts.join(', ')}.`)
+  }else await jvSay('Активных кампаний за вами сейчас нет, сэр.')
+
+  // 5) Задачи здесь не озвучиваем — они идут отдельной сценой в конце
   document.getElementById('mo-jt')?.classList.remove('open')
   await jvWait(120)
+
+  // Тенденция по трёхдневному графику
+  const t1=await jvTrend3('PL'),t2=await jvTrend3('CZ')
+  const w1=jvTrendWords(t1,'Польша'),w2=jvTrendWords(t2,'Чехия')
+  if(w1||w2){
+    await jvSay('Тенденция за три дня.')
+    if(w1)await jvSay(w1)
+    if(w2)await jvSay(w2)
+  }
 }
 
 // ── Сцена 2: статистика по региону ──
@@ -3232,6 +3344,20 @@ async function jarvisBrief(){
     await jvOutro(10000)          // 10 секунд музыки с плавным затуханием
   }else{jvHud(false);jvMusicStop();jvTrackStop()}
   _jvRunning=false
+}
+
+// Микрофон запускается сам, если разрешение на него уже выдано этому сайту.
+// Первый раз всё равно нужен клик — таково требование браузера, обойти его нельзя.
+async function jvAutoListen(){
+  if(!jvAllowed()||!jvRecSupported())return
+  if(localStorage.getItem('jdl_mic_auto')==='0')return
+  try{
+    if(!navigator.permissions)return
+    const st=await navigator.permissions.query({name:'microphone'})
+    if(st.state==='granted'){jvListen();return}
+    // разрешили позже — включаемся сразу, без повторного клика
+    st.onchange=()=>{if(st.state==='granted'&&!_jvListening)jvListen()}
+  }catch(e){}
 }
 
 // Звук в браузере требует жеста пользователя. Пробуем стартовать сразу;
