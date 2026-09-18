@@ -4752,6 +4752,39 @@ function normDate(d){
 }
 
 var _buyerCache={}
+// ── Сверка спенда: Meta (все кампании аккаунтов) vs то, что суммирует CRM ──
+// Показывает ПОЧЕМУ цифры расходятся: не импортированные РК, без campaign_id, в TOGO, не тот регион.
+async function checkSpend(from,to){
+  from=from||document.getElementById('pd-from')?.value
+  to=to||document.getElementById('pd-to')?.value
+  if(!from){console.log('Укажи период: checkSpend("2026-09-13","2026-09-16")');return}
+  to=to||from
+  console.log('%c⏳ Сверка '+CURRENT_REGION+' · '+from+' → '+to,'font-weight:bold')
+  const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'reconcile',region:CURRENT_REGION,since:from,until:to})})
+  const d=await r.json()
+  if(!d.ok){console.error('Ошибка:',d.error||d);toast('Сверка: '+(d.error||'ошибка'),'err');return}
+
+  // то, что CRM считает своим
+  const mine=ZALIVS.filter(z=>!z.togo&&z.campaign_id)
+  const mineIds=new Set(mine.map(z=>String(z.campaign_id)))
+  const crmTotal=Math.round(d.campaigns.filter(c=>mineIds.has(String(c.campaign_id))).reduce((s,c)=>s+c.spend,0)*100)/100
+
+  const missing=d.campaigns.filter(c=>!mineIds.has(String(c.campaign_id))&&c.spend>0)
+  const byId={};ZALIVS.forEach(z=>{if(z.campaign_id)byId[String(z.campaign_id)]=z})
+  const reason=c=>{const z=byId[String(c.campaign_id)];if(!z)return'НЕТ в CRM (не импортирована)';if(z.togo)return'в TOGO (исключена)';return'есть, но не в этом регионе'}
+
+  console.log('%cMeta ('+CURRENT_REGION+'): $'+d.total+'   CRM: $'+crmTotal+'   разница: $'+(Math.round((d.total-crmTotal)*100)/100),'font-size:14px;font-weight:bold;color:#D4AF37')
+  if(d.currencies.length>1)console.warn('⚠ Аккаунты в разных валютах: '+d.currencies.join(', ')+' — суммы несопоставимы напрямую')
+  console.table(d.accounts)
+  if(missing.length){
+    console.log('%cНе попало в CRM ('+missing.length+' РК, $'+Math.round(missing.reduce((s,c)=>s+c.spend,0)*100)/100+'):','color:#E04050;font-weight:bold')
+    console.table(missing.map(c=>({spend:c.spend,name:c.name,причина:reason(c),campaign_id:c.campaign_id})))
+  }else console.log('%c✓ Все кампании Meta учтены в CRM','color:#3DBE8B')
+  const noId=ZALIVS.filter(z=>!z.togo&&!z.campaign_id)
+  if(noId.length){console.log('%cРК в CRM без campaign_id ('+noId.length+') — их спенд не считается:','color:#D4AF37');console.table(noId.map(z=>({name:z.name,date:z.date})))}
+  toast('Meta $'+d.total+' · CRM $'+crmTotal,'info')
+  return d
+}
 async function bulkInsights(ids,from,to){const out={};for(let i=0;i<ids.length;i+=50){try{const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+50),since:from,until:to,region:CURRENT_REGION})});const d=await r.json();if(d.ok)Object.assign(out,d.data||{})}catch(e){}}return out}
 function sumIns(map,ids){let spend=0,clicks=0,imp=0,reach=0;ids.forEach(id=>{const v=map[id];if(!v||v.error)return;spend+=+v.spend||0;clicks+=+v.clicks||0;imp+=+v.impressions||0;reach+=+v.reach||0});return{spend:Math.round(spend*100)/100,clicks,imp,reach,ctr:imp?Math.round(clicks/imp*10000)/100:0}}
 async function heroAllMeta(from,to){const $=id=>document.getElementById(id);const rks=ZALIVS.filter(z=>!z.togo&&z.campaign_id);const ids=[...new Set(rks.map(z=>String(z.campaign_id)))];if(!ids.length)return
