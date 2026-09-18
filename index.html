@@ -2879,7 +2879,7 @@ async function jvSpeakLocal(text){
                      pitch:jvPitch()+tn.p+[0,-1,.8,-.5][j]*jt})
     // после точки пауза длиннее, чем после запятой — как при чтении вслух
     const loc=(jvVoice()||{}).localService
-    if(i<parts.length-1)await jvWait((/[.!?\u2026]$/.test(s)?260:130)*(loc?1.5:1))
+    if(i<parts.length-1)await jvWait((/[.!?\u2026]$/.test(s)?170:85)*(loc?1.25:1))
   }
 }
 function jvUtter(text,opt){
@@ -2914,7 +2914,7 @@ async function jvSpotEl(sel,label){
   if(!el)return
   el.scrollIntoView({behavior:'smooth',block:'center'})
   // рамка ставится по координатам ПОСЛЕ прокрутки, иначе при скролле она встаёт мимо цели
-  await jvWait(380)
+  await jvWait(180)
   if(_jvAbort)return
   const r=el.getBoundingClientRect()
   const pad=10
@@ -3028,7 +3028,7 @@ function jvQuipDue(n){
 async function jvSay(t,sel,label){
   if(_jvAbort||!t)return
   if(sel)await jvSpotEl(sel,label); else jvClearSpot()
-  jvHud(true,t);await jvSpeak(t);await jvWait(160)
+  jvHud(true,t);await jvSpeak(t);await jvWait(70)
 }
 function jvNum(id){const e=document.getElementById(id);if(!e)return null
   const v=parseFloat(String(e.textContent).replace(/[^\d.,-]/g,'').replace(',','.'));return isFinite(v)?v:null}
@@ -3066,19 +3066,19 @@ async function jvPhaseToday(){
   }
   if(ins.length)await jvSay('Также записано заметок в Grind: '+ins.length+'.')
   document.getElementById('mo-jt')?.classList.remove('open')
-  await jvWait(300)
+  await jvWait(120)
 }
 
 // ── Сцена 2: статистика по региону ──
 async function jvPhaseStats(reg,isFirst){
   const label=reg==='CZ'?'Чехии':'Польше'
-  if(CURRENT_REGION!==reg&&typeof switchRegion==='function'){await switchRegion(reg);await jvWait(900)}
+  if(CURRENT_REGION!==reg&&typeof switchRegion==='function'){await switchRegion(reg);await jvWait(550)}
   const nb=document.getElementById('nb-dash');if(nb)nb.click()
   await jvWait(300)
   // сравнение с прошлым периодом и окно в сутки
   const cmp=document.getElementById('cmp-tgl');if(cmp&&!cmp.classList.contains('on'))cmp.click()
   const day1=document.querySelector('.pbtns .pb[data-days="1"]');if(day1)day1.click()
-  await jvWait(600);await jvWaitLive()
+  await jvWait(350);await jvWaitLive()
 
   await jvSay(isFirst?`Перехожу к статистике. Сначала по ${label}.`:`Теперь по ${label}.`)
 
@@ -3113,7 +3113,7 @@ async function jvPhaseStats(reg,isFirst){
 // ── Сцена 3: задачи ──
 async function jvPhaseTasks(){
   const nb=document.getElementById('nb-tasks');if(nb)nb.click()
-  await jvWait(700)
+  await jvWait(450)
   await jvSay(JV_PICK(['И последнее — задачи.','Остались задачи.','Теперь о задачах.']))
   const me=CURRENT_USER&&CURRENT_USER.name
   const todo=TASKS.filter(t=>t.col==='todo'&&(!me||t.assignee===me))
@@ -3121,17 +3121,20 @@ async function jvPhaseTasks(){
   const proc=TASKS.filter(t=>t.col==='process'&&(!me||t.assignee===me))
 
   if(!todo.length&&!due.length&&!proc.length){
-    await jvSay('Задач на сегодня нет. Доска чистая, сэр.')
+    await jvSay('Задач на сегодня нет. Доска чистая, сэр.','#kc-todo','TO DO')
     return
   }
-  await jvSay(todo.length?`На сегодня в работе ${todo.length} ${jvPlural(todo.length,'задача','задачи','задач')}.`:'В колонке на сегодня пусто.')
-  if(due.length){await jvSay(`Просрочено ${due.length}.`)
+  // подсветка переезжает по колонкам вслед за тем, о чём речь
+  await jvSay(todo.length?`На сегодня в работе ${todo.length} ${jvPlural(todo.length,'задача','задачи','задач')}.`:'В колонке на сегодня пусто.','#kc-todo','TO DO')
+  if(due.length){
+    await jvSay(`Просрочено ${due.length}.`,'#kc-all','ПРОСРОЧЕНО')
     const q=jvQuipDue(due.length);if(q)await jvSay(q)}
-  if(proc.length)await jvSay(`В процессе ${proc.length}.`)
+  if(proc.length)await jvSay(`В процессе ${proc.length}.`,'#kc-process','В РАБОТЕ')
   // что конкретно делать
   const first=[...due,...todo].slice(0,3)
   if(first.length){
-    await jvSay('Ближайшее: '+first.map(t=>String(t.title).slice(0,46)).join(', ')+'.')
+    const card=document.getElementById('tc-'+first[0].id)
+    await jvSay('Ближайшее: '+first.map(t=>String(t.title).slice(0,46)).join(', ')+'.',card||'#kc-todo','НАЧАТЬ С ЭТОГО')
   }
 }
 function jvPlural(n,a,b,c){const n1=n%10,n2=n%100
