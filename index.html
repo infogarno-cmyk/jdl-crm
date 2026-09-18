@@ -2260,10 +2260,17 @@ async function jarvis11Picker(){
     try{
       const r=await fetch('https://api.elevenlabs.io/v1/voices',{headers:{'xi-api-key':key}})
       if(!r.ok){
-        d.querySelector('.vp-sub').innerHTML=r.status===401
-          ?'Ключ не принят. <button class="vp-rekey">Ввести другой</button>'
-          :'Ошибка '+r.status+'. Попробуй позже.'
-        d.querySelector('.vp-rekey')?.addEventListener('click',()=>{localStorage.removeItem('jdl_11_key');d.remove();jarvis11Picker()})
+        // показываем, что именно ответил сервер: 400 почти всегда = ключу не хватает прав
+        let detail=''
+        try{const j=await r.json();detail=j?.detail?.message||j?.detail?.status||JSON.stringify(j?.detail||j).slice(0,180)}catch(e){detail=await r.text().catch(()=>'')}
+        console.log('ElevenLabs '+r.status+':',detail)
+        const hint=r.status===401?'Ключ не принят.'
+          :r.status===400?'Ключу не хватает прав. В ElevenLabs пересоздай ключ и включи Voices — чтение и Text to Speech — запись.'
+          :r.status===429?'Лимит запросов исчерпан.'
+          :'Ошибка '+r.status+'.'
+        d.querySelector('.vp-sub').innerHTML=hint+(detail?'<br><span style="opacity:.65;font-size:11px">'+String(detail).replace(/</g,'&lt;')+'</span>':'')
+          +'<br><button class="vp-rekey" style="margin-top:8px">Ввести другой ключ</button>'
+        d.querySelector('.vp-rekey')?.addEventListener('click',()=>{localStorage.removeItem('jdl_11_key');_jv11Cache=null;d.remove();jarvis11Picker()})
         return
       }
       voices=(await r.json()).voices||[];_jv11Cache=voices
@@ -2272,12 +2279,15 @@ async function jarvis11Picker(){
   if(!voices.length){d.querySelector('.vp-sub').textContent='В аккаунте нет голосов.';return}
 
   // мужские британские — ближе всего по характеру к тому, что ты хочешь
+  // Русский текст лучше идёт у голосов с русскими метками; модель multilingual тянет любой,
+  // поэтому это сортировка, а не отсечение — остальные остаются в списке ниже.
+  const isRu=v=>/russian|русск|ru-|slav/i.test(JSON.stringify(v.labels||{})+' '+(v.name||'')+' '+(v.description||''))
   const score=v=>{const l=JSON.stringify(v.labels||{}).toLowerCase()
-    return (/british|english \(british\)|uk/.test(l)?2:0)+(/male/.test(l)&&!/female/.test(l)?2:0)+(/calm|deep|mature|middle|news|narrat/.test(l)?1:0)}
+    return (isRu(v)?6:0)+(/british|english \(british\)|uk/.test(l)?2:0)+(/male/.test(l)&&!/female/.test(l)?2:0)+(/calm|deep|mature|middle|news|narrat/.test(l)?1:0)}
   voices=voices.slice().sort((a,b)=>score(b)-score(a))
   const saved=localStorage.getItem('jdl_11_voice')||''
   d.querySelector('.vp-box').innerHTML=`<div class="vp-h">Голос ElevenLabs <button class="vp-x">×</button></div>
-    <div class="vp-sub">Нажми ▶ чтобы послушать. Сверху — мужские британские, они ближе всего по характеру.</div>
+    <div class="vp-sub">Нажми ▶ — прочитает фразу с цифрами по-русски. Сверху те, что лучше звучат на русском.</div>
     <div class="vp-list">${voices.map((v,i)=>`
       <div class="vp-i${v.voice_id===saved?' on':''}" data-id="${v.voice_id}" data-i="${i}">
         <div><b>${v.name}</b><span>${Object.values(v.labels||{}).join(' · ')||v.category||''}</span></div>
@@ -2380,12 +2390,48 @@ async function jvSpeak(text){
   if(await jv11Speak(text))return          // ElevenLabs, если настроен
   return jvSpeakLocal(text)
 }
+// ── Числа словами ──
+// Движки читают "428" как попало и путают падежи. Пишем словами — читается всегда верно.
+const RU_1=['','один','два','три','четыре','пять','шесть','семь','восемь','девять','десять','одиннадцать','двенадцать','тринадцать','четырнадцать','пятнадцать','шестнадцать','семнадцать','восемнадцать','девятнадцать']
+const RU_1F=['','одна','две','три','четыре','пять','шесть','семь','восемь','девять']
+const RU_10=['','','двадцать','тридцать','сорок','пятьдесят','шестьдесят','семьдесят','восемьдесят','девяносто']
+const RU_100=['','сто','двести','триста','четыреста','пятьсот','шестьсот','семьсот','восемьсот','девятьсот']
+function ruTriad(n,fem){
+  const out=[]
+  const h=Math.floor(n/100),rest=n%100
+  if(h)out.push(RU_100[h])
+  if(rest<20){if(rest)out.push(fem?(rest<10?RU_1F[rest]:RU_1[rest]):RU_1[rest])}
+  else{out.push(RU_10[Math.floor(rest/10)]);const u=rest%10;if(u)out.push(fem?RU_1F[u]:RU_1[u])}
+  return out.join(' ')
+}
+function ruPlural(n,a,b,c){const n1=n%10,n2=n%100
+  if(n1===1&&n2!==11)return a
+  if(n1>=2&&n1<=4&&(n2<10||n2>=20))return b
+  return c}
+function num2ru(n,fem){
+  n=Math.round(Math.abs(n))
+  if(n===0)return 'ноль'
+  const parts=[]
+  const mil=Math.floor(n/1000000),th=Math.floor(n%1000000/1000),rest=n%1000
+  if(mil)parts.push(ruTriad(mil,false),ruPlural(mil,'миллион','миллиона','миллионов'))
+  if(th)parts.push(ruTriad(th,true),ruPlural(th,'тысяча','тысячи','тысяч'))
+  if(rest)parts.push(ruTriad(rest,!!fem))
+  return parts.filter(Boolean).join(' ')
+}
+// «428 долларов» → «четыреста двадцать восемь долларов» с верным падежом
+function ruMoney(n){n=Math.round(n);return num2ru(n)+' '+ruPlural(n,'доллар','доллара','долларов')}
+function ruCount(n,a,b,c){n=Math.round(n);return num2ru(n)+' '+ruPlural(n,a,b,c)}
 // Синтез читает символы буквально ($, %, ·) — переводим их в слова заранее.
 function jvNorm(t){
   return String(t)
-    .replace(/\$\s?([\d\s.,]+)/g,(m,n)=>Math.round(parseFloat(n.replace(/\s/g,'').replace(',','.'))||0)+' долларов')
-    .replace(/([\d.,]+)\s?\$/g,(m,n)=>Math.round(parseFloat(n.replace(',','.'))||0)+' долларов')
-    .replace(/([\d.,]+)\s?%/g,'$1 процентов')
+    // сначала суммы вместе со словом «долларов», иначе оно продублируется
+    .replace(/\$?\s?([\d\s.,]+)\s*долларов/gi,(m,n)=>ruMoney(parseFloat(n.replace(/\s/g,'').replace(',','.'))||0))
+    .replace(/\$\s?([\d\s.,]+)/g,(m,n)=>ruMoney(parseFloat(n.replace(/\s/g,'').replace(',','.'))||0))
+    .replace(/([\d.,]+)\s?\$/g,(m,n)=>ruMoney(parseFloat(n.replace(',','.'))||0))
+    .replace(/([\d.,]+)\s?%/g,(m,n)=>{const v=Math.round(parseFloat(n.replace(',','.'))||0);return num2ru(v)+' '+ruPlural(v,'процент','процента','процентов')})
+    // существительные женского рода требуют «одна», «две»
+    .replace(/\b(\d{1,7})\s+(задач\w*|заметк\w*|кампани\w*|минут\w*)/gi,(m,n,w)=>num2ru(parseInt(n),true)+' '+w)
+    .replace(/\b(\d{1,7})\b/g,(m,n)=>num2ru(parseInt(n)))
     .replace(/CPL/gi,'си пи эл').replace(/CQL/gi,'си кью эл').replace(/CTR/gi,'си ти ар')
     .replace(/\bPL\b/g,'Польша').replace(/\bCZ\b/g,'Чехия').replace(/\bРК\b/g,'кампаний')
     .replace(/[·•|]/g,', ').replace(/[—–]/g,', ')
@@ -2467,14 +2513,14 @@ function jvStop(){
 const JV_PICK=a=>a[Math.floor(Math.random()*a.length)]
 function jvQuipCPL(cpl,reg){
   if(!cpl)return ''
-  if(cpl<8)return JV_PICK(['Это отличная цена, сэр. Рекомендую не трогать то, что работает.','Дёшево. Я бы на вашем месте подливал.','Такой лид стоит дешевле кофе. Масштабируйте.'])
+  if(cpl<8)return JV_PICK(['Это отличная цена, сэр. Рекомендую не трогать то, что работает.','Дёшево. Я бы на вашем месте подливал.','Такой лид стоит дешевле кофе. Масштабируйте.','Прекрасная цена. Редкий случай, когда мне нечего добавить.','Если бы я умел радоваться, сэр, это был бы подходящий момент.'])
   if(cpl<13)return JV_PICK(['Цена в рамках нормы.','Ровно. Ничего героического, но и жаловаться не на что.','Приемлемо, сэр.'])
   if(cpl<20)return JV_PICK(['Дороговато. Я бы присмотрелся к креативам.','Цена подросла. Возможно, аудитория подустала.','Выше комфортного. Стоит проверить связки.'])
-  return JV_PICK(['Дорого, сэр. Откровенно дорого.','Такой лид обходится как хороший обед. Предлагаю вмешаться.','Цена вышла из берегов. Рекомендую пересобрать связку.'])
+  return JV_PICK(['Дорого, сэр. Откровенно дорого.','Такой лид обходится как хороший обед. Предлагаю вмешаться.','Цена вышла из берегов. Рекомендую пересобрать связку.','За эти деньги лид мог бы приехать лично.','Полагаю, кабинет решил, что мы благотворительный фонд.'])
 }
 function jvQuipQuals(leads,quals){
   if(!leads)return ''
-  if(!quals)return JV_PICK(['Квалов пока нет. Либо рано, либо трафик мимо.','Ни одного квала. Надеюсь, отдел продаж просто спит.','Квалификаций ноль. Это стоит проверить.'])
+  if(!quals)return JV_PICK(['Квалов пока нет. Либо рано, либо трафик мимо.','Ни одного квала. Надеюсь, отдел продаж просто спит.','Квалификаций ноль. Это стоит проверить.','Лиды есть, квалов нет. Классика жанра, сэр.'])
   const r=quals/leads*100
   if(r>=40)return 'Квалификация '+Math.round(r)+' процентов. Отличное качество трафика.'
   if(r>=20)return 'Квалификация '+Math.round(r)+' процентов. Нормальный показатель.'
@@ -2488,7 +2534,27 @@ function jvQuipDelta(d){
   if(d<-15)return 'Ниже прошлого периода.'
   return 'Практически вровень с прошлым периодом.'
 }
-const JV_BYE=['Хорошего вам залива, сэр.','Удачной охоты, сэр.','Ровного хасла, сэр.']
+const JV_BYE=['Хорошего вам залива, сэр.','Удачной охоты, сэр.','Ровного хасла, сэр.',
+  'Хорошего залива, сэр. Я присмотрю за цифрами.','Удачной охоты. Буду на связи, сэр.','Ровного хасла, сэр. И пощадите бюджет.']
+// Комментарий к количеству новых РК
+function jvQuipRk(n){
+  if(n>=8)return JV_PICK(['Восемь и больше за сутки. Кто-то сегодня не жалел ни себя, ни рекламный кабинет.','Темп впечатляющий, сэр. Надеюсь, креативов хватило на всех.'])
+  if(n>=4)return JV_PICK(['Плотный день, сэр.','Неплохой темп запуска.'])
+  if(n===1)return JV_PICK(['Всего одна. Осторожный подход, сэр.','Одна кампания. Бережём патроны?'])
+  return ''
+}
+// Комментарий к открутe
+function jvQuipSpend(v){
+  if(v>=1000)return JV_PICK(['Солидная сумма, сэр. Полагаю, вы знаете, что делаете.','Бюджет сегодня не скучал.'])
+  if(v<30)return JV_PICK(['Скромно. Мы экономим или просто отдыхаем?','Такими темпами кабинет успеет заскучать.'])
+  return ''
+}
+// Комментарий к просрочкам
+function jvQuipDue(n){
+  if(n>=5)return JV_PICK(['Пять и больше просрочек. Позволю себе заметить: список сам себя не разгребёт.','Просрочек накопилось прилично. Рекомендую начать прямо сейчас, сэр.'])
+  if(n>=1)return JV_PICK(['Просрочка — вещь накопительная, сэр.','Лучше закрыть сегодня, чем объяснять завтра.'])
+  return ''
+}
 
 // ── Утилиты сцены ──
 // Подсветка живёт ровно одну реплику: с новой фразой она переезжает или снимается,
@@ -2527,6 +2593,10 @@ async function jvPhaseToday(){
     const body=String(e[2]||'')
     const useBody=/\d/.test(body)&&!/[\\\/{}]/.test(body)&&body.length<90
     await jvSay(head+(useBody?', '+body+'.':'.'))
+    // живой комментарий к событию, а не сухой список
+    const num=parseInt((head.match(/(\d+)/)||[])[1]||0)
+    if(/Новые РК/i.test(head)){const q=jvQuipRk(num);if(q)await jvSay(q)}
+    else if(/Просрочен/i.test(head)){const q=jvQuipDue(num);if(q)await jvSay(q)}
   }
   if(ins.length)await jvSay('Также записано заметок в Grind: '+ins.length+'.')
   document.getElementById('mo-jt')?.classList.remove('open')
@@ -2549,6 +2619,7 @@ async function jvPhaseStats(reg,isFirst){
   const sp=jvNum('hero-tick')
   if(sp===null||sp===0){await jvSay('Открута за сутки нет.');return}
   await jvSay(`Открут за сутки — ${Math.round(sp)} долларов.`,'#hero-tick','СПЕНД 24 Ч')
+  const qs=jvQuipSpend(sp);if(qs)await jvSay(qs)
 
   // дельта к прошлому периоду
   const dl=jvTxt('hero-dl')
@@ -2587,7 +2658,8 @@ async function jvPhaseTasks(){
     return
   }
   await jvSay(todo.length?`На сегодня в работе ${todo.length} ${jvPlural(todo.length,'задача','задачи','задач')}.`:'В колонке на сегодня пусто.')
-  if(due.length)await jvSay(`Просрочено ${due.length}. Рекомендую начать именно с них.`)
+  if(due.length){await jvSay(`Просрочено ${due.length}.`)
+    const q=jvQuipDue(due.length);if(q)await jvSay(q)}
   if(proc.length)await jvSay(`В процессе ${proc.length}.`)
   // что конкретно делать
   const first=[...due,...todo].slice(0,3)
