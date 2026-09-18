@@ -4762,18 +4762,39 @@ async function linkRks(from,to){
   const d=await r.json()
   if(!d.ok){toast('Сверка: '+(d.error||'ошибка'),'err');return}
   const used=new Set(ZALIVS.filter(z=>z.campaign_id).map(z=>String(z.campaign_id)))
-  let n=0
+  const normName=s=>s.trim().replace(/\s+/g,' ').toLowerCase()
+  let n=0,created=0
   for(const camp of d.campaigns){
     if(used.has(String(camp.campaign_id)))continue
     const pool=ZALIVS.filter(z=>!z.campaign_id)
-    const normName=s=>s.trim().replace(/\s+/g,' ').toLowerCase()
     const t=pool.find(z=>normName(z.name)===normName(camp.name))||fuzzyMatchZaliv(camp.name,pool)
-    if(!t)continue
-    const{error}=await db.from('zalivs').update({campaign_id:String(camp.campaign_id),updated_at:new Date().toISOString()}).eq('id',t.id)
-    if(!error){t.campaign_id=String(camp.campaign_id);used.add(String(camp.campaign_id));n++;console.log('✓ '+t.name+' → '+camp.campaign_id)}
+    if(t){
+      // РК уже заведена — только дописываем ID, ничего из заполненного не трогаем
+      const{error}=await db.from('zalivs').update({campaign_id:String(camp.campaign_id),updated_at:new Date().toISOString()}).eq('id',t.id)
+      if(!error){t.campaign_id=String(camp.campaign_id);used.add(String(camp.campaign_id));n++;console.log('✓ привязана: '+t.name)}
+      continue
+    }
+    // РК в CRM нет вовсе — заводим по названию из Meta
+    const date=parseDateFromCampName(camp.name)
+    const{data:z,error}=await db.from('zalivs').insert({
+      geo:parseGeoFromName(camp.name),name:camp.name,
+      ad_budget:0,rk_budget:0,domain:'',creos:[],goals:[],
+      ind:'profit',status:'Check',insights:'',
+      buyer:parseBuyerFromName(camp.name)||'Danya',
+      funnel:parseFunnelFromName(camp.name),score:3,
+      campaign_id:String(camp.campaign_id),
+      date:date||new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'}),
+      region:CURRENT_REGION
+    }).select().single()
+    if(!error&&z){
+      ZALIVS.unshift(z);(window._ALL_ZALIVS||[]).unshift(z);used.add(String(camp.campaign_id));created++
+      // FDC-таски тут не заводим: это старые РК, свежие подхватит backfillFdc при загрузке
+      console.log('+ создана: '+camp.name+' ($'+camp.spend+')')
+    }
   }
-  if(n){toast('Привязано РК: '+n,'ok');rzalivs();rdash()}else toast('Нечего привязывать','info')
-  return n
+  const tot=n+created
+  if(tot){toast('Привязано: '+n+' · создано: '+created,'ok');rzalivs();rdash()}else toast('Нечего привязывать','info')
+  return{linked:n,created}
 }
 // ── Сверка спенда: Meta (все кампании аккаунтов) vs то, что суммирует CRM ──
 // Показывает ПОЧЕМУ цифры расходятся: не импортированные РК, без campaign_id, в TOGO, не тот регион.
