@@ -1381,7 +1381,7 @@ if(_jvBtn){
       <div class="jvm-l">Голос</div>
       <div class="jvm-n">${has11?'ElevenLabs подключён':'встроенный синтез браузера'}</div>
       <button data-a="picker">🎙 Выбрать голос и послушать</button>
-      <button data-a="voices">⚙ Подключить ElevenLabs</button>`
+      <button data-a="e11">✨ Голос ElevenLabs — живой</button>`
     const r=_jvBtn.getBoundingClientRect()
     m.style.cssText=`top:${r.bottom+8}px;right:${Math.max(10,innerWidth-r.right)}px`
     document.body.appendChild(m)
@@ -1402,16 +1402,7 @@ if(_jvBtn){
       if(a==='track'){close();jarvisTrack()}
       if(a==='trackoff'){close();jarvisTrackOff()}
       if(a==='picker'){close();jarvisVoicePicker();return}
-      if(a==='voices'){close()
-        const k=prompt('Ключ ElevenLabs (оставь пустым, чтобы вернуть встроенный голос):',localStorage.getItem('jdl_11_key')||'')
-        if(k===null)return
-        if(!k.trim()){jarvisSetup(null);return}
-        jarvisSetup(k.trim())
-        jarvisVoices().then(()=>{
-          const v=prompt('voice_id из списка в консоли (F12):',localStorage.getItem('jdl_11_voice')||'')
-          if(v&&v.trim())jarvisSetup(k.trim(),v.trim())
-        })
-      }
+      if(a==='e11'){close();jarvis11Picker();return}
     }
   }
 }
@@ -2193,7 +2184,7 @@ function jvDemo(voice,rate,pitch){
     speechSynthesis.speak(u)
   }catch(e){}
 }
-function jvRate(){const v=parseFloat(localStorage.getItem('jdl_voice_rate'));return isFinite(v)?v:.92}
+function jvRate(){const v=parseFloat(localStorage.getItem('jdl_voice_rate'));return isFinite(v)?v:1.05}
 function jvPitch(){const v=parseFloat(localStorage.getItem('jdl_voice_pitch'));return isFinite(v)?v:.98}
 
 function jarvisVoicePicker(){
@@ -2211,7 +2202,7 @@ function jarvisVoicePicker(){
         <button data-play="${i}">▶</button>
       </div>`).join('')}</div>
     <div class="vp-ctl">
-      <label>Темп <input type="range" id="vp-rate" min="70" max="115" value="${Math.round(jvRate()*100)}"><b id="vp-rate-n">${jvRate().toFixed(2)}</b></label>
+      <label>Темп <input type="range" id="vp-rate" min="70" max="140" value="${Math.round(jvRate()*100)}"><b id="vp-rate-n">${jvRate().toFixed(2)}</b></label>
       <label>Тон <input type="range" id="vp-pitch" min="60" max="130" value="${Math.round(jvPitch()*100)}"><b id="vp-pitch-n">${jvPitch().toFixed(2)}</b></label>
     </div>
     <div class="vp-foot">
@@ -2245,6 +2236,82 @@ function jarvisVoicePicker(){
         const vid=prompt('voice_id из списка в консоли (F12):',localStorage.getItem('jdl_11_voice')||'')
         if(vid&&vid.trim())jarvisSetup(k.trim(),vid.trim())})
     }
+  }
+}
+// ── Выбор голоса ElevenLabs прямо в интерфейсе ──
+const JV_DEMO11='Добрый вечер, сэр. Открут за сутки — 428 долларов. Цена лида в пределах нормы.'
+let _jv11Cache=null,_jv11Audio=null
+async function jarvis11Picker(){
+  let key=localStorage.getItem('jdl_11_key')
+  if(!key){
+    key=prompt('Ключ ElevenLabs (elevenlabs.io → профиль → API Keys):','')
+    if(!key||!key.trim())return
+    key=key.trim();localStorage.setItem('jdl_11_key',key)
+  }
+  document.getElementById('jv-vp')?.remove()
+  const d=document.createElement('div');d.id='jv-vp'
+  d.innerHTML=`<div class="vp-box"><div class="vp-h">Голос ElevenLabs <button class="vp-x">×</button></div>
+    <div class="vp-sub">Загружаю список…</div></div>`
+  document.body.appendChild(d)
+  d.onclick=e=>{if(e.target.classList.contains('vp-x')||e.target===d){if(_jv11Audio){_jv11Audio.pause();_jv11Audio=null}d.remove()}}
+
+  let voices=_jv11Cache
+  if(!voices){
+    try{
+      const r=await fetch('https://api.elevenlabs.io/v1/voices',{headers:{'xi-api-key':key}})
+      if(!r.ok){
+        d.querySelector('.vp-sub').innerHTML=r.status===401
+          ?'Ключ не принят. <button class="vp-rekey">Ввести другой</button>'
+          :'Ошибка '+r.status+'. Попробуй позже.'
+        d.querySelector('.vp-rekey')?.addEventListener('click',()=>{localStorage.removeItem('jdl_11_key');d.remove();jarvis11Picker()})
+        return
+      }
+      voices=(await r.json()).voices||[];_jv11Cache=voices
+    }catch(e){d.querySelector('.vp-sub').textContent='Нет связи с ElevenLabs: '+e.message;return}
+  }
+  if(!voices.length){d.querySelector('.vp-sub').textContent='В аккаунте нет голосов.';return}
+
+  // мужские британские — ближе всего по характеру к тому, что ты хочешь
+  const score=v=>{const l=JSON.stringify(v.labels||{}).toLowerCase()
+    return (/british|english \(british\)|uk/.test(l)?2:0)+(/male/.test(l)&&!/female/.test(l)?2:0)+(/calm|deep|mature|middle|news|narrat/.test(l)?1:0)}
+  voices=voices.slice().sort((a,b)=>score(b)-score(a))
+  const saved=localStorage.getItem('jdl_11_voice')||''
+  d.querySelector('.vp-box').innerHTML=`<div class="vp-h">Голос ElevenLabs <button class="vp-x">×</button></div>
+    <div class="vp-sub">Нажми ▶ чтобы послушать. Сверху — мужские британские, они ближе всего по характеру.</div>
+    <div class="vp-list">${voices.map((v,i)=>`
+      <div class="vp-i${v.voice_id===saved?' on':''}" data-id="${v.voice_id}" data-i="${i}">
+        <div><b>${v.name}</b><span>${Object.values(v.labels||{}).join(' · ')||v.category||''}</span></div>
+        <button data-play="${i}">▶</button>
+      </div>`).join('')}</div>
+    <div class="vp-foot"><button class="vp-save">Сохранить выбранный</button><button class="vp-rekey">Сменить ключ</button></div>`
+
+  d.onclick=async e=>{
+    if(e.target.classList.contains('vp-x')||e.target===d){if(_jv11Audio){_jv11Audio.pause();_jv11Audio=null}d.remove();return}
+    if(e.target.classList.contains('vp-rekey')){localStorage.removeItem('jdl_11_key');_jv11Cache=null;d.remove();jarvis11Picker();return}
+    if(e.target.classList.contains('vp-save')){
+      const on=d.querySelector('.vp-i.on')
+      if(!on){toast('Сначала выбери голос','info');return}
+      localStorage.setItem('jdl_11_voice',on.dataset.id)
+      _jv11Fail=0
+      toast('Голос сохранён: '+on.querySelector('b').textContent,'ok');d.remove();return
+    }
+    const pi=e.target.dataset.play
+    const row=e.target.closest('.vp-i');if(!row)return
+    d.querySelectorAll('.vp-i').forEach(x=>x.classList.remove('on'));row.classList.add('on')
+    if(pi===undefined)return
+    const btn=e.target;btn.textContent='…'
+    try{
+      if(_jv11Audio){_jv11Audio.pause();_jv11Audio=null}
+      const r=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${row.dataset.id}`,{
+        method:'POST',headers:{'xi-api-key':localStorage.getItem('jdl_11_key'),'Content-Type':'application/json'},
+        body:JSON.stringify({text:JV_DEMO11,model_id:'eleven_multilingual_v2',
+          voice_settings:{stability:.45,similarity_boost:.75,style:.25,use_speaker_boost:true}})})
+      if(!r.ok){btn.textContent='▶';toast('ElevenLabs '+r.status+(r.status===401?' — ключ не принят':''),'err');return}
+      const url=URL.createObjectURL(new Blob([await r.arrayBuffer()],{type:'audio/mpeg'}))
+      const a=new Audio(url);_jv11Audio=a
+      a.onended=()=>{URL.revokeObjectURL(url);btn.textContent='▶'}
+      await a.play();btn.textContent='■'
+    }catch(err){btn.textContent='▶';toast('Не удалось: '+err.message,'err')}
   }
 }
 // ── Голос через ElevenLabs (опционально) ──
@@ -2316,8 +2383,8 @@ async function jvSpeak(text){
 // Синтез читает символы буквально ($, %, ·) — переводим их в слова заранее.
 function jvNorm(t){
   return String(t)
-    .replace(/\$\s?([\d\s.,]+)/g,(m,n)=>n.trim()+' долларов')
-    .replace(/([\d.,]+)\s?\$/g,'$1 долларов')
+    .replace(/\$\s?([\d\s.,]+)/g,(m,n)=>Math.round(parseFloat(n.replace(/\s/g,'').replace(',','.'))||0)+' долларов')
+    .replace(/([\d.,]+)\s?\$/g,(m,n)=>Math.round(parseFloat(n.replace(',','.'))||0)+' долларов')
     .replace(/([\d.,]+)\s?%/g,'$1 процентов')
     .replace(/CPL/gi,'си пи эл').replace(/CQL/gi,'си кью эл').replace(/CTR/gi,'си ти ар')
     .replace(/\bPL\b/g,'Польша').replace(/\bCZ\b/g,'Чехия').replace(/\bРК\b/g,'кампаний')
@@ -2330,7 +2397,7 @@ async function jvSpeakLocal(text){
   for(let i=0;i<parts.length;i++){
     if(_jvAbort)return
     await jvUtter(parts[i])
-    if(i<parts.length-1)await jvWait(300)
+    if(i<parts.length-1)await jvWait(190)
   }
 }
 function jvUtter(text){
@@ -2498,11 +2565,11 @@ async function jvPhaseStats(reg,isFirst){
 
   const cpl=jvNum('d-cpl')
   if(cpl){
-    await jvSay(`Цена лида — ${cpl} долларов.`,'#d-cpl','CPL')
+    await jvSay(`Цена лида — ${Math.round(cpl)} долларов.`,'#d-cpl','CPL')
     const q=jvQuipCPL(cpl,reg);if(q)await jvSay(q,'#d-cpl','CPL')
   }
   const cql=jvNum('d-cql')
-  if(cql)await jvSay(`Цена квала — ${cql} долларов.`,'#d-cql','CQL')
+  if(cql)await jvSay(`Цена квала — ${Math.round(cql)} долларов.`,'#d-cql','CQL')
   jvClearSpot()
 }
 
@@ -2542,19 +2609,21 @@ async function jarvisBrief(){
   const own=await jvTrackStart()
   if(!own)jvMusicStart()
   jvHud(true,'')
-  try{
-    const name=(CURRENT_USER&&CURRENT_USER.name)||''
-    const h=new Date().getHours()
-    const greet=h<5?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер'
-    await jvSay(`${greet}, ${name}. Все системы в норме. Позвольте ввести вас в курс дела.`)
-
-    if(!_jvAbort)await jvPhaseToday()
-    if(!_jvAbort)await jvPhaseStats('PL',true)
-    if(!_jvAbort)await jvPhaseStats('CZ',false)
-    if(!_jvAbort&&CURRENT_REGION!==startRegion&&typeof switchRegion==='function'){await switchRegion(startRegion);await jvWait(700)}
-    if(!_jvAbort)await jvPhaseTasks()
-    if(!_jvAbort)await jvSay(JV_PICK(JV_BYE))
-  }catch(e){console.log('JARVIS:',e.message)}
+  // Каждая сцена изолирована: если что-то упало на статистике, задачи и финал всё равно прозвучат.
+  const phase=async(fn,label)=>{
+    if(_jvAbort)return
+    try{await fn()}catch(e){console.log('JARVIS: сбой на этапе «'+label+'» —',e&&e.message)}
+  }
+  const name=(CURRENT_USER&&CURRENT_USER.name)||''
+  const h=new Date().getHours()
+  const greet=h<5?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер'
+  await phase(()=>jvSay(`${greet}, ${name}. Все системы в норме. Позвольте ввести вас в курс дела.`),'приветствие')
+  await phase(jvPhaseToday,'события суток')
+  await phase(()=>jvPhaseStats('PL',true),'статистика PL')
+  await phase(()=>jvPhaseStats('CZ',false),'статистика CZ')
+  await phase(async()=>{if(CURRENT_REGION!==startRegion&&typeof switchRegion==='function'){await switchRegion(startRegion);await jvWait(700)}},'возврат региона')
+  await phase(jvPhaseTasks,'задачи')
+  await phase(()=>jvSay(JV_PICK(JV_BYE)),'прощание')
   jvClearSpot()
   if(!_jvAbort){
     const nb=document.getElementById('nb-tasks');if(nb)nb.click()
