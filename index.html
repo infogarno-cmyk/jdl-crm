@@ -818,6 +818,9 @@ tr.zr2.zsel td{background:linear-gradient(90deg,rgba(212,175,55,.07),transparent
 #jv-menu .jvm-h{font:700 10px var(--mono);letter-spacing:.16em;color:#8FB4FF;padding:5px 9px 8px}
 #jv-menu .jvm-l{font:600 9px var(--mono);letter-spacing:.14em;color:var(--text3);text-transform:uppercase;padding:6px 9px 3px}
 #jv-menu .jvm-n{font:400 11px var(--sans);color:var(--text3);padding:2px 9px 5px;word-break:break-all}
+#jv-menu .jvm-vol{display:flex;align-items:center;gap:8px;padding:6px 9px;font:500 11.5px var(--sans);color:var(--text3)}
+#jv-menu .jvm-vol input{flex:1;accent-color:#6E9BFF;height:3px}
+#jv-menu .jvm-vol b{color:#8FB4FF;font:700 11px var(--mono);min-width:20px;text-align:right}
 #jv-menu .jvm-sep{height:1px;background:var(--border);margin:6px 4px}
 #jv-menu button{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--text2);
   font:500 12.5px var(--sans);padding:7px 9px;border-radius:7px;cursor:pointer}
@@ -1334,6 +1337,7 @@ document.getElementById('btn-open-templates').addEventListener('click',openTempl
 document.getElementById('btn-import-meta').addEventListener('click',importCampaignsFromMeta)
 const _jvBtn=document.getElementById('nb-jv')
 if(_jvBtn){
+  _jvBtn.style.display='none'   // покажем после входа, если это Даня
   const paint=()=>_jvBtn.classList.toggle('off',localStorage.getItem('jdl_jarvis_off')==='1')
   paint()
   _jvBtn.addEventListener('click',()=>{if(_jvRunning)jvStop();else jarvisBrief()})
@@ -1351,6 +1355,7 @@ if(_jvBtn){
       <div class="jvm-sep"></div>
       <div class="jvm-l">Музыка</div>
       <button data-a="track">♪ ${tn?'Заменить дорожку':'Загрузить свою дорожку'}</button>
+      <div class="jvm-vol"><span>Громкость</span><input type="range" id="jv-vol" min="0" max="30" value="${Math.round(jvVol()*100)}"><b id="jv-vol-n">${Math.round(jvVol()*100)}</b></div>
       ${tn?`<div class="jvm-n">${tn}</div><button data-a="trackoff">✕ Убрать дорожку</button>`:'<div class="jvm-n">сейчас: синтезированный фон</div>'}
       <div class="jvm-sep"></div>
       <div class="jvm-l">Голос</div>
@@ -1359,6 +1364,14 @@ if(_jvBtn){
     const r=_jvBtn.getBoundingClientRect()
     m.style.cssText=`top:${r.bottom+8}px;right:${Math.max(10,innerWidth-r.right)}px`
     document.body.appendChild(m)
+    const vr=m.querySelector('#jv-vol')
+    if(vr){
+      vr.oninput=()=>{m.querySelector('#jv-vol-n').textContent=vr.value
+        localStorage.setItem('jdl_music_vol',String(vr.value/100))
+        if(_jvTrackEl){try{_jvTrackEl.volume=jvVol()}catch(e){}}
+        if(window._jvMaster&&_jvAudio){try{window._jvMaster.gain.setTargetAtTime(jvVol()*.7,_jvAudio.currentTime,.1)}catch(e){}}}
+      vr.onclick=e=>e.stopPropagation()
+    }
     const close=()=>{m.remove();document.removeEventListener('click',close)}
     setTimeout(()=>document.addEventListener('click',close),0)
     m.onclick=ev=>{
@@ -1515,12 +1528,12 @@ document.getElementById('btn-ins-table').addEventListener('mousedown',e=>{
 
 // ── LOGIN / LOGOUT ──
 function doLogin(userId){
-  CURRENT_USER=USERS[userId];localStorage.setItem('jdl_user',userId)
+  CURRENT_USER=USERS[userId];localStorage.setItem('jdl_user',userId);if(typeof jvApplyAccess==='function')jvApplyAccess()
   document.getElementById('login').style.display='none';document.getElementById('app').style.display='flex'
   const ava=document.getElementById('uava');ava.textContent=CURRENT_USER.initials;ava.style.background=CURRENT_USER.bg;ava.style.color=CURRENT_USER.color;ava.style.borderColor=CURRENT_USER.border
   document.getElementById('uname').textContent=CURRENT_USER.name;init()
 }
-function doLogout(){localStorage.removeItem('jdl_user');CURRENT_USER=null;document.getElementById('login').style.display='flex';document.getElementById('app').style.display='none'}
+function doLogout(){localStorage.removeItem('jdl_user');CURRENT_USER=null;if(typeof jvApplyAccess==='function')jvApplyAccess();document.getElementById('login').style.display='flex';document.getElementById('app').style.display='none'}
 
 // ── INIT ──
 async function init(){
@@ -1930,8 +1943,26 @@ async function liveChart(from,to,seq){
 //  Голос — встроенный синтез речи браузера.
 // ══════════════════════════════════════════════════════════════
 let _jvAudio=null,_jvNodes=[],_jvAbort=false,_jvRunning=false
+// Одна громкость на весь брифинг. Музыка — фон, голос всегда должен быть разборчив.
+// Подстроить: jarvisVolume(0.15) — сохраняется в браузере.
+function jvVol(){const v=parseFloat(localStorage.getItem('jdl_music_vol'));return isFinite(v)?Math.max(0,Math.min(1,v)):.07}
+function jarvisVolume(v){
+  if(v===undefined){console.log('Сейчас:',jvVol(),'· задать: jarvisVolume(0.12)');return jvVol()}
+  localStorage.setItem('jdl_music_vol',String(v))
+  if(_jvTrackEl){try{_jvTrackEl.volume=jvVol()}catch(e){}}
+  if(window._jvMaster&&_jvAudio){try{window._jvMaster.gain.setTargetAtTime(jvVol()*.7,_jvAudio.currentTime,.1)}catch(e){}}
+  toast('Громкость музыки: '+jvVol(),'ok');return jvVol()
+}
 
-function jvOn(){return localStorage.getItem('jdl_jarvis_off')!=='1'}
+// JARVIS доступен только Дане
+function jvAllowed(){return !!(CURRENT_USER&&CURRENT_USER.name==='Danya')}
+// вызывается после входа/выхода: кнопка видна только Дане
+function jvApplyAccess(){
+  const b=document.getElementById('nb-jv');if(!b)return
+  b.style.display=jvAllowed()?'':'none'
+  if(!jvAllowed()){jvStop();document.getElementById('jv-menu')?.remove();document.getElementById('jv-unlock')?.remove()}
+}
+function jvOn(){return jvAllowed()&&localStorage.getItem('jdl_jarvis_off')!=='1'}
 
 // ── Музыка: низкий пад + медленный подъём + редкие «блипы» ──
 // Своя дорожка: положи файл рядом с index.html (например brief.mp3) на Vercel.
@@ -1968,7 +1999,7 @@ function jvSynthStart(){
       if(_jvAudio.state!=='running')console.log('JARVIS: звук заблокирован браузером — запусти брифинг кнопкой')})
     const ctx=_jvAudio,t0=ctx.currentTime
     const master=ctx.createGain();master.gain.value=0;master.connect(ctx.destination)
-    master.gain.linearRampToValueAtTime(.16,t0+2.5)
+    master.gain.linearRampToValueAtTime(jvVol()*.7,t0+2.5)
     const filt=ctx.createBiquadFilter();filt.type='lowpass';filt.frequency.value=380
     filt.frequency.linearRampToValueAtTime(1400,t0+10);filt.connect(master)
     // пад из трёх расстроенных осцилляторов
@@ -1979,10 +2010,7 @@ function jvSynthStart(){
       g.gain.value=[.5,.32,.22][i]
       o.connect(g);g.connect(filt);o.start(t0);_jvNodes.push(o,g)
     })
-    // медленное биение
-    const lfo=ctx.createOscillator(),lg=ctx.createGain()
-    lfo.frequency.value=.22;lg.gain.value=.05
-    lfo.connect(lg);lg.connect(master.gain);lfo.start(t0);_jvNodes.push(lfo,lg)
+    // без LFO на общей громкости — именно он давал «то громче, то тише»
     _jvNodes.push(master,filt)
     window._jvMaster=master
   }catch(e){console.log('JARVIS: фон не создался —',e.message)}
@@ -2093,7 +2121,7 @@ async function jvTrackStart(){
     await a.play()
     _jvTrackEl=a
     // плавный вход
-    let v=0;const t=setInterval(()=>{v=Math.min(.32,v+.02);a.volume=v;if(v>=.32)clearInterval(t)},70)
+    const tgt=jvVol();let v=0;const t=setInterval(()=>{v=Math.min(tgt,v+.015);a.volume=v;if(v>=tgt)clearInterval(t)},70)
     return true
   }catch(e){
     console.log('JARVIS: дорожка не запустилась —',e.name,e.message)
@@ -2106,13 +2134,23 @@ function jvTrackStop(){
   let v=a.volume;const t=setInterval(()=>{v-=.03;if(v<=0){clearInterval(t);a.pause();a.src=''}else a.volume=v},60)
 }
 // Приглушаем музыку, пока говорит голос, и возвращаем громкость после
-function jvDuck(on){
-  if(_jvTrackEl){try{_jvTrackEl.volume=on?.10:.32}catch(e){}}
-  if(window._jvMaster&&_jvAudio){try{
-    const t=_jvAudio.currentTime
-    window._jvMaster.gain.cancelScheduledValues(t)
-    window._jvMaster.gain.linearRampToValueAtTime(on?.06:.16,t+.35)
-  }catch(e){}}
+function jvDuck(){}
+// После последней реплики музыка не обрывается: играет ещё 10 секунд, плавно затухая.
+function jvOutro(ms){
+  ms=ms||10000
+  const steps=40,dt=ms/steps
+  let i=0
+  const a=_jvTrackEl,m=window._jvMaster,ctx=_jvAudio
+  const startTrack=a?a.volume:0
+  const startPad=(m&&ctx)?m.gain.value:0
+  const t=setInterval(()=>{
+    i++
+    const k=Math.max(0,1-i/steps)
+    if(a){try{a.volume=startTrack*k}catch(e){}}
+    if(m&&ctx){try{m.gain.setTargetAtTime(startPad*k,ctx.currentTime,.05)}catch(e){}}
+    if(i>=steps){clearInterval(t);jvTrackStop();jvMusicStop()}
+  },dt)
+  return jvWait(ms)
 }
 // ── Голос через ElevenLabs (опционально) ──
 // Ключ и голос задаются один раз: jarvisSetup('sk-...','voiceId')
@@ -2142,7 +2180,7 @@ async function jv11Speak(text){
   try{
     const r=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${vid}`,{
       method:'POST',headers:{'xi-api-key':key,'Content-Type':'application/json'},
-      body:JSON.stringify({text,model_id:'eleven_multilingual_v2',
+      body:JSON.stringify({text:jvNorm(text),model_id:'eleven_multilingual_v2',
         voice_settings:{stability:.45,similarity_boost:.75,style:.25,use_speaker_boost:true}})
     })
     if(!r.ok){_jv11Fail++;console.log('ElevenLabs '+r.status+' — перехожу на встроенный голос');return false}
@@ -2178,13 +2216,24 @@ async function jvSpeak(text){
   if(await jv11Speak(text))return          // ElevenLabs, если настроен
   return jvSpeakLocal(text)
 }
-// Одна фраза целиком звучит механически. Режем на предложения и даём дышать между ними.
+// Синтез читает символы буквально ($, %, ·) — переводим их в слова заранее.
+function jvNorm(t){
+  return String(t)
+    .replace(/\$\s?([\d\s.,]+)/g,(m,n)=>n.trim()+' долларов')
+    .replace(/([\d.,]+)\s?\$/g,'$1 долларов')
+    .replace(/([\d.,]+)\s?%/g,'$1 процентов')
+    .replace(/CPL/gi,'си пи эл').replace(/CQL/gi,'си кью эл').replace(/CTR/gi,'си ти ар')
+    .replace(/\bPL\b/g,'Польша').replace(/\bCZ\b/g,'Чехия').replace(/\bРК\b/g,'кампаний')
+    .replace(/[·•|]/g,', ').replace(/[—–]/g,', ')
+    .replace(/\s{2,}/g,' ').trim()
+}
+// Читаем по предложениям и даём дышать — цельная фраза звучит механически.
 async function jvSpeakLocal(text){
-  const parts=String(text).split(/(?<=[.!?…])\s+/).filter(Boolean)
+  const parts=jvNorm(text).split(/(?<=[.!?…])\s+/).filter(Boolean)
   for(let i=0;i<parts.length;i++){
     if(_jvAbort)return
     await jvUtter(parts[i])
-    if(i<parts.length-1)await jvWait(260)
+    if(i<parts.length-1)await jvWait(300)
   }
 }
 function jvUtter(text){
@@ -2195,7 +2244,7 @@ function jvUtter(text){
       const u=new SpeechSynthesisUtterance(text)
       const v=jvVoice();if(v){u.voice=v;u.lang=v.lang}
       // спокойно и чуть ниже обычного, но без «подвала» — иначе получается робот
-      u.rate=.93;u.pitch=.88;u.volume=1
+      u.rate=.92;u.pitch=.98;u.volume=1
       const t0=Date.now();let done=false
       const fin=()=>{if(done)return;done=true
         // мгновенный «конец» = синтез недоступен: дальше идём по времени чтения
@@ -2250,72 +2299,173 @@ function jvStop(){
   jvClearSpot();jvHud(false);jvMusicStop();jvTrackStop()
 }
 
-// ── Текст брифинга из реальных данных ──
-function jvScript(){
-  const{ev}=buildJdlToday()
-  const name=(CURRENT_USER&&CURRENT_USER.name)||''
-  const reg=CURRENT_REGION==='CZ'?'Чехия':'Польша'
-  const h=new Date().getHours()
-  const greet=h<5?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер'
-  const steps=[]
+// ── Реплики с характером: комментарий подбирается по самим цифрам ──
+const JV_PICK=a=>a[Math.floor(Math.random()*a.length)]
+function jvQuipCPL(cpl,reg){
+  if(!cpl)return ''
+  if(cpl<8)return JV_PICK(['Это отличная цена, сэр. Рекомендую не трогать то, что работает.','Дёшево. Я бы на вашем месте подливал.','Такой лид стоит дешевле кофе. Масштабируйте.'])
+  if(cpl<13)return JV_PICK(['Цена в рамках нормы.','Ровно. Ничего героического, но и жаловаться не на что.','Приемлемо, сэр.'])
+  if(cpl<20)return JV_PICK(['Дороговато. Я бы присмотрелся к креативам.','Цена подросла. Возможно, аудитория подустала.','Выше комфортного. Стоит проверить связки.'])
+  return JV_PICK(['Дорого, сэр. Откровенно дорого.','Такой лид обходится как хороший обед. Предлагаю вмешаться.','Цена вышла из берегов. Рекомендую пересобрать связку.'])
+}
+function jvQuipQuals(leads,quals){
+  if(!leads)return ''
+  if(!quals)return JV_PICK(['Квалов пока нет. Либо рано, либо трафик мимо.','Ни одного квала. Надеюсь, отдел продаж просто спит.','Квалификаций ноль. Это стоит проверить.'])
+  const r=quals/leads*100
+  if(r>=40)return 'Квалификация '+Math.round(r)+' процентов. Отличное качество трафика.'
+  if(r>=20)return 'Квалификация '+Math.round(r)+' процентов. Нормальный показатель.'
+  return 'Квалификация всего '+Math.round(r)+' процентов. Качество лидов оставляет желать.'
+}
+function jvQuipDelta(d){
+  if(d===null||d===undefined||!isFinite(d))return ''
+  if(d>60)return 'Это заметно больше, чем в прошлом периоде. Надеюсь, осознанно.'
+  if(d>15)return 'Расход подрос против прошлого периода.'
+  if(d<-60)return 'Существенно меньше прошлого периода. Мы притормозили?'
+  if(d<-15)return 'Ниже прошлого периода.'
+  return 'Практически вровень с прошлым периодом.'
+}
+const JV_BYE=['Хорошего вам залива, сэр.','Удачной охоты, сэр.','Ровного хасла, сэр.']
 
-  steps.push({say:`${greet}, ${name}. Системы в норме. Регион — ${reg}. Готовлю сводку за последние сутки.`,page:'dash'})
-
-  const spend=(document.getElementById('hero-tick')||{}).textContent
-  const spNum=Math.round(parseFloat(String(spend).replace(/\s/g,''))||0)
-  if(spNum>0)steps.push({say:`Расход за выбранный период — ${spNum.toLocaleString('ru')} долларов.`,spot:'#hero-tick',label:'СПЕНД'})
-
-  const hl=(document.getElementById('hero-l')||{}).textContent,hq=(document.getElementById('hero-q')||{}).textContent
-  if(hl)steps.push({say:`Лидов ${hl}, из них квалифицированных ${hq||0}.`,spot:'#hero-l',label:'ЛИДЫ'})
-
-  const cpl=(document.getElementById('d-cpl')||{}).textContent
-  if(cpl&&cpl!=='—'&&cpl!=='⏳')steps.push({say:`Цена лида ${cpl.replace('$','')} долларов.`,spot:'#d-cpl',label:'CPL'})
-
-  // события суток
-  ev.slice(0,4).forEach(e=>{
-    const head=String(e[1]).replace(/:/g,' —').replace(/·/g,',')
-    const body=String(e[2]||'')
-    // детали проговариваем только там, где это цифры, а не список названий РК
-    const useBody=/^[\d\s$·,.a-zA-Zа-яА-Я]{0,80}$/.test(body)&&/\d/.test(body)&&!/[\\\/{}]/.test(body)
-    steps.push({say:head+(useBody?': '+body.replace(/·/g,',').replace(/\$/g,' ')+'.':'.')})
-  })
-
-  const dueT=TASKS.filter(t=>t.deadline&&t.deadline<todayISO()&&t.col!=='done'&&t.col!=='archived')
-  const todoT=TASKS.filter(t=>t.col==='todo'&&(!CURRENT_USER||t.assignee===CURRENT_USER.name))
-  steps.push({say:'Перехожу к задачам.',page:'tasks'})
-  if(dueT.length)steps.push({say:`Внимание. Просрочено задач: ${dueT.length}. Рекомендую начать с них.`})
-  steps.push({say:todoT.length?`В работе на сегодня ${todoT.length}. Оставляю вас здесь. Удачной открутки.`:'Просроченных задач нет. Доска чистая. Удачной открутки.'})
-  return steps
+// ── Утилиты сцены ──
+// Подсветка живёт ровно одну реплику: с новой фразой она переезжает или снимается,
+// чтобы рамка не висела на одном параметре весь монолог.
+async function jvSay(t,sel,label){
+  if(_jvAbort||!t)return
+  if(sel)await jvSpotEl(sel,label); else jvClearSpot()
+  jvHud(true,t);await jvSpeak(t);await jvWait(160)
+}
+function jvNum(id){const e=document.getElementById(id);if(!e)return null
+  const v=parseFloat(String(e.textContent).replace(/[^\d.,-]/g,'').replace(',','.'));return isFinite(v)?v:null}
+function jvTxt(id){return (document.getElementById(id)||{}).textContent||''}
+// Ждём, пока живые цифры Meta доедут (в KPI стоит ⏳, пока идёт запрос)
+async function jvWaitLive(ms){
+  const t0=Date.now()
+  while(Date.now()-t0<(ms||9000)){
+    const s=jvTxt('d-spend')
+    if(s&&s!=='⏳'&&s!=='—')return true
+    if(_jvAbort)return false
+    await jvWait(260)
+  }
+  return false
 }
 
-// ── Запуск ──
+// ── Сцена 1: что произошло за сутки ──
+async function jvPhaseToday(){
+  const nb=document.getElementById('nb-dash');if(nb)nb.click()
+  await jvWait(400)
+  await jvSay('Начнём с того, что произошло за последние сутки.')
+  if(typeof openJdlToday==='function'){openJdlToday();await jvWait(700)}
+  const{ev,ins}=buildJdlToday()
+  if(!ev.length)await jvSay('За сутки ничего примечательного. Тихо, как в хорошем сейфе.')
+  for(const e of ev.slice(0,5)){
+    if(_jvAbort)break
+    const head=String(e[1]).replace(/:/g,' —')
+    const body=String(e[2]||'')
+    const useBody=/\d/.test(body)&&!/[\\\/{}]/.test(body)&&body.length<90
+    await jvSay(head+(useBody?', '+body+'.':'.'))
+  }
+  if(ins.length)await jvSay('Также записано заметок в Grind: '+ins.length+'.')
+  document.getElementById('mo-jt')?.classList.remove('open')
+  await jvWait(300)
+}
+
+// ── Сцена 2: статистика по региону ──
+async function jvPhaseStats(reg,isFirst){
+  const label=reg==='CZ'?'Чехии':'Польше'
+  if(CURRENT_REGION!==reg&&typeof switchRegion==='function'){await switchRegion(reg);await jvWait(900)}
+  const nb=document.getElementById('nb-dash');if(nb)nb.click()
+  await jvWait(300)
+  // сравнение с прошлым периодом и окно в сутки
+  const cmp=document.getElementById('cmp-tgl');if(cmp&&!cmp.classList.contains('on'))cmp.click()
+  const day1=document.querySelector('.pbtns .pb[data-days="1"]');if(day1)day1.click()
+  await jvWait(600);await jvWaitLive()
+
+  await jvSay(isFirst?`Перехожу к статистике. Сначала по ${label}.`:`Теперь по ${label}.`)
+
+  const sp=jvNum('hero-tick')
+  if(sp===null||sp===0){await jvSay('Открута за сутки нет.');return}
+  await jvSay(`Открут за сутки — ${Math.round(sp)} долларов.`,'#hero-tick','СПЕНД 24 Ч')
+
+  // дельта к прошлому периоду
+  const dl=jvTxt('hero-dl')
+  const dm=dl.match(/(↑|↓|→)\s*(\d+)/)
+  if(dm){
+    const d=(dm[1]==='↓'?-1:1)*parseInt(dm[2])
+    const q=jvQuipDelta(dm[1]==='→'?0:d)
+    if(q)await jvSay(q,'#hero-dl','VS ПРОШЛЫЙ')
+  }
+
+  const leads=jvNum('hero-l'),quals=jvNum('hero-q')
+  await jvSay(`Лидов ${leads||0}, квалифицированных ${quals||0}.`,'#hero-l','ЛИДЫ')
+  const qq=jvQuipQuals(leads,quals);if(qq)await jvSay(qq,'#hero-q','КВАЛЫ')
+
+  const cpl=jvNum('d-cpl')
+  if(cpl){
+    await jvSay(`Цена лида — ${cpl} долларов.`,'#d-cpl','CPL')
+    const q=jvQuipCPL(cpl,reg);if(q)await jvSay(q,'#d-cpl','CPL')
+  }
+  const cql=jvNum('d-cql')
+  if(cql)await jvSay(`Цена квала — ${cql} долларов.`,'#d-cql','CQL')
+  jvClearSpot()
+}
+
+// ── Сцена 3: задачи ──
+async function jvPhaseTasks(){
+  const nb=document.getElementById('nb-tasks');if(nb)nb.click()
+  await jvWait(700)
+  const me=CURRENT_USER&&CURRENT_USER.name
+  const todo=TASKS.filter(t=>t.col==='todo'&&(!me||t.assignee===me))
+  const due=TASKS.filter(t=>t.deadline&&t.deadline<todayISO()&&t.col!=='done'&&t.col!=='archived'&&(!me||t.assignee===me))
+  const proc=TASKS.filter(t=>t.col==='process'&&(!me||t.assignee===me))
+
+  if(!todo.length&&!due.length&&!proc.length){
+    await jvSay('Задач на сегодня нет. Доска чистая, сэр.')
+    return
+  }
+  await jvSay(todo.length?`На сегодня в работе ${todo.length} ${jvPlural(todo.length,'задача','задачи','задач')}.`:'В колонке на сегодня пусто.')
+  if(due.length)await jvSay(`Просрочено ${due.length}. Рекомендую начать именно с них.`)
+  if(proc.length)await jvSay(`В процессе ${proc.length}.`)
+  // что конкретно делать
+  const first=[...due,...todo].slice(0,3)
+  if(first.length){
+    await jvSay('Ближайшее: '+first.map(t=>String(t.title).slice(0,46)).join(', ')+'.')
+  }
+}
+function jvPlural(n,a,b,c){const n1=n%10,n2=n%100
+  if(n1===1&&n2!==11)return a
+  if(n1>=2&&n1<=4&&(n2<10||n2>=20))return b
+  return c}
+
 async function jarvisBrief(){
+  if(!jvAllowed())return
   if(_jvRunning)return
   _jvAbort=false;_jvRunning=true
   try{speechSynthesis.cancel()}catch(e){}
+  const startRegion=CURRENT_REGION
   const own=await jvTrackStart()
   if(!own)jvMusicStart()
   jvHud(true,'')
-  const steps=jvScript()
-  for(const s of steps){
-    if(_jvAbort)break
-    if(s.page){
-      const nb=document.getElementById('nb-'+s.page)
-      if(nb){nb.click();await jvWait(650)}
-    }
-    if(s.spot)await jvSpotEl(s.spot,s.label)
-    jvHud(true,s.say)
-    jvDuck(true);await jvSpeak(s.say);jvDuck(false)
-    if(_jvAbort)break
-    await jvWait(220)
-  }
+  try{
+    const name=(CURRENT_USER&&CURRENT_USER.name)||''
+    const h=new Date().getHours()
+    const greet=h<5?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер'
+    await jvSay(`${greet}, ${name}. Все системы в норме. Позвольте ввести вас в курс дела.`)
+
+    if(!_jvAbort)await jvPhaseToday()
+    if(!_jvAbort)await jvPhaseStats('PL',true)
+    if(!_jvAbort)await jvPhaseStats('CZ',false)
+    if(!_jvAbort&&CURRENT_REGION!==startRegion&&typeof switchRegion==='function'){await switchRegion(startRegion);await jvWait(700)}
+    if(!_jvAbort)await jvPhaseTasks()
+    if(!_jvAbort)await jvSay(JV_PICK(JV_BYE))
+  }catch(e){console.log('JARVIS:',e.message)}
   jvClearSpot()
   if(!_jvAbort){
     const nb=document.getElementById('nb-tasks');if(nb)nb.click()
     jvHud(true,'Брифинг завершён')
-    await jvWait(1200)
-  }
-  jvHud(false);jvMusicStop();jvTrackStop();_jvRunning=false
+    await jvWait(900);jvHud(false)
+    await jvOutro(10000)          // 10 секунд музыки с плавным затуханием
+  }else{jvHud(false);jvMusicStop();jvTrackStop()}
+  _jvRunning=false
 }
 
 // Звук в браузере требует жеста пользователя. Пробуем стартовать сразу;
