@@ -3041,7 +3041,7 @@ async function importCampaignsFromMeta(){
     const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
       method:'POST',
       headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
-      body:JSON.stringify({action:'get_campaigns',region:CURRENT_REGION})
+      body:JSON.stringify({action:'get_campaigns',region:CURRENT_REGION,days:14})
     })
     if(!r.ok){
       toast('Нужно задеплоить get-campaigns функцию. Пока добавь РК вручную.','info')
@@ -4115,7 +4115,7 @@ async function autoMatchCampaignIds(){
     const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
       method:'POST',
       headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
-      body:JSON.stringify({action:'get_campaigns',region:CURRENT_REGION})
+      body:JSON.stringify({action:'get_campaigns',region:CURRENT_REGION,days:14})
     })
     const d=await r.json()
     if(!d.campaigns?.length){setSS('ok','—');return}
@@ -4752,6 +4752,29 @@ function normDate(d){
 }
 
 var _buyerCache={}
+// ── Привязать campaign_id к заливам по данным сверки ──
+// Надёжнее импорта: берёт ВСЕ кампании со спендом за период, а не только созданные за 3 дня.
+async function linkRks(from,to){
+  from=from||document.getElementById('pd-from')?.value
+  to=to||document.getElementById('pd-to')?.value||from
+  if(!from){console.log('Укажи период: linkRks("2026-09-15","2026-09-18")');return}
+  const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'reconcile',region:CURRENT_REGION,since:from,until:to})})
+  const d=await r.json()
+  if(!d.ok){toast('Сверка: '+(d.error||'ошибка'),'err');return}
+  const used=new Set(ZALIVS.filter(z=>z.campaign_id).map(z=>String(z.campaign_id)))
+  let n=0
+  for(const camp of d.campaigns){
+    if(used.has(String(camp.campaign_id)))continue
+    const pool=ZALIVS.filter(z=>!z.campaign_id)
+    const normName=s=>s.trim().replace(/\s+/g,' ').toLowerCase()
+    const t=pool.find(z=>normName(z.name)===normName(camp.name))||fuzzyMatchZaliv(camp.name,pool)
+    if(!t)continue
+    const{error}=await db.from('zalivs').update({campaign_id:String(camp.campaign_id),updated_at:new Date().toISOString()}).eq('id',t.id)
+    if(!error){t.campaign_id=String(camp.campaign_id);used.add(String(camp.campaign_id));n++;console.log('✓ '+t.name+' → '+camp.campaign_id)}
+  }
+  if(n){toast('Привязано РК: '+n,'ok');rzalivs();rdash()}else toast('Нечего привязывать','info')
+  return n
+}
 // ── Сверка спенда: Meta (все кампании аккаунтов) vs то, что суммирует CRM ──
 // Показывает ПОЧЕМУ цифры расходятся: не импортированные РК, без campaign_id, в TOGO, не тот регион.
 async function checkSpend(from,to){
@@ -4781,7 +4804,8 @@ async function checkSpend(from,to){
     console.table(missing.map(c=>({spend:c.spend,name:c.name,причина:reason(c),campaign_id:c.campaign_id})))
   }else console.log('%c✓ Все кампании Meta учтены в CRM','color:#3DBE8B')
   const noId=ZALIVS.filter(z=>!z.togo&&!z.campaign_id)
-  if(noId.length){console.log('%cРК в CRM без campaign_id ('+noId.length+') — их спенд не считается:','color:#D4AF37');console.table(noId.map(z=>({name:z.name,date:z.date})))}
+  if(noId.length){console.log('%cРК в CRM без campaign_id ('+noId.length+') — их спенд не считается:','color:#D4AF37');console.table(noId.map(z=>({name:z.name,date:z.date})))
+    console.log('%c→ выполни linkRks("'+from+'","'+to+'") чтобы привязать их автоматически','color:#6E9BFF;font-weight:bold')}
   toast('Meta $'+d.total+' · CRM $'+crmTotal,'info')
   return d
 }
