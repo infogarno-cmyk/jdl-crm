@@ -825,6 +825,26 @@ tr.zr2.zsel td{background:linear-gradient(90deg,rgba(212,175,55,.07),transparent
 #jv-menu button{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--text2);
   font:500 12.5px var(--sans);padding:7px 9px;border-radius:7px;cursor:pointer}
 #jv-menu button:hover{background:var(--bg3);color:#fff}
+
+#jv-vp{position:fixed;inset:0;z-index:99996;background:rgba(4,6,11,.72);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center}
+#jv-vp .vp-box{width:min(520px,92vw);max-height:82vh;display:flex;flex-direction:column;background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+#jv-vp .vp-h{display:flex;justify-content:space-between;align-items:center;font:700 16px var(--sans);color:#fff;margin-bottom:4px}
+#jv-vp .vp-x{border:0;background:transparent;color:var(--text3);font-size:22px;cursor:pointer;line-height:1}
+#jv-vp .vp-sub{font:400 12.5px var(--sans);color:var(--text3);margin-bottom:14px}
+#jv-vp .vp-list{overflow-y:auto;flex:1;margin:-4px -4px 10px;padding:4px}
+#jv-vp .vp-i{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer}
+#jv-vp .vp-i:hover{border-color:var(--border3)}
+#jv-vp .vp-i.on{border-color:#6E9BFF;background:rgba(110,155,255,.08)}
+#jv-vp .vp-i b{display:block;font:600 13px var(--sans);color:#fff}
+#jv-vp .vp-i span{font:400 11px var(--mono);color:var(--text3)}
+#jv-vp .vp-i button{border:1px solid var(--border2);background:transparent;color:#8FB4FF;border-radius:7px;padding:4px 10px;cursor:pointer}
+#jv-vp .vp-ctl{display:flex;gap:14px;padding:10px 0;border-top:1px solid var(--border)}
+#jv-vp .vp-ctl label{flex:1;display:flex;align-items:center;gap:7px;font:500 11.5px var(--sans);color:var(--text3)}
+#jv-vp .vp-ctl input{flex:1;accent-color:#6E9BFF;height:3px}
+#jv-vp .vp-ctl b{font:700 11px var(--mono);color:#8FB4FF;min-width:30px}
+#jv-vp .vp-foot{display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--border)}
+#jv-vp .vp-foot button{flex:1;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font:600 12px var(--sans);padding:9px;border-radius:9px;cursor:pointer}
+#jv-vp .vp-foot button:hover{color:#fff;border-color:#6E9BFF}
 /* ══ JARVIS BRIEFING ══ */
 #jv-hud{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:99990;display:flex;align-items:center;gap:14px;
   background:rgba(10,12,17,.93);border:1px solid rgba(110,155,255,.32);border-radius:14px;padding:13px 18px;
@@ -1360,7 +1380,8 @@ if(_jvBtn){
       <div class="jvm-sep"></div>
       <div class="jvm-l">Голос</div>
       <div class="jvm-n">${has11?'ElevenLabs подключён':'встроенный синтез браузера'}</div>
-      <button data-a="voices">⚙ Настроить ElevenLabs</button>`
+      <button data-a="picker">🎙 Выбрать голос и послушать</button>
+      <button data-a="voices">⚙ Подключить ElevenLabs</button>`
     const r=_jvBtn.getBoundingClientRect()
     m.style.cssText=`top:${r.bottom+8}px;right:${Math.max(10,innerWidth-r.right)}px`
     document.body.appendChild(m)
@@ -1380,6 +1401,7 @@ if(_jvBtn){
       if(a==='auto'){if(off)localStorage.removeItem('jdl_jarvis_off');else localStorage.setItem('jdl_jarvis_off','1');paint();close()}
       if(a==='track'){close();jarvisTrack()}
       if(a==='trackoff'){close();jarvisTrackOff()}
+      if(a==='picker'){close();jarvisVoicePicker();return}
       if(a==='voices'){close()
         const k=prompt('Ключ ElevenLabs (оставь пустым, чтобы вернуть встроенный голос):',localStorage.getItem('jdl_11_key')||'')
         if(k===null)return
@@ -2152,6 +2174,79 @@ function jvOutro(ms){
   },dt)
   return jvWait(ms)
 }
+// ── Выбор голоса с прослушиванием ──
+// Движки у всех разные: на одной машине голос сносный, на другой — робот.
+// Поэтому даём послушать все и выбрать, а не угадываем.
+const JV_DEMO='Добрый вечер, сэр. Открут за сутки — 428 долларов. Цена лида в пределах нормы.'
+function jvAllVoices(){
+  const vs=speechSynthesis.getVoices()||[]
+  const ru=vs.filter(v=>/ru/i.test(v.lang))
+  const other=vs.filter(v=>!/ru/i.test(v.lang)&&/en[-_]GB|en[-_]US/i.test(v.lang))
+  return[...ru,...other]
+}
+function jvDemo(voice,rate,pitch){
+  try{
+    speechSynthesis.cancel()
+    const u=new SpeechSynthesisUtterance(JV_DEMO)
+    if(voice){u.voice=voice;u.lang=voice.lang}
+    u.rate=rate!==undefined?rate:jvRate();u.pitch=pitch!==undefined?pitch:jvPitch();u.volume=1
+    speechSynthesis.speak(u)
+  }catch(e){}
+}
+function jvRate(){const v=parseFloat(localStorage.getItem('jdl_voice_rate'));return isFinite(v)?v:.92}
+function jvPitch(){const v=parseFloat(localStorage.getItem('jdl_voice_pitch'));return isFinite(v)?v:.98}
+
+function jarvisVoicePicker(){
+  const list=jvAllVoices()
+  if(!list.length){toast('Браузер не отдал список голосов — перезагрузи страницу','err');return}
+  const saved=localStorage.getItem('jdl_voice_name')||''
+  document.getElementById('jv-vp')?.remove()
+  const d=document.createElement('div');d.id='jv-vp'
+  d.innerHTML=`<div class="vp-box">
+    <div class="vp-h">Голос JARVIS <button class="vp-x">×</button></div>
+    <div class="vp-sub">Нажми на голос, чтобы послушать. Выбранный сохранится.</div>
+    <div class="vp-list">${list.map((v,i)=>`
+      <div class="vp-i${v.name===saved?' on':''}" data-i="${i}">
+        <div><b>${v.name}</b><span>${v.lang}${v.localService?' · локальный':' · сетевой'}</span></div>
+        <button data-play="${i}">▶</button>
+      </div>`).join('')}</div>
+    <div class="vp-ctl">
+      <label>Темп <input type="range" id="vp-rate" min="70" max="115" value="${Math.round(jvRate()*100)}"><b id="vp-rate-n">${jvRate().toFixed(2)}</b></label>
+      <label>Тон <input type="range" id="vp-pitch" min="60" max="130" value="${Math.round(jvPitch()*100)}"><b id="vp-pitch-n">${jvPitch().toFixed(2)}</b></label>
+    </div>
+    <div class="vp-foot">
+      <button class="vp-test">▶ Прослушать</button>
+      <button class="vp-11">Подключить ElevenLabs — живой голос</button>
+    </div>
+  </div>`
+  document.body.appendChild(d)
+  const rate=d.querySelector('#vp-rate'),pitch=d.querySelector('#vp-pitch')
+  const cur=()=>list[+(d.querySelector('.vp-i.on')?.dataset.i||0)]
+  rate.oninput=()=>{localStorage.setItem('jdl_voice_rate',rate.value/100);d.querySelector('#vp-rate-n').textContent=(rate.value/100).toFixed(2)}
+  pitch.oninput=()=>{localStorage.setItem('jdl_voice_pitch',pitch.value/100);d.querySelector('#vp-pitch-n').textContent=(pitch.value/100).toFixed(2)}
+  d.onclick=e=>{
+    if(e.target.classList.contains('vp-x')||e.target===d){speechSynthesis.cancel();d.remove();return}
+    const pi=e.target.dataset.play
+    const row=e.target.closest('.vp-i')
+    if(row){
+      d.querySelectorAll('.vp-i').forEach(x=>x.classList.remove('on'))
+      row.classList.add('on')
+      const v=list[+row.dataset.i]
+      localStorage.setItem('jdl_voice_name',v.name)
+      jvDemo(v,rate.value/100,pitch.value/100)
+      return
+    }
+    if(e.target.classList.contains('vp-test')){jvDemo(cur(),rate.value/100,pitch.value/100);return}
+    if(e.target.classList.contains('vp-11')){
+      d.remove()
+      const k=prompt('Ключ ElevenLabs:',localStorage.getItem('jdl_11_key')||'')
+      if(!k||!k.trim())return
+      jarvisSetup(k.trim());jarvisVoices().then(()=>{
+        const vid=prompt('voice_id из списка в консоли (F12):',localStorage.getItem('jdl_11_voice')||'')
+        if(vid&&vid.trim())jarvisSetup(k.trim(),vid.trim())})
+    }
+  }
+}
 // ── Голос через ElevenLabs (опционально) ──
 // Ключ и голос задаются один раз: jarvisSetup('sk-...','voiceId')
 // Без ключа используется встроенный синтез браузера.
@@ -2203,6 +2298,8 @@ const JV_MALE=/male|мужск|dmitr|дмитр|yuri|юри|pavel|павел|art
 const JV_FEM=/female|женск|alena|алена|milena|милена|tatyana|татьян|svetlana|светлан|irina|ирин|katerina|катерин|zira|samantha/i
 function jvVoice(){
   const vs=speechSynthesis.getVoices()||[]
+  const saved=localStorage.getItem('jdl_voice_name')
+  if(saved){const s=vs.find(v=>v.name===saved);if(s)return s}
   const ru=vs.filter(v=>/ru/i.test(v.lang))
   return ru.find(v=>JV_MALE.test(v.name)&&!JV_FEM.test(v.name))
     ||ru.find(v=>!JV_FEM.test(v.name))
@@ -2244,7 +2341,7 @@ function jvUtter(text){
       const u=new SpeechSynthesisUtterance(text)
       const v=jvVoice();if(v){u.voice=v;u.lang=v.lang}
       // спокойно и чуть ниже обычного, но без «подвала» — иначе получается робот
-      u.rate=.92;u.pitch=.98;u.volume=1
+      u.rate=jvRate();u.pitch=jvPitch();u.volume=1
       const t0=Date.now();let done=false
       const fin=()=>{if(done)return;done=true
         // мгновенный «конец» = синтез недоступен: дальше идём по времени чтения
