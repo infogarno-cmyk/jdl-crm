@@ -2072,6 +2072,16 @@ let _jvRec=null,_jvListening=false
 
 function jvRecSupported(){return !!(window.SpeechRecognition||window.webkitSpeechRecognition)}
 
+// ── Постоянное прослушивание с обращением ──
+// Микрофон слушает всё время, но команды выполняет только после «Джарвис».
+// После обращения даётся окно в 20 секунд, внутри которого можно говорить без него.
+let _jvAwake=0,_jvRestart=null
+const JV_WAKE=/\b(джарвис|джарвиз|джарвес|jarvis|привет джарвис)\b/i
+const JV_HELLO=['К вашим услугам, сэр.','Слушаю, сэр.','Да, сэр.','Я здесь, сэр.','Всегда к вашим услугам.']
+
+function jvAwakeNow(){return Date.now()<_jvAwake}
+function jvWakeOn(){_jvAwake=Date.now()+20000;jvMicUI(true,'awake')}
+
 function jvListen(){
   if(!jvAllowed())return
   if(_jvListening){jvListenStop();return}
@@ -2079,32 +2089,53 @@ function jvListen(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition
   try{
     _jvRec=new SR()
-    _jvRec.lang='ru-RU';_jvRec.continuous=false;_jvRec.interimResults=true;_jvRec.maxAlternatives=1
-    _jvRec.onstart=()=>{_jvListening=true;jvMicUI(true);jvHud(true,'Слушаю…')}
-    _jvRec.onresult=e=>{
-      let txt='',final=false
-      for(const r of e.results){txt+=r[0].transcript;if(r.isFinal)final=true}
-      jvHud(true,'« '+txt+' »')
-      if(final){jvListenStop();jvCommand(txt.trim())}
+    _jvRec.lang='ru-RU';_jvRec.continuous=true;_jvRec.interimResults=true;_jvRec.maxAlternatives=1
+    _jvRec.onstart=()=>{_jvListening=true;jvMicUI(true);jvHud(true,'Скажите «Джарвис»…')}
+    _jvRec.onresult=async e=>{
+      let fin='',tmp=''
+      for(let k=e.resultIndex;k<e.results.length;k++){
+        const r=e.results[k]
+        if(r.isFinal)fin+=r[0].transcript+' '; else tmp+=r[0].transcript
+      }
+      if(tmp&&!fin)jvHud(true,(jvAwakeNow()?'« ':'… ')+tmp+' »')
+      const said=fin.trim()
+      if(!said)return
+      const hasWake=JV_WAKE.test(said)
+      // пока не обратились — молчим, чтобы не реагировать на разговоры вокруг
+      if(!hasWake&&!jvAwakeNow()){jvHud(true,'Скажите «Джарвис»…');return}
+      let cmd=said.replace(JV_WAKE,'').replace(/^[\s,.:;!?—-]+/,'').trim()
+      jvWakeOn()
+      if(hasWake&&!cmd){await jvReply(JV_PICK(JV_HELLO));jvHud(true,'Слушаю…');return}
+      jvHud(true,'« '+cmd+' »')
+      await jvCommand(cmd)
+      if(_jvListening)jvHud(true,'Слушаю…')
     }
     _jvRec.onerror=e=>{
-      jvListenStop()
-      const m={'not-allowed':'Нет доступа к микрофону — разреши в настройках сайта',
-               'no-speech':'Не расслышал','audio-capture':'Микрофон не найден',
-               'network':'Распознавание требует соединения'}[e.error]||('Ошибка: '+e.error)
-      jvHud(true,m);setTimeout(()=>{if(!_jvRunning)jvHud(false)},2600)
+      if(e.error==='no-speech'||e.error==='aborted')return   // тишина — это нормально
+      if(e.error==='not-allowed'){jvListenStop();toast('Нет доступа к микрофону — разреши в настройках сайта','err');return}
+      console.log('JARVIS mic:',e.error)
     }
-    _jvRec.onend=()=>{jvListenStop()}
+    // распознавание само обрывается через паузу — поднимаем обратно, пока режим включён
+    _jvRec.onend=()=>{
+      if(!_jvListening)return
+      clearTimeout(_jvRestart)
+      _jvRestart=setTimeout(()=>{try{_jvRec&&_jvRec.start()}catch(e){}},250)
+    }
     _jvRec.start()
+    toast('Слушаю. Скажите «Джарвис»','ok')
   }catch(e){toast('Не удалось запустить микрофон: '+e.message,'err')}
 }
 function jvListenStop(){
-  _jvListening=false;jvMicUI(false)
-  try{_jvRec&&_jvRec.stop()}catch(e){}
+  const was=_jvListening
+  _jvListening=false;_jvAwake=0;clearTimeout(_jvRestart);jvMicUI(false)
+  try{if(_jvRec){_jvRec.onend=null;_jvRec.stop()}}catch(e){}
+  if(was)jvHud(false)
 }
-function jvMicUI(on){
+function jvMicUI(on,mode){
   const b=document.getElementById('nb-mic')
-  if(b)b.classList.toggle('live',!!on)
+  if(!b)return
+  b.classList.toggle('live',!!on)
+  b.classList.toggle('awake',mode==='awake')   // ярче, пока идёт разговор
 }
 
 // Ответ голосом + субтитр, с автоскрытием
@@ -2153,6 +2184,24 @@ function jvParse(raw){
   if(has('цена квала','какой cql','какой сикьюэл'))return{cmd:'ask',arg:'cql'}
 
   // действия
+  // разговорное
+  if(has('спасибо','благодарю','спс'))return{cmd:'thanks'}
+  if(has('как дела','как ты','как сам'))return{cmd:'howareyou'}
+  if(has('кто ты','как тебя зовут','ты кто'))return{cmd:'whoami'}
+  if(has('который час','сколько времени','время'))return{cmd:'time'}
+  if(has('что умеешь','какие команды','помощь','что ты можешь','хелп'))return{cmd:'help'}
+  if(has('пока','до свидания','отбой','спокойной ночи'))return{cmd:'bye'}
+  if(has('пошути','шутк','развесели'))return{cmd:'joke'}
+
+  // сводные вопросы
+  if(has('как дела по','общая картина','как обстоят','итоги','резюме'))return{cmd:'summary'}
+  if(has('сравни регион','где лучше','какой регион лучше','польша или чехия'))return{cmd:'compare'}
+  if(has('сколько рк','сколько кампан','сколько заливов','активных рк'))return{cmd:'rkcount'}
+  if(has('какие домены свободн','свободные домены','сколько доменов'))return{cmd:'domains'}
+  if(has('лучшая рк','лучший залив','что лучше всего','топ рк'))return{cmd:'bestrk'}
+  if(has('худш','что плохо','что слить','что выключ'))return{cmd:'worstrk'}
+  if(has('просроч','что горит','дедлайн'))return{cmd:'overdue'}
+
   if(has('синхрон','обнови','синк','sync'))return{cmd:'sync'}
   if(has('сверь','сверк','проверь спенд'))return{cmd:'check'}
   if(has('импорт'))return{cmd:'import'}
@@ -2187,6 +2236,99 @@ async function jvCommand(raw){
       if(typeof openJdlToday==='function'){openJdlToday();await jvReply('События за сутки, сэр.')}
       else await jvReply('Сводка недоступна.')
       return
+
+    case 'thanks':
+      await jvReply(JV_PICK(['Всегда пожалуйста, сэр.','Рад служить.','Не стоит благодарности, сэр.','Это моя работа, сэр.']));return
+
+    case 'howareyou':
+      await jvReply(JV_PICK(['Все системы в норме, сэр. Чего не скажешь о некоторых связках.',
+        'Работаю штатно. Слежу за цифрами, пока вы заняты важным.',
+        'Отлично, сэр. Ни одного сбоя с момента запуска.']));return
+
+    case 'whoami':
+      await jvReply('Джарвис. Слежу за вашими кампаниями, считаю цифры и изредка позволяю себе замечания.');return
+
+    case 'time':{
+      const d=new Date()
+      await jvReply(`Сейчас ${d.getHours()} ${jvPlural(d.getHours(),'час','часа','часов')} ${d.getMinutes()} ${jvPlural(d.getMinutes(),'минута','минуты','минут')}, сэр.`);return}
+
+    case 'joke':
+      await jvReply(JV_PICK([
+        'Дорогой лид — это не проблема, сэр. Это инвестиция в смирение.',
+        'Хороший медиабайер отличается от плохого тем, что выключает связку до того, как она выключит его.',
+        'Статистика подобна бикини, сэр: показывает многое, но скрывает главное.',
+        'Я бы пошутил про CPL, но у нас он и так смешной.',
+        'Медиабайер — единственный человек, который радуется, когда что-то падает.',
+        'Тест не бывает неудачным, сэр. Бывает дорогой.',
+        'Идеальная связка живёт ровно до того момента, когда вы решите её масштабировать.',
+        'Алгоритм учится на ваших деньгах. Дорогое, но качественное образование.',
+        'Если креатив работает — не трогайте. Если не работает — тоже не трогайте, подождите. Шучу, трогайте.',
+        'Пиксель как кот, сэр: делает вид, что понимает, и поступает по-своему.',
+        'Лучшее время выключить связку было вчера. Второе лучшее — сейчас.',
+        'Знаете, почему у медиабайеров нет хобби? У них есть кабинет.',
+        'Модерация отклонила объявление. Причину не сообщила. Как обычно, сэр.',
+        'Отдел продаж говорит, что лиды плохие. Лиды говорят, что им не перезвонили.',
+        'Масштабирование — это когда вы умножаете на десять и то, и другое.'
+      ]));return
+
+    case 'bye':
+      await jvReply(JV_PICK(JV_BYE));jvListenStop();return
+
+    case 'help':
+      await jvReply('Могу открыть любой раздел, переключить регион, назвать открут, цену лида и квала, сравнить регионы, показать задачи и просрочки, запустить брифинг или синхронизацию. Просто скажите, что нужно.');return
+
+    case 'rkcount':{
+      const act=ZALIVS.filter(z=>!z.togo&&z.ind!=='off')
+      document.getElementById('nb-zalivs')?.click()
+      await jvReply(`Активных кампаний ${act.length} ${CURRENT_REGION==='CZ'?'в Чехии':'в Польше'}, всего заведено ${ZALIVS.length}.`);return}
+
+    case 'overdue':{
+      const me=CURRENT_USER&&CURRENT_USER.name
+      const due=TASKS.filter(t=>t.deadline&&t.deadline<todayISO()&&t.col!=='done'&&t.col!=='archived'&&(!me||t.assignee===me))
+      document.getElementById('nb-tasks')?.click()
+      if(!due.length){await jvReply('Просроченного ничего нет, сэр. Приятно удивлён.');return}
+      await jvReply(`Просрочено ${due.length}. ${due.slice(0,3).map(t=>String(t.title).slice(0,40)).join(', ')}. `+jvQuipDue(due.length));return}
+
+    case 'domains':{
+      document.getElementById('nb-domains')?.click();await jvWait(500)
+      const busy=Object.keys(lockedDomains()).length,all=allDKeys().length
+      await jvReply(`Занято ${busy} ${jvPlural(busy,'домен','домена','доменов')} из ${all}. Свободно ${Math.max(0,all-busy)}.`);return}
+
+    case 'bestrk':
+    case 'worstrk':{
+      document.getElementById('nb-zalivs')?.click();await jvWait(500)
+      const withCpl=ZALIVS.filter(z=>!z.togo&&z.campaign_id).map(z=>{
+        const s=zSrcStats(z);const an=RK_ANALYSES.filter(a=>a.zaliv_id===z.id).slice(-1)[0]
+        return{z,cpl:parseFloat(an&&an.cpl||0)||0,leads:(s&&s.leads)||0}}).filter(x=>x.cpl>0)
+      if(!withCpl.length){await jvReply('Пока не по чему сравнивать, сэр — нет ни одного анализа с ценой лида.');return}
+      withCpl.sort((a,b)=>a.cpl-b.cpl)
+      const pick=p.cmd==='bestrk'?withCpl[0]:withCpl[withCpl.length-1]
+      await jvReply(`${p.cmd==='bestrk'?'Лучшая':'Худшая'} по цене лида — ${String(pick.z.name).slice(0,44)}. Цена лида ${Math.round(pick.cpl)} долларов.`)
+      if(typeof openRk==='function')openRk(pick.z.id,pick.z.region)
+      return}
+
+    case 'summary':{
+      const nb2=document.getElementById('nb-dash');if(nb2)nb2.click()
+      await jvWait(500);await jvWaitLive(8000)
+      const sp=jvNum('hero-tick'),l=jvNum('hero-l'),q=jvNum('hero-q'),cpl=jvNum('d-cpl')
+      const reg=CURRENT_REGION==='CZ'?'Чехии':'Польше'
+      let s=`По ${reg}: открут ${Math.round(sp||0)} долларов, лидов ${l||0}, квалов ${q||0}.`
+      if(cpl)s+=` Цена лида ${Math.round(cpl)} долларов. `+jvQuipCPL(cpl)
+      await jvReply(s,'#hero-tick','ИТОГО');return}
+
+    case 'compare':{
+      const start=CURRENT_REGION,res={}
+      for(const r of ['PL','CZ']){
+        if(CURRENT_REGION!==r&&typeof switchRegion==='function'){await switchRegion(r);await jvWait(800)}
+        document.getElementById('nb-dash')?.click();await jvWait(400);await jvWaitLive(8000)
+        res[r]={sp:jvNum('hero-tick')||0,cpl:jvNum('d-cpl')||0,l:jvNum('hero-l')||0}
+      }
+      if(CURRENT_REGION!==start&&typeof switchRegion==='function')await switchRegion(start)
+      const a=res.PL,b=res.CZ
+      let s=`Польша: открут ${Math.round(a.sp)} долларов, лидов ${a.l}${a.cpl?`, цена лида ${Math.round(a.cpl)}`:''}. `
+      s+=`Чехия: открут ${Math.round(b.sp)} долларов, лидов ${b.l}${b.cpl?`, цена лида ${Math.round(b.cpl)}`:''}. `
+      if(a.cpl&&b.cpl)s+=a.cpl<b.cpl?'Польша сейчас выгоднее, сэр.':b.cpl<a.cpl?'Чехия сейчас выгоднее, сэр.':'Разницы практически нет.'
+      await jvReply(s);return}
 
     case 'nomusic':
       jvTrackStop();jvMusicStop();await jvReply('Музыку убрал.');return
@@ -2380,11 +2522,33 @@ function jvDemo(voice,rate,pitch){
     speechSynthesis.speak(u)
   }catch(e){}
 }
-function jvRate(){const v=parseFloat(localStorage.getItem('jdl_voice_rate'));return isFinite(v)?v:1.05}
-function jvPitch(){const v=parseFloat(localStorage.getItem('jdl_voice_pitch'));return isFinite(v)?v:.98}
+// У каждого движка своя манера. Локальные Microsoft (Pavel, Irina) звучат жестяно на
+// стандартных настройках: их надо вести медленнее и чуть выше, иначе получается жесть.
+function jvProfile(){
+  const n=(jvVoice()||{}).name||''
+  if(/pavel|павел/i.test(n))   return{rate:.88,pitch:1.06,jitter:.05}  // Павел: медленно и светлее
+  if(/irina|ирина|milena/i.test(n))return{rate:.9,pitch:1.0,jitter:.04}
+  if(/microsoft/i.test(n))     return{rate:.9,pitch:1.02,jitter:.045}
+  if(/google/i.test(n))        return{rate:1.0,pitch:1.0,jitter:.03}
+  return{rate:1.0,pitch:1.0,jitter:.03}
+}
+function jvRate(){const v=parseFloat(localStorage.getItem('jdl_voice_rate'));return isFinite(v)?v:jvProfile().rate}
+function jvPitch(){const v=parseFloat(localStorage.getItem('jdl_voice_pitch'));return isFinite(v)?v:jvProfile().pitch}
 
-function jarvisVoicePicker(){
-  const list=jvAllVoices()
+async function jvVoicesReady(){
+  // Chrome отдаёт сетевые голоса (Google) асинхронно: сразу после загрузки список неполный
+  let list=jvAllVoices()
+  if(list.length&&list.some(v=>/google/i.test(v.name)))return list
+  await new Promise(res=>{
+    let done=false
+    const fin=()=>{if(!done){done=true;res()}}
+    speechSynthesis.addEventListener('voiceschanged',fin,{once:true})
+    setTimeout(fin,1500)
+  })
+  return jvAllVoices()
+}
+async function jarvisVoicePicker(){
+  const list=await jvVoicesReady()
   if(!list.length){toast('Браузер не отдал список голосов — перезагрузи страницу','err');return}
   const saved=localStorage.getItem('jdl_voice_name')||''
   document.getElementById('jv-vp')?.remove()
@@ -2645,6 +2809,41 @@ function jvNorm(t){
     .replace(/[·•|]/g,', ').replace(/[—–]/g,', ')
     .replace(/\s{2,}/g,' ').trim()
 }
+// Знак ударения U+0301 после гласной — движки читают слово правильно.
+// Без него «хасла» звучит как «хаслА», а «квалы» как «квалЫ».
+// \b в JS не работает с кириллицей (там только латиница), поэтому границы задаём вручную.
+const JV_STRESS=[
+  ['хасла','ха\u0301сла'],['хасл','ха\u0301сл'],
+  ['квалы','ква\u0301лы'],['квалов','ква\u0301лов'],['квала','ква\u0301ла'],['квал','ква\u0301л'],
+  ['залива','зали\u0301ва'],['заливы','зали\u0301вы'],['заливов','зали\u0301вов'],
+  ['открут','откру\u0301т'],['открута','откру\u0301та'],
+  ['связку','свя\u0301зку'],['связки','свя\u0301зки'],['связка','свя\u0301зка'],
+  ['крео','кре\u0301о'],['лиды','ли\u0301ды'],['лидов','ли\u0301дов'],['лида','ли\u0301да']
+].map(([w,to])=>[new RegExp('(^|[^а-яёa-z\u0301])'+w+'(?![а-яёa-z])','gi'),to])
+function jvStress(t){
+  let s=String(t)
+  for(const[re,to]of JV_STRESS)s=s.replace(re,(m,p1)=>{
+    const body=m.slice((p1||'').length)
+    // сохраняем регистр: «Квалов» не должно превращаться в «квалов»
+    const rep=/^[А-ЯЁ]/.test(body)?to[0].toUpperCase()+to.slice(1):to
+    return (p1||'')+rep
+  })
+  return s
+}
+// ── Интонация по смыслу ──
+// Приветствие звучит теплее, предупреждение ниже и медленнее, подколка легче и быстрее,
+// вопрос идёт вверх. Без этого всё читается одной краской.
+function jvTone(s){
+  const t=String(s)
+  if(/[?]\s*$/.test(t))                                   return{r:.02,p:.10,tag:'вопрос'}
+  if(/^(внимание|просрочено|рекомендую|дорого|осторожно)/i.test(t)
+     ||/(дорого|из берегов|вмешаться|пересобрать|горит)/i.test(t)) return{r:-.07,p:-.07,tag:'тревога'}
+  if(/(отличн|прекрасн|дёшево|дешевле|масштабируйте|поздравляю|чисто)/i.test(t))  return{r:.03,p:.07,tag:'одобрение'}
+  if(/(полагаю|позволю себе|надеюсь|если бы|классика|обед|фонд|смирени)/i.test(t))return{r:.05,p:.03,tag:'ирония'}
+  if(/(сэр\.|доброе утро|добрый день|добрый вечер|доброй ночи|к вашим услугам)/i.test(t)) return{r:-.02,p:.05,tag:'тепло'}
+  if(/[!]\s*$/.test(t))                                   return{r:.04,p:.08,tag:'акцент'}
+  return{r:0,p:0,tag:''}
+}
 // ── Просодия ──
 // Робот выдаёт себя постоянством: один тон, один темп, равные паузы. Живая речь всё время
 // чуть плавает, тормозит на цифрах и по-разному держит паузу после точки и после запятой.
@@ -2668,17 +2867,19 @@ function jvChunks(text){
   return out
 }
 async function jvSpeakLocal(text){
-  const parts=jvChunks(text)
+  const parts=jvChunks(text).map(jvStress)
   for(let i=0;i<parts.length;i++){
     if(_jvAbort)return
     const s=parts[i]
     // на цифрах притормаживаем — так их легче разобрать
     const slow=/(долларов|доллара|процент|тысяч)/.test(s)?-.05:0
     // лёгкий разброс тона и темпа: две фразы подряд не звучат одинаково
-    const j=_jvPhrase++%4
-    await jvUtter(s,{rate:jvRate()+slow+[0,.03,-.02,.015][j],pitch:jvPitch()+[0,-.03,.025,-.015][j]})
+    const j=_jvPhrase++%4,jt=jvProfile().jitter,tn=jvTone(s)
+    await jvUtter(s,{rate:jvRate()+slow+tn.r+[0,1,-.7,.5][j]*jt,
+                     pitch:jvPitch()+tn.p+[0,-1,.8,-.5][j]*jt})
     // после точки пауза длиннее, чем после запятой — как при чтении вслух
-    if(i<parts.length-1)await jvWait(/[.!?\u2026]$/.test(s)?260:130)
+    const loc=(jvVoice()||{}).localService
+    if(i<parts.length-1)await jvWait((/[.!?\u2026]$/.test(s)?260:130)*(loc?1.5:1))
   }
 }
 function jvUtter(text,opt){
@@ -2750,14 +2951,39 @@ function jvStop(){
 const JV_PICK=a=>a[Math.floor(Math.random()*a.length)]
 function jvQuipCPL(cpl,reg){
   if(!cpl)return ''
-  if(cpl<8)return JV_PICK(['Это отличная цена, сэр. Рекомендую не трогать то, что работает.','Дёшево. Я бы на вашем месте подливал.','Такой лид стоит дешевле кофе. Масштабируйте.','Прекрасная цена. Редкий случай, когда мне нечего добавить.','Если бы я умел радоваться, сэр, это был бы подходящий момент.'])
+  if(cpl<8)return JV_PICK(['Это отличная цена, сэр. Рекомендую не трогать то, что работает.',
+    'Дёшево. Я бы на вашем месте подливал.',
+    'Такой лид стоит дешевле кофе. Масштабируйте.',
+    'Прекрасная цена. Редкий случай, когда мне нечего добавить.',
+    'Если бы я умел радоваться, сэр, это был бы подходящий момент.',
+    'Цена почти неприлично низкая. Не спугните.',
+    'Вот за это я и люблю свою работу, сэр.',
+    'Отличный результат. Запишите, как вы это сделали — пригодится.',
+    'При такой цене можно и не спать, сэр. Но лучше поспите.',
+    'Лид дешевле проезда в метро. Я впечатлён.'])
   if(cpl<13)return JV_PICK(['Цена в рамках нормы.','Ровно. Ничего героического, но и жаловаться не на что.','Приемлемо, сэр.'])
   if(cpl<20)return JV_PICK(['Дороговато. Я бы присмотрелся к креативам.','Цена подросла. Возможно, аудитория подустала.','Выше комфортного. Стоит проверить связки.'])
-  return JV_PICK(['Дорого, сэр. Откровенно дорого.','Такой лид обходится как хороший обед. Предлагаю вмешаться.','Цена вышла из берегов. Рекомендую пересобрать связку.','За эти деньги лид мог бы приехать лично.','Полагаю, кабинет решил, что мы благотворительный фонд.'])
+  return JV_PICK(['Дорого, сэр. Откровенно дорого.',
+    'Такой лид обходится как хороший обед. Предлагаю вмешаться.',
+    'Цена вышла из берегов. Рекомендую пересобрать связку.',
+    'За эти деньги лид мог бы приехать лично.',
+    'Полагаю, кабинет решил, что мы благотворительный фонд.',
+    'Я бы сказал «дороговато», но это было бы слишком мягко.',
+    'Каждый лид обходится в стоимость ужина. И без десерта.',
+    'Тут либо креатив устал, либо аудитория. Или оба, сэр.',
+    'Мы платим премию за терпение. Я бы её отменил.',
+    'Цена растёт быстрее, чем мои надежды на неё.',
+    'Позволю себе заметить: это уже не тест, это спонсорство.'])
 }
 function jvQuipQuals(leads,quals){
   if(!leads)return ''
-  if(!quals)return JV_PICK(['Квалов пока нет. Либо рано, либо трафик мимо.','Ни одного квала. Надеюсь, отдел продаж просто спит.','Квалификаций ноль. Это стоит проверить.','Лиды есть, квалов нет. Классика жанра, сэр.'])
+  if(!quals)return JV_PICK(['Квалов пока нет. Либо рано, либо трафик мимо.',
+    'Ни одного квала. Надеюсь, отдел продаж просто спит.',
+    'Квалификаций ноль. Это стоит проверить.',
+    'Лиды есть, квалов нет. Классика жанра, сэр.',
+    'Трафик идёт, качество отдыхает.',
+    'Похоже, лиды пришли посмотреть, а не купить.',
+    'Ноль квалов. Либо связка, либо обработка. Ставлю на второе.'])
   const r=quals/leads*100
   if(r>=40)return 'Квалификация '+Math.round(r)+' процентов. Отличное качество трафика.'
   if(r>=20)return 'Квалификация '+Math.round(r)+' процентов. Нормальный показатель.'
