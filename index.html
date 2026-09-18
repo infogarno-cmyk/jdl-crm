@@ -421,6 +421,11 @@ html,body{height:100%;overflow:hidden;max-width:100vw;font-family:var(--sans);ba
 .jt-foot input[type=checkbox]{width:15px;height:15px;accent-color:var(--gold)}
 .jt-foot button{padding:9px 18px;font-size:13px;font-weight:600}
 .jt-empty{padding:20px 16px;text-align:center;color:var(--text3);font-size:14px;background:var(--bg2);border:1px dashed var(--border2);border-radius:11px}
+.nb-jv{cursor:pointer;font:700 11px var(--mono);letter-spacing:.09em;color:#8FB4FF;border:1px solid rgba(110,155,255,.32);
+  border-radius:8px;padding:5px 10px;user-select:none;transition:all .15s;white-space:nowrap}
+.nb-jv:hover{color:#fff;border-color:#6E9BFF;box-shadow:0 0 14px rgba(110,155,255,.25)}
+.nb-jv.off{color:var(--text3);border-color:var(--border2);opacity:.6}
+@media(max-width:768px){.nb-jv{display:none}}
 .nb-jt{font-size:11px;font-weight:600;color:var(--gold);cursor:pointer;padding:4px 8px;display:flex;align-items:center;gap:5px;border:1px solid rgba(212,175,55,.3);border-radius:8px;background:rgba(212,175,55,.08);white-space:nowrap;margin-right:4px}
 .nb-jt:hover{color:#fff}
 .zrk-add{background:none;border:1px solid var(--border);color:var(--text3);font-size:11px;padding:3px 8px;border-radius:5px;cursor:pointer;margin-left:6px}
@@ -806,13 +811,50 @@ tr.zr2.zsel td{background:linear-gradient(90deg,rgba(212,175,55,.07),transparent
 @keyframes jdlCap{to{opacity:1}}
 @media(max-width:768px){#jdl-intro .im{height:104px}#jdl-intro .iw{height:50px}#jdl-intro .bar{width:170px}}
 @media(prefers-reduced-motion:reduce){#jdl-intro *{animation-duration:.01ms!important}}
+
+
+#jv-menu{position:fixed;z-index:99995;min-width:236px;background:rgba(12,14,20,.98);border:1px solid var(--border2);
+  border-radius:12px;padding:8px;box-shadow:0 14px 44px rgba(0,0,0,.6);backdrop-filter:blur(14px)}
+#jv-menu .jvm-h{font:700 10px var(--mono);letter-spacing:.16em;color:#8FB4FF;padding:5px 9px 8px}
+#jv-menu .jvm-l{font:600 9px var(--mono);letter-spacing:.14em;color:var(--text3);text-transform:uppercase;padding:6px 9px 3px}
+#jv-menu .jvm-n{font:400 11px var(--sans);color:var(--text3);padding:2px 9px 5px;word-break:break-all}
+#jv-menu .jvm-sep{height:1px;background:var(--border);margin:6px 4px}
+#jv-menu button{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--text2);
+  font:500 12.5px var(--sans);padding:7px 9px;border-radius:7px;cursor:pointer}
+#jv-menu button:hover{background:var(--bg3);color:#fff}
+/* ══ JARVIS BRIEFING ══ */
+#jv-hud{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:99990;display:flex;align-items:center;gap:14px;
+  background:rgba(10,12,17,.93);border:1px solid rgba(110,155,255,.32);border-radius:14px;padding:13px 18px;
+  box-shadow:0 10px 40px rgba(0,0,0,.6),0 0 30px rgba(110,155,255,.13);backdrop-filter:blur(14px);max-width:min(900px,92vw)}
+#jv-hud .jv-cap{font:500 14px var(--sans);color:#D6E2FF;line-height:1.45;flex:1}
+#jv-hud .jv-skip{border:1px solid var(--border2);background:transparent;color:var(--text3);font:600 11px var(--sans);
+  padding:5px 11px;border-radius:7px;cursor:pointer;white-space:nowrap}
+#jv-hud .jv-skip:hover{color:#fff;border-color:var(--border3)}
+.jv-eq{display:flex;align-items:flex-end;gap:3px;height:22px;flex:none}
+.jv-eq i{width:3px;background:linear-gradient(180deg,#8FB4FF,#4A7BE0);border-radius:2px;animation:jvEq .9s ease-in-out infinite}
+.jv-eq i:nth-child(1){animation-delay:0s}.jv-eq i:nth-child(2){animation-delay:.12s}.jv-eq i:nth-child(3){animation-delay:.24s}
+.jv-eq i:nth-child(4){animation-delay:.36s}.jv-eq i:nth-child(5){animation-delay:.48s}
+@keyframes jvEq{0%,100%{height:5px;opacity:.55}50%{height:20px;opacity:1}}
+.jv-spot{position:fixed;z-index:99985;pointer-events:none;border:2px solid #6E9BFF;border-radius:12px;
+  box-shadow:0 0 0 4px rgba(110,155,255,.16),0 0 26px rgba(110,155,255,.5),0 0 0 9999px rgba(4,6,11,.55);
+  animation:jvPop .45s cubic-bezier(.16,1,.3,1)}
+@keyframes jvPop{from{opacity:0;transform:scale(.93)}to{opacity:1;transform:scale(1)}}
+.jv-spot i{position:absolute;top:-24px;left:0;font:700 10px var(--mono);letter-spacing:.16em;color:#8FB4FF;
+  background:rgba(10,12,17,.9);border:1px solid rgba(110,155,255,.3);border-radius:5px;padding:2px 7px;font-style:normal}
+#jv-unlock{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);z-index:99991;cursor:pointer;
+  display:flex;align-items:center;gap:9px;background:rgba(10,12,17,.95);border:1px solid rgba(110,155,255,.4);
+  color:#D6E2FF;font:600 13px var(--sans);padding:11px 20px;border-radius:12px;
+  box-shadow:0 8px 32px rgba(0,0,0,.55),0 0 22px rgba(110,155,255,.18);animation:jvPop .4s ease}
+#jv-unlock:hover{border-color:#6E9BFF}
+#jv-unlock span{color:#6E9BFF;font-size:15px}
+@media(prefers-reduced-motion:reduce){.jv-eq i,.jv-spot{animation:none}}
 </style>`)
 // Intro is shown once per browser session; always let the 3s reveal finish before fading out.
 window._introAt=Date.now()
 function dismissIntro(){
   const el=document.getElementById('jdl-intro');if(!el||el._going)return;el._going=1
   const wait=Math.max(0,3000-(Date.now()-window._introAt))
-  setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),800)},wait)
+  setTimeout(()=>{el.classList.add('out');setTimeout(()=>{el.remove();if(typeof jarvisMaybeStart==='function')jarvisMaybeStart()},800)},wait)
 }
 // hard safety net — never let the splash trap the user if a load call hangs
 setTimeout(dismissIntro,9000)
@@ -852,7 +894,7 @@ document.getElementById('root').innerHTML=`
       <div class="nb" id="nb-sales"><span class="dot"></span>Sales</div>
       <div class="nb" id="nb-domains"><span class="dot"></span>Домены</div>
     </nav>
-    <div class="sync-area"><span class="nb-jt" id="nb-jt" title="Сводка за 24 часа">☀ TODAY</span><div class="bell" id="bell" title="Алерты">🔔<span class="n" id="bell-n" style="display:none">0</span></div><div class="sdot" id="sdot"></div><span class="stxt" id="stxt">—</span><button class="sbtn" id="sync-btn">↻ Sync</button></div>
+    <div class="sync-area"><span class="nb-jt" id="nb-jt" title="Сводка за 24 часа">☀ TODAY</span><span class="nb-jv" id="nb-jv" title="Брифинг JARVIS · правый клик — настройки">◉ JARVIS</span><div class="bell" id="bell" title="Алерты">🔔<span class="n" id="bell-n" style="display:none">0</span></div><div class="sdot" id="sdot"></div><span class="stxt" id="stxt">—</span><button class="sbtn" id="sync-btn">↻ Sync</button></div>
     <button class="search-btn" id="topbar-search">🔍 Поиск <kbd>Ctrl K</kbd></button>
     <div class="uchip" id="uchip"><div class="uava" id="uava"></div><span class="uname" id="uname"></span></div>
   </div>
@@ -1290,6 +1332,54 @@ document.getElementById('zf-buyer').addEventListener('change',rzalivs)
 document.getElementById('btn-new-zaliv').addEventListener('click',()=>openMoZaliv())
 document.getElementById('btn-open-templates').addEventListener('click',openTemplates)
 document.getElementById('btn-import-meta').addEventListener('click',importCampaignsFromMeta)
+const _jvBtn=document.getElementById('nb-jv')
+if(_jvBtn){
+  const paint=()=>_jvBtn.classList.toggle('off',localStorage.getItem('jdl_jarvis_off')==='1')
+  paint()
+  _jvBtn.addEventListener('click',()=>{if(_jvRunning)jvStop();else jarvisBrief()})
+  _jvBtn.addEventListener('contextmenu',e=>{e.preventDefault();jvMenu(e)})
+  window.jvMenu=function(e){
+    document.getElementById('jv-menu')?.remove()
+    const off=localStorage.getItem('jdl_jarvis_off')==='1'
+    const tn=localStorage.getItem('jdl_track_name')
+    const has11=!!localStorage.getItem('jdl_11_key')
+    const m=document.createElement('div');m.id='jv-menu'
+    m.innerHTML=`
+      <div class="jvm-h">JARVIS</div>
+      <button data-a="run">▶ Запустить брифинг</button>
+      <button data-a="auto">${off?'☐':'☑'} Автозапуск при входе</button>
+      <div class="jvm-sep"></div>
+      <div class="jvm-l">Музыка</div>
+      <button data-a="track">♪ ${tn?'Заменить дорожку':'Загрузить свою дорожку'}</button>
+      ${tn?`<div class="jvm-n">${tn}</div><button data-a="trackoff">✕ Убрать дорожку</button>`:'<div class="jvm-n">сейчас: синтезированный фон</div>'}
+      <div class="jvm-sep"></div>
+      <div class="jvm-l">Голос</div>
+      <div class="jvm-n">${has11?'ElevenLabs подключён':'встроенный синтез браузера'}</div>
+      <button data-a="voices">⚙ Настроить ElevenLabs</button>`
+    const r=_jvBtn.getBoundingClientRect()
+    m.style.cssText=`top:${r.bottom+8}px;right:${Math.max(10,innerWidth-r.right)}px`
+    document.body.appendChild(m)
+    const close=()=>{m.remove();document.removeEventListener('click',close)}
+    setTimeout(()=>document.addEventListener('click',close),0)
+    m.onclick=ev=>{
+      const a=ev.target.closest('button')?.dataset.a;if(!a)return
+      if(a==='run'){close();jarvisBrief()}
+      if(a==='auto'){if(off)localStorage.removeItem('jdl_jarvis_off');else localStorage.setItem('jdl_jarvis_off','1');paint();close()}
+      if(a==='track'){close();jarvisTrack()}
+      if(a==='trackoff'){close();jarvisTrackOff()}
+      if(a==='voices'){close()
+        const k=prompt('Ключ ElevenLabs (оставь пустым, чтобы вернуть встроенный голос):',localStorage.getItem('jdl_11_key')||'')
+        if(k===null)return
+        if(!k.trim()){jarvisSetup(null);return}
+        jarvisSetup(k.trim())
+        jarvisVoices().then(()=>{
+          const v=prompt('voice_id из списка в консоли (F12):',localStorage.getItem('jdl_11_voice')||'')
+          if(v&&v.trim())jarvisSetup(k.trim(),v.trim())
+        })
+      }
+    }
+  }
+}
 document.getElementById('df-geo').addEventListener('change',rdomains)
 document.getElementById('df-q').addEventListener('input',rdomains)
 document.getElementById('btn-new-domain').addEventListener('click',()=>document.getElementById('mo-domain').classList.add('open'))
@@ -1834,6 +1924,424 @@ async function liveChart(from,to,seq){
   }
   drawChart(rows)
 }
+// ══════════════════════════════════════════════════════════════
+//  JARVIS BRIEFING — голос, музыка, подсветка метрик, маршрут по страницам
+//  Музыка синтезируется на Web Audio (ничего не грузится, никаких прав на саундтрек).
+//  Голос — встроенный синтез речи браузера.
+// ══════════════════════════════════════════════════════════════
+let _jvAudio=null,_jvNodes=[],_jvAbort=false,_jvRunning=false
+
+function jvOn(){return localStorage.getItem('jdl_jarvis_off')!=='1'}
+
+// ── Музыка: низкий пад + медленный подъём + редкие «блипы» ──
+// Своя дорожка: положи файл рядом с index.html (например brief.mp3) на Vercel.
+// Путь можно сменить из консоли: jarvisTrack('/my-intro.mp3'), сбросить: jarvisTrack(null).
+function jarvisTrack(url){
+  if(url===null||url===''){localStorage.removeItem('jdl_jarvis_track');toast('JARVIS: вернулся синтезированный саундтрек','info');return}
+  if(url===undefined)return localStorage.getItem('jdl_jarvis_track')||'(не задана, играет синтез)'
+  localStorage.setItem('jdl_jarvis_track',url);toast('JARVIS: дорожка — '+url,'ok')
+}
+let _jvEl=null
+function jvMusicStart(){
+  // 1) своя дорожка, если она есть и доступна
+  const src=localStorage.getItem('jdl_jarvis_track')||'brief.mp3'
+  try{
+    _jvEl=new Audio(src);_jvEl.volume=0;_jvEl.loop=true
+    _jvEl.addEventListener('canplay',()=>{
+      if(!_jvEl)return
+      _jvEl.play().then(()=>{
+        // плавный заход вместо резкого старта
+        let v=0;const iv=setInterval(()=>{v=Math.min(.5,v+.03);if(_jvEl)_jvEl.volume=v;if(v>=.5)clearInterval(iv)},70)
+      }).catch(()=>jvSynthStart())
+    },{once:true})
+    _jvEl.addEventListener('error',()=>{_jvEl=null;jvSynthStart()},{once:true})
+    return
+  }catch(e){_jvEl=null}
+  jvSynthStart()
+}
+function jvSynthStart(){
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext
+    if(!AC){console.log('JARVIS: Web Audio не поддерживается');return}
+    _jvAudio=_jvAudio||new AC()
+    if(_jvAudio.state==='suspended')_jvAudio.resume().then(()=>{
+      if(_jvAudio.state!=='running')console.log('JARVIS: звук заблокирован браузером — запусти брифинг кнопкой')})
+    const ctx=_jvAudio,t0=ctx.currentTime
+    const master=ctx.createGain();master.gain.value=0;master.connect(ctx.destination)
+    master.gain.linearRampToValueAtTime(.16,t0+2.5)
+    const filt=ctx.createBiquadFilter();filt.type='lowpass';filt.frequency.value=380
+    filt.frequency.linearRampToValueAtTime(1400,t0+10);filt.connect(master)
+    // пад из трёх расстроенных осцилляторов
+    ;[55,82.5,110].forEach((f,i)=>{
+      const o=ctx.createOscillator(),g=ctx.createGain()
+      o.type=i===2?'triangle':'sawtooth';o.frequency.value=f
+      o.detune.value=(i-1)*7
+      g.gain.value=[.5,.32,.22][i]
+      o.connect(g);g.connect(filt);o.start(t0);_jvNodes.push(o,g)
+    })
+    // медленное биение
+    const lfo=ctx.createOscillator(),lg=ctx.createGain()
+    lfo.frequency.value=.22;lg.gain.value=.05
+    lfo.connect(lg);lg.connect(master.gain);lfo.start(t0);_jvNodes.push(lfo,lg)
+    _jvNodes.push(master,filt)
+    window._jvMaster=master
+  }catch(e){console.log('JARVIS: фон не создался —',e.message)}
+}
+function jvBlip(freq){
+  if(!_jvAudio)return
+  try{
+    const ctx=_jvAudio,t=ctx.currentTime
+    const o=ctx.createOscillator(),g=ctx.createGain()
+    o.type='sine';o.frequency.value=freq||880
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.09,t+.02)
+    g.gain.exponentialRampToValueAtTime(.0001,t+.5)
+    o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+.55)
+  }catch(e){}
+}
+function jvMusicStop(){
+  try{
+    if(_jvEl){const el=_jvEl;_jvEl=null
+      const iv=setInterval(()=>{el.volume=Math.max(0,el.volume-.04);if(el.volume<=0.01){clearInterval(iv);el.pause();el.src=''}},60)}
+    if(window._jvMaster&&_jvAudio){
+      const t=_jvAudio.currentTime
+      window._jvMaster.gain.cancelScheduledValues(t)
+      window._jvMaster.gain.setValueAtTime(window._jvMaster.gain.value,t)
+      window._jvMaster.gain.linearRampToValueAtTime(0,t+1.4)
+    }
+    setTimeout(()=>{_jvNodes.forEach(n=>{try{n.stop&&n.stop()}catch(e){}});_jvNodes=[]},1600)
+  }catch(e){}
+}
+
+// ── Диагностика звука ──
+async function jarvisTest(){
+  console.log('%c♪ Проверка звука JARVIS','font-weight:bold;font-size:13px')
+  const AC=window.AudioContext||window.webkitAudioContext
+  console.log('AudioContext поддерживается:',!!AC)
+  if(AC){
+    _jvAudio=_jvAudio||new AC()
+    console.log('состояние контекста:',_jvAudio.state,_jvAudio.state==='suspended'?'← заблокирован, нужен клик по странице':'')
+    try{await _jvAudio.resume();console.log('после resume:',_jvAudio.state)}catch(e){console.log('resume не удался:',e.message)}
+  }
+  const blob=await jvTrackGet()
+  console.log('своя дорожка:',blob?`есть, ${(blob.size/1048576).toFixed(2)} МБ, тип ${blob.type||'не указан'}`:'НЕ ЗАГРУЖЕНА (играет синтезированный фон)')
+  if(blob){
+    if(!blob.type||!/^audio|^video|ogg|mpeg|mp3|wav|m4a/i.test(blob.type))console.log('%c⚠ тип файла подозрительный — браузер может его не проиграть','color:#D4AF37')
+    try{
+      const a=new Audio(URL.createObjectURL(blob));a.volume=.3
+      await a.play()
+      console.log('%c✓ дорожка играет — слышишь?','color:#3DBE8B;font-weight:bold')
+      setTimeout(()=>{a.pause();a.src=''},5000)
+      return
+    }catch(e){console.log('%c✗ проиграть не удалось: '+e.name+' — '+e.message,'color:#E04050')
+      if(e.name==='NotAllowedError')console.log('Браузер требует клик. Запускай брифинг кнопкой JARVIS, а не автозапуском.')}
+  }
+  console.log('Пробую синтезированный фон...')
+  jvMusicStart();jvBlip(880)
+  setTimeout(()=>{jvMusicStop();console.log('фон остановлен')},5000)
+  console.log('Если тишина — проверь громкость вкладки: правый клик по вкладке браузера → «Включить звук на сайте».')
+}
+// ── Своя музыкальная дорожка ──
+// Файл хранится в IndexedDB этого браузера (localStorage не вместит мегабайты).
+// Загружай только то, на что у тебя есть права: royalty-free или купленная лицензия.
+function jvDB(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open('jdl_jarvis',1)
+    r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('files'))r.result.createObjectStore('files')}
+    r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)
+  })
+}
+async function jvTrackSave(blob,name){
+  const db=await jvDB()
+  await new Promise((res,rej)=>{const tx=db.transaction('files','readwrite')
+    tx.objectStore('files').put(blob,'track');tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})
+  localStorage.setItem('jdl_track_name',name||'дорожка')
+}
+async function jvTrackGet(){
+  try{const db=await jvDB()
+    return await new Promise(res=>{const tx=db.transaction('files','readonly')
+      const q=tx.objectStore('files').get('track');q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null)})
+  }catch(e){return null}
+}
+async function jvTrackClear(){
+  try{const db=await jvDB()
+    await new Promise(res=>{const tx=db.transaction('files','readwrite')
+      tx.objectStore('files').delete('track');tx.oncomplete=res;tx.onerror=res})
+  }catch(e){}
+  localStorage.removeItem('jdl_track_name')
+}
+// Выбор файла через системный диалог
+function jarvisTrack(){
+  const inp=document.createElement('input')
+  inp.type='file';inp.accept='audio/*'
+  inp.onchange=async()=>{
+    const f=inp.files&&inp.files[0];if(!f)return
+    if(f.size>25*1024*1024){toast('Файл больше 25 МБ — возьми покороче','err');return}
+    try{await jvTrackSave(f,f.name);toast('Дорожка сохранена: '+f.name,'ok')}
+    catch(e){toast('Не удалось сохранить: '+e.message,'err')}
+  }
+  inp.click()
+}
+async function jarvisTrackOff(){await jvTrackClear();toast('Дорожка убрана — вернулся синтезированный фон','info')}
+
+// Проигрывание своей дорожки вместо синтезированного пада
+let _jvTrackEl=null
+async function jvTrackStart(){
+  const blob=await jvTrackGet();if(!blob)return false
+  try{
+    const a=new Audio(URL.createObjectURL(blob))
+    a.loop=true;a.volume=0
+    await a.play()
+    _jvTrackEl=a
+    // плавный вход
+    let v=0;const t=setInterval(()=>{v=Math.min(.32,v+.02);a.volume=v;if(v>=.32)clearInterval(t)},70)
+    return true
+  }catch(e){
+    console.log('JARVIS: дорожка не запустилась —',e.name,e.message)
+    if(e.name==='NotAllowedError')toast('Браузер заблокировал звук — нажми кнопку JARVIS','err')
+    else toast('Дорожка не проигрывается: '+e.message,'err')
+    return false}
+}
+function jvTrackStop(){
+  const a=_jvTrackEl;if(!a)return;_jvTrackEl=null
+  let v=a.volume;const t=setInterval(()=>{v-=.03;if(v<=0){clearInterval(t);a.pause();a.src=''}else a.volume=v},60)
+}
+// Приглушаем музыку, пока говорит голос, и возвращаем громкость после
+function jvDuck(on){
+  if(_jvTrackEl){try{_jvTrackEl.volume=on?.10:.32}catch(e){}}
+  if(window._jvMaster&&_jvAudio){try{
+    const t=_jvAudio.currentTime
+    window._jvMaster.gain.cancelScheduledValues(t)
+    window._jvMaster.gain.linearRampToValueAtTime(on?.06:.16,t+.35)
+  }catch(e){}}
+}
+// ── Голос через ElevenLabs (опционально) ──
+// Ключ и голос задаются один раз: jarvisSetup('sk-...','voiceId')
+// Без ключа используется встроенный синтез браузера.
+function jarvisSetup(key,voiceId){
+  if(key===null){localStorage.removeItem('jdl_11_key');localStorage.removeItem('jdl_11_voice');toast('JARVIS: вернулся на встроенный голос','info');return}
+  if(key)localStorage.setItem('jdl_11_key',key)
+  if(voiceId)localStorage.setItem('jdl_11_voice',voiceId)
+  toast('JARVIS: голос ElevenLabs подключён','ok')
+  console.log('Проверка: jarvisBrief()')
+}
+// Список доступных голосов — чтобы выбрать подходящий по характеру
+async function jarvisVoices(){
+  const key=localStorage.getItem('jdl_11_key')
+  if(!key){console.log('Сначала: jarvisSetup("ключ")');return}
+  try{
+    const r=await fetch('https://api.elevenlabs.io/v1/voices',{headers:{'xi-api-key':key}})
+    const d=await r.json()
+    console.table((d.voices||[]).map(v=>({voice_id:v.voice_id,имя:v.name,описание:(v.labels?Object.values(v.labels).join(', '):'')})))
+    console.log('Выбрать: jarvisSetup(null_или_ключ, "voice_id")  →  jarvisSetup(localStorage.getItem("jdl_11_key"),"voice_id")')
+  }catch(e){console.log('Ошибка:',e.message)}
+}
+let _jv11Fail=0
+async function jv11Speak(text){
+  const key=localStorage.getItem('jdl_11_key'),vid=localStorage.getItem('jdl_11_voice')
+  if(!key||!vid||_jv11Fail>=2)return false
+  try{
+    const r=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${vid}`,{
+      method:'POST',headers:{'xi-api-key':key,'Content-Type':'application/json'},
+      body:JSON.stringify({text,model_id:'eleven_multilingual_v2',
+        voice_settings:{stability:.45,similarity_boost:.75,style:.25,use_speaker_boost:true}})
+    })
+    if(!r.ok){_jv11Fail++;console.log('ElevenLabs '+r.status+' — перехожу на встроенный голос');return false}
+    const buf=await r.arrayBuffer()
+    const url=URL.createObjectURL(new Blob([buf],{type:'audio/mpeg'}))
+    await new Promise(res=>{
+      const a=new Audio(url);a.volume=1
+      _jvCurAudio=a
+      const fin=()=>{URL.revokeObjectURL(url);_jvCurAudio=null;res()}
+      a.onended=fin;a.onerror=fin
+      a.play().catch(fin)
+    })
+    return true
+  }catch(e){_jv11Fail++;return false}
+}
+let _jvCurAudio=null
+// ── Голос ──
+// Предпочитаем мужской русский голос — женский по умолчанию звучит как навигатор.
+const JV_MALE=/male|мужск|dmitr|дмитр|yuri|юри|pavel|павел|artem|артем|maxim|максим|alexander|александр|george|daniel/i
+const JV_FEM=/female|женск|alena|алена|milena|милена|tatyana|татьян|svetlana|светлан|irina|ирин|katerina|катерин|zira|samantha/i
+function jvVoice(){
+  const vs=speechSynthesis.getVoices()||[]
+  const ru=vs.filter(v=>/ru/i.test(v.lang))
+  return ru.find(v=>JV_MALE.test(v.name)&&!JV_FEM.test(v.name))
+    ||ru.find(v=>!JV_FEM.test(v.name))
+    ||ru[0]||vs[0]||null
+}
+// время, за которое реплику комфортно прочитать глазами (если голоса нет)
+function jvReadMs(text){return Math.min(9000,Math.max(1900,text.length*72))}
+let _jvNoVoice=false
+async function jvSpeak(text){
+  if(_jvAbort||!text)return
+  if(await jv11Speak(text))return          // ElevenLabs, если настроен
+  return jvSpeakLocal(text)
+}
+// Одна фраза целиком звучит механически. Режем на предложения и даём дышать между ними.
+async function jvSpeakLocal(text){
+  const parts=String(text).split(/(?<=[.!?…])\s+/).filter(Boolean)
+  for(let i=0;i<parts.length;i++){
+    if(_jvAbort)return
+    await jvUtter(parts[i])
+    if(i<parts.length-1)await jvWait(260)
+  }
+}
+function jvUtter(text){
+  return new Promise(res=>{
+    if(_jvAbort||!text)return res()
+    if(_jvNoVoice||!window.speechSynthesis)return setTimeout(res,jvReadMs(text))
+    try{
+      const u=new SpeechSynthesisUtterance(text)
+      const v=jvVoice();if(v){u.voice=v;u.lang=v.lang}
+      // спокойно и чуть ниже обычного, но без «подвала» — иначе получается робот
+      u.rate=.93;u.pitch=.88;u.volume=1
+      const t0=Date.now();let done=false
+      const fin=()=>{if(done)return;done=true
+        // мгновенный «конец» = синтез недоступен: дальше идём по времени чтения
+        const dt=Date.now()-t0
+        if(dt<300){_jvNoVoice=true;return setTimeout(res,jvReadMs(text))}
+        res()}
+      u.onend=fin;u.onerror=fin
+      setTimeout(fin,Math.max(4000,text.length*95))
+      speechSynthesis.speak(u)
+    }catch(e){_jvNoVoice=true;setTimeout(res,jvReadMs(text))}
+  })
+}
+const jvWait=ms=>new Promise(r=>setTimeout(r,ms))
+
+// ── Подсветка элемента ──
+async function jvSpotEl(sel,label){
+  const el=typeof sel==='string'?document.querySelector(sel):sel
+  jvClearSpot()
+  if(!el)return
+  el.scrollIntoView({behavior:'smooth',block:'center'})
+  // рамка ставится по координатам ПОСЛЕ прокрутки, иначе при скролле она встаёт мимо цели
+  await jvWait(380)
+  if(_jvAbort)return
+  const r=el.getBoundingClientRect()
+  const pad=10
+  const box=document.createElement('div')
+  box.className='jv-spot'
+  box.style.cssText=`position:fixed;left:${r.left-pad}px;top:${r.top-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px;`
+  if(label){const b=document.createElement('i');b.textContent=label;box.appendChild(b)}
+  document.body.appendChild(box)
+  jvBlip(760+Math.random()*320)
+}
+function jvClearSpot(){document.querySelectorAll('.jv-spot').forEach(e=>e.remove())}
+
+// ── Каркас презентации ──
+function jvHud(on,text){
+  let h=document.getElementById('jv-hud')
+  if(!h&&on){
+    h=document.createElement('div');h.id='jv-hud'
+    h.innerHTML='<div class="jv-eq"><i></i><i></i><i></i><i></i><i></i></div><div class="jv-cap"></div><button class="jv-skip">Пропустить ✕</button>'
+    document.body.appendChild(h)
+    h.querySelector('.jv-skip').onclick=jvStop
+  }
+  if(!h)return
+  if(!on){h.remove();return}
+  if(text!==undefined)h.querySelector('.jv-cap').textContent=text
+}
+function jvStop(){
+  _jvAbort=true;_jvRunning=false
+  try{speechSynthesis.cancel()}catch(e){}
+  try{if(_jvCurAudio){_jvCurAudio.pause();_jvCurAudio=null}}catch(e){}
+  jvClearSpot();jvHud(false);jvMusicStop();jvTrackStop()
+}
+
+// ── Текст брифинга из реальных данных ──
+function jvScript(){
+  const{ev}=buildJdlToday()
+  const name=(CURRENT_USER&&CURRENT_USER.name)||''
+  const reg=CURRENT_REGION==='CZ'?'Чехия':'Польша'
+  const h=new Date().getHours()
+  const greet=h<5?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер'
+  const steps=[]
+
+  steps.push({say:`${greet}, ${name}. Системы в норме. Регион — ${reg}. Готовлю сводку за последние сутки.`,page:'dash'})
+
+  const spend=(document.getElementById('hero-tick')||{}).textContent
+  const spNum=Math.round(parseFloat(String(spend).replace(/\s/g,''))||0)
+  if(spNum>0)steps.push({say:`Расход за выбранный период — ${spNum.toLocaleString('ru')} долларов.`,spot:'#hero-tick',label:'СПЕНД'})
+
+  const hl=(document.getElementById('hero-l')||{}).textContent,hq=(document.getElementById('hero-q')||{}).textContent
+  if(hl)steps.push({say:`Лидов ${hl}, из них квалифицированных ${hq||0}.`,spot:'#hero-l',label:'ЛИДЫ'})
+
+  const cpl=(document.getElementById('d-cpl')||{}).textContent
+  if(cpl&&cpl!=='—'&&cpl!=='⏳')steps.push({say:`Цена лида ${cpl.replace('$','')} долларов.`,spot:'#d-cpl',label:'CPL'})
+
+  // события суток
+  ev.slice(0,4).forEach(e=>{
+    const head=String(e[1]).replace(/:/g,' —').replace(/·/g,',')
+    const body=String(e[2]||'')
+    // детали проговариваем только там, где это цифры, а не список названий РК
+    const useBody=/^[\d\s$·,.a-zA-Zа-яА-Я]{0,80}$/.test(body)&&/\d/.test(body)&&!/[\\\/{}]/.test(body)
+    steps.push({say:head+(useBody?': '+body.replace(/·/g,',').replace(/\$/g,' ')+'.':'.')})
+  })
+
+  const dueT=TASKS.filter(t=>t.deadline&&t.deadline<todayISO()&&t.col!=='done'&&t.col!=='archived')
+  const todoT=TASKS.filter(t=>t.col==='todo'&&(!CURRENT_USER||t.assignee===CURRENT_USER.name))
+  steps.push({say:'Перехожу к задачам.',page:'tasks'})
+  if(dueT.length)steps.push({say:`Внимание. Просрочено задач: ${dueT.length}. Рекомендую начать с них.`})
+  steps.push({say:todoT.length?`В работе на сегодня ${todoT.length}. Оставляю вас здесь. Удачной открутки.`:'Просроченных задач нет. Доска чистая. Удачной открутки.'})
+  return steps
+}
+
+// ── Запуск ──
+async function jarvisBrief(){
+  if(_jvRunning)return
+  _jvAbort=false;_jvRunning=true
+  try{speechSynthesis.cancel()}catch(e){}
+  const own=await jvTrackStart()
+  if(!own)jvMusicStart()
+  jvHud(true,'')
+  const steps=jvScript()
+  for(const s of steps){
+    if(_jvAbort)break
+    if(s.page){
+      const nb=document.getElementById('nb-'+s.page)
+      if(nb){nb.click();await jvWait(650)}
+    }
+    if(s.spot)await jvSpotEl(s.spot,s.label)
+    jvHud(true,s.say)
+    jvDuck(true);await jvSpeak(s.say);jvDuck(false)
+    if(_jvAbort)break
+    await jvWait(220)
+  }
+  jvClearSpot()
+  if(!_jvAbort){
+    const nb=document.getElementById('nb-tasks');if(nb)nb.click()
+    jvHud(true,'Брифинг завершён')
+    await jvWait(1200)
+  }
+  jvHud(false);jvMusicStop();jvTrackStop();_jvRunning=false
+}
+
+// Звук в браузере требует жеста пользователя. Пробуем стартовать сразу;
+// если контекст заблокирован — показываем ненавязчивую кнопку.
+function jarvisMaybeStart(){
+  if(!jvOn())return
+  const go=()=>{document.getElementById('jv-unlock')?.remove();jarvisBrief()}
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext
+    if(!AC)return
+    _jvAudio=_jvAudio||new AC()
+    if(_jvAudio.state==='running'){go();return}
+    _jvAudio.resume().then(()=>{
+      if(_jvAudio.state==='running')go();else jvUnlockBtn(go)
+    }).catch(()=>jvUnlockBtn(go))
+  }catch(e){jvUnlockBtn(go)}
+}
+function jvUnlockBtn(go){
+  if(document.getElementById('jv-unlock'))return
+  const b=document.createElement('button');b.id='jv-unlock'
+  b.innerHTML='<span>▶</span> Брифинг JARVIS'
+  b.onclick=go
+  document.body.appendChild(b)
+  setTimeout(()=>b.remove(),25000)
+}
+
 function drawChart(rows){chartData=rows;const c=document.getElementById('dyn-chart');if(!c)return;c.width=c.parentElement.offsetWidth||600;c.height=130;renderChart(true)}
 function renderChart(animate=false){
   if(!chartData||!chartData.length)return
@@ -4790,6 +5298,50 @@ function normDate(d){
 }
 
 var _buyerCache={}
+// ── Почему у РК в CRM меньше лидов, чем в Meta ──
+// CRM считает лиды из GarnoCRM по привязанным доменам, Meta — свои события лида.
+// Показывает: какие адсеты без домена и какие источники GarnoCRM ни к чему не привязались.
+function checkLeads(zidOrName,from,to){
+  const z=typeof zidOrName==='number'?ZALIVS.find(x=>x.id===zidOrName)
+    :ZALIVS.find(x=>(x.name||'').toLowerCase().includes(String(zidOrName).toLowerCase()))
+  if(!z){console.log('РК не найдена. Передай id или кусок названия.');return}
+  const d=z.date||parseDateFromCampName(z.name)
+  if(!from&&d){const p=d.split('.');if(p.length===2)from=new Date().getFullYear()+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0')}
+  to=to||new Date().toISOString().slice(0,10)
+  console.log('%c'+z.name,'font-weight:bold;font-size:13px')
+  console.log('период '+from+' → '+to+' · баер '+(z.buyer||'—'))
+
+  const doms=zDomains(z)
+  console.log('%cАдсеты и привязанные домены:','font-weight:bold')
+  console.table((_zAdsCache[z.id]||[]).map(a=>{
+    const e=doms.find(x=>x.adset_id===a.id)
+    return{адсет:a.name,статус:a.status,домен:e?.domain||'— НЕ ПРИВЯЗАН —'}
+  }))
+  if(!(_zAdsCache[z.id]||[]).length)console.log('%cАдсеты не загружены — открой РК в Заливах, чтобы они подтянулись','color:#D4AF37')
+
+  const keys=new Set(doms.filter(x=>x.domain).map(x=>x.domain))
+  if(!keys.size){console.log('%cНи одного домена не привязано — CRM не может посчитать лиды вовсе','color:#E04050;font-weight:bold');return}
+
+  const bl=z.buyer==='Illia'?'I':z.buyer==='Danya'?'D':''
+  let leads=0,quals=0;const matched={},unmatched={}
+  SRC_DAILY.forEach(r=>{
+    if((from&&r.day<from)||(to&&r.day>to))return
+    const p=srcParse(r.source)
+    if(keys.has(p.key)&&(!p.letter||!bl||p.letter===bl)){
+      leads+=r.leads||0;quals+=r.quals||0
+      matched[r.source]=(matched[r.source]||0)+(r.leads||0)
+    }else unmatched[r.source]=(unmatched[r.source]||0)+(r.leads||0)
+  })
+  console.log('%cCRM насчитал: лидов '+leads+' · квалов '+quals,'font-weight:bold;color:#3DBE8B')
+  console.log('Совпавшие источники:');console.table(Object.entries(matched).map(([источник,лиды])=>({источник,лиды})))
+  const un=Object.entries(unmatched).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,15)
+  if(un.length){
+    console.log('%cИсточники GarnoCRM за период, НЕ привязанные ни к одной РК-домену ('+un.length+'):','color:#D4AF37;font-weight:bold')
+    console.table(un.map(([источник,лиды])=>({источник,лиды,'зарегистрирован_как_домен':allDKeys().includes(srcParse(источник).key)?'да':'НЕТ'})))
+    console.log('Если среди них есть лендинги этой РК — заведи их в Домены («+ свой домен») и привяжи к адсету.')
+  }
+  return{leads,quals,matched,unmatched}
+}
 // ── Починить дубли campaign_id ──
 // Оставляет ID у того залива, чьё название реально совпадает с кампанией в Meta,
 // у остальных ID снимает (сами РК не удаляются — данные остаются).
