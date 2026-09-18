@@ -1660,8 +1660,8 @@ function heroRender(spend,leads,quals,daily,from,to){
   const $=id=>document.getElementById(id);if(!$('hero-tick'))return
   $('hero-reg').textContent=regionCfg().main==='CZ'?'Чехия':'Польша'
   const days=Math.max(1,Math.round((new Date(to)-new Date(from))/864e5)+1);$('hero-per').textContent=days+' дн.'
-  heroCountUp($('hero-tick'),spend,v=>v.toLocaleString('ru',{minimumFractionDigits:2,maximumFractionDigits:2}).replace(',','.'))
-  heroCountUp($('hero-l'),leads,v=>Math.round(v));heroCountUp($('hero-q'),quals,v=>Math.round(v));heroCountUp($('hero-daily'),daily,v=>'$'+Math.round(v))
+  // hero-tick пишет только heroAllMeta() живыми данными Meta, иначе цифры прыгают между источниками
+  heroCountUp($('hero-l'),leads,v=>Math.round(v));heroCountUp($('hero-q'),quals,v=>Math.round(v))
   $('hero-rk').textContent=ZALIVS.filter(z=>z.ind!=='off'&&!z.togo).length;$('hero-rkall').textContent=ZALIVS.filter(z=>!z.togo).length
   // tape: recent events
   const ev=[]
@@ -1680,8 +1680,10 @@ function heroRender(spend,leads,quals,daily,from,to){
 })()
 function heroDelta(cur,prev){const el=document.getElementById('hero-dl');if(!el)return;if(!prev||!document.getElementById('cmp-tgl')?.classList.contains('on')){el.className='dl big n';el.innerHTML='';return}const d=(cur-prev)/prev*100;const cls=Math.abs(d)<.5?'n':d>0?'g':'r';el.className='dl big '+cls;el.innerHTML=`<span class="ar">${d>0?'↑':d<0?'↓':'→'}</span>${Math.abs(d).toFixed(0)}% к прошлому периоду`}
 
+let _dashSeq=0
 function rdash(){
   const buyer=CURRENT_BUYER||''
+  const seq=++_dashSeq
   resetDashLabels()
   const from=document.getElementById('pd-from').value,to=document.getElementById('pd-to').value
   const rows=METRICS.filter(m=>m.day>=from&&m.day<=to)
@@ -1767,7 +1769,7 @@ function rdash(){
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#4080ff,#60a0ff)"></div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">AVG DEAL</div><div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--mono)">${savg.toLocaleString('ru')} ${cur()}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">средний чек</div></div>
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--bord),var(--bord2))"></div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">КОЛ-ВО ПРОДАЖ</div><div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--mono)">${sf.length}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">за период</div></div>`
   drawChart(rows)
-  if(buyer)rdashBuyer(buyer);else heroAllMeta(from,to)
+  if(buyer)rdashBuyer(buyer);else{heroAllMeta(from,to,seq);liveChart(from,to,seq)}
 }
 
 // ── CHART ──
@@ -1801,6 +1803,34 @@ function renderChartFocused(focusKey){
   })
 }
 
+// ── График: посуточный спенд берём живьём из Meta, теми же данными что и цифры сверху ──
+// Раньше линия рисовалась из metrics_daily: дни без строки просто отсутствовали (линия ложилась на дно),
+// а сумма не совпадала с KPI. Лиды/квалы остаются из metrics_daily, CPL/CQL пересчитываются от живого спенда.
+const _dailyCache={}
+async function liveChart(from,to,seq){
+  if(!from||!to)return
+  const key=CURRENT_REGION+'|'+from+'|'+to
+  let cc=_dailyCache[key]
+  if(!cc||Date.now()-cc.at>5*60000){
+    try{
+      const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'reconcile',region:CURRENT_REGION,since:from,until:to,daily:true})})
+      const d=await r.json();if(!d.ok||!d.byDay)return
+      cc=_dailyCache[key]={at:Date.now(),byDay:d.byDay}
+    }catch(e){return}
+  }
+  if(seq!==undefined&&seq!==_dashSeq)return  // период уже сменили — не трогаем график
+  // строим непрерывный ряд по всем дням периода, а не только по тем, что есть в metrics_daily
+  const mByDay={};METRICS.forEach(m=>{mByDay[m.day]=m})
+  const rows=[]
+  for(let t=new Date(from+'T00:00:00');t<=new Date(to+'T00:00:00');t=new Date(+t+864e5)){
+    const day=t.toISOString().slice(0,10),m=mByDay[day]||{}
+    const sp=cc.byDay[day]||0
+    const leads=(m.leads_pl||0)+(m.leads_plua||0),quals=m.quals||0
+    rows.push({day,spend_pl:sp,spend_plua:0,leads_pl:leads,leads_plua:0,quals,
+      cpl:leads>0?sp/leads:0,cql:quals>0?sp/quals:0,ctr:parseFloat(m.ctr||0)})
+  }
+  drawChart(rows)
+}
 function drawChart(rows){chartData=rows;const c=document.getElementById('dyn-chart');if(!c)return;c.width=c.parentElement.offsetWidth||600;c.height=130;renderChart(true)}
 function renderChart(animate=false){
   if(!chartData||!chartData.length)return
@@ -4887,11 +4917,12 @@ async function checkSpend(from,to){
 function idsSig(ids){let h=0;const s=[...ids].sort().join(',');for(let i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))|0}return ids.length+':'+(h>>>0).toString(36)}
 async function bulkInsights(ids,from,to){const out={};for(let i=0;i<ids.length;i+=50){try{const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+50),since:from,until:to,region:CURRENT_REGION})});const d=await r.json();if(d.ok)Object.assign(out,d.data||{})}catch(e){}}return out}
 function sumIns(map,ids){let spend=0,clicks=0,imp=0,reach=0;ids.forEach(id=>{const v=map[id];if(!v||v.error)return;spend+=+v.spend||0;clicks+=+v.clicks||0;imp+=+v.impressions||0;reach+=+v.reach||0});return{spend:Math.round(spend*100)/100,clicks,imp,reach,ctr:imp?Math.round(clicks/imp*10000)/100:0}}
-async function heroAllMeta(from,to){const $=id=>document.getElementById(id);const rks=ZALIVS.filter(z=>!z.togo&&z.campaign_id);const ids=[...new Set(rks.map(z=>String(z.campaign_id)))]
+async function heroAllMeta(from,to,seq){const $=id=>document.getElementById(id);const fresh=()=>seq===undefined||seq===_dashSeq;const rks=ZALIVS.filter(z=>!z.togo&&z.campaign_id);const ids=[...new Set(rks.map(z=>String(z.campaign_id)))]
   if(!ids.length){['d-spend','d-daily'].forEach(id=>{const e=$(id);if(e)e.textContent='$0'});return}
   const days=Math.max(1,Math.round((new Date(to)-new Date(from))/864e5)+1),pTo=new Date(new Date(from)-864e5).toISOString().slice(0,10),pFrom=new Date(new Date(from)-days*864e5).toISOString().slice(0,10)
   const key='ALL|'+from+'|'+to+'|'+CURRENT_REGION+'|'+idsSig(ids);let cc=_buyerCache[key]
   if(!cc||Date.now()-cc.at>5*60000){const[cur,prev]=await Promise.all([bulkInsights(ids,from,to),document.getElementById('cmp-tgl')?.classList.contains('on')?bulkInsights(ids,pFrom,pTo):Promise.resolve({})]);cc=_buyerCache[key]={at:Date.now(),cur:sumIns(cur,ids),prev:sumIns(prev,ids)};if(CURRENT_BUYER)return}
+  if(!fresh())return
   const S=cc.cur,P=cc.prev
   heroCountUp($('hero-tick'),S.spend,v=>v.toLocaleString('ru',{minimumFractionDigits:2,maximumFractionDigits:2}).replace(',','.'));heroDelta(S.spend,P.spend);heroCountUp($('hero-daily'),S.spend/days,v=>'$'+Math.round(v))
   const lbl=$('hero-per');if(lbl)lbl.textContent=days+' дн. · Meta live'
