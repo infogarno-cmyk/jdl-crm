@@ -1571,6 +1571,7 @@ async function init(){
   rolloverTodayTasks();scheduleRollover();repairRegions().then(backfillFdc)
   if(localStorage.getItem('jdl_buyer')===null&&CURRENT_USER)CURRENT_BUYER=CURRENT_USER.name
   setBuyer(CURRENT_BUYER);setupRT();setSS('ok','Данные загружены');dismissIntro();maybeJdlToday();schemaCheck()
+  if(typeof jvRemindersOnStart==='function')setTimeout(jvRemindersOnStart,2500);setTimeout(()=>{if(typeof jvRemindersOnStart==='function')jvRemindersOnStart()},2500)
 }
 async function loadDomainMeta(){if(!db)return;try{const{data}=await db.from('domain_meta').select('*').eq('region',CURRENT_REGION);DOMAIN_META=data||[]}catch(e){DOMAIN_META=[]}}
 function dMeta(key){return DOMAIN_META.find(m=>m.key===key)||{}}
@@ -2072,6 +2073,32 @@ let _jvRec=null,_jvListening=false
 
 function jvRecSupported(){return !!(window.SpeechRecognition||window.webkitSpeechRecognition)}
 
+// ── Короткий отклик до выполнения ──
+// Длинные команды (сверка регионов, сводка) считаются секундами. Без подтверждения
+// кажется, что он не услышал, поэтому сначала отвечаем, потом работаем.
+const JV_ACK=['Есть, сэр.','Секунду, сэр.','Сейчас, сэр.','Минуту.','Уже смотрю.']
+const JV_ACK_OPEN=['Открываю.','Открываю, сэр.','Сию минуту.']
+async function jvAck(kind){await jvReply(JV_PICK(kind==='open'?JV_ACK_OPEN:JV_ACK))}
+
+// ── Напоминания ──
+// «Джарвис, напомни ...» — запоминается и проговаривается при следующем заходе в CRM.
+function jvRemGet(){try{return JSON.parse(localStorage.getItem('jdl_reminders')||'[]')}catch(e){return[]}}
+function jvRemSave(a){localStorage.setItem('jdl_reminders',JSON.stringify(a.slice(-20)))}
+function jvRemAdd(text){
+  const a=jvRemGet()
+  a.push({t:String(text).trim(),at:Date.now(),done:false})
+  jvRemSave(a)
+}
+// проговариваются один раз при следующем открытии CRM
+async function jvRemindersOnStart(){
+  if(!jvAllowed())return
+  const a=jvRemGet(),pend=a.filter(x=>!x.done)
+  if(!pend.length)return
+  await jvWait(1200)
+  await jvReply(pend.length===1?'Сэр, вы просили напомнить.':`Сэр, у вас ${pend.length} ${jvPlural(pend.length,'напоминание','напоминания','напоминаний')}.`)
+  for(const r of pend){if(_jvAbort)break;await jvReply(r.t+'.')}
+  pend.forEach(x=>x.done=true);jvRemSave(a)
+}
 // ── Постоянное прослушивание с обращением ──
 // Микрофон слушает всё время, но команды выполняет только после «Джарвис».
 // После обращения даётся окно в 20 секунд, внутри которого можно говорить без него.
@@ -2154,6 +2181,12 @@ function jvParse(raw){
   if(!t)return null
   const has=(...w)=>w.some(x=>t.includes(x))
 
+  // напоминание разбираем первым: внутри него могут быть слова других команд
+  // служебное слово только целиком: иначе «напомни проверить» теряет «про» из «проверить»
+  const rem=t.match(/^(?:напомни(?:ть)?|запомни|не забудь)\s+(?:мне\s+)?(?:(?:что|про|о|об)\s+)?(.+)$/i)
+  if(rem&&rem[1].trim().length>2)return{cmd:'remind',arg:rem[1].trim()}
+  if(has('какие напоминан','что я просил','мои напоминан'))return{cmd:'remlist'}
+
   if(has('стоп','замолчи','отмена','хватит'))return{cmd:'stop'}
   if(has('брифинг','доклад','сводк','что нового','введи в курс'))return{cmd:'brief'}
 
@@ -2229,13 +2262,24 @@ async function jvCommand(raw){
     case 'page':{
       const nb=document.getElementById('nb-'+p.arg)
       if(!nb){await jvReply('Не нахожу такой раздел, сэр.');return}
-      nb.click();await jvReply('Открываю.')
+      nb.click();await jvAck('open')
       return}
 
     case 'today':
       if(typeof openJdlToday==='function'){openJdlToday();await jvReply('События за сутки, сэр.')}
       else await jvReply('Сводка недоступна.')
       return
+
+    case 'remind':
+      jvRemAdd(p.arg)
+      await jvReply(JV_PICK(['Запомнил, сэр. Напомню при следующем заходе.','Принято. Напомню, когда вернётесь.','Записал, сэр.']))
+      return
+
+    case 'remlist':{
+      const pend=jvRemGet().filter(x=>!x.done)
+      if(!pend.length){await jvReply('Напоминаний нет, сэр.');return}
+      await jvReply(`Напоминаний ${pend.length}: `+pend.map(x=>x.t).join(', ')+'.')
+      return}
 
     case 'thanks':
       await jvReply(JV_PICK(['Всегда пожалуйста, сэр.','Рад служить.','Не стоит благодарности, сэр.','Это моя работа, сэр.']));return
@@ -2308,6 +2352,7 @@ async function jvCommand(raw){
       return}
 
     case 'summary':{
+      await jvAck()
       const nb2=document.getElementById('nb-dash');if(nb2)nb2.click()
       await jvWait(500);await jvWaitLive(8000)
       const sp=jvNum('hero-tick'),l=jvNum('hero-l'),q=jvNum('hero-q'),cpl=jvNum('d-cpl')
@@ -2317,6 +2362,7 @@ async function jvCommand(raw){
       await jvReply(s,'#hero-tick','ИТОГО');return}
 
     case 'compare':{
+      await jvAck()
       const start=CURRENT_REGION,res={}
       for(const r of ['PL','CZ']){
         if(CURRENT_REGION!==r&&typeof switchRegion==='function'){await switchRegion(r);await jvWait(800)}
@@ -2755,7 +2801,7 @@ function jvVoice(){
     ||ru[0]||vs[0]||null
 }
 // время, за которое реплику комфортно прочитать глазами (если голоса нет)
-function jvReadMs(text){return Math.min(9000,Math.max(1900,text.length*72))}
+function jvReadMs(text){return Math.min(5200,Math.max(1200,text.length*58))}
 let _jvNoVoice=false
 async function jvSpeak(text){
   if(_jvAbort||!text)return
@@ -2889,18 +2935,23 @@ function jvUtter(text,opt){
     try{
       const u=new SpeechSynthesisUtterance(text)
       const v=jvVoice();if(v){u.voice=v;u.lang=v.lang}
-      // базовые темп и тон, плюс лёгкий разброс от jvSpeakLocal — без него звучит как робот
       u.rate=Math.max(.6,Math.min(1.6,(opt&&opt.rate)||jvRate()))
       u.pitch=Math.max(.5,Math.min(1.5,(opt&&opt.pitch)||jvPitch()))
       u.volume=1
-      const t0=Date.now();let done=false
-      const fin=()=>{if(done)return;done=true
-        // мгновенный «конец» = синтез недоступен: дальше идём по времени чтения
-        const dt=Date.now()-t0
-        if(dt<300){_jvNoVoice=true;return setTimeout(res,jvReadMs(text))}
-        res()}
+      const t0=Date.now();let done=false,keep=null
+      const fin=()=>{
+        if(done)return;done=true
+        clearInterval(keep)
+        // мгновенный «конец» = синтез недоступен, дальше идём по времени чтения
+        if(Date.now()-t0<250){_jvNoVoice=true;return setTimeout(res,jvReadMs(text))}
+        res()
+      }
       u.onend=fin;u.onerror=fin
-      setTimeout(fin,Math.max(4000,text.length*95))
+      // Chrome глушит длинную речь примерно через 15 секунд и не присылает onend —
+      // периодический resume() не даёт ему уснуть, иначе между фразами возникают провалы.
+      keep=setInterval(()=>{try{if(speechSynthesis.speaking)speechSynthesis.resume();else fin()}catch(e){}},2000)
+      // страховка пропорциональна длине: короткая фраза не должна ждать секундами
+      setTimeout(fin,1200+text.length*70)
       speechSynthesis.speak(u)
     }catch(e){_jvNoVoice=true;setTimeout(res,jvReadMs(text))}
   })
@@ -2915,6 +2966,8 @@ async function jvSpotEl(sel,label){
   el.scrollIntoView({behavior:'smooth',block:'center'})
   // рамка ставится по координатам ПОСЛЕ прокрутки, иначе при скролле она встаёт мимо цели
   await jvWait(180)
+  // подпись не нужна, когда подсвечиваем карточку внутри списка
+
   if(_jvAbort)return
   const r=el.getBoundingClientRect()
   const pad=10
@@ -3000,8 +3053,10 @@ function jvQuipDelta(d){
 // Связки между фактами: без них речь звучит как зачитывание таблицы
 const JV_LINK=['Далее.','Идём дальше.','Смотрим дальше.','Так.','Теперь вот что.']
 const JV_NEXT=['Что касается цены.','По цене.','Теперь цифры по цене.']
-const JV_BYE=['Хорошего вам залива, сэр.','Удачной охоты, сэр.','Ровного хасла, сэр.',
-  'Хорошего залива, сэр. Я присмотрю за цифрами.','Удачной охоты. Буду на связи, сэр.','Ровного хасла, сэр. И пощадите бюджет.']
+// Ударения проставлены знаком U+0301 прямо в тексте: зали́ва, ха́сла
+const JV_BYE=['Хорошего вам зали́ва, сэр.','Удачной охоты, сэр.','Ровного ха́сла, сэр.',
+  'Хорошего зали́ва, сэр. Я присмотрю за цифрами.','Удачной охоты. Буду на связи, сэр.',
+  'Ровного ха́сла, сэр. И пощадите бюджет.','Лёгкого зали́ва, сэр.','Пусть кабинет будет к вам добр, сэр.']
 // Комментарий к количеству новых РК
 function jvQuipRk(n){
   if(n>=8)return JV_PICK(['Восемь и больше за сутки. Кто-то сегодня не жалел ни себя, ни рекламный кабинет.','Темп впечатляющий, сэр. Надеюсь, креативов хватило на всех.'])
@@ -3053,12 +3108,15 @@ async function jvPhaseToday(){
   if(typeof openJdlToday==='function'){openJdlToday();await jvWait(700)}
   const{ev,ins}=buildJdlToday()
   if(!ev.length)await jvSay('За сутки ничего примечательного. Тихо, как в хорошем сейфе.')
-  for(const e of ev.slice(0,5)){
+  const cards=document.querySelectorAll('#jt-body .jt-ev')
+  for(let ei=0;ei<Math.min(ev.length,5);ei++){
     if(_jvAbort)break
+    const e=ev[ei]
     const head=String(e[1]).replace(/:/g,' —')
     const body=String(e[2]||'')
     const useBody=/\d/.test(body)&&!/[\\\/{}]/.test(body)&&body.length<90
-    await jvSay(head+(useBody?', '+body+'.':'.'))
+    // подсвечиваем ту карточку, которую сейчас читает
+    await jvSay(head+(useBody?', '+body+'.':'.'),cards[ei]||null,null)
     // живой комментарий к событию, а не сухой список
     const num=parseInt((head.match(/(\d+)/)||[])[1]||0)
     if(/Новые РК/i.test(head)){const q=jvQuipRk(num);if(q)await jvSay(q)}
