@@ -3024,12 +3024,16 @@ function doSearch(q){
 // Shared fuzzy signature for campaign-name matching — stable prefix (buyer+date+geo code),
 // tolerant of trailing decorations added in Meta ("— 1-2-1", extra spaces, etc.)
 function campKey(name){return(name||'').toLowerCase().replace(/\s+/g,'').slice(0,25)}
+// Ядро названия: только буквы и цифры, без ведущего порядкового номера ("8D{13.09}..." → "d1309...").
+// Переживает ручные правки в Meta/CRM — лишние слэши, пробелы, тире, "— 1-2-1" в конце.
+function campCore(name){return(name||'').toLowerCase().replace(/^\s*\d+(?=[a-zа-я])/,'').replace(/[^a-z0-9]/g,'')}
 function fuzzyMatchZaliv(campName,pool){
-  const nk=campKey(campName)
-  return pool.find(z=>{
-    const zk=campKey(z.name)
-    return zk===nk||zk.includes(nk.slice(0,15))||nk.includes(zk.slice(0,15))
-  })
+  const nk=campKey(campName),nc=campCore(campName)
+  // 1) совпадение по ядру — самое надёжное
+  let m=pool.find(z=>{const zc=campCore(z.name);return zc===nc||(nc.length>=18&&zc.startsWith(nc.slice(0,18)))||(zc.length>=18&&nc.startsWith(zc.slice(0,18)))})
+  if(m)return m
+  // 2) запасной вариант — по сырому префиксу
+  return pool.find(z=>{const zk=campKey(z.name);return zk===nk||zk.includes(nk.slice(0,15))||nk.includes(zk.slice(0,15))})
 }
 async function importCampaignsFromMeta(){
   if(!db)return
