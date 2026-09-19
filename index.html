@@ -2105,6 +2105,90 @@ async function jvRemindersOnStart(){
   pend.forEach(x=>x.done=true);jvRemSave(a)
 }
 
+
+// ══ ПЕРИОДЫ ══
+// «за прошлую неделю», «позавчера», «с 1 по 10 сентября» — всё это должно
+// приводиться к паре дат и подставляться в фильтр дашборда.
+const JV_MON='январ феврал март апрел ма июн июл август сентябр октябр ноябр декабр'.split(' ')
+const JV_MONW=['январ','феврал','март','апрел','мая|май','июн','июл','август','сентябр','октябр','ноябр','декабр']
+function jvISO(d){return new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)}
+function jvShift(days){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()+days);return d}
+// понедельник недели, в которую попадает дата
+function jvMonday(d){const x=new Date(d);x.setHours(12,0,0,0);const w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);return x}
+
+function jvPeriod(raw){
+  const t=(raw||'').toLowerCase().replace(/ё/g,'е')
+  const has=(...w)=>w.some(x=>t.includes(x))
+  const D=(a,b,label)=>({from:jvISO(a),to:jvISO(b),label})
+  const today=jvShift(0)
+
+  // явные даты: «с 1 по 10 сентября», «с 1 сентября по 10 октября»
+  const span=t.match(/с\s+(\d{1,2})\s*([а-я]+)?\s+по\s+(\d{1,2})\s*([а-я]+)?/)
+  if(span){
+    const mi=w=>{if(!w)return -1;return JV_MONW.findIndex(m=>m.split('|').some(x=>w.startsWith(x)))}
+    const y=today.getFullYear()
+    let m2=mi(span[4]),m1=mi(span[2]);if(m1<0)m1=m2;if(m2<0)m2=m1
+    if(m1<0)m1=m2=today.getMonth()
+    const a=new Date(y,m1,+span[1],12),b=new Date(y,m2,+span[3],12)
+    if(a<=b)return D(a,b,'выбранный период')
+  }
+  // «за 12 сентября», «10 сентября»
+  const one=t.match(/(\d{1,2})\s+([а-я]{3,})/)
+  if(one){
+    const m=JV_MONW.findIndex(x=>x.split('|').some(w=>one[2].startsWith(w)))
+    if(m>=0){const d=new Date(today.getFullYear(),m,+one[1],12);return D(d,d,one[0])}
+  }
+
+  if(has('позавчера'))                        {const d=jvShift(-2);return D(d,d,'позавчера')}
+  if(has('вчера'))                            {const d=jvShift(-1);return D(d,d,'вчера')}
+  if(has('сегодня','за сутки','за день'))     return D(today,today,'сегодня')
+
+  if(has('прошлую неделю','прошлой неделе','прошедшую неделю','на прошлой')){
+    const mon=jvMonday(jvShift(-7));const sun=new Date(mon);sun.setDate(sun.getDate()+6)
+    return D(mon,sun,'прошлую неделю')}
+  if(has('этой неделе','эту неделю','текущую неделю','с понедельника'))
+    return D(jvMonday(today),today,'эту неделю')
+
+  if(has('прошлый месяц','прошлом месяце','прошедший месяц')){
+    const a=new Date(today.getFullYear(),today.getMonth()-1,1,12)
+    const b=new Date(today.getFullYear(),today.getMonth(),0,12)
+    return D(a,b,'прошлый месяц')}
+  if(has('этот месяц','этом месяце','текущий месяц','с начала месяца'))
+    return D(new Date(today.getFullYear(),today.getMonth(),1,12),today,'этот месяц')
+
+  // «за последние 5 дней», «за 2 недели», «за 3 месяца»
+  const num=t.match(/(?:за\s+)?(?:последни[ех]\s+)?(\d{1,3})\s*(дн|дня|дней|день|недел|месяц)/)
+  if(num){
+    const k=num[2].startsWith('недел')?7:num[2].startsWith('месяц')?30:1
+    const days=Math.min(365,Math.max(1,parseInt(num[1])*k))
+    return D(jvShift(-(days-1)),today,'последние '+days+' дней')
+  }
+  if(has('за неделю','недел'))   return D(jvShift(-6),today,'неделю')
+  if(has('за месяц','месяц'))    return D(jvShift(-29),today,'месяц')
+  if(has('за квартал','квартал'))return D(jvShift(-89),today,'квартал')
+  if(has('за год','за весь год'))return D(jvShift(-364),today,'год')
+  if(has('за все время','всего','за все'))return D(new Date(2024,0,1,12),today,'всё время')
+  return null
+}
+// Подставляем период в фильтр дашборда и ждём, пока приедут живые цифры
+async function jvSetPeriod(pr){
+  if(!pr)return false
+  const nb=document.getElementById('nb-dash');if(nb)nb.click()
+  await jvWait(250)
+  const f=document.getElementById('pd-from'),tt=document.getElementById('pd-to')
+  if(!f||!tt)return false
+  document.querySelectorAll('.pbtns .pb').forEach(b=>b.classList.remove('active'))
+  f.value=pr.from;tt.value=pr.to
+  if(typeof rdash==='function')rdash()
+  await jvWait(300)
+  return await jvWaitLive(15000)
+}
+function jvPeriodWords(pr){
+  if(!pr)return ''
+  if(pr.from===pr.to)return pr.label||pr.from
+  return pr.label||`с ${pr.from} по ${pr.to}`
+}
+
 // ══ МОЗГ — Claude через Edge Function ══
 // Ключ лежит в секретах Supabase и в браузер не попадает: HTML отдаётся целиком,
 // и всё, что вписано в него, видно любому, кто открыл исходник страницы.
@@ -2300,12 +2384,17 @@ function jvParse(raw){
   if(has('выключи музык','убери музык','без музык'))return{cmd:'nomusic'}
   if(has('громче','тише'))return{cmd:'vol',arg:has('громче')?1:-1}
 
-  // вопросы по цифрам
-  if(has('сколько потрат','какой спенд','сколько спенд','сколько открут','открут'))return{cmd:'ask',arg:'spend'}
-  if(has('сколько лид','лидов'))return{cmd:'ask',arg:'leads'}
-  if(has('сколько квал','квалов'))return{cmd:'ask',arg:'quals'}
-  if(has('цена лида','сколько стоит лид','какой сипиэл','какой cpl'))return{cmd:'ask',arg:'cpl'}
-  if(has('цена квала','какой cql','какой сикьюэл'))return{cmd:'ask',arg:'cql'}
+  // вопросы по цифрам — вместе с периодом, если он назван
+  const per=jvPeriod(t)
+  const withPer=(arg)=>per?{cmd:'ask',arg,period:per}:{cmd:'ask',arg}
+  if(has('цена квала','цена квалов','стоит квал','какой cql','какой сикьюэл','сикьюэл','за квал'))return withPer('cql')
+  if(has('цена лида','сколько стоит лид','какой сипиэл','какой cpl','сипиэл'))return withPer('cpl')
+  if(has('спенд','сколько потрат','потратили','сколько открут','открут','сколько слил','слили','налил','расход','бюджет'))return withPer('spend')
+  if(has('сколько лид','лидов','сколько заяв','заявок'))return withPer('leads')
+  if(has('сколько квал','квалов','квалифицирован'))return withPer('quals')
+  // «покажи прошлую неделю» — период без метрики: даём сводку по нему
+  if(per&&has('покажи','открой','поставь','давай','посмотрим','что было','как было','итоги'))
+    return{cmd:'ask',arg:'all',period:per}
 
   // действия
   // разговорное
@@ -2342,7 +2431,12 @@ async function jvCommand(raw){
   if(p.cmd==='unknown'){
     jvHud(true,'думаю…')
     const g=await brainIntent(raw)
-    if(g&&g.cmd&&g.cmd!=='unknown')p={cmd:g.cmd,arg:g.arg}
+    if(g&&g.cmd&&g.cmd!=='unknown'){
+      p={cmd:g.cmd,arg:g.arg}
+      // период мозг возвращает словами — разбираем тем же парсером, что и команды
+      if(g.period)p.period=jvPeriod(String(g.period))||jvPeriod(raw)
+      else p.period=jvPeriod(raw)
+    }
     else if(g&&g.say){await jvReply(String(g.say));return}
   }
   switch(p.cmd){
@@ -2492,26 +2586,39 @@ async function jvCommand(raw){
 
     case 'ask':{
       const nb=document.getElementById('nb-dash')
-      if(p.arg!=='tasks'&&nb&&!nb.classList.contains('active')){nb.click();await jvWait(600);await jvWaitLive(7000)}
+      if(p.period&&p.arg!=='tasks'){
+        await jvAck('open')
+        const ok=await jvSetPeriod(p.period)
+        if(!ok)console.log('Геннадий: цифры за период не доехали')
+      }else if(p.arg!=='tasks'&&nb&&!nb.classList.contains('active')){nb.click();await jvWait(600);await jvWaitLive(9000)}
+      const pw=p.period?' за '+jvPeriodWords(p.period):''
       const K=jvKpi()
+      if(p.arg==='all'){
+        let s=`За ${p.period?jvPeriodWords(p.period):'период'}: открут ${Math.round(K.spend||0)} долларов, лидов ${K.leads||0}, квалов ${K.quals||0}.`
+        if(K.cql)s+=` CQL ${Math.round(K.cql)} долларов.`
+        else if(K.cpl)s+=` Цена лида ${Math.round(K.cpl)} долларов, квалов нет.`
+        await jvReply(s,'#hero-tick','ПЕРИОД')
+        const say=await brainSay('period',{период:p.period&&p.period.label,spend:Math.round(K.spend||0),leads:K.leads,quals:K.quals,cpl:K.cpl,cql:K.cql},'')
+        if(say)await jvSpeak(say)
+        return}
       if(p.arg==='spend'){
         const v=K.spend
-        await jvReply(v?`Открут за период — ${Math.round(v)} долларов.`:'Открута за период нет, сэр.','#hero-tick','СПЕНД')
+        await jvReply(v?`Открут${pw||' за период'} — ${Math.round(v)} долларов.`:`Открута${pw||' за период'} нет, сэр.`,'#hero-tick','СПЕНД')
         return}
       if(p.arg==='leads'){
-        await jvReply(`Лидов ${K.leads||0}, квалифицированных ${K.quals||0}.`,'#hero-l','ЛИДЫ');return}
+        await jvReply(`Лидов${pw} ${K.leads||0}, квалифицированных ${K.quals||0}.`,'#hero-l','ЛИДЫ');return}
       if(p.arg==='quals'){
-        await jvReply(`Квалифицированных ${K.quals||0}.`,'#hero-q','КВАЛЫ');return}
+        await jvReply(`Квалифицированных${pw} ${K.quals||0}.`,'#hero-q','КВАЛЫ');return}
       if(p.arg==='cpl'){
         const v=K.cpl
-        await jvReply(v?`Цена лида — ${Math.round(v)} долларов.`:'Цену лида пока не посчитать, сэр.','#d-cpl','CPL')
+        await jvReply(v?`Цена лида${pw} — ${Math.round(v)} долларов.`:`Цену лида${pw} не посчитать, сэр.`,'#d-cpl','CPL')
         if(v){const say=await brainSay('cpl',{spend:Math.round(K.spend||0),leads:K.leads,quals:K.quals,cpl:+v.toFixed(1),cql:K.cql?+K.cql.toFixed(1):null},jvQuipCPL(v))
           if(say)await jvSpeak(say)}
         return}
       if(p.arg==='cql'){
         const v=K.cql
         if(!v){await jvReply(K.leads?'Квалов за период нет, CQL считать не из чего, сэр.':'Квалов пока нет, сэр.','#d-cql','CQL');return}
-        await jvReply(`CQL — ${Math.round(v)} долларов.`,'#d-cql','CQL')
+        await jvReply(`CQL${pw} — ${Math.round(v)} долларов.`,'#d-cql','CQL')
         const say=await brainSay('cql',{spend:Math.round(K.spend||0),leads:K.leads,quals:K.quals,cpl:K.cpl?+K.cpl.toFixed(1):null,cql:+v.toFixed(1)},'')
         if(say)await jvSpeak(say)
         return}
@@ -2993,7 +3100,7 @@ function ruCount(n,a,b,c){n=Math.round(n);return num2ru(n)+' '+ruPlural(n,a,b,c)
 function jvNorm(t){
   return String(t)
     // аббревиатуры расшифровываем словами — «си кью эл» на слух не значит ничего
-    .replace(/CQL/gi,'цена квалифицированного лида').replace(/CPL/gi,'цена лида').replace(/CTR/gi,'си ти ар')
+    .replace(/CQL/gi,'цена квала').replace(/CPL/gi,'цена лида').replace(/CTR/gi,'си ти ар')
     // сначала суммы вместе со словом «долларов», иначе оно продублируется
     // Пробел возвращаем в замене, иначе слова склеиваются («лидадвести»);
     // лишние пробелы схлопываются последним правилом.
@@ -3309,7 +3416,7 @@ async function jvTodayData(){
   const byType={};ins.forEach(g=>{const t=g.gtype||'insight';byType[t]=(byType[t]||0)+1})
 
   // 4. РК в работе — оба баера, все гео, дроп включительно, выключенные не в счёт
-  const mine=(window._ALL_ZALIVS||ZALIVS).filter(z=>!z.togo&&z.ind!=='off')
+  const mine=zWorkingAll()
   const byGeo={};mine.forEach(z=>{const g=z.geo||z.region||'—';byGeo[g]=(byGeo[g]||0)+1})
 
   // 5. задачи на сегодня — только на экран, голосом здесь не читаются
@@ -3522,6 +3629,7 @@ function jvPlural(n,a,b,c){const n1=n%10,n2=n%100
 async function jarvisBrief(){
   if(!jvAllowed())return
   if(_jvRunning)return
+  jvBriefMark()   // ручной брифинг тоже закрывает день: второй раз сам не полезет
   _jvAbort=false;_jvRunning=true;_jvNoVoice=false
   try{speechSynthesis.cancel()}catch(e){}
   await jvEnsureVoices()
@@ -3568,10 +3676,32 @@ async function jvAutoListen(){
   }catch(e){}
 }
 
+// ── Брифинг сам запускается один раз в сутки ──
+// Либо при первом заходе за день, либо в 9:00, если вкладка была открыта раньше.
+// Дальше — только по кнопке или голосом: «Геннадий, брифинг».
+const JV_BRIEF_HOUR=9
+function jvBriefDone(){return localStorage.getItem('jdl_brief_day')===todayISO()}
+function jvBriefMark(){localStorage.setItem('jdl_brief_day',todayISO())}
+function jvBriefReset(){localStorage.removeItem('jdl_brief_day');console.log('Брифинг за сегодня сброшен — перезагрузи страницу')}
+// вкладка живёт сутками: раз в минуту проверяем, не наступило ли утро
+function jvBriefClock(){
+  setInterval(()=>{
+    if(!jvOn()||_jvRunning||jvBriefDone())return
+    if(new Date().getHours()<JV_BRIEF_HOUR)return
+    jvBriefMark()
+    console.log('Геннадий: утренний брифинг')
+    jarvisBrief()
+  },60000)
+}
+
 // Звук в браузере требует жеста пользователя. Пробуем стартовать сразу;
 // если контекст заблокирован — показываем ненавязчивую кнопку.
 function jarvisMaybeStart(){
   if(!jvOn())return
+  jvBriefClock()
+  // уже отчитался сегодня — молчим, ждём вызова
+  if(jvBriefDone()){console.log('Геннадий: брифинг за сегодня уже был. Кнопка ГЕННАДИЙ или «Геннадий, брифинг».');return}
+  jvBriefMark()
   const go=()=>{document.getElementById('jv-unlock')?.remove();jarvisBrief()}
   try{
     const AC=window.AudioContext||window.webkitAudioContext
@@ -3831,7 +3961,11 @@ function zAnKeys(z){const set=new Set();RK_ANALYSES.filter(a=>a.zaliv_id===z.id)
 function zLifecycle(z){const d=zDays(z),an=zAnKeys(z),T=zLCT(z),pos=x=>Math.min(100,x/T*100),on=z.ind!=='off';return`<div class="lc" title="день ${d}${z.cat==='test'?' · TEST: только 1DC':''}"><div class="tr"></div><div class="fl2" style="width:${pos(d)}%"></div>${zLCM(z).map(m=>`<div class="m ${an.has(m[2])?'d':(d>=Math.ceil(m[0])&&on?'w':'')}" style="left:${pos(m[0])}%" data-l="${m[1]}"></div>`).join('')}<div class="now" style="left:${pos(d)}%"></div></div>`}
 function zNeedsAn(z){if(z.ind==='off'||z.togo)return false;const d=zDays(z),an=zAnKeys(z);return zLCM(z).some(m=>d>=Math.ceil(m[0])&&!an.has(m[2]))}
 function zCpl(z){const a=RK_ANALYSES.filter(x=>x.zaliv_id===z.id).sort((p,q)=>(q.created_at||'').localeCompare(p.created_at||''))[0];return a?+a.cpl||0:0}
-function zViewFilter(z){const me=CURRENT_BUYER||'';if(_zView==='togo')return !!z.togo;if(z.togo)return false;switch(_zView){case'mine':return z.ind!=='off'&&(!me||z.buyer===me);case'noan':return zNeedsAn(z);case'test':return z.cat==='test';default:return true}}
+// «В работе» = не в to-go и не выключена. Дроп считается: кампания работает, её просто не трогают.
+// Это правило используют и раздел «Мои активные», и сводка Геннадия — чтобы цифры совпадали.
+function zWorking(z){return !!z&&!z.togo&&z.ind!=='off'}
+function zWorkingAll(){return (window._ALL_ZALIVS||ZALIVS||[]).filter(zWorking)}
+function zViewFilter(z){const me=CURRENT_BUYER||'';if(_zView==='togo')return !!z.togo;if(z.togo)return false;switch(_zView){case'mine':return zWorking(z)&&(!me||z.buyer===me);case'noan':return zNeedsAn(z);case'test':return z.cat==='test';default:return true}}
 function spbs(z){return Array.from({length:7},(_,i)=>`<button class="spb${z.score===i?' s'+i:''}" data-zid="${z.id}" data-sc="${i}">${i}</button>`).join('')}
 
 function rzalivs(){
@@ -4619,8 +4753,7 @@ async function jtSections(){
 
   // 4) РК в работе — активные кампании обоих баеров по всем гео.
   // «В работе» = не в to-go и не выключена. На дропе кампания тоже в работе, её просто не трогают.
-  const all=(window._ALL_ZALIVS||ZALIVS)
-  const work=all.filter(z=>!z.togo&&z.ind!=='off')
+  const work=zWorkingAll()
   const byGeo={},byBuyer={}
   work.forEach(z=>{const g=z.geo||z.region||'—';byGeo[g]=(byGeo[g]||0)+1
                    const b=z.buyer||'без баера';byBuyer[b]=(byBuyer[b]||0)+1})
