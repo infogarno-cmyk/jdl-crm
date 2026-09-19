@@ -848,7 +848,7 @@ tr.zr2.zsel td{background:linear-gradient(90deg,rgba(212,175,55,.07),transparent
 #jv-vp .vp-foot{display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--border)}
 #jv-vp .vp-foot button{flex:1;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font:600 12px var(--sans);padding:9px;border-radius:9px;cursor:pointer}
 #jv-vp .vp-foot button:hover{color:#fff;border-color:#6E9BFF}
-/* ══ JARVIS BRIEFING ══ */
+/* ══ БРИФИНГ ГЕННАДИЯ ══ */
 #jv-hud{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:99990;display:flex;align-items:center;gap:14px;
   background:rgba(10,12,17,.93);border:1px solid rgba(110,155,255,.32);border-radius:14px;padding:13px 18px;
   box-shadow:0 10px 40px rgba(0,0,0,.6),0 0 30px rgba(110,155,255,.13);backdrop-filter:blur(14px);max-width:min(900px,92vw)}
@@ -920,7 +920,7 @@ document.getElementById('root').innerHTML=`
       <div class="nb" id="nb-sales"><span class="dot"></span>Sales</div>
       <div class="nb" id="nb-domains"><span class="dot"></span>Домены</div>
     </nav>
-    <div class="sync-area"><span class="nb-jt" id="nb-jt" title="Сводка за 24 часа">☀ TODAY</span><span class="nb-jv" id="nb-mic" title="Голосовая команда · Ctrl+Shift+J">🎤</span><span class="nb-jv" id="nb-jv" title="Брифинг JARVIS · правый клик — настройки">◉ JARVIS</span><div class="bell" id="bell" title="Алерты">🔔<span class="n" id="bell-n" style="display:none">0</span></div><div class="sdot" id="sdot"></div><span class="stxt" id="stxt">—</span><button class="sbtn" id="sync-btn">↻ Sync</button></div>
+    <div class="sync-area"><span class="nb-jt" id="nb-jt" title="Сводка за 24 часа">☀ TODAY</span><span class="nb-jv" id="nb-mic" title="Микрофон · скажите «Привет, Геннадий» · Ctrl+Shift+J">🎤</span><span class="nb-jv" id="nb-jv" title="Брифинг Геннадия · правый клик — настройки">◉ ГЕННАДИЙ</span><div class="bell" id="bell" title="Алерты">🔔<span class="n" id="bell-n" style="display:none">0</span></div><div class="sdot" id="sdot"></div><span class="stxt" id="stxt">—</span><button class="sbtn" id="sync-btn">↻ Sync</button></div>
     <button class="search-btn" id="topbar-search">🔍 Поиск <kbd>Ctrl K</kbd></button>
     <div class="uchip" id="uchip"><div class="uava" id="uava"></div><span class="uname" id="uname"></span></div>
   </div>
@@ -1380,7 +1380,7 @@ if(_jvBtn){
     const has11=!!localStorage.getItem('jdl_11_key')
     const m=document.createElement('div');m.id='jv-menu'
     m.innerHTML=`
-      <div class="jvm-h">JARVIS</div>
+      <div class="jvm-h">ГЕННАДИЙ</div>
       <button data-a="run">▶ Запустить брифинг</button>
       <button data-a="auto">${off?'☐':'☑'} Автозапуск при входе</button>
       <div class="jvm-sep"></div>
@@ -1813,6 +1813,9 @@ let _dashSeq=0
 function rdash(){
   const buyer=CURRENT_BUYER||''
   const seq=++_dashSeq
+  // Живые цифры Meta едут 2-3 секунды. До их приезда на экране висит прошлое значение,
+  // и голос успевал зачитать именно его. Флаг закрыт, пока heroAllMeta() не отчитается.
+  window._liveSeq=-1;window._liveKpi=null
   resetDashLabels()
   const from=document.getElementById('pd-from').value,to=document.getElementById('pd-to').value
   const rows=METRICS.filter(m=>m.day>=from&&m.day<=to)
@@ -1898,7 +1901,8 @@ function rdash(){
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#4080ff,#60a0ff)"></div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">AVG DEAL</div><div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--mono)">${savg.toLocaleString('ru')} ${cur()}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">средний чек</div></div>
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--bord),var(--bord2))"></div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">КОЛ-ВО ПРОДАЖ</div><div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--mono)">${sf.length}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">за период</div></div>`
   drawChart(rows)
-  if(buyer)rdashBuyer(buyer);else{heroAllMeta(from,to,seq);liveChart(from,to,seq)}
+  if(buyer){Promise.resolve(rdashBuyer(buyer)).then(()=>{window._liveSeq=seq}).catch(()=>{window._liveSeq=seq})}
+  else{heroAllMeta(from,to,seq);liveChart(from,to,seq)}
 }
 
 // ── CHART ──
@@ -1964,7 +1968,7 @@ async function liveChart(from,to,seq){
   drawChart(rows)
 }
 // ══════════════════════════════════════════════════════════════
-//  JARVIS BRIEFING — голос, музыка, подсветка метрик, маршрут по страницам
+//  БРИФИНГ ГЕННАДИЯ — голос, музыка, подсветка метрик, маршрут по страницам
 //  Музыка синтезируется на Web Audio (ничего не грузится, никаких прав на саундтрек).
 //  Голос — встроенный синтез речи браузера.
 // ══════════════════════════════════════════════════════════════
@@ -1980,7 +1984,7 @@ function jarvisVolume(v){
   toast('Громкость музыки: '+jvVol(),'ok');return jvVol()
 }
 
-// JARVIS доступен только Дане
+// Геннадий доступен только Дане
 function jvAllowed(){return !!(CURRENT_USER&&CURRENT_USER.name==='Danya')}
 // вызывается после входа/выхода: кнопка видна только Дане
 function jvApplyAccess(){
@@ -1996,9 +2000,9 @@ function jvOn(){return jvAllowed()&&localStorage.getItem('jdl_jarvis_off')!=='1'
 // Своя дорожка: положи файл рядом с index.html (например brief.mp3) на Vercel.
 // Путь можно сменить из консоли: jarvisTrack('/my-intro.mp3'), сбросить: jarvisTrack(null).
 function jarvisTrack(url){
-  if(url===null||url===''){localStorage.removeItem('jdl_jarvis_track');toast('JARVIS: вернулся синтезированный саундтрек','info');return}
+  if(url===null||url===''){localStorage.removeItem('jdl_jarvis_track');toast('Геннадий: вернулся синтезированный саундтрек','info');return}
   if(url===undefined)return localStorage.getItem('jdl_jarvis_track')||'(не задана, играет синтез)'
-  localStorage.setItem('jdl_jarvis_track',url);toast('JARVIS: дорожка — '+url,'ok')
+  localStorage.setItem('jdl_jarvis_track',url);toast('Геннадий: дорожка — '+url,'ok')
 }
 let _jvEl=null
 function jvMusicStart(){
@@ -2021,10 +2025,10 @@ function jvMusicStart(){
 function jvSynthStart(){
   try{
     const AC=window.AudioContext||window.webkitAudioContext
-    if(!AC){console.log('JARVIS: Web Audio не поддерживается');return}
+    if(!AC){console.log('Геннадий: Web Audio не поддерживается');return}
     _jvAudio=_jvAudio||new AC()
     if(_jvAudio.state==='suspended')_jvAudio.resume().then(()=>{
-      if(_jvAudio.state!=='running')console.log('JARVIS: звук заблокирован браузером — запусти брифинг кнопкой')})
+      if(_jvAudio.state!=='running')console.log('Геннадий: звук заблокирован браузером — запусти брифинг кнопкой')})
     const ctx=_jvAudio,t0=ctx.currentTime
     const master=ctx.createGain();master.gain.value=0;master.connect(ctx.destination)
     master.gain.linearRampToValueAtTime(jvVol()*.7,t0+2.5)
@@ -2041,7 +2045,7 @@ function jvSynthStart(){
     // без LFO на общей громкости — именно он давал «то громче, то тише»
     _jvNodes.push(master,filt)
     window._jvMaster=master
-  }catch(e){console.log('JARVIS: фон не создался —',e.message)}
+  }catch(e){console.log('Геннадий: фон не создался —',e.message)}
 }
 function jvBlip(freq){
   if(!_jvAudio)return
@@ -2082,7 +2086,7 @@ const JV_ACK_OPEN=['Открываю.','Открываю, сэр.','Сию ми�
 async function jvAck(kind){await jvReply(JV_PICK(kind==='open'?JV_ACK_OPEN:JV_ACK))}
 
 // ── Напоминания ──
-// «Джарвис, напомни ...» — запоминается и проговаривается при следующем заходе в CRM.
+// «Геннадий, напомни ...» — запоминается и проговаривается при следующем заходе в CRM.
 function jvRemGet(){try{return JSON.parse(localStorage.getItem('jdl_reminders')||'[]')}catch(e){return[]}}
 function jvRemSave(a){localStorage.setItem('jdl_reminders',JSON.stringify(a.slice(-20)))}
 function jvRemAdd(text){
@@ -2100,19 +2104,80 @@ async function jvRemindersOnStart(){
   for(const r of pend){if(_jvAbort)break;await jvReply(r.t+'.')}
   pend.forEach(x=>x.done=true);jvRemSave(a)
 }
-// ── Постоянное прослушивание с обращением ──
-// Микрофон слушает всё время, но команды выполняет только после «Джарвис».
-// После обращения даётся окно в 20 секунд, внутри которого можно говорить без него.
+
+// ══ МОЗГ — Claude через Edge Function ══
+// Ключ лежит в секретах Supabase и в браузер не попадает: HTML отдаётся целиком,
+// и всё, что вписано в него, видно любому, кто открыл исходник страницы.
+// Если функция недоступна — всё продолжает работать на заготовленных фразах.
+let _brainFails=0
+function brainOn(){return localStorage.getItem('jdl_brain')!=='0'&&_brainFails<3}
+function brainToggle(v){
+  if(v===undefined)v=!brainOn()
+  localStorage.setItem('jdl_brain',v?'1':'0');_brainFails=0
+  toast('Мозг '+(v?'включён':'выключен'),'ok');return v
+}
+async function brainCall(kind,payload,ms){
+  if(!brainOn()||!db)return null
+  const t0=Date.now()
+  try{
+    const call=db.functions.invoke('gena',{body:{
+      kind,payload,region:CURRENT_REGION,
+      user:(CURRENT_USER&&CURRENT_USER.name)||'',
+      now:new Date().toISOString()
+    }})
+    const res=await Promise.race([call,new Promise(r=>setTimeout(()=>r({error:{message:'таймаут'}}),ms||9000))])
+    if(res.error)throw new Error(res.error.message||'edge error')
+    const d=res.data||{}
+    if(d.error)throw new Error(d.error)
+    _brainFails=0
+    console.log('🧠 '+kind,(Date.now()-t0)+' мс',d)
+    return d
+  }catch(e){
+    _brainFails++
+    console.log('🧠 мозг недоступен — '+e.message+(_brainFails>=3?' · отключаю до перезагрузки':' · работаю на заготовках'))
+    return null
+  }
+}
+// Живой комментарий к цифрам. Если мозга нет — возвращается заготовка.
+async function brainSay(scene,facts,fallback){
+  const d=await brainCall('comment',{scene,facts})
+  const t=d&&d.text&&String(d.text).trim()
+  return t||fallback||''
+}
+// Свободная формулировка команды: мозг возвращает либо команду, либо реплику
+async function brainIntent(text){
+  const d=await brainCall('intent',{text},7000)
+  return d&&(d.cmd||d.say)?d:null
+}
+function brainTest(){
+  console.log('%c🧠 Проверка мозга','font-weight:bold;font-size:13px')
+  console.log('включён:',brainOn(),'· сбоев подряд:',_brainFails)
+  brainCall('comment',{scene:'test',facts:{spend:428,leads:31,quals:7,cql:61.1}})
+    .then(d=>console.log(d?'ответ: '+d.text:'ответа нет — смотри сообщение выше'))
+}
+
+// ── Сон и обращение ──
+// Чтобы услышать «Привет, Геннадий», микрофон физически должен быть включён — иначе
+// слышать нечего. Поэтому он включён, но СПИТ: ничего не разбирает, никуда не отправляет
+// и никак не реагирует, пока не прозвучит обращение. После обращения — полминуты разговора,
+// внутри которого имя повторять не нужно.
 let _jvAwake=0,_jvRestart=null,_jvMuted=false
+let _jvBuf='',_jvBufT=null
+const JV_PAUSE=1500      // столько тишины ждём, прежде чем счесть фразу договорённой
+const JV_WINDOW=30000    // окно разговора после обращения
+const JV_SLEEP='Сплю. Скажите «Привет, Геннадий»'
 // Микрофон слышит колонки: без этого он реагирует на собственные реплики
 function jvMute(on){_jvMuted=!!on;if(!on)_jvMuteUntil=Date.now()+700}
 let _jvMuteUntil=0
-// \b в JS не работает с кириллицей — границы задаём явно, иначе «Джарвис» не совпадёт
-const JV_WAKE=/(^|[^а-яёa-z])(джарвис|джарвиз|джарвес|джарвиc|jarvis)(?![а-яёa-z])/i
-const JV_HELLO=['К вашим услугам, сэр.','Слушаю, сэр.','Да, сэр.','Я здесь, сэр.','Всегда к вашим услугам.']
+// \b в JS не работает с кириллицей — границы задаём явно, иначе имя не совпадёт
+const JV_WAKE=/(^|[^а-яёa-z])(геннадий|геннадии|геннадьевич|генадий|генадии|геннадия|гennadiy|gennadiy|гена|геннадь)(?![а-яёa-z])/i
+// «привет» и прочие подводки срезаем отдельно: \b в JS не знает кириллицы
+const JV_LEAD=/^(привет|здравствуйте|здравствуй|доброе утро|добрый день|добрый вечер|слушай|слушайте|эй|ну|так|скажи|скажите)(?![а-яё])[\s,.:;!?—-]*/i
+const JV_HELLO=['К вашим услугам, сэр.','Слушаю, сэр.','Да, сэр.','Я здесь, сэр.','Всегда к вашим услугам.','Проснулся. Слушаю.']
 
 function jvAwakeNow(){return Date.now()<_jvAwake}
-function jvWakeOn(){_jvAwake=Date.now()+20000;jvMicUI(true,'awake')}
+function jvWakeOn(){_jvAwake=Date.now()+JV_WINDOW;jvMicUI(true,'awake')}
+function jvSleep(){_jvAwake=0;_jvBuf='';clearTimeout(_jvBufT);jvMicUI(!!_jvListening);if(_jvListening)jvHud(true,JV_SLEEP)}
 
 function jvListen(){
   if(!jvAllowed())return
@@ -2122,32 +2187,35 @@ function jvListen(){
   try{
     _jvRec=new SR()
     _jvRec.lang='ru-RU';_jvRec.continuous=true;_jvRec.interimResults=true;_jvRec.maxAlternatives=1
-    _jvRec.onstart=()=>{_jvListening=true;jvMicUI(true);jvHud(true,'Скажите «Джарвис»…')}
-    _jvRec.onresult=async e=>{
+    _jvRec.onstart=()=>{_jvListening=true;jvMicUI(true);jvHud(true,JV_SLEEP)}
+    _jvRec.onresult=e=>{
       let fin='',tmp=''
       for(let k=e.resultIndex;k<e.results.length;k++){
         const r=e.results[k]
         if(r.isFinal)fin+=r[0].transcript+' '; else tmp+=r[0].transcript
       }
-      if(tmp&&!fin)jvHud(true,(jvAwakeNow()?'« ':'… ')+tmp+' »')
-      const said=fin.trim()
-      if(!said)return
-      if(_jvMuted||Date.now()<_jvMuteUntil)return   // это наш собственный голос
-      console.log('🎤',said,'| обращение:',JV_WAKE.test(said)?'да':jvAwakeNow()?'активно':'нет')
-      const hasWake=JV_WAKE.test(said)
-      // пока не обратились — молчим, чтобы не реагировать на разговоры вокруг
-      if(!hasWake&&!jvAwakeNow()){jvHud(true,'Скажите «Джарвис»…');return}
-      let cmd=said.replace(JV_WAKE,'$1').replace(/^[\s,.:;!?—-]+/,'').replace(/^(привет|слушай|эй)\s+/i,'').trim()
-      jvWakeOn()
-      if(hasWake&&!cmd){await jvReply(JV_PICK(JV_HELLO));jvHud(true,'Слушаю…');return}
-      jvHud(true,'« '+cmd+' »')
-      await jvCommand(cmd)
-      if(_jvListening)jvHud(true,'Слушаю…')
+      if(_jvMuted||Date.now()<_jvMuteUntil)return   // это наш собственный голос из колонок
+      const awake=jvAwakeNow()
+      // Пока спим — в буфер не кладём ничего, кроме фразы с обращением.
+      // Чужие разговоры рядом не копятся и никуда не уходят.
+      if(!awake&&!_jvBuf&&!JV_WAKE.test(fin+' '+tmp)){
+        if(fin)jvHud(true,JV_SLEEP)
+        return
+      }
+      // Живой субтитр, пока человек говорит
+      if(tmp)jvHud(true,'« '+(_jvBuf+' '+tmp).trim()+' »')
+      if(!fin.trim())return
+      // Копим предложение целиком: раньше каждый кусок уходил в разбор отдельно,
+      // и фраза рвалась на половине слова.
+      _jvBuf=(_jvBuf+' '+fin).trim()
+      jvHud(true,'« '+_jvBuf+' »')
+      clearTimeout(_jvBufT)
+      _jvBufT=setTimeout(()=>{const phrase=_jvBuf;_jvBuf='';jvHeard(phrase)},JV_PAUSE)
     }
     _jvRec.onerror=e=>{
       if(e.error==='no-speech'||e.error==='aborted')return   // тишина — это нормально
       if(e.error==='not-allowed'){jvListenStop();toast('Нет доступа к микрофону — разреши в настройках сайта','err');return}
-      console.log('JARVIS mic:',e.error)
+      console.log('Геннадий mic:',e.error)
     }
     // распознавание само обрывается через паузу — поднимаем обратно, пока режим включён
     _jvRec.onend=()=>{
@@ -2156,12 +2224,27 @@ function jvListen(){
       _jvRestart=setTimeout(()=>{try{_jvRec&&_jvRec.start()}catch(e){}},250)
     }
     _jvRec.start()
-    toast('Слушаю. Скажите «Джарвис»','ok')
+    toast('Микрофон включён. Геннадий спит — скажите «Привет, Геннадий»','ok')
   }catch(e){toast('Не удалось запустить микрофон: '+e.message,'err')}
+}
+// Фраза договорена — вот теперь разбираем
+async function jvHeard(said){
+  if(!said||_jvAbort)return
+  const hasWake=JV_WAKE.test(said)
+  console.log('🎤',said,'|',hasWake?'обращение':jvAwakeNow()?'разговор':'мимо')
+  if(!hasWake&&!jvAwakeNow()){jvHud(true,JV_SLEEP);return}
+  let cmd=said.replace(JV_WAKE,'$1')
+    .replace(/^[\s,.:;!?—-]+/,'').replace(JV_LEAD,'')
+    .replace(/^[\s,.:;!?—-]+/,'').trim()
+  jvWakeOn()
+  if(hasWake&&!cmd){await jvReply(JV_PICK(JV_HELLO));jvHud(true,'Слушаю…');return}
+  jvHud(true,'« '+cmd+' »')
+  await jvCommand(cmd)
+  if(_jvListening)jvHud(true,jvAwakeNow()?'Слушаю…':JV_SLEEP)
 }
 function jvListenStop(){
   const was=_jvListening
-  _jvListening=false;_jvAwake=0;clearTimeout(_jvRestart);jvMicUI(false)
+  _jvListening=false;_jvAwake=0;_jvBuf='';clearTimeout(_jvRestart);clearTimeout(_jvBufT);jvMicUI(false)
   try{if(_jvRec){_jvRec.onend=null;_jvRec.stop()}}catch(e){}
   if(was)jvHud(false)
 }
@@ -2195,6 +2278,7 @@ function jvParse(raw){
   if(has('какие напоминан','что я просил','мои напоминан'))return{cmd:'remlist'}
 
   if(has('стоп','замолчи','отмена','хватит'))return{cmd:'stop'}
+  if(has('спи','засыпай','отдыхай','свободен'))return{cmd:'sleep'}
   if(has('брифинг','доклад','сводк','что нового','введи в курс'))return{cmd:'brief'}
 
   // регион
@@ -2250,12 +2334,24 @@ function jvParse(raw){
 }
 
 async function jvCommand(raw){
-  const p=jvParse(raw)
+  let p=jvParse(raw)
   if(!p)return
   _jvNoVoice=false
+  // Ключевых слов не нашлось — отдаём фразу мозгу: он понимает формулировки,
+  // которых нет в списке, и отвечает сам, если это просто разговор.
+  if(p.cmd==='unknown'){
+    jvHud(true,'думаю…')
+    const g=await brainIntent(raw)
+    if(g&&g.cmd&&g.cmd!=='unknown')p={cmd:g.cmd,arg:g.arg}
+    else if(g&&g.say){await jvReply(String(g.say));return}
+  }
   switch(p.cmd){
     case 'stop':
-      jvStop();return
+      jvStop();jvSleep();return
+
+    case 'sleep':
+      await jvReply(JV_PICK(['Засыпаю, сэр.','Ухожу в сон. Позовите, если понадоблюсь.','Спокойно, сэр. Я рядом.']))
+      jvSleep();return
 
     case 'brief':
       await jvReply('Слушаюсь, сэр.');jarvisBrief();return
@@ -2298,7 +2394,7 @@ async function jvCommand(raw){
         'Отлично, сэр. Ни одного сбоя с момента запуска.']));return
 
     case 'whoami':
-      await jvReply('Джарвис. Слежу за вашими кампаниями, считаю цифры и изредка позволяю себе замечания.');return
+      await jvReply('Геннадий. Слежу за вашими кампаниями, считаю цифры и изредка позволяю себе замечания.');return
 
     case 'time':{
       const d=new Date()
@@ -2397,23 +2493,28 @@ async function jvCommand(raw){
     case 'ask':{
       const nb=document.getElementById('nb-dash')
       if(p.arg!=='tasks'&&nb&&!nb.classList.contains('active')){nb.click();await jvWait(600);await jvWaitLive(7000)}
+      const K=jvKpi()
       if(p.arg==='spend'){
-        const v=jvNum('hero-tick')
+        const v=K.spend
         await jvReply(v?`Открут за период — ${Math.round(v)} долларов.`:'Открута за период нет, сэр.','#hero-tick','СПЕНД')
         return}
       if(p.arg==='leads'){
-        const l=jvNum('hero-l'),q=jvNum('hero-q')
-        await jvReply(`Лидов ${l||0}, квалифицированных ${q||0}.`,'#hero-l','ЛИДЫ');return}
+        await jvReply(`Лидов ${K.leads||0}, квалифицированных ${K.quals||0}.`,'#hero-l','ЛИДЫ');return}
       if(p.arg==='quals'){
-        const q=jvNum('hero-q');await jvReply(`Квалифицированных ${q||0}.`,'#hero-q','КВАЛЫ');return}
+        await jvReply(`Квалифицированных ${K.quals||0}.`,'#hero-q','КВАЛЫ');return}
       if(p.arg==='cpl'){
-        const v=jvNum('d-cpl')
+        const v=K.cpl
         await jvReply(v?`Цена лида — ${Math.round(v)} долларов.`:'Цену лида пока не посчитать, сэр.','#d-cpl','CPL')
-        if(v){const qq=jvQuipCPL(v);if(qq)await jvSpeak(qq)}
+        if(v){const say=await brainSay('cpl',{spend:Math.round(K.spend||0),leads:K.leads,quals:K.quals,cpl:+v.toFixed(1),cql:K.cql?+K.cql.toFixed(1):null},jvQuipCPL(v))
+          if(say)await jvSpeak(say)}
         return}
       if(p.arg==='cql'){
-        const v=jvNum('d-cql')
-        await jvReply(v?`Цена квала — ${Math.round(v)} долларов.`:'Квалов пока нет, сэр.','#d-cql','CQL');return}
+        const v=K.cql
+        if(!v){await jvReply(K.leads?'Квалов за период нет, CQL считать не из чего, сэр.':'Квалов пока нет, сэр.','#d-cql','CQL');return}
+        await jvReply(`CQL — ${Math.round(v)} долларов.`,'#d-cql','CQL')
+        const say=await brainSay('cql',{spend:Math.round(K.spend||0),leads:K.leads,quals:K.quals,cpl:K.cpl?+K.cpl.toFixed(1):null,cql:+v.toFixed(1)},'')
+        if(say)await jvSpeak(say)
+        return}
       if(p.arg==='tasks'){
         const t=document.getElementById('nb-tasks');if(t)t.click();await jvWait(500)
         const me=CURRENT_USER&&CURRENT_USER.name
@@ -2453,13 +2554,13 @@ async function jarvisMicTest(){
     console.log('разрешение:',st.state,st.state==='granted'?'':'← нажми кнопку микрофона и разреши доступ')
   }catch(e){console.log('разрешение: не удалось проверить')}
   console.log('режим слушания сейчас:',_jvListening?'ВКЛЮЧЁН':'выключен')
-  console.log('обращение активно:',jvAwakeNow()?'да':'нет (скажи «Джарвис»)')
+  console.log('обращение активно:',jvAwakeNow()?'да':'нет — скажи «Привет, Геннадий»')
   console.log('%cГовори — всё распознанное будет здесь:','color:#6E9BFF')
   if(!_jvListening)jvListen()
 }
 // ── Диагностика звука ──
 async function jarvisTest(){
-  console.log('%c♪ Проверка звука JARVIS','font-weight:bold;font-size:13px')
+  console.log('%c♪ Проверка звука Геннадия','font-weight:bold;font-size:13px')
   const AC=window.AudioContext||window.webkitAudioContext
   console.log('AudioContext поддерживается:',!!AC)
   if(AC){
@@ -2478,7 +2579,7 @@ async function jarvisTest(){
       setTimeout(()=>{a.pause();a.src=''},5000)
       return
     }catch(e){console.log('%c✗ проиграть не удалось: '+e.name+' — '+e.message,'color:#E04050')
-      if(e.name==='NotAllowedError')console.log('Браузер требует клик. Запускай брифинг кнопкой JARVIS, а не автозапуском.')}
+      if(e.name==='NotAllowedError')console.log('Браузер требует клик. Запускай брифинг кнопкой ГЕННАДИЙ, а не автозапуском.')}
   }
   console.log('Пробую синтезированный фон...')
   jvMusicStart();jvBlip(880)
@@ -2541,8 +2642,8 @@ async function jvTrackStart(){
     const tgt=jvVol();let v=0;const t=setInterval(()=>{v=Math.min(tgt,v+.015);a.volume=v;if(v>=tgt)clearInterval(t)},70)
     return true
   }catch(e){
-    console.log('JARVIS: дорожка не запустилась —',e.name,e.message)
-    if(e.name==='NotAllowedError')toast('Браузер заблокировал звук — нажми кнопку JARVIS','err')
+    console.log('Геннадий: дорожка не запустилась —',e.name,e.message)
+    if(e.name==='NotAllowedError')toast('Браузер заблокировал звук — нажми кнопку ГЕННАДИЙ','err')
     else toast('Дорожка не проигрывается: '+e.message,'err')
     return false}
 }
@@ -2622,7 +2723,7 @@ async function jarvisVoicePicker(){
   document.getElementById('jv-vp')?.remove()
   const d=document.createElement('div');d.id='jv-vp'
   d.innerHTML=`<div class="vp-box">
-    <div class="vp-h">Голос JARVIS <button class="vp-x">×</button></div>
+    <div class="vp-h">Голос Геннадия <button class="vp-x">×</button></div>
     <div class="vp-sub">Нажми на голос, чтобы послушать. Выбранный сохранится.</div>
     <div class="vp-list">${list.map((v,i)=>{
       // сетевые голоса Google заметно живее локальных системных — помечаем их
@@ -2758,10 +2859,10 @@ async function jarvis11Picker(){
 // Ключ и голос задаются один раз: jarvisSetup('sk-...','voiceId')
 // Без ключа используется встроенный синтез браузера.
 function jarvisSetup(key,voiceId){
-  if(key===null){localStorage.removeItem('jdl_11_key');localStorage.removeItem('jdl_11_voice');toast('JARVIS: вернулся на встроенный голос','info');return}
+  if(key===null){localStorage.removeItem('jdl_11_key');localStorage.removeItem('jdl_11_voice');toast('Геннадий: вернулся на встроенный голос','info');return}
   if(key)localStorage.setItem('jdl_11_key',key)
   if(voiceId)localStorage.setItem('jdl_11_voice',voiceId)
-  toast('JARVIS: голос ElevenLabs подключён','ok')
+  toast('Геннадий: голос ElevenLabs подключён','ok')
   console.log('Проверка: jarvisBrief()')
 }
 // Список доступных голосов — чтобы выбрать подходящий по характеру
@@ -3010,7 +3111,7 @@ function jvUtter(text,opt){
         clearInterval(keep)
         if(!started){
           // речь так и не зазвучала — браузер её заблокировал
-          console.log('JARVIS: синтез не стартовал (нужен клик по странице)')
+          console.log('Геннадий: синтез не стартовал (нужен клик по странице)')
           if(!_jvSpeechUnlocked)toast('Нажми в любом месте страницы — браузер блокирует голос','info')
           return setTimeout(res,jvReadMs(text))
         }
@@ -3163,19 +3264,33 @@ async function jvSay(t,sel,label){
 function jvNum(id){const e=document.getElementById(id);if(!e)return null
   const v=parseFloat(String(e.textContent).replace(/[^\d.,-]/g,'').replace(',','.'));return isFinite(v)?v:null}
 function jvTxt(id){return (document.getElementById(id)||{}).textContent||''}
-// Ждём, пока живые цифры Meta доедут (в KPI стоит ⏳, пока идёт запрос)
+// Ждём, пока живые цифры Meta реально доедут.
+// Раньше проверялось содержимое поля — но там до приезда висит значение прошлого периода,
+// поэтому проверка проходила мгновенно и озвучивался старый спенд. Теперь ждём флаг.
 async function jvWaitLive(ms){
   const t0=Date.now()
-  while(Date.now()-t0<(ms||9000)){
-    const s=jvTxt('d-spend')
-    if(s&&s!=='⏳'&&s!=='—')return true
+  while(Date.now()-t0<(ms||15000)){
+    if(window._liveSeq===_dashSeq&&window._liveKpi){await jvWait(150);return true}
     if(_jvAbort)return false
-    await jvWait(260)
+    await jvWait(150)
   }
+  console.log('Геннадий: живые цифры Meta не доехали за '+Math.round((Date.now()-t0)/1000)+' с — читаю экран как есть')
   return false
 }
+// Цифры для речи: сначала точные из Meta, экран — только как запасной вариант
+function jvKpi(){
+  const L=(window._liveSeq===_dashSeq)?window._liveKpi:null
+  return{
+    spend:L?L.spend:jvNum('hero-tick'),
+    leads:L?L.leads:jvNum('hero-l'),
+    quals:L?L.quals:jvNum('hero-q'),
+    cpl:  L?L.cpl  :jvNum('d-cpl'),
+    cql:  L?L.cql  :jvNum('d-cql'),
+    live: !!L
+  }
+}
 
-// ── Данные сводки в том же порядке, в каком их проговаривает JARVIS ──
+// ── Данные сводки в том же порядке, в каком их проговаривает Геннадий ──
 // Один источник для текста на экране и для речи, чтобы они не расходились.
 async function jvTodayData(){
   const since=Date.now()-864e5, me=(CURRENT_USER&&CURRENT_USER.name)||''
@@ -3193,8 +3308,8 @@ async function jvTodayData(){
   const ins=(GRIND||[]).filter(g=>g.created_at>=new Date(since).toISOString())
   const byType={};ins.forEach(g=>{const t=g.gtype||'insight';byType[t]=(byType[t]||0)+1})
 
-  // 4. активные РК вошедшего баера по гео
-  const mine=(window._ALL_ZALIVS||ZALIVS).filter(z=>!z.togo&&z.buyer===me)
+  // 4. РК в работе — оба баера, все гео, дроп включительно, выключенные не в счёт
+  const mine=(window._ALL_ZALIVS||ZALIVS).filter(z=>!z.togo&&z.ind!=='off')
   const byGeo={};mine.forEach(z=>{const g=z.geo||z.region||'—';byGeo[g]=(byGeo[g]||0)+1})
 
   // 5. задачи на сегодня — только на экран, голосом здесь не читаются
@@ -3218,7 +3333,8 @@ async function jvBothYesterday(){
   }
   return out
 }
-// Тенденция за три дня — по спенду и цене лида
+// Тенденция за три дня — по расходу и CQL.
+// Смотрим именно на цену квала: дешёвый лид, который никто не квалифицирует, ничего не стоит.
 async function jvTrend3(region){
   try{
     const from=new Date(Date.now()-3*864e5).toISOString().slice(0,10)
@@ -3226,23 +3342,33 @@ async function jvTrend3(region){
     const rows=(data||[]).slice(-3)
     if(rows.length<2)return null
     const sp=rows.map(r=>(+r.spend_pl||0)+(+r.spend_plua||0))
-    const cpl=rows.map(r=>+r.cpl||0).filter(x=>x>0)
+    // если cql в строке не посчитан — считаем сами из расхода и квалов
+    const cqlAll=rows.map(r=>{const c=+r.cql||0;if(c>0)return c
+      const sr=(+r.spend_pl||0)+(+r.spend_plua||0),q=+r.quals||0;return q>0?sr/q:0})
+    const cq=cqlAll.filter(x=>x>0)
+    const quals=rows.reduce((a,r)=>a+(+r.quals||0),0)
     const dS=sp[sp.length-1]-sp[0]
-    const dC=cpl.length>1?cpl[cpl.length-1]-cpl[0]:0
-    return{days:rows.length,spendDelta:dS,cplDelta:dC,
+    const dQ=cq.length>1?cq[cq.length-1]-cq[0]:0
+    const base=cq[0]||0
+    return{days:rows.length,region,
+      spendDelta:dS,spendFrom:sp[0],spendTo:sp[sp.length-1],
+      cqlDelta:dQ,cqlFrom:cq[0]||0,cqlTo:cq[cq.length-1]||0,quals,
+      noQuals:quals===0,
       spendUp:dS>sp[0]*.15,spendDown:dS<-sp[0]*.15,
-      cplUp:dC>1.5,cplDown:dC<-1.5}
+      cqlUp:base?dQ>base*.12:dQ>4,cqlDown:base?dQ<-base*.12:dQ<-4}
   }catch(e){return null}
 }
 function jvTrendWords(t,regName){
   if(!t)return ''
-  if(t.cplDown&&t.spendUp) return `${regName}: за три дня льём больше, а лид дешевеет. Это лучший из возможных раскладов, сэр.`
-  if(t.cplUp&&t.spendUp)   return `${regName}: за три дня и расход, и цена лида растут. Так делать не стоит, сэр.`
-  if(t.cplUp)              return `${regName}: лид за три дня дорожает. Стоит вмешаться, пока это не вошло в привычку.`
-  if(t.cplDown)            return `${regName}: лид за три дня дешевеет. Направление верное.`
-  if(t.spendDown)          return `${regName}: расход за три дня просел. Мы притормозили намеренно?`
-  if(t.spendUp)            return `${regName}: расход растёт, цена лида держится.`
-  return `${regName}: за три дня без заметных движений.`
+  const q=`Было ${Math.round(t.cqlFrom)} долларов, стало ${Math.round(t.cqlTo)}.`
+  if(t.noQuals)            return `${regName}: за три дня ни одного квала. Тенденцию тут считать не из чего, сэр.`
+  if(t.cqlDown&&t.spendUp) return `${regName}: льём больше, а квал дешевеет. ${q} Лучший из возможных раскладов, сэр.`
+  if(t.cqlUp&&t.spendUp)   return `${regName}: и расход, и цена квала растут. ${q} Так делать не стоит, сэр.`
+  if(t.cqlUp)              return `${regName}: квал за три дня дорожает. ${q} Стоит вмешаться, пока это не вошло в привычку.`
+  if(t.cqlDown)            return `${regName}: квал за три дня дешевеет. ${q} Направление верное.`
+  if(t.spendDown)          return `${regName}: расход просел, цена квала держится. Мы притормозили намеренно?`
+  if(t.spendUp)            return `${regName}: расход растёт, цена квала на месте.`
+  return `${regName}: за три дня без заметных движений. ${q}`
 }
 
 // ── Сцена 1: сводка за сутки ──
@@ -3267,7 +3393,9 @@ async function jvPhaseToday(){
     const m=S.yday[r]
     if(!m||!m.spend){await jvSay(`${nm} вчера: данных нет.`,at('yday-'+nm),null);continue}
     let s=`${nm} вчера: открут ${Math.round(m.spend)} долларов, лидов ${m.leads}, квалов ${m.quals}.`
-    if(m.cpl)s+=` Цена лида ${Math.round(m.cpl)}.`
+    const cqlY=m.cql||(m.quals?m.spend/m.quals:0)
+    if(cqlY)s+=` CQL ${Math.round(cqlY)} долларов.`
+    else if(m.cpl)s+=` Цена лида ${Math.round(m.cpl)}. Квалов нет, считать CQL не из чего.`
     await jvSay(s,at('yday-'+nm),null)
   }
 
@@ -3280,11 +3408,15 @@ async function jvPhaseToday(){
       +'. Рекомендую ознакомиться, сэр.', at('grind'),null)
   }
 
-  // 4) Что в работе у вошедшего баера
+  // 4) РК в работе — по обоим баерам и по гео
   if(S.rk.n){
-    await jvSay(`Так, ${S.rk.buyer}. В работе ${S.rk.n} ${jvPlural(S.rk.n,'кампания','кампании','кампаний')}: `
-      +S.rk.geo.map(([g,n])=>`${g} — ${n}`).join(', ')+'.', at('rk'),null)
-  }else await jvSay('Активных кампаний за вами сейчас нет, сэр.',at('rk'),null)
+    let s=`В работе ${S.rk.n} ${jvPlural(S.rk.n,'кампания','кампании','кампаний')}.`
+    if(S.rk.buyers&&S.rk.buyers.length>1)
+      s+=' По баерам: '+S.rk.buyers.map(([b,n])=>`${b} — ${n}`).join(', ')+'.'
+    s+=' По гео: '+S.rk.geo.map(([g,n])=>`${g} — ${n}`).join(', ')+'.'
+    if(S.rk.drop)s+=` На дропе ${S.rk.drop}.`
+    await jvSay(s,at('rk'),null)
+  }else await jvSay('Активных кампаний сейчас нет, сэр.',at('rk'),null)
 
   // 5) Задачи в модалке есть, но голосом здесь не читаем — они идут отдельной сценой
   jvClearSpot()
@@ -3300,9 +3432,13 @@ async function jvPhaseToday(){
   const w1=jvTrendWords(t1,'Польша'),w2=jvTrendWords(t2,'Чехия')
   const chart=document.getElementById('dyn-chart')||document.querySelector('.chart-wrap')
   if(w1||w2){
-    await jvSay('Тенденция за три дня.',chart,'ГРАФИК · 3 ДНЯ')
-    if(w1)await jvSay(w1,chart,'ГРАФИК · 3 ДНЯ')
-    if(w2)await jvSay(w2,chart,'ГРАФИК · 3 ДНЯ')
+    await jvSay('Тенденция за три дня — смотрю на цену квала.',chart,'ГРАФИК · 3 ДНЯ')
+    const live=await brainSay('trend3',{days:3,metric:'CQL',PL:t1,CZ:t2},'')
+    if(live){await jvSay(live,chart,'ГРАФИК · 3 ДНЯ')}
+    else{
+      if(w1)await jvSay(w1,chart,'ГРАФИК · 3 ДНЯ')
+      if(w2)await jvSay(w2,chart,'ГРАФИК · 3 ДНЯ')
+    }
   }
   jvClearSpot()
 }
@@ -3320,31 +3456,34 @@ async function jvPhaseStats(reg,isFirst){
 
   await jvSay(isFirst?`Перехожу к статистике. Сначала по ${label}.`:`Теперь по ${label}.`)
 
-  const sp=jvNum('hero-tick')
+  // Цифры берём из jvKpi(): там точные значения из Meta, а не то, что успело нарисоваться на экране
+  const K=jvKpi()
+  const sp=K.spend
+  if(!K.live)console.log('Геннадий: озвучиваю экран — живые цифры Meta не подтвердились')
   if(sp===null||sp===0){await jvSay('Открута за сутки нет.');return}
   await jvSay(`Открут за сутки — ${Math.round(sp)} долларов.`,'#hero-tick','СПЕНД 24 Ч')
-  const qs=jvQuipSpend(sp);if(qs)await jvSay(qs)
 
   // дельта к прошлому периоду
   const dl=jvTxt('hero-dl')
   const dm=dl.match(/(↑|↓|→)\s*(\d+)/)
-  if(dm){
-    const d=(dm[1]==='↓'?-1:1)*parseInt(dm[2])
-    const q=jvQuipDelta(dm[1]==='→'?0:d)
-    if(q)await jvSay(q,'#hero-dl','VS ПРОШЛЫЙ')
-  }
+  const delta=dm?((dm[1]==='↓'?-1:1)*parseInt(dm[2])):null
+  if(dm)await jvSay(`К прошлому периоду ${dm[1]==='↓'?'минус':dm[1]==='↑'?'плюс':'ровно'} ${dm[2]} процентов.`,'#hero-dl','VS ПРОШЛЫЙ')
 
-  const leads=jvNum('hero-l'),quals=jvNum('hero-q')
-  await jvSay(`Лидов ${leads||0}, квалифицированных ${quals||0}.`,'#hero-l','ЛИДЫ')
-  const qq=jvQuipQuals(leads,quals);if(qq)await jvSay(qq,'#hero-q','КВАЛЫ')
+  const leads=K.leads||0,quals=K.quals||0
+  await jvSay(`Лидов ${leads}, квалифицированных ${quals}.`,'#hero-l','ЛИДЫ')
 
-  const cpl=jvNum('d-cpl')
-  if(cpl){
-    await jvSay(JV_PICK(JV_NEXT)+` Цена лида — ${Math.round(cpl)} долларов.`,'#d-cpl','CPL')
-    const q=jvQuipCPL(cpl,reg);if(q)await jvSay(q,'#d-cpl','CPL')
-  }
-  const cql=jvNum('d-cql')
-  if(cql)await jvSay(`Цена квала — ${Math.round(cql)} долларов.`,'#d-cql','CQL')
+  const cpl=K.cpl,cql=K.cql
+  if(cpl)await jvSay(JV_PICK(JV_NEXT)+` Цена лида — ${Math.round(cpl)} долларов.`,'#d-cpl','CPL')
+  if(cql)await jvSay(`CQL — ${Math.round(cql)} долларов.`,'#d-cql','CQL')
+  else if(leads)await jvSay('Квалов нет, CQL посчитать не из чего, сэр.','#d-cql','CQL')
+
+  // Один живой комментарий на весь регион вместо россыпи заготовок
+  const fb=[jvQuipSpend(sp),cpl?jvQuipCPL(cpl,reg):'',jvQuipQuals(leads,quals)].filter(Boolean)
+  const say=await brainSay('stats',
+    {region:reg==='CZ'?'Чехия':'Польша',spend:Math.round(sp),delta_pct:delta,
+     leads,quals,cpl:cpl?+cpl.toFixed(1):null,cql:cql?+cql.toFixed(1):null},
+    fb[0]||'')
+  if(say)await jvSay(say,'#d-cql','CQL')
   jvClearSpot()
 }
 
@@ -3393,7 +3532,7 @@ async function jarvisBrief(){
   // Каждая сцена изолирована: если что-то упало на статистике, задачи и финал всё равно прозвучат.
   const phase=async(fn,label)=>{
     if(_jvAbort)return
-    try{await fn()}catch(e){console.log('JARVIS: сбой на этапе «'+label+'» —',e&&e.message)}
+    try{await fn()}catch(e){console.log('Геннадий: сбой на этапе «'+label+'» —',e&&e.message)}
   }
   const name=(CURRENT_USER&&CURRENT_USER.name)||''
   const h=new Date().getHours()
@@ -3447,7 +3586,7 @@ function jarvisMaybeStart(){
 function jvUnlockBtn(go){
   if(document.getElementById('jv-unlock'))return
   const b=document.createElement('button');b.id='jv-unlock'
-  b.innerHTML='<span>▶</span> Брифинг JARVIS'
+  b.innerHTML='<span>▶</span> Брифинг Геннадия'
   b.onclick=go
   document.body.appendChild(b)
   setTimeout(()=>b.remove(),25000)
@@ -4457,7 +4596,7 @@ function buildJdlToday(){
   return{ev,ins}
 }
 // ── Содержимое сводки TODAY ──
-// Тот же порядок, в котором Джарвис её проговаривает: продажи, вчера по обоим регионам,
+// Тот же порядок, в котором Геннадий её проговаривает: продажи, вчера по обоим регионам,
 // Grind, РК в работе, задачи. Секции помечены data-jt, чтобы подсветка попадала точно.
 async function jtSections(){
   const since=Date.now()-864e5, sinceISO=new Date(since).toISOString()
@@ -4478,12 +4617,19 @@ async function jtSections(){
   // 3) Grind
   S.grind=(GRIND||[]).filter(g=>g.created_at>=sinceISO)
 
-  // 4) РК в работе у вошедшего баера, по гео
+  // 4) РК в работе — активные кампании обоих баеров по всем гео.
+  // «В работе» = не в to-go и не выключена. На дропе кампания тоже в работе, её просто не трогают.
   const all=(window._ALL_ZALIVS||ZALIVS)
-  const mine=all.filter(z=>!z.togo&&z.buyer===me)
-  const byGeo={}
-  mine.forEach(z=>{const g=z.geo||z.region||'—';byGeo[g]=(byGeo[g]||0)+1})
-  S.rk={n:mine.length,geo:Object.entries(byGeo).sort((a,b)=>b[1]-a[1]),buyer:me}
+  const work=all.filter(z=>!z.togo&&z.ind!=='off')
+  const byGeo={},byBuyer={}
+  work.forEach(z=>{const g=z.geo||z.region||'—';byGeo[g]=(byGeo[g]||0)+1
+                   const b=z.buyer||'без баера';byBuyer[b]=(byBuyer[b]||0)+1})
+  S.rk={n:work.length,
+        geo:Object.entries(byGeo).sort((a,b)=>b[1]-a[1]),
+        buyers:Object.entries(byBuyer).sort((a,b)=>b[1]-a[1]),
+        drop:work.filter(z=>z.ind==='drop').length,
+        profit:work.filter(z=>z.ind==='profit').length,
+        buyer:me}
 
   // 5) Задачи на сегодня (в модалке пишем, голосом не читаем)
   const td=todayISO()
@@ -4525,9 +4671,10 @@ async function openJdlToday(){
       <p>${String(g.text||'').replace(/</g,'&lt;')}</p></div>`}).join('')
     :'<div class="jt-empty">Записей нет</div>'}
 
-  <div class="jt-sec">4 · РК в работе${S.rk.buyer?' · '+S.rk.buyer:''}</div>
+  <div class="jt-sec">4 · РК в работе${S.rk.drop?' · на дропе '+S.rk.drop:''}</div>
   <div class="jt-ev" data-jt="rk"><i style="background:#6E9BFF;color:#6E9BFF"></i><div>
     <b style="color:#6E9BFF">${S.rk.n?`${S.rk.n} ${jvPlural(S.rk.n,'кампания','кампании','кампаний')}`:'Активных кампаний нет'}</b>
+    ${S.rk.buyers&&S.rk.buyers.length?`<p style="color:#D4AF37">${S.rk.buyers.map(([b,n])=>`${b} — ${n}`).join(' · ')}</p>`:''}
     ${S.rk.geo.length?`<p>${S.rk.geo.map(([g,n])=>`${g} — ${n}`).join(' · ')}</p>`:''}</div></div>
 
   <div class="jt-sec">5 · Задачи на сегодня</div>
@@ -6663,10 +6810,11 @@ function idsSig(ids){let h=0;const s=[...ids].sort().join(',');for(let i=0;i<s.l
 async function bulkInsights(ids,from,to){const out={};for(let i=0;i<ids.length;i+=50){try{const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+50),since:from,until:to,region:CURRENT_REGION})});const d=await r.json();if(d.ok)Object.assign(out,d.data||{})}catch(e){}}return out}
 function sumIns(map,ids){let spend=0,clicks=0,imp=0,reach=0;ids.forEach(id=>{const v=map[id];if(!v||v.error)return;spend+=+v.spend||0;clicks+=+v.clicks||0;imp+=+v.impressions||0;reach+=+v.reach||0});return{spend:Math.round(spend*100)/100,clicks,imp,reach,ctr:imp?Math.round(clicks/imp*10000)/100:0}}
 async function heroAllMeta(from,to,seq){const $=id=>document.getElementById(id);const fresh=()=>seq===undefined||seq===_dashSeq;const rks=ZALIVS.filter(z=>!z.togo&&z.campaign_id);const ids=[...new Set(rks.map(z=>String(z.campaign_id)))]
-  if(!ids.length){['d-spend','d-daily'].forEach(id=>{const e=$(id);if(e)e.textContent='$0'});return}
+  if(!ids.length){['d-spend','d-daily'].forEach(id=>{const e=$(id);if(e)e.textContent='$0'})
+    window._liveKpi={spend:0,leads:0,quals:0,cpl:0,cql:0,days:1};window._liveSeq=(seq===undefined?_dashSeq:seq);return}
   const days=Math.max(1,Math.round((new Date(to)-new Date(from))/864e5)+1),pTo=new Date(new Date(from)-864e5).toISOString().slice(0,10),pFrom=new Date(new Date(from)-days*864e5).toISOString().slice(0,10)
   const key='ALL|'+from+'|'+to+'|'+CURRENT_REGION+'|'+idsSig(ids);let cc=_buyerCache[key]
-  if(!cc||Date.now()-cc.at>5*60000){const[cur,prev]=await Promise.all([bulkInsights(ids,from,to),document.getElementById('cmp-tgl')?.classList.contains('on')?bulkInsights(ids,pFrom,pTo):Promise.resolve({})]);cc=_buyerCache[key]={at:Date.now(),cur:sumIns(cur,ids),prev:sumIns(prev,ids)};if(CURRENT_BUYER)return}
+  if(!cc||Date.now()-cc.at>5*60000){const[cur,prev]=await Promise.all([bulkInsights(ids,from,to),document.getElementById('cmp-tgl')?.classList.contains('on')?bulkInsights(ids,pFrom,pTo):Promise.resolve({})]);cc=_buyerCache[key]={at:Date.now(),cur:sumIns(cur,ids),prev:sumIns(prev,ids)};if(CURRENT_BUYER){window._liveSeq=(seq===undefined?_dashSeq:seq);return}}
   if(!fresh())return
   const S=cc.cur,P=cc.prev
   heroCountUp($('hero-tick'),S.spend,v=>v.toLocaleString('ru',{minimumFractionDigits:2,maximumFractionDigits:2}).replace(',','.'));heroDelta(S.spend,P.spend);heroCountUp($('hero-daily'),S.spend/days,v=>'$'+Math.round(v))
@@ -6683,12 +6831,18 @@ async function heroAllMeta(from,to,seq){const $=id=>document.getElementById(id);
     const qe=$('d-cql');if(qe){qe.textContent=cqlN?'$'+cqlN.toFixed(1):'—'
       qe.style.color=cqlN>0&&cqlN<25?'var(--green)':cqlN<=35&&cqlN>0?'var(--yellow)':cqlN>0?'var(--red)':'var(--text)'
       qe.style.textShadow=cqlN>0&&cqlN<25?'0 0 12px rgba(46,160,67,.7)':cqlN<=35&&cqlN>0?'0 0 12px rgba(212,160,23,.7)':cqlN>0?'0 0 12px rgba(224,64,80,.6)':''}
+    // Точные числа кладём отдельно: на экране в этот момент ещё крутится анимация счётчика,
+    // и голос, читая DOM, поймал бы промежуточный кадр.
+    window._liveKpi={spend:S.spend,leads:pd.leads,quals:pd.quals,cpl:cplN,cql:cqlN,
+                     days:pd.days||1,prev:P.spend||0,region:CURRENT_REGION}
     const cmpOn=$('cmp-tgl')?.classList.contains('on'),pv=P.spend||pd.prevSpend
     const pe=$('d-spend-prev'),ae=$('d-spend-arr')
     if(cmpOn&&pv){if(pe)pe.textContent='$'+Math.round(pv)
       if(ae){const dlt=(S.spend-pv)/pv*100;ae.className='karr '+(dlt>=0?'up-good':'dn-bad');ae.textContent=(dlt>=0?'↑':'↓')+' '+Math.abs(dlt).toFixed(0)+'%'}}
     else{if(pe)pe.textContent='';if(ae)ae.textContent=''}
-  }}
+  }
+  window._liveSeq=(seq===undefined?_dashSeq:seq)   // цифры на экране настоящие — голосу можно читать
+  }
 async function rdashBuyer(buyer){
   const from=document.getElementById('pd-from')?.value,to=document.getElementById('pd-to')?.value
   const $=id=>document.getElementById(id)
