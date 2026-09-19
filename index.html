@@ -21,7 +21,10 @@ const GARNO_CZ_KEY='sb_publishable_TlOfq2xdIytwVDYLCGMcMA_30cMUc_c'
 // Region → GarnoCRM source + currency
 function garnoForRegion(){return CURRENT_REGION==='CZ'?{url:GARNO_CZ_URL,key:GARNO_CZ_KEY}:{url:GARNO_URL,key:GARNO_KEY}}
 function cur(){return CURRENT_REGION==='CZ'?'Kč':'zł'}
-const USERS={illia:{name:'Illia',role:'Junior Buyer',initials:'IB',color:'#b52240',bg:'rgba(181,34,64,.15)',border:'#8b1a2e'},danya:{name:'Danya',role:'Head of Marketing',initials:'DM',color:'#6090ff',bg:'rgba(64,128,255,.1)',border:'#1a3060'}}
+const USERS={illia:{name:'Illia',role:'Junior Buyer',initials:'IB',color:'#b52240',bg:'rgba(181,34,64,.15)',border:'#8b1a2e',email:'chabanill12@gmail.com'},danya:{name:'Danya',role:'Head of Marketing',initials:'DM',color:'#6090ff',bg:'rgba(64,128,255,.1)',border:'#1a3060',email:'kuchura.danya154@gmail.com'}}
+// по какой почте вошли — тот профиль и подставляем
+function userByEmail(e){e=String(e||'').toLowerCase().trim()
+  return Object.keys(USERS).find(k=>(USERS[k].email||'').toLowerCase()===e)||''}
 const AUTO_STATUS_LOCKED=['Proliw','Perezaliw']
 var db,CURRENT_USER=null
 var CURRENT_REGION=localStorage.getItem('jdl_region')||'PL'
@@ -47,6 +50,13 @@ html,body{height:100%;overflow:hidden;max-width:100vw;font-family:var(--sans);ba
 #login{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999}
 .l-logo{font-size:28px;font-weight:800;letter-spacing:4px;color:#fff;margin-bottom:6px}.l-logo em{color:var(--bord2);font-style:normal}
 .l-sub{font-size:11px;color:var(--text3);margin-bottom:40px;letter-spacing:2px;text-transform:uppercase}
+.l-form{display:flex;flex-direction:column;gap:10px;width:280px;margin:26px auto 0}
+.l-form input{background:var(--bg2);border:1px solid var(--border2);border-radius:9px;padding:12px 14px;color:var(--text);font:500 14px var(--sans);outline:none;transition:border-color .15s}
+.l-form input:focus{border-color:var(--bord2)}
+.l-form button{background:var(--bord);border:none;border-radius:9px;padding:12px;color:#0d0f14;font:700 14px var(--sans);cursor:pointer;transition:filter .15s}
+.l-form button:hover{filter:brightness(1.1)}
+.l-form button:disabled{opacity:.5;cursor:default}
+.l-err{min-height:17px;font-size:12px;color:var(--red);text-align:center}
 .l-cards{display:flex;gap:16px}
 .l-card{background:var(--bg2);border:2px solid var(--border2);border-radius:14px;padding:28px 32px;cursor:pointer;text-align:center;min-width:180px;transition:all .2s}.l-card:hover{border-color:var(--bord2);transform:translateY(-3px)}
 .l-ava{width:56px;height:56px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;font-family:var(--mono)}
@@ -893,9 +903,11 @@ document.getElementById('root').innerHTML=`
 <div id="login">
   <div class="l-logo"><img src="${JDL_MARK}" class="l-mark" alt=""><img src="${JDL_WORD}" class="l-word" alt="JDL JustDoLead"></div>
   <div class="l-sub">Traffic Team Dashboard</div>
-  <div class="l-cards">
-    <div class="l-card" id="btn-illia"><div class="l-ava" style="background:rgba(181,34,64,.15);color:#b52240;border:2px solid #8b1a2e">IB</div><div class="l-name">Illia</div><div class="l-role">Junior Buyer</div></div>
-    <div class="l-card" id="btn-danya"><div class="l-ava" style="background:rgba(64,128,255,.1);color:#6090ff;border:2px solid #1a3060">DM</div><div class="l-name">Danya</div><div class="l-role">Head of Marketing</div></div>
+  <div class="l-form">
+    <input type="email" id="li-mail" placeholder="Почта" autocomplete="username" spellcheck="false">
+    <input type="password" id="li-pass" placeholder="Пароль" autocomplete="current-password">
+    <button id="li-go">Войти</button>
+    <div class="l-err" id="li-err"></div>
   </div>
 </div>
 <div id="app">
@@ -1306,8 +1318,7 @@ document.getElementById('root').innerHTML=`
 function toast(msg,type='ok'){const w=document.getElementById('toast-wrap');const t=document.createElement('div');t.className=`toast ${type}`;t.innerHTML=`<span>${type==='ok'?'✓':type==='err'?'✗':'ℹ'}</span><span>${msg}</span>`;w.appendChild(t);setTimeout(()=>t.remove(),3000)}
 
 // ── EVENTS ──
-document.getElementById('btn-illia').addEventListener('click',()=>doLogin('illia'))
-document.getElementById('btn-danya').addEventListener('click',()=>doLogin('danya'))
+// кнопки с именами убраны: вход теперь по почте и паролю, см. doAuthLogin()
 ;['dash','zalivs','domains','sales','tasks','journal','creo','analysis'].forEach(id=>document.getElementById('nb-'+id).addEventListener('click',function(){gp(id,this)}))
 document.getElementById('sync-btn').addEventListener('click',manualSync)
 document.getElementById('uchip').addEventListener('click',doLogout)
@@ -1550,14 +1561,53 @@ document.getElementById('btn-ins-table').addEventListener('mousedown',e=>{
 })
 // journal buttons use onclick attributes
 
+// Клиент Supabase поднимаем один раз и как можно раньше: через него идёт
+// и авторизация, и все запросы. persistSession держит вход между вкладками
+// и перезагрузками, autoRefreshToken продлевает его, пока вкладка открыта.
+function dbInit(){
+  if(db)return db
+  try{
+    db=supabase.createClient(SB_URL,SB_ANON,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'jdl-auth'}})
+  }catch(e){console.error('Supabase не поднялся:',e)}
+  return db
+}
+
 // ── LOGIN / LOGOUT ──
+// Настоящая авторизация через Supabase Auth. Защита стоит в базе (RLS),
+// а не здесь: в исходнике страницы лежит анонимный ключ, и любая проверка,
+// написанная в JS, обходится за минуту. Эта форма только получает сессию —
+// без неё база не отдаёт ни строки.
+function liErr(m){const e=document.getElementById('li-err');if(e)e.textContent=m||''}
+async function doAuthLogin(){
+  const mail=(document.getElementById('li-mail')||{}).value||''
+  const pass=(document.getElementById('li-pass')||{}).value||''
+  const btn=document.getElementById('li-go')
+  if(!mail||!pass){liErr('Заполните почту и пароль');return}
+  if(!db){liErr('Нет связи с базой');return}
+  if(btn){btn.disabled=true;btn.textContent='Вхожу…'}
+  liErr('')
+  try{
+    const{data,error}=await db.auth.signInWithPassword({email:mail.trim(),password:pass})
+    if(error)throw error
+    const key=userByEmail(data.user&&data.user.email)
+    if(!key){await db.auth.signOut();liErr('Эта почта не привязана к профилю в CRM');return}
+    doLogin(key)
+  }catch(e){
+    const m=String(e.message||e)
+    liErr(/Invalid login/i.test(m)?'Неверная почта или пароль'
+        :/Email not confirmed/i.test(m)?'Учётка не подтверждена — включи Auto Confirm в Supabase'
+        :m)
+  }finally{if(btn){btn.disabled=false;btn.textContent='Войти'}}
+}
 function doLogin(userId){
   CURRENT_USER=USERS[userId];localStorage.setItem('jdl_user',userId);if(typeof jvApplyAccess==='function')jvApplyAccess()
   document.getElementById('login').style.display='none';document.getElementById('app').style.display='flex'
   const ava=document.getElementById('uava');ava.textContent=CURRENT_USER.initials;ava.style.background=CURRENT_USER.bg;ava.style.color=CURRENT_USER.color;ava.style.borderColor=CURRENT_USER.border
   document.getElementById('uname').textContent=CURRENT_USER.name;init()
 }
-function doLogout(){localStorage.removeItem('jdl_user');CURRENT_USER=null;if(typeof jvApplyAccess==='function')jvApplyAccess();document.getElementById('login').style.display='flex';document.getElementById('app').style.display='none'}
+async function doLogout(){try{db&&await db.auth.signOut()}catch(e){}
+  ;['li-mail','li-pass'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});liErr('')
+  localStorage.removeItem('jdl_user');CURRENT_USER=null;if(typeof jvApplyAccess==='function')jvApplyAccess();document.getElementById('login').style.display='flex';document.getElementById('app').style.display='none'}
 
 // ── INIT ──
 async function init(){
@@ -1566,12 +1616,13 @@ async function init(){
   document.querySelectorAll('.rt-btn').forEach(b=>b.classList.toggle('active',b.dataset.region===CURRENT_REGION))
   const today=new Date().toISOString().split('T')[0]
   ;['pd-from','pd-to','sp-from','sp-to'].forEach(id=>document.getElementById(id).value=today)
-  try{db=supabase.createClient(SB_URL,SB_ANON)}catch(e){console.error(e)}
+  dbInit()
   await Promise.all([loadZ(),loadD(),loadT(),loadJ(),loadM(),loadSales(),loadTemplates(),loadCreoReports(),loadCreoLib(),loadRkAnalyses(),loadInsights(),loadGrind(),loadAllZalivs(),loadSrcDaily(),loadAdsetSrc(),loadDomainMeta()])
   rolloverTodayTasks();scheduleRollover();repairRegions().then(backfillFdc)
   if(localStorage.getItem('jdl_buyer')===null&&CURRENT_USER)CURRENT_BUYER=CURRENT_USER.name
   setBuyer(CURRENT_BUYER);setupRT();setSS('ok','Данные загружены');dismissIntro();maybeJdlToday();schemaCheck()
   if(typeof jvRemindersOnStart==='function')setTimeout(jvRemindersOnStart,2500)
+  if(typeof cqlRefresh==='function'){setTimeout(cqlRefresh,4000);setInterval(cqlRefresh,15*60000)}
   if(typeof jvAutoListen==='function')setTimeout(jvAutoListen,3200);setTimeout(()=>{if(typeof jvRemindersOnStart==='function')jvRemindersOnStart()},2500)
 }
 async function loadDomainMeta(){if(!db)return;try{const{data}=await db.from('domain_meta').select('*').eq('region',CURRENT_REGION);DOMAIN_META=data||[]}catch(e){DOMAIN_META=[]}}
@@ -1768,6 +1819,14 @@ function buildEvents(){
   const pdt=s=>{if(!s)return null;if(s.includes('-'))return new Date(s);const p=s.split('.');return p.length===3?new Date(p[2]+'-'+p[1]+'-'+p[0]):null};const sl=(SALES_DATA||[]).filter(s=>{const d=pdt(s.createdAt);return d&&d.getTime()>=Date.now()-864e5});if(sl.length)ev.push(['#3DBE8B','Продажа'+(sl.length>1?'и: '+sl.length:''),sl.slice(0,2).map(s=>(s.saleAmount||0).toLocaleString('ru')+' '+cur()+(s.source?' · '+s.source:'')).join(' · '),[['Sales',"gp('sales',document.getElementById('nb-sales'))"]]])
   // tasks overdue
   const due=TASKS.filter(t=>t.deadline&&t.deadline<td&&t.col!=='done'&&t.col!=='archived'&&(!me||t.assignee===me));if(due.length){ev.push(['#F03A55','Просрочено задач: '+due.length,due.slice(0,3).map(t=>t.title.slice(0,30)).join(' · '),[['Таски',"gp('tasks',document.getElementById('nb-tasks'))"]]]);al.push(['r','⏰','Просрочено задач: '+due.length,due.slice(0,3).map(t=>t.title.slice(0,30)).join(' · '),0])}
+  // CQL баера поехал за три дня
+  cqlFlagged().forEach(r=>{
+    const worse=r.dry||r.pct>0
+    const txt=cqlWords(r)
+    const act=[['Открыть баера',`setBuyer('${r.buyer}')`]]
+    ev.push([worse?'#F03A55':'#3DBE8B',(r.dry?'Квалы пропали · ':'CQL '+(r.pct>0?'+':'')+r.pct+'% · ')+r.buyer,txt,act])
+    if(worse)al.push(['r','📉','CQL '+r.buyer+(r.dry?' · квалов нет':' · +'+r.pct+'%'),txt,act[0]])
+  })
   // grind
   GRIND.filter(g=>g.created_at>=since).slice(0,2).forEach(g=>ev.push([({insight:'#D4AF37',plan:'#6E9BFF',test:'#A07CF5'})[g.gtype],g.gtype.toUpperCase()+' · '+(g.buyer||''),g.text.slice(0,90),[]]))
   return{ev,al}
@@ -2106,6 +2165,87 @@ async function jvRemindersOnStart(){
 }
 
 
+
+// ══ АЛЕРТ: CQL БАЕРА ЗА 3 ДНЯ ══
+// Разбивки по баерам в metrics_daily нет, поэтому собираем сами:
+// спенд по дням — из Meta через reconcile, привязывая campaign_id к баеру;
+// квалы — из source_daily по букве источника (I — Illia, D — Danya).
+// Сравниваем последние 3 закрытых дня с предыдущими 3.
+function cqlThresh(v){
+  if(v===undefined)return +(localStorage.getItem('jdl_cql_thresh')||25)
+  localStorage.setItem('jdl_cql_thresh',String(v));toast('Порог алерта по CQL: '+v+'%','ok');return v
+}
+function srcBuyer(src){const p=srcParse(src);return p.letter==='I'?'Illia':p.letter==='D'?'Danya':''}
+
+async function cqlByBuyer3(region){
+  region=region||CURRENT_REGION
+  const to=jvISO(jvShift(-1)),from=jvISO(jvShift(-6)),mid=jvISO(jvShift(-3))
+  let camps=[]
+  try{
+    const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',
+      headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
+      body:JSON.stringify({action:'reconcile',region,since:from,until:to,daily:true})})
+    const d=await r.json()
+    if(!d||!d.ok)return null
+    camps=d.campaigns||[]
+  }catch(e){console.log('CQL-алерт: Meta не ответила —',e.message);return null}
+
+  const buyerOf={};ZALIVS.forEach(z=>{if(z.campaign_id)buyerOf[String(z.campaign_id)]=z.buyer||''})
+  const acc={}
+  const box=(b,day)=>{const o=acc[b]||(acc[b]={now:{s:0,q:0},prev:{s:0,q:0}});return day>=mid?o.now:o.prev}
+  camps.forEach(r=>{const b=buyerOf[String(r.campaign_id)];if(!b||!r.day)return;box(b,r.day).s+=+r.spend||0})
+  ;(SRC_DAILY||[]).forEach(r=>{
+    if(!r.day||r.day<from||r.day>to)return
+    const b=srcBuyer(r.source);if(!b)return
+    box(b,r.day).q+=+r.quals||0})
+
+  const out=[]
+  for(const b of Object.keys(acc)){
+    const o=acc[b]
+    const cNow=o.now.q>0?o.now.s/o.now.q:0
+    const cPrev=o.prev.q>0?o.prev.s/o.prev.q:0
+    out.push({buyer:b,region,
+      cqlNow:cNow,cqlPrev:cPrev,
+      spendNow:o.now.s,spendPrev:o.prev.s,qualsNow:o.now.q,qualsPrev:o.prev.q,
+      pct:cPrev>0&&cNow>0?Math.round((cNow-cPrev)/cPrev*100):null,
+      // тратим, а квалов не стало — это хуже любого процента
+      dry:o.now.s>50&&o.now.q===0&&o.prev.q>0})
+  }
+  return out.sort((a,b)=>b.spendNow-a.spendNow)
+}
+// Считаем в фоне и держим результат под рукой: колокольчик рисуется синхронно
+window._cqlAlerts=null
+async function cqlRefresh(){
+  try{
+    const r=await cqlByBuyer3()
+    if(r){window._cqlAlerts={at:Date.now(),region:CURRENT_REGION,rows:r};if(typeof renderFeed==='function')renderFeed()}
+  }catch(e){}
+}
+function cqlWords(r){
+  const nm=r.buyer
+  if(r.dry)return `${nm}: за три дня ${Math.round(r.spendNow)} долларов и ни одного квала. Раньше квалы были.`
+  if(r.pct===null)return ''
+  const d=Math.abs(r.pct)
+  if(r.pct>0)return `${nm}: CQL вырос на ${d} процентов — было ${Math.round(r.cqlPrev)}, стало ${Math.round(r.cqlNow)} долларов.`
+  return `${nm}: CQL упал на ${d} процентов — было ${Math.round(r.cqlPrev)}, стало ${Math.round(r.cqlNow)} долларов.`
+}
+// что считаем достойным внимания
+function cqlFlagged(){
+  const c=window._cqlAlerts
+  if(!c||c.region!==CURRENT_REGION)return[]
+  const th=cqlThresh()
+  return c.rows.filter(r=>r.dry||(r.pct!==null&&Math.abs(r.pct)>=th))
+}
+function cqlReport(){
+  console.log('%c📉 CQL по баерам за 3 дня','font-weight:bold;font-size:13px')
+  cqlByBuyer3().then(r=>{
+    if(!r){console.log('нет данных');return}
+    console.table(r.map(x=>({баер:x.buyer,'CQL было':Math.round(x.cqlPrev),'CQL стало':Math.round(x.cqlNow),
+      '%':x.pct,'спенд 3д':Math.round(x.spendNow),'квалы 3д':x.qualsNow,'квалы пред.3д':x.qualsPrev})))
+    console.log('порог алерта:',cqlThresh()+'% · сменить — cqlThresh(20)')
+  })
+}
+
 // ══ ПЕРИОДЫ ══
 // «за прошлую неделю», «позавчера», «с 1 по 10 сентября» — всё это должно
 // приводиться к паре дат и подставляться в фильтр дашборда.
@@ -2414,6 +2554,8 @@ function jvParse(raw){
   if(has('лучшая рк','лучший залив','что лучше всего','топ рк'))return{cmd:'bestrk'}
   if(has('худш','что плохо','что слить','что выключ'))return{cmd:'worstrk'}
   if(has('просроч','что горит','дедлайн'))return{cmd:'overdue'}
+  if(has('алерт','тревог','что не так','есть проблем','на что обратить'))return{cmd:'alerts'}
+  if(has('по баер','что с баер','кто как льет','кто как льёт','сравни баер'))return{cmd:'cqlbuyers'}
 
   if(has('синхрон','обнови','синк','sync'))return{cmd:'sync'}
   if(has('сверь','сверк','проверь спенд'))return{cmd:'check'}
@@ -2631,6 +2773,27 @@ async function jvCommand(raw){
         if(due.length)s+=` Просрочено ${due.length}.`
         if(todo.length||due.length)s+=' Ближайшее: '+[...due,...todo].slice(0,2).map(x=>String(x.title).slice(0,40)).join(', ')+'.'
         await jvReply(s);return}
+      return}
+
+    case 'cqlbuyers':{
+      await jvAck('open')
+      await cqlRefresh()
+      const rows=(window._cqlAlerts&&window._cqlAlerts.rows)||[]
+      if(!rows.length){await jvReply('Данных по баерам за три дня нет, сэр.');return}
+      for(const r of rows){
+        const w=r.pct===null&&!r.dry
+          ? `${r.buyer}: за три дня ${Math.round(r.spendNow)} долларов, квалов ${r.qualsNow}.`
+          : cqlWords(r)
+        if(w)await jvReply(w,'#d-cql','CQL · '+r.buyer)
+      }
+      return}
+
+    case 'alerts':{
+      const bad=cqlFlagged()
+      const due=TASKS.filter(t=>t.deadline&&t.deadline<todayISO()&&t.col!=='done'&&t.col!=='archived')
+      if(!bad.length&&!due.length){await jvReply('Тревожного ничего, сэр.');return}
+      for(const r of bad){const w=cqlWords(r);if(w)await jvReply(w,'#d-cql','CQL · '+r.buyer)}
+      if(due.length)await jvReply(`И просрочено задач ${due.length}.`)
       return}
 
     case 'sync':{
@@ -3550,6 +3713,29 @@ async function jvPhaseToday(){
   jvClearSpot()
 }
 
+// ── Сцена: CQL баеров за три дня ──
+// Озвучиваем только то, что вышло за порог. Ровные показатели проговаривать незачем.
+async function jvPhaseCql(){
+  if(!window._cqlAlerts||window._cqlAlerts.region!==CURRENT_REGION)await cqlRefresh()
+  const bad=cqlFlagged()
+  if(!bad.length){
+    const all=(window._cqlAlerts&&window._cqlAlerts.rows)||[]
+    if(all.length)await jvSay('CQL у баеров за три дня держится ровно, сэр.')
+    return
+  }
+  await jvSay(JV_PICK(['Отдельно — по баерам.','Теперь о баерах.','Есть что отметить по баерам.']))
+  for(const r of bad){
+    if(_jvAbort)return
+    const w=cqlWords(r);if(!w)continue
+    await jvSay(w,'#d-cql','CQL · '+r.buyer)
+  }
+  const say=await brainSay('cql_buyers',{дней:3,регион:CURRENT_REGION,баеры:bad.map(r=>({
+    баер:r.buyer,cql_было:Math.round(r.cqlPrev),cql_стало:Math.round(r.cqlNow),
+    процент:r.pct,спенд_3д:Math.round(r.spendNow),квалы_3д:r.qualsNow,квалов_нет:r.dry}))},'')
+  if(say)await jvSay(say,'#d-cql','CQL')
+  jvClearSpot()
+}
+
 // ── Сцена 2: статистика по региону ──
 async function jvPhaseStats(reg,isFirst){
   const label=reg==='CZ'?'Чехии':'Польше'
@@ -3647,6 +3833,7 @@ async function jarvisBrief(){
   const greet=h<5?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер'
   await phase(()=>jvSay(`${greet}, ${name}. Все системы в норме. Позвольте ввести вас в курс дела.`),'приветствие')
   await phase(jvPhaseToday,'события суток')
+  await phase(jvPhaseCql,'CQL по баерам')
   await phase(()=>jvPhaseStats('PL',true),'статистика PL')
   await phase(()=>jvPhaseStats('CZ',false),'статистика CZ')
   await phase(async()=>{if(CURRENT_REGION!==startRegion&&typeof switchRegion==='function'){await switchRegion(startRegion);await jvWait(700)}},'возврат региона')
@@ -7026,14 +7213,22 @@ function resetDashLabels(){
 }
 
 // ── AUTO LOGIN ──
-// Auto-login
-const _saved=localStorage.getItem('jdl_user')
-if(_saved&&USERS[_saved]){
-  // Small delay to ensure supabase is ready
-  setTimeout(()=>doLogin(_saved), 50)
-}else{
-  // Not logged in — init() never runs, so retire the splash on its own schedule
+// Пускает внутрь только живая сессия Supabase. Запись в localStorage больше
+// не является пропуском — раньше её хватало, чтобы открыть всю CRM.
+document.getElementById('li-go')?.addEventListener('click',doAuthLogin)
+;['li-mail','li-pass'].forEach(id=>document.getElementById(id)
+  ?.addEventListener('keydown',e=>{if(e.key==='Enter')doAuthLogin()}))
+
+;(async()=>{
+  try{
+    if(!dbInit()){liErr('Не удалось подключиться к базе');dismissIntro();return}
+    const{data}=await db.auth.getSession()
+    const mail=data&&data.session&&data.session.user&&data.session.user.email
+    const key=mail?userByEmail(mail):''
+    if(key){doLogin(key);return}
+  }catch(e){console.log('сессия не проверилась —',e.message)}
+  // не вошли — init() не запустится, так что заставку убираем сами
   dismissIntro()
-}
+})()
 </script>
 </body></html>
