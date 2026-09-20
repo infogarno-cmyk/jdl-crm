@@ -2044,7 +2044,10 @@ function jarvisVolume(v){
 }
 
 // Геннадий доступен только Дане
-function jvAllowed(){return !!(CURRENT_USER&&CURRENT_USER.name==='Danya')}
+// Кому доступен Геннадий. Настройки (голос, порог CQL, отметка о брифинге)
+// лежат в localStorage, то есть у каждого свои — на общей учётке они бы смешались.
+const JV_USERS=['Danya','Illia']
+function jvAllowed(){return !!(CURRENT_USER&&JV_USERS.includes(CURRENT_USER.name))}
 // вызывается после входа/выхода: кнопка видна только Дане
 function jvApplyAccess(){
   const m=document.getElementById('nb-mic')
