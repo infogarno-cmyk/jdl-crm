@@ -5336,7 +5336,22 @@ function parseFunnelFromName(name){
 // ВАЖНО: правило должно быть идентично nameRegion() в get-campaigns и sync Edge Functions.
 // Раньше здесь стояла проверка по границам слова, из-за чего "cloadczua1" считалась польской
 // в CRM и чешской в Edge Function — РК застревала не в том регионе и завышала спенд.
-function nameRegion(name){return (name||'').replace(/\\/g,'').toUpperCase().includes('CZ')?'CZ':'PL'}
+// GEO берём строго из головы имени — сразу после «}». Поиск "CZ" по всей строке
+// утаскивал польские кампании с «(cz)» в середине названия в чешский регион.
+// Правило обязано совпадать с sync и get-campaigns, иначе цифры разойдутся.
+function nameRegion(name){
+  const n=(name||'').replace(/\\/g,'').toUpperCase()
+  const i=n.indexOf('}')
+  if(i>=0){
+    const a=n.slice(i+1,i+7)
+    if(a.startsWith('CZ'))return 'CZ'
+    if(a.startsWith('UACZ'))return 'CZ'
+    if(a.startsWith('PL'))return 'PL'
+    if(a.startsWith('UAPL'))return 'PL'
+    if(a.startsWith('UA'))return 'PL'
+  }
+  return n.includes('CZ')?'CZ':'PL'
+}
 function parseBuyerFromName(name){const m=(name||'').match(/^\s*\d*\s*([DIІіДд])\s*[{\[(]?\s*\d/i);if(!m)return'';const L=m[1].toUpperCase();return(L==='I'||L==='І')?'Illia':'Danya'}
 function parseDateFromCampName(name){
   // Matches: D{17.06} I[16.06] D[09.06] etc
