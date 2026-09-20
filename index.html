@@ -1595,14 +1595,13 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-09-20 20:20'
+const BUILD='2026-09-20 20:30'
 function ver(){
-  const have=['whyRegion','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin']
-    .filter(f=>typeof window[f]==='function')
+  const need=['whyRegion','syncNames','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
+  const have=need.filter(f=>typeof window[f]==='function')
   console.log('%cJDL CRM · сборка '+BUILD,'font-weight:bold;font-size:13px')
   console.log('на месте:',have.join(', ')||'ничего из нового')
-  const miss=['whyRegion','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin']
-    .filter(f=>typeof window[f]!=='function')
+  const miss=need.filter(f=>typeof window[f]!=='function')
   if(miss.length)console.warn('НЕ хватает: '+miss.join(', ')+' — открыта старая сборка, обнови жёстко (Ctrl+Shift+R)')
   return BUILD
 }
@@ -7110,6 +7109,41 @@ async function linkRks(from,to){
 }
 // ── Сверка спенда: Meta (все кампании аккаунтов) vs то, что суммирует CRM ──
 // Показывает ПОЧЕМУ цифры расходятся: не импортированные РК, без campaign_id, в TOGO, не тот регион.
+// Подтянуть имена кампаний из Meta в CRM.
+// Переименование в кабинете в базу само не приезжает, а регион РК считается
+// по имени ИЗ БАЗЫ — поэтому после правки имени в Meta строка остаётся в старом
+// регионе и её спенд продолжает уходить не туда. Эта команда синхронизирует имена
+// и заодно пересчитывает регион по новому имени.
+async function syncNames(from,to){
+  from=from||document.getElementById('pd-from')?.value
+  to=to||document.getElementById('pd-to')?.value||from
+  if(!from){console.log('Укажи период: syncNames("2026-09-20")');return}
+  console.log('%c⏳ Сверяю имена с Meta · '+from+' → '+to,'font-weight:bold')
+  const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',
+    headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
+    body:JSON.stringify({action:'reconcile',region:CURRENT_REGION,since:from,until:to})})
+  const d=await r.json()
+  if(!d.ok){console.error(d.error||d);return}
+  const meta={}
+  ;[...(d.campaigns||[]),...(d.other||[])].forEach(c=>{meta[String(c.campaign_id)]=c.name})
+  const{data,error}=await db.from('zalivs').select('id,name,region,campaign_id').not('campaign_id','is',null)
+  if(error){console.error(error);return}
+  const changes=[]
+  for(const z of (data||[])){
+    const nm=meta[String(z.campaign_id)]
+    if(!nm||nm===z.name)continue
+    const tr=nameRegion(nm), was=z.region||'PL'
+    changes.push({было:String(z.name).slice(0,46),стало:String(nm).slice(0,46),регион:was===tr?was:was+' → '+tr})
+    await db.from('zalivs').update({name:nm,region:tr}).eq('id',z.id)
+  }
+  if(!changes.length){console.log('%c✓ Имена в CRM совпадают с Meta','color:#3DBE8B');return}
+  console.log('%cОбновлено РК: '+changes.length,'color:#D4AF37;font-weight:bold')
+  console.table(changes)
+  toast('Имена обновлены: '+changes.length+' РК. Перезагружаю…','ok')
+  setTimeout(()=>location.reload(),1600)
+  return changes
+}
+
 // Почему кампания оказалась в том или ином регионе.
 // Показывает каждую кампанию Meta за период: кабинет, спенд и вердикт nameRegion.
 // Нужна, когда сумма по кабинету и сумма по региону не сходятся: значит часть
