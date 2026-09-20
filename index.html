@@ -358,6 +358,7 @@ html,body{height:100%;overflow:hidden;max-width:100vw;font-family:var(--sans);ba
 .ttype.prep{color:#C7B2FF;border-color:rgba(160,124,245,.4);background:rgba(160,124,245,.1)}
 .ttype.zaliw{color:#F0D98A;border-color:rgba(212,175,55,.4);background:rgba(212,175,55,.1)}
 .ttype.an{color:#6FD9A8;border-color:rgba(61,190,139,.4);background:rgba(61,190,139,.1)}
+.ttype.vibe{color:#7FE3D4;border-color:rgba(64,200,185,.4);background:rgba(64,200,185,.1)}
 .ttype.other{color:var(--text3);border-color:var(--border);background:var(--bg4)}
 .trk{font-size:10px;color:var(--text2);font-family:var(--mono);background:var(--bg4);padding:2px 7px;border-radius:5px;border:1px solid var(--border);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle}
 .ttm{font-size:10px;font-family:var(--mono);color:var(--yellow);display:inline-flex;align-items:center;gap:4px}
@@ -1039,7 +1040,7 @@ document.getElementById('root').innerHTML=`
       <div class="fhdr" style="margin-bottom:12px"><span class="fhtit">Tasks</span><span style="font-size:11px;color:var(--text3);margin-left:10px">общие для PL и CZ</span></div>
       <div class="fbar" style="margin-bottom:12px;gap:8px;flex-wrap:wrap">
         <select class="fsel" id="tf-u"><option value="">👤 Все</option><option value="Illia">Illia</option><option value="Danya">Danya</option></select>
-        <select class="fsel" id="tf-type"><option value="">Тип: все</option><option value="fdc">FDC</option><option value="prep">Prepare ADS</option><option value="zaliw">Zaliw ADS</option><option value="an">Analyzing ADS</option><option value="other">Другое</option></select>
+        <select class="fsel" id="tf-type"><option value="">Тип: все</option><option value="fdc">FDC</option><option value="prep">Prepare ADS</option><option value="zaliw">Zaliw ADS</option><option value="an">Analyzing ADS</option><option value="vibe">Vibe Code</option><option value="other">Другое</option></select>
         <select class="fsel" id="tf-per"><option value="1">Сегодня</option><option value="7" selected>Неделя</option><option value="30">Месяц</option><option value="0">Всё</option></select>
         <button class="fsel" id="tf-stat-tgl" style="cursor:pointer">📊 Статистика</button>
       </div>
@@ -1220,6 +1221,7 @@ document.getElementById('root').innerHTML=`
       <button class="ttype-btn" data-ttype="prep">Prepare ADS</button>
       <button class="ttype-btn" data-ttype="zaliw">Zaliw ADS</button>
       <button class="ttype-btn" data-ttype="an">Analyzing ADS</button>
+      <button class="ttype-btn" data-ttype="vibe">Vibe Code</button>
       <button class="ttype-btn" data-ttype="other">Другое</button>
     </div>
     <div class="rkpick" id="te-rkpick">
@@ -1595,7 +1597,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-09-20 20:36'
+const BUILD='2026-09-20 20:44'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -4656,7 +4658,7 @@ function rdomains(){rdomRegistry();
 // TASKS v8 — types · RK link · timer · stats · grind · auto FDC · JDL TODAY
 // tasks shared across PL/CZ (no region filter)
 // ══════════════════════════════════════════
-var TTYPES={fdc:'FDC',prep:'Prepare ADS',zaliw:'Zaliw ADS',an:'Analyzing ADS',other:'Другое'}
+var TTYPES={fdc:'FDC',prep:'Prepare ADS',zaliw:'Zaliw ADS',an:'Analyzing ADS',vibe:'Vibe Code',other:'Другое'}
 var TTCOL={fdc:'#6E9BFF',prep:'#A07CF5',zaliw:'#D4AF37',an:'#3DBE8B',other:'#5a5a70'}
 var GRIND=[],_teType='',_teRk=null,_teRg='PL',_grindTab='insight',_tmTick=null
 var _rkGeoMap={PL:'PL',PLUA:'PLUA',CZ:'CZ',CZUA:'CZUA'}
