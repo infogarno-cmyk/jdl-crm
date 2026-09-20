@@ -1595,9 +1595,9 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-09-20 20:30'
+const BUILD='2026-09-20 20:33'
 function ver(){
-  const need=['whyRegion','syncNames','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
+  const need=['whyRegion','syncNames','fixRegions','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
   console.log('%cJDL CRM · сборка '+BUILD,'font-weight:bold;font-size:13px')
   console.log('на месте:',have.join(', ')||'ничего из нового')
@@ -7109,6 +7109,23 @@ async function linkRks(from,to){
 }
 // ── Сверка спенда: Meta (все кампании аккаунтов) vs то, что суммирует CRM ──
 // Показывает ПОЧЕМУ цифры расходятся: не импортированные РК, без campaign_id, в TOGO, не тот регион.
+// Пересчитать регион у ВСЕХ РК по их именам.
+// repairRegions() работает только внутри открытого региона: строку, лежащую в PL
+// с чешским именем, из вкладки CZ не видно и починить оттуда нечем.
+async function fixRegions(apply){
+  const{data,error}=await db.from('zalivs').select('id,name,region')
+  if(error){console.error(error);return}
+  const bad=(data||[]).filter(z=>nameRegion(z.name)!==(z.region||'PL'))
+  if(!bad.length){console.log('%c✓ Регионы всех РК соответствуют именам','color:#3DBE8B');return[]}
+  console.log('%cРК не в своём регионе: '+bad.length,'color:#E8A33D;font-weight:bold')
+  console.table(bad.map(z=>({id:z.id,регион:(z.region||'PL')+' → '+nameRegion(z.name),name:String(z.name).slice(0,56)})))
+  if(!apply){console.log('Это предпросмотр. Чтобы применить — fixRegions(true)');return bad}
+  for(const z of bad)await db.from('zalivs').update({region:nameRegion(z.name)}).eq('id',z.id)
+  toast('Перенесено РК: '+bad.length+'. Перезагружаю…','ok')
+  setTimeout(()=>location.reload(),1600)
+  return bad
+}
+
 // Подтянуть имена кампаний из Meta в CRM.
 // Переименование в кабинете в базу само не приезжает, а регион РК считается
 // по имени ИЗ БАЗЫ — поэтому после правки имени в Meta строка остаётся в старом
@@ -7131,12 +7148,17 @@ async function syncNames(from,to){
   const changes=[]
   for(const z of (data||[])){
     const nm=meta[String(z.campaign_id)]
-    if(!nm||nm===z.name)continue
+    if(!nm)continue
     const tr=nameRegion(nm), was=z.region||'PL'
-    changes.push({было:String(z.name).slice(0,46),стало:String(nm).slice(0,46),регион:was===tr?was:was+' → '+tr})
-    await db.from('zalivs').update({name:nm,region:tr}).eq('id',z.id)
+    const nameOld=nm!==z.name, regOld=tr!==was
+    if(!nameOld&&!regOld)continue
+    // регион правим и тогда, когда имя уже верное: строка могла остаться в прошлом
+    // регионе с момента, когда имя было другим
+    const upd={};if(nameOld)upd.name=nm;if(regOld)upd.region=tr
+    changes.push({было:String(z.name).slice(0,46),стало:String(nm).slice(0,46),регион:regOld?was+' → '+tr:was})
+    await db.from('zalivs').update(upd).eq('id',z.id)
   }
-  if(!changes.length){console.log('%c✓ Имена в CRM совпадают с Meta','color:#3DBE8B');return}
+  if(!changes.length){console.log('%c✓ Имена и регионы в CRM совпадают с Meta','color:#3DBE8B');return}
   console.log('%cОбновлено РК: '+changes.length,'color:#D4AF37;font-weight:bold')
   console.table(changes)
   toast('Имена обновлены: '+changes.length+' РК. Перезагружаю…','ok')
