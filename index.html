@@ -5769,7 +5769,7 @@ function renderCreoTable(){
   tbody.innerHTML=f.map(cr=>{
     const statusColor=cr.status==='hall'?'#ffd700':cr.status==='used'?'var(--yellow)':'var(--blue)'
     const statusLabel=cr.status==='hall'?'🏆 MWP':cr.status==='used'?'⚡ Use':'✨ Clean'
-    const geoClass=geoClass(cr.geo)
+    const gcls=geoClass(cr.geo)   // нельзя называть переменную как функцию: она перекрывает саму себя
     const ctrColor=cr.avg_ctr>2?'var(--green)':cr.avg_ctr>1?'var(--yellow)':cr.avg_ctr>0?'var(--red)':'var(--text3)'
     const cplColor=cr.avg_cpl>0&&cr.avg_cpl<10?'var(--green)':cr.avg_cpl<15?'var(--yellow)':cr.avg_cpl>0?'var(--red)':'var(--text3)'
     return`<tr>
@@ -5790,7 +5790,7 @@ function renderCreoTable(){
         <div style="font-weight:700;color:#fff;font-size:12px">${cr.name}</div>
         ${cr.notes?`<div style="font-size:10px;color:var(--text3);margin-top:2px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cr.notes}</div>`:''}
       </td>
-      <td><span class="zgeo gchip ${geoClass}">${cr.geo}</span></td>
+      <td><span class="zgeo gchip ${gcls}">${cr.geo}</span></td>
       <td><span class="fchip">${cr.funnel||'—'}</span></td>
       <td><span style="font-size:10px;font-weight:700;color:${statusColor}">${statusLabel}</span></td>
       <td style="font-family:var(--mono);font-weight:700;color:${ctrColor}">${cr.avg_ctr?cr.avg_ctr+'%':'—'}</td>
@@ -6105,7 +6105,7 @@ function openCreoInfo(creoName){
 
   const statusColor=cr?.status==='hall'?'#ffd700':cr?.status==='used'?'var(--yellow)':'var(--blue)'
   const statusLabel=cr?.status==='hall'?'🏆 MWP':cr?.status==='used'?'⚡ Use':'✨ Clean'
-  const geoClass=geoClass(cr?.geo)
+  const gcls=geoClass(cr?.geo)   // то же самое: переменная не должна затенять функцию
 
   bodyEl.innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
@@ -6114,7 +6114,7 @@ function openCreoInfo(creoName){
     </div>
     ${cr?`
     <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
-      <span class="zgeo gchip ${geoClass}">${cr.geo}</span>
+      <span class="zgeo gchip ${gcls}">${cr.geo}</span>
       <span class="fchip">${cr.funnel||'—'}</span>
       <span class="tma">${cr.buyer||'—'}</span>
     </div>
@@ -7070,6 +7070,34 @@ async function linkRks(from,to){
 }
 // ── Сверка спенда: Meta (все кампании аккаунтов) vs то, что суммирует CRM ──
 // Показывает ПОЧЕМУ цифры расходятся: не импортированные РК, без campaign_id, в TOGO, не тот регион.
+// Почему кампания оказалась в том или ином регионе.
+// Показывает каждую кампанию Meta за период: кабинет, спенд и вердикт nameRegion.
+// Нужна, когда сумма по кабинету и сумма по региону не сходятся: значит часть
+// кампаний из этого кабинета правило отнесло к другому региону.
+async function whyRegion(from,to){
+  from=from||document.getElementById('pd-from')?.value
+  to=to||document.getElementById('pd-to')?.value||from
+  if(!from){console.log('Укажи период: whyRegion("2026-09-20")');return}
+  const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',
+    headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
+    body:JSON.stringify({action:'reconcile',region:CURRENT_REGION,since:from,until:to})})
+  const d=await r.json()
+  if(!d.ok){console.error(d.error||d);return}
+  const all=[...(d.campaigns||[]),...(d.other||[])]
+  console.log('%c🔎 Разбор регионов · '+from+' → '+to,'font-weight:bold;font-size:13px')
+  console.table(d.accounts)
+  const byAcc={}
+  all.forEach(c=>{const a=byAcc[c.account_id]||(byAcc[c.account_id]={});a[c.region]=Math.round(((a[c.region]||0)+c.spend)*100)/100})
+  console.log('%cСпенд кабинета в разрезе регионов:','font-weight:bold')
+  console.table(Object.entries(byAcc).map(([a,v])=>({кабинет:a,PL:v.PL||0,CZ:v.CZ||0})))
+  console.log('%cВсе кампании с вердиктом:','font-weight:bold')
+  console.table(all.sort((a,b)=>b.spend-a.spend).map(c=>({
+    spend:c.spend,кабинет:c.account_id,регион:c.region,
+    голова:(String(c.name).replace(/\\/g,'').toUpperCase().split('}')[1]||'').slice(0,6),
+    name:String(c.name).slice(0,64)})))
+  console.log('Если у кампании кабинет чешский, а регион PL — смотри колонку «голова»: именно её читает правило.')
+  return all
+}
 async function checkSpend(from,to){
   from=from||document.getElementById('pd-from')?.value
   to=to||document.getElementById('pd-to')?.value
