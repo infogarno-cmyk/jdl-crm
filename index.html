@@ -1595,9 +1595,9 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-09-20 20:33'
+const BUILD='2026-09-20 20:36'
 function ver(){
-  const need=['whyRegion','syncNames','fixRegions','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
+  const need=['whyRegion','syncNames','fixRegions','findRk','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
   console.log('%cJDL CRM · сборка '+BUILD,'font-weight:bold;font-size:13px')
   console.log('на месте:',have.join(', ')||'ничего из нового')
@@ -7109,6 +7109,30 @@ async function linkRks(from,to){
 }
 // ── Сверка спенда: Meta (все кампании аккаунтов) vs то, что суммирует CRM ──
 // Показывает ПОЧЕМУ цифры расходятся: не импортированные РК, без campaign_id, в TOGO, не тот регион.
+// Найти РК по куску имени во ВСЕЙ базе, не глядя на открытый регион.
+// Нужна, когда checkSpend говорит «нет в CRM», а строка на самом деле есть —
+// просто лежит в другом регионе, со старым именем или без campaign_id,
+// и потому не попадает ни в одну из проверок.
+async function findRk(q){
+  if(!q){console.log('Укажи кусок имени: findRk("20i")');return}
+  const{data,error}=await db.from('zalivs').select('id,name,region,geo,buyer,campaign_id,togo,ind,created_at')
+  if(error){console.error(error);return}
+  const needle=String(q).toLowerCase()
+  const hit=(data||[]).filter(z=>String(z.name||'').toLowerCase().includes(needle)
+                              ||String(z.campaign_id||'')===String(q))
+  if(!hit.length){console.log('%cВ базе нет РК с «'+q+'»','color:#E04050')
+    console.log('Значит кампания не заведена вовсе — заведи её в CRM или прогони импорт.');return[]}
+  console.log('%cНайдено РК: '+hit.length,'font-weight:bold')
+  console.table(hit.map(z=>({id:z.id,регион:z.region||'PL',поИмени:nameRegion(z.name),
+    campaign_id:z.campaign_id||'— НЕТ —',togo:!!z.togo,ind:z.ind||'',
+    name:String(z.name).slice(0,58)})))
+  const stale=hit.filter(z=>!z.campaign_id)
+  if(stale.length)console.log('Без campaign_id: '+stale.length+' — их спенд не считается. Привяжи: linkRks("ГГГГ-ММ-ДД","ГГГГ-ММ-ДД") в ИХ регионе.')
+  const wrong=hit.filter(z=>nameRegion(z.name)!==(z.region||'PL'))
+  if(wrong.length)console.log('Лежат не в своём регионе: '+wrong.length+' — почини fixRegions(true)')
+  return hit
+}
+
 // Пересчитать регион у ВСЕХ РК по их именам.
 // repairRegions() работает только внутри открытого региона: строку, лежащую в PL
 // с чешским именем, из вкладки CZ не видно и починить оттуда нечем.
