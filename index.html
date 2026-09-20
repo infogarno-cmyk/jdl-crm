@@ -1572,6 +1572,19 @@ function dbInit(){
   return db
 }
 
+// Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
+// Если номер не совпадает с тем, что прислано — открыта старая версия.
+const BUILD='2026-09-20 20:20'
+function ver(){
+  const have=['whyRegion','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin']
+    .filter(f=>typeof window[f]==='function')
+  console.log('%cJDL CRM · сборка '+BUILD,'font-weight:bold;font-size:13px')
+  console.log('на месте:',have.join(', ')||'ничего из нового')
+  const miss=['whyRegion','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin']
+    .filter(f=>typeof window[f]!=='function')
+  if(miss.length)console.warn('НЕ хватает: '+miss.join(', ')+' — открыта старая сборка, обнови жёстко (Ctrl+Shift+R)')
+  return BUILD
+}
 // ── LOGIN / LOGOUT ──
 // Настоящая авторизация через Supabase Auth. Защита стоит в базе (RLS),
 // а не здесь: в исходнике страницы лежит анонимный ключ, и любая проверка,
@@ -7070,6 +7083,17 @@ async function linkRks(from,to){
 }
 // ── Сверка спенда: Meta (все кампании аккаунтов) vs то, что суммирует CRM ──
 // Показывает ПОЧЕМУ цифры расходятся: не импортированные РК, без campaign_id, в TOGO, не тот регион.
+// Метка сборки. Отвечает на вопрос «уехал ли деплой» без догадок:
+// если в консоли build() показывает старую дату — на Vercel лежит прошлая версия.
+const JDL_BUILD='2026-09-20 20:18'
+function build(){
+  console.log('%cJDL CRM · сборка '+JDL_BUILD,'font-weight:bold;font-size:13px;color:#D4AF37')
+  const have=['whyRegion','checkSpend','linkRks','fixDupes','cqlReport','brainTest','jvBriefReset']
+    .filter(f=>typeof window[f]==='function')
+  console.log('доступно:',have.join(', '))
+  return JDL_BUILD
+}
+
 // Почему кампания оказалась в том или ином регионе.
 // Показывает каждую кампанию Meta за период: кабинет, спенд и вердикт nameRegion.
 // Нужна, когда сумма по кабинету и сумма по региону не сходятся: значит часть
