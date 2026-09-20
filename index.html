@@ -1572,6 +1572,27 @@ function dbInit(){
   return db
 }
 
+// Гео в имени указано дважды: в голове после «}» и в скобке, которой помечен
+// лендинг — (pl)isystem1, (cz)isystem2. Обычно они совпадают. Разошлись — почти
+// наверняка опечатка в голове, и спенд уедет не в тот регион.
+// Правило нарочно продолжает читать голову: скобка обозначает лендинг, а не гео,
+// и польская кампания с чешским лендингом — законный случай. Мы её просто помечаем.
+function nameGeoConflict(name){
+  const u=(name||'').replace(/\\/g,'').toUpperCase()
+  const i=u.indexOf('}')
+  if(i<0)return null
+  const head=(u.slice(i+1,i+7).match(/^(UACZ|UAPL|CZUA|PLUA|CZ|PL|UA)/)||[])[0]
+  const m=u.match(/\((CZ|PL)\)/)
+  if(!head||!m)return null
+  const lander=m[1], headReg=head.indexOf('CZ')>=0?'CZ':'PL'
+  return headReg===lander?null:{head,lander,headReg,name}
+}
+function nameConflicts(){
+  return (ZALIVS||[]).filter(z=>!z.togo&&z.ind!=='off')
+    .map(z=>{const c=nameGeoConflict(z.name);return c?Object.assign({id:z.id},c):null})
+    .filter(Boolean)
+}
+
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
 const BUILD='2026-09-20 20:20'
@@ -1833,6 +1854,12 @@ function buildEvents(){
   const pdt=s=>{if(!s)return null;if(s.includes('-'))return new Date(s);const p=s.split('.');return p.length===3?new Date(p[2]+'-'+p[1]+'-'+p[0]):null};const sl=(SALES_DATA||[]).filter(s=>{const d=pdt(s.createdAt);return d&&d.getTime()>=Date.now()-864e5});if(sl.length)ev.push(['#3DBE8B','Продажа'+(sl.length>1?'и: '+sl.length:''),sl.slice(0,2).map(s=>(s.saleAmount||0).toLocaleString('ru')+' '+cur()+(s.source?' · '+s.source:'')).join(' · '),[['Sales',"gp('sales',document.getElementById('nb-sales'))"]]])
   // tasks overdue
   const due=TASKS.filter(t=>t.deadline&&t.deadline<td&&t.col!=='done'&&t.col!=='archived'&&(!me||t.assignee===me));if(due.length){ev.push(['#F03A55','Просрочено задач: '+due.length,due.slice(0,3).map(t=>t.title.slice(0,30)).join(' · '),[['Таски',"gp('tasks',document.getElementById('nb-tasks'))"]]]);al.push(['r','⏰','Просрочено задач: '+due.length,due.slice(0,3).map(t=>t.title.slice(0,30)).join(' · '),0])}
+  // Имя кампании само себе противоречит — спенд уедет не в тот регион
+  nameConflicts().forEach(c=>{
+    const t=`В голове ${c.head}, а лендинг помечен (${c.lander.toLowerCase()}). Спенд считается как ${c.headReg}.`
+    ev.push(['#E8A33D','Гео в имени не сходится',t+' '+String(c.name).slice(0,46),[['Открыть РК',`openRk(${c.id})`]]])
+    al.push(['y','⚠','Гео в имени не сходится',t,['Открыть РК',`openRk(${c.id})`]])
+  })
   // CQL баера поехал за три дня
   cqlFlagged().forEach(r=>{
     const worse=r.dry||r.pct>0
@@ -7083,17 +7110,6 @@ async function linkRks(from,to){
 }
 // ── Сверка спенда: Meta (все кампании аккаунтов) vs то, что суммирует CRM ──
 // Показывает ПОЧЕМУ цифры расходятся: не импортированные РК, без campaign_id, в TOGO, не тот регион.
-// Метка сборки. Отвечает на вопрос «уехал ли деплой» без догадок:
-// если в консоли build() показывает старую дату — на Vercel лежит прошлая версия.
-const JDL_BUILD='2026-09-20 20:18'
-function build(){
-  console.log('%cJDL CRM · сборка '+JDL_BUILD,'font-weight:bold;font-size:13px;color:#D4AF37')
-  const have=['whyRegion','checkSpend','linkRks','fixDupes','cqlReport','brainTest','jvBriefReset']
-    .filter(f=>typeof window[f]==='function')
-  console.log('доступно:',have.join(', '))
-  return JDL_BUILD
-}
-
 // Почему кампания оказалась в том или ином регионе.
 // Показывает каждую кампанию Meta за период: кабинет, спенд и вердикт nameRegion.
 // Нужна, когда сумма по кабинету и сумма по региону не сходятся: значит часть
@@ -7115,10 +7131,14 @@ async function whyRegion(from,to){
   console.log('%cСпенд кабинета в разрезе регионов:','font-weight:bold')
   console.table(Object.entries(byAcc).map(([a,v])=>({кабинет:a,PL:v.PL||0,CZ:v.CZ||0})))
   console.log('%cВсе кампании с вердиктом:','font-weight:bold')
-  console.table(all.sort((a,b)=>b.spend-a.spend).map(c=>({
-    spend:c.spend,кабинет:c.account_id,регион:c.region,
-    голова:(String(c.name).replace(/\\/g,'').toUpperCase().split('}')[1]||'').slice(0,6),
-    name:String(c.name).slice(0,64)})))
+  console.table(all.sort((a,b)=>b.spend-a.spend).map(c=>{
+    const k=nameGeoConflict(c.name)
+    return{spend:c.spend,кабинет:c.account_id,регион:c.region,
+      голова:(String(c.name).replace(/\\/g,'').toUpperCase().split('}')[1]||'').slice(0,6),
+      лендинг:k?k.lander:'',конфликт:k?'⚠ ДА':'',name:String(c.name).slice(0,64)}}))
+  const bad=all.map(c=>nameGeoConflict(c.name)).filter(Boolean)
+  if(bad.length)console.warn('Имён с противоречием голова/лендинг: '+bad.length
+    +'. Скорее всего опечатка в голове — переименуй кампанию в Meta и прогони sync заново.')
   console.log('Если у кампании кабинет чешский, а регион PL — смотри колонку «голова»: именно её читает правило.')
   return all
 }
