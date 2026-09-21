@@ -1591,15 +1591,24 @@ function nameGeoConflict(name){
 }
 function nameConflicts(){
   return (ZALIVS||[]).filter(z=>!z.togo&&z.ind!=='off')
-    .map(z=>{const c=nameGeoConflict(z.name);return c?Object.assign({id:z.id},c):null})
+    .map(z=>{
+      // главное расхождение — голова имени против кабинета: это точно опечатка
+      if(zRegionSure(z)){
+        const u=String(z.name||'').replace(/\\/g,'').toUpperCase(),i=u.indexOf('}')
+        const head=i>=0?(u.slice(i+1,i+7).match(/^(UACZ|UAPL|CZUA|PLUA|CZ|PL|UA)/)||[])[0]:''
+        const hr=head?(head.indexOf('CZ')>=0?'CZ':'PL'):''
+        const ar=zRegion(z)
+        if(hr&&hr!==ar)return{id:z.id,head,lander:ar,headReg:hr,name:z.name,byAccount:true}
+      }
+      const c=nameGeoConflict(z.name);return c?Object.assign({id:z.id},c):null})
     .filter(Boolean)
 }
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-09-20 20:44'
+const BUILD='2026-09-21 18:19'
 function ver(){
-  const need=['whyRegion','syncNames','fixRegions','findRk','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
+  const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
   console.log('%cJDL CRM · сборка '+BUILD,'font-weight:bold;font-size:13px')
   console.log('на месте:',have.join(', ')||'ничего из нового')
@@ -1768,11 +1777,19 @@ function setupRT(){
 
 // ── LOAD ──
 async function loadZ(){if(!db)return;const{data}=await db.from('zalivs').select('*').eq('region',CURRENT_REGION).order('created_at',{ascending:false});ZALIVS=data||[];repairBuyers()}
-async function repairRegions(){const bad=ZALIVS.filter(z=>nameRegion(z.name)!==CURRENT_REGION);if(!bad.length)return;const all=window._ALL_ZALIVS||[];let moved=0,dropped=0
-  for(const z of bad){const tr=nameRegion(z.name);const dup=all.find(x=>x.id!==z.id&&(x.region||'PL')===tr&&(x.name||'').trim().toLowerCase()===(z.name||'').trim().toLowerCase())
+async function repairRegions(){
+  // Сначала узнаём у Meta, какой кабинет у каждой кампании. Раньше решали по имени —
+  // и кампания с опечаткой «PL» из чешского кабинета уезжала в Польшу при каждой загрузке.
+  if(!window._metaRegion)await loadMetaRegions()
+  // Переносим только то, в чём уверены: по кабинету, либо РК без campaign_id, где кроме имени ничего нет.
+  // Если карта не загрузилась — РК с campaign_id не трогаем вовсе: лучше не починить, чем сломать.
+  const trust=z=>zRegionSure(z)||!z.campaign_id
+  const bad=ZALIVS.filter(z=>trust(z)&&zRegion(z)!==CURRENT_REGION);if(!bad.length)return;const all=window._ALL_ZALIVS||[];let moved=0,dropped=0
+  for(const z of bad){const tr=zRegion(z);const dup=all.find(x=>x.id!==z.id&&(x.region||'PL')===tr&&(x.name||'').trim().toLowerCase()===(z.name||'').trim().toLowerCase())
     const hasData=RK_ANALYSES.some(a=>a.zaliv_id===z.id)||TASKS.some(t=>t.rk_id===z.id)
-    if(dup&&!hasData){await db.from('zalivs').delete().eq('id',z.id);dropped++}else{await db.from('zalivs').update({region:tr}).eq('id',z.id);moved++}}
-  ZALIVS=ZALIVS.filter(z=>nameRegion(z.name)===CURRENT_REGION);console.log('regions repaired: moved',moved,'dropped',dropped);if(moved||dropped){toast(`Регионы РК исправлены: ${moved} перенесено, ${dropped} дублей убрано`,'ok');rzalivs()}}
+    // удаляем дубль, только если регион подтверждён кабинетом — на одном имени строки не удаляем
+    if(dup&&!hasData&&zRegionSure(z)){await db.from('zalivs').delete().eq('id',z.id);dropped++}else{await db.from('zalivs').update({region:tr}).eq('id',z.id);moved++}}
+  ZALIVS=ZALIVS.filter(z=>!trust(z)||zRegion(z)===CURRENT_REGION);console.log('regions repaired: moved',moved,'dropped',dropped);if(moved||dropped){toast(`Регионы РК исправлены: ${moved} перенесено, ${dropped} дублей убрано`,'ok');rzalivs()}}
 async function repairBuyers(){const fixed=[];for(const z of ZALIVS){const b=parseBuyerFromName(z.name);if(b&&z.buyer!==b){z.buyer=b;fixed.push(z.id);db.from('zalivs').update({buyer:b}).eq('id',z.id)}}if(fixed.length)console.log('buyers repaired:',fixed.length)}
 async function loadD(){if(!db)return;const{data}=await db.from('domains').select('*').eq('region',CURRENT_REGION).order('created_at',{ascending:false});DOMAINS=data||[]}
 async function loadT(){if(!db)return;const{data}=await db.from('tasks').select('*').order('sort_order',{ascending:true});TASKS=data||[]}
@@ -1857,7 +1874,9 @@ function buildEvents(){
   const due=TASKS.filter(t=>t.deadline&&t.deadline<td&&t.col!=='done'&&t.col!=='archived'&&(!me||t.assignee===me));if(due.length){ev.push(['#F03A55','Просрочено задач: '+due.length,due.slice(0,3).map(t=>t.title.slice(0,30)).join(' · '),[['Таски',"gp('tasks',document.getElementById('nb-tasks'))"]]]);al.push(['r','⏰','Просрочено задач: '+due.length,due.slice(0,3).map(t=>t.title.slice(0,30)).join(' · '),0])}
   // Имя кампании само себе противоречит — спенд уедет не в тот регион
   nameConflicts().forEach(c=>{
-    const t=`В голове ${c.head}, а лендинг помечен (${c.lander.toLowerCase()}). Спенд считается как ${c.headReg}.`
+    const t=c.byAccount
+      ?`В голове ${c.head}, а кампания крутится в кабинете ${c.lander}. Спенд идёт в ${c.lander} — поправь имя.`
+      :`В голове ${c.head}, а лендинг помечен (${c.lander.toLowerCase()}). Спенд считается как ${c.headReg}.`
     ev.push(['#E8A33D','Гео в имени не сходится',t+' '+String(c.name).slice(0,46),[['Открыть РК',`openRk(${c.id})`]]])
     al.push(['y','⚠','Гео в имени не сходится',t,['Открыть РК',`openRk(${c.id})`]])
   })
@@ -7111,6 +7130,86 @@ async function linkRks(from,to){
 }
 // ── Сверка спенда: Meta (все кампании аккаунтов) vs то, что суммирует CRM ──
 // Показывает ПОЧЕМУ цифры расходятся: не импортированные РК, без campaign_id, в TOGO, не тот регион.
+// Подтянуть домены прямо из объявлений Meta.
+// Домены записаны на уровне объявлений, а не адсетов: в одном адсете может быть
+// пять креативов с разными лендингами, и одним полем «источник адсета» это не описать.
+// Берём не название объявления, а ссылку из самого креатива — она не врёт,
+// в отличие от имён, которые пишутся руками.
+async function pullAdDomains(zid,apply){
+  const z=ZALIVS.find(x=>x.id===(zid||_zSel))   // без аргумента — берём выделенную в списке
+  if(!z){console.log('Укажи РК: pullAdDomains(id). Список — ZALIVS.map(z=>[z.id,z.name])');return}
+  if(!z.campaign_id){console.log('У этой РК нет campaign_id — сначала привяжи: linkRks(...)');return}
+  const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',
+    headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
+    body:JSON.stringify({action:'get_ads',campaign_id:z.campaign_id,region:CURRENT_REGION})})
+  const d=await r.json()
+  if(!d.ok){console.error(d.error||d);
+    if(/Unsupported|action/i.test(JSON.stringify(d)))console.log('Похоже, get-campaigns не передеплоена — в ней ещё нет действия get_ads')
+    return}
+  const ads=d.ads||[]
+  if(!ads.length){console.log('В кампании нет объявлений');return[]}
+  console.log('%cОбъявления · '+String(z.name).slice(0,50),'font-weight:bold')
+  console.table(ads.map(a=>({объявление:String(a.name).slice(0,40),адсет:a.adset_id,
+    домен:a.domain||'— не найден —',ещё:a.multi?a.domains.slice(1).join(', '):'',статус:a.status})))
+  const noLink=ads.filter(a=>!a.domain)
+  if(noLink.length)console.log('Без ссылки в креативе: '+noLink.length+' — такие бывают у динамических креативов, их придётся указать руками')
+  if(!apply){console.log('Это предпросмотр. Записать в РК — pullAdDomains('+z.id+',true)');return ads}
+
+  const arr=zDomains(z).slice()
+  let i=0,changed=0
+  for(const a of ads){
+    if(!a.domain)continue
+    let e=arr.find(x=>x.ad_id===a.id)
+    if(!e){e={ad:arr.length,ad_id:a.id};arr.push(e)}
+    if(e.domain===a.domain&&e.adset_id===a.adset_id)continue
+    e.ad_id=a.id;e.ad_name=a.name;e.adset_id=a.adset_id;e.domain=a.domain
+    changed++
+  }
+  if(!changed){console.log('%c✓ Домены уже записаны','color:#3DBE8B');return ads}
+  await db.from('zalivs').update({adset_domains:arr}).eq('id',z.id)
+  z.adset_domains=arr
+  toast('Записано доменов: '+changed,'ok')
+  console.log('%cЗаписано: '+changed,'color:#3DBE8B')
+  rzalivs();selZaliv(z.id)
+  return ads
+}
+// Пройтись по всем активным РК региона разом
+async function pullAllAdDomains(apply){
+  const list=zWorkingAll().filter(z=>z.campaign_id)
+  console.log('РК к обработке: '+list.length+(apply?'':' (предпросмотр)'))
+  for(const z of list){console.log('— '+String(z.name).slice(0,46));await pullAdDomains(z.id,apply)}
+  console.log('Готово')
+}
+
+// ── Регион по кабинету ──
+// Кабинеты чистые, поэтому регион кампании надёжнее всего брать по кабинету,
+// в котором она крутится, — это знает только сервер. Берём у него готовую карту
+// campaign_id → регион и держим её до перезагрузки. Имя — лишь запасной вариант
+// для РК без campaign_id или без спенда за последние 60 дней.
+window._metaRegion=null
+async function loadMetaRegions(){
+  try{
+    const to=todayISO(),from=jvISO(jvShift(-60))
+    const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',
+      headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
+      body:JSON.stringify({action:'reconcile',region:'PL',since:from,until:to})})
+    const d=await r.json()
+    if(!d||!d.ok)return null
+    const m={}
+    ;[...(d.campaigns||[]),...(d.other||[])].forEach(c=>{if(c.campaign_id&&c.region)m[String(c.campaign_id)]=c.region})
+    window._metaRegion=m
+    return m
+  }catch(e){console.log('карта регионов Meta не загрузилась —',e.message);return null}
+}
+// Какой регион у РК на самом деле
+function zRegion(z){
+  const m=window._metaRegion
+  if(m&&z&&z.campaign_id&&m[String(z.campaign_id)])return m[String(z.campaign_id)]
+  return nameRegion(z&&z.name)
+}
+// Насколько надёжно мы это знаем: по кабинету — да; по одному лишь имени — нет
+function zRegionSure(z){const m=window._metaRegion;return !!(m&&z&&z.campaign_id&&m[String(z.campaign_id)])}
+
 // Найти РК по куску имени во ВСЕЙ базе, не глядя на открытый регион.
 // Нужна, когда checkSpend говорит «нет в CRM», а строка на самом деле есть —
 // просто лежит в другом регионе, со старым именем или без campaign_id,
@@ -7125,12 +7224,13 @@ async function findRk(q){
   if(!hit.length){console.log('%cВ базе нет РК с «'+q+'»','color:#E04050')
     console.log('Значит кампания не заведена вовсе — заведи её в CRM или прогони импорт.');return[]}
   console.log('%cНайдено РК: '+hit.length,'font-weight:bold')
-  console.table(hit.map(z=>({id:z.id,регион:z.region||'PL',поИмени:nameRegion(z.name),
+  await loadMetaRegions()
+  console.table(hit.map(z=>({id:z.id,регион:z.region||'PL',поКабинету:zRegionSure(z)?zRegion(z):'—',поИмени:nameRegion(z.name),
     campaign_id:z.campaign_id||'— НЕТ —',togo:!!z.togo,ind:z.ind||'',
     name:String(z.name).slice(0,58)})))
   const stale=hit.filter(z=>!z.campaign_id)
   if(stale.length)console.log('Без campaign_id: '+stale.length+' — их спенд не считается. Привяжи: linkRks("ГГГГ-ММ-ДД","ГГГГ-ММ-ДД") в ИХ регионе.')
-  const wrong=hit.filter(z=>nameRegion(z.name)!==(z.region||'PL'))
+  const wrong=hit.filter(z=>zRegion(z)!==(z.region||'PL'))
   if(wrong.length)console.log('Лежат не в своём регионе: '+wrong.length+' — почини fixRegions(true)')
   return hit
 }
@@ -7139,14 +7239,16 @@ async function findRk(q){
 // repairRegions() работает только внутри открытого региона: строку, лежащую в PL
 // с чешским именем, из вкладки CZ не видно и починить оттуда нечем.
 async function fixRegions(apply){
-  const{data,error}=await db.from('zalivs').select('id,name,region')
+  await loadMetaRegions()
+  const{data,error}=await db.from('zalivs').select('id,name,region,campaign_id')
   if(error){console.error(error);return}
-  const bad=(data||[]).filter(z=>nameRegion(z.name)!==(z.region||'PL'))
+  const bad=(data||[]).filter(z=>zRegion(z)!==(z.region||'PL'))
   if(!bad.length){console.log('%c✓ Регионы всех РК соответствуют именам','color:#3DBE8B');return[]}
   console.log('%cРК не в своём регионе: '+bad.length,'color:#E8A33D;font-weight:bold')
-  console.table(bad.map(z=>({id:z.id,регион:(z.region||'PL')+' → '+nameRegion(z.name),name:String(z.name).slice(0,56)})))
+  console.table(bad.map(z=>({id:z.id,регион:(z.region||'PL')+' → '+zRegion(z),
+    основание:zRegionSure(z)?'кабинет':'только имя',name:String(z.name).slice(0,52)})))
   if(!apply){console.log('Это предпросмотр. Чтобы применить — fixRegions(true)');return bad}
-  for(const z of bad)await db.from('zalivs').update({region:nameRegion(z.name)}).eq('id',z.id)
+  for(const z of bad)await db.from('zalivs').update({region:zRegion(z)}).eq('id',z.id)
   toast('Перенесено РК: '+bad.length+'. Перезагружаю…','ok')
   setTimeout(()=>location.reload(),1600)
   return bad
@@ -7167,15 +7269,15 @@ async function syncNames(from,to){
     body:JSON.stringify({action:'reconcile',region:CURRENT_REGION,since:from,until:to})})
   const d=await r.json()
   if(!d.ok){console.error(d.error||d);return}
-  const meta={}
-  ;[...(d.campaigns||[]),...(d.other||[])].forEach(c=>{meta[String(c.campaign_id)]=c.name})
+  const meta={},metaReg={}
+  ;[...(d.campaigns||[]),...(d.other||[])].forEach(c=>{meta[String(c.campaign_id)]=c.name;metaReg[String(c.campaign_id)]=c.region})
   const{data,error}=await db.from('zalivs').select('id,name,region,campaign_id').not('campaign_id','is',null)
   if(error){console.error(error);return}
   const changes=[]
   for(const z of (data||[])){
     const nm=meta[String(z.campaign_id)]
     if(!nm)continue
-    const tr=nameRegion(nm), was=z.region||'PL'
+    const tr=metaReg[String(z.campaign_id)]||nameRegion(nm), was=z.region||'PL'   // регион — по кабинету
     const nameOld=nm!==z.name, regOld=tr!==was
     if(!nameOld&&!regOld)continue
     // регион правим и тогда, когда имя уже верное: строка могла остаться в прошлом
