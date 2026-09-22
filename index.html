@@ -220,6 +220,11 @@ const SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJl
 // а на «User request limit reached» делается ретрай с нарастающей паузой вместо падения.
 const _gcCache=new Map();
 const _gcInflight=new Map();
+// Глобальный троттл: реальные сетевые вызовы к Meta идут не чаще, чем раз в _GC_GAP мс.
+// Кэш-хиты его не трогают. Это не даёт всплескам (открыл кампанию, потыкал адсеты) выжечь лимит.
+let _gcGate=Promise.resolve();
+const _GC_GAP=750;
+function _gcSlot(){const p=_gcGate.then(()=>new Promise(r=>setTimeout(r,_GC_GAP)));_gcGate=p.catch(()=>{});return p;}
 const _GC_TTL={get_adsets:600000,get_campaigns:600000,get_ads:600000,get_campaign_insights:150000,get_adset_insights:150000,get_campaign_video:150000,get_bulk_insights:150000};
 function _gcIsRate(err){return /request limit|user request limit|#17\b|\(#17\)|reduce the amount|too many calls|rate limit|try again later/i.test(String(err||''));}
 async function gcFetch(url,opts){
@@ -238,6 +243,7 @@ async function gcFetch(url,opts){
     let data={ok:false,error:'rate limit'};
     for(let attempt=0;attempt<3;attempt++){
       if(attempt) await new Promise(r=>setTimeout(r,2500*attempt)); // 0 → 2.5s → 5s
+      await _gcSlot(); // держим темп между реальными вызовами Meta
       try{
         const r=await fetch(url,opts);
         lastStatus=r.status;
