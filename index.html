@@ -2,10 +2,210 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Rubik+Spray+Paint&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <title>JDL · JustDoLead Traffic Team</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23090B0F'/><path d='M4.5 8.5h23L18.6 19v7.5L13.4 23v-4z' fill='%23ED1C24'/><path d='M13 4.2l2.4 5.6-2.1 1zM19.4 4.4l-1.6 6-2-.9zM8.6 6l3.5 4.6-1.9 1.3z' fill='%23fff'/></svg>">
+<style id="mobile-layer">
+/* ══════════════════════════════════════════════════════════════════
+   МОБИЛЬНЫЙ СЛОЙ
+   Подключается последним, поэтому главный на телефоне. На десктопе не
+   действует вовсе. Логика: навигация уходит вниз под большой палец,
+   шапка в одну строку, таблицы превращаются в карточки, модалки —
+   в шторки снизу, всё кликабельное не меньше 40px.
+   ══════════════════════════════════════════════════════════════════ */
+#mnav,#mmore,#mmore-bg{display:none}
+@media (max-width:760px){
+  :root{--mnav:60px;--sab:env(safe-area-inset-bottom,0px);--sat:env(safe-area-inset-top,0px)}
+
+  /* каркас: dvh вместо vh — иначе низ прячется под адресную строку Safari */
+  #app{height:100vh;height:100dvh}
+  html,body{font-size:14px;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+  .content{padding-bottom:calc(var(--mnav) + var(--sab) + 14px);-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+  .page{padding:12px 12px 8px}
+
+  /* ── шапка в одну строку ── */
+  .topbar{height:auto!important;min-height:0!important;padding:calc(6px + var(--sat)) 10px 6px!important;
+    flex-wrap:nowrap!important;gap:6px!important;align-items:center!important;overflow:visible!important;
+    position:sticky;top:0;z-index:300}
+  .topbar .nav{display:none!important}
+  .topbar .search-btn{display:none!important}
+  .topbar .logo{flex-shrink:0;order:0!important}
+  .topbar .logo .lg-mark{height:24px!important}
+  .region-tog{order:0!important;margin-left:0!important;flex-shrink:0}
+  .rt-btn{padding:7px 9px!important;font-size:12px!important;min-height:32px}
+  .byseg .rt-btn{padding:7px 8px!important}
+  .sync-area{margin-left:auto!important;display:flex!important;align-items:center;gap:4px!important;order:0!important;flex-shrink:0}
+  .sync-area .sync-btn,.sync-area [onclick*="manualSync"],#sync-btn{display:none!important}
+  #ss-lbl,.ss-lbl,.sync-area .sst{display:none!important}
+  #nb-jt{font-size:0!important;padding:0!important;width:36px;height:36px;display:inline-flex!important;align-items:center;justify-content:center;border-radius:10px}
+  #nb-jt::before{content:'☀';font-size:17px}
+  /* аватар в шапке не помещается рядом с переключателями — он живёт в шторке «Ещё» */
+  .topbar .uchip{display:none!important}
+  .tape{max-width:100%;overflow:hidden}
+
+  /* ── нижняя панель навигации ── */
+  #mnav{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:420;
+    height:calc(var(--mnav) + var(--sab));padding-bottom:var(--sab);
+    background:rgba(11,13,18,.94);backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);
+    border-top:1px solid var(--border2)}
+  #mnav button{all:unset;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    color:var(--text3);font:600 10.5px var(--sans);letter-spacing:.02em;cursor:pointer;-webkit-tap-highlight-color:transparent;position:relative}
+  #mnav button i{font-style:normal;font-size:20px;line-height:1;filter:grayscale(.6) opacity(.75);transition:transform .15s,filter .15s}
+  #mnav button.on{color:var(--gold2,#e8c96a)}
+  #mnav button.on i{filter:none;transform:translateY(-1px)}
+  #mnav button.on::before{content:'';position:absolute;top:0;left:28%;right:28%;height:2px;border-radius:0 0 2px 2px;background:var(--gold2,#e8c96a)}
+  #mnav button:active i{transform:scale(.88)}
+  #mnav .bdg{position:absolute;top:7px;left:calc(50% + 6px);min-width:16px;height:16px;padding:0 4px;border-radius:8px;
+    background:var(--red);color:#fff;font:700 10px/16px var(--sans);text-align:center}
+
+  /* шторка «Ещё» */
+  #mmore-bg{display:block;position:fixed;inset:0;z-index:430;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .2s}
+  #mmore-bg.on{opacity:1;pointer-events:auto}
+  #mmore{display:block;position:fixed;left:0;right:0;bottom:0;z-index:440;transform:translateY(105%);transition:transform .26s cubic-bezier(.2,.8,.2,1);
+    background:var(--bg3);border-top:1px solid var(--border2);border-radius:18px 18px 0 0;
+    padding:10px 14px calc(18px + var(--sab));max-height:80dvh;overflow-y:auto}
+  #mmore.on{transform:none}
+  #mmore .grab{width:40px;height:4px;border-radius:2px;background:var(--border2);margin:2px auto 14px}
+  #mmore .mm-me{display:flex;align-items:center;gap:12px;padding:4px 4px 2px}
+  #mmore .mm-me b{display:block;font:600 15px var(--sans);color:var(--text)}
+  #mmore .mm-me small{display:block;font:500 12px var(--sans);color:var(--text3);margin-top:2px}
+  #mmore .mm-ava{width:40px;height:40px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font:700 13px var(--sans);flex-shrink:0}
+  #mmore .mm-sec{font:600 11px var(--sans);color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:14px 4px 8px}
+  #mmore .mm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  #mmore .mm-grid button{all:unset;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border-radius:12px;
+    background:var(--bg2);border:1px solid var(--border);color:var(--text2);font:600 11.5px var(--sans);text-align:center;cursor:pointer}
+  #mmore .mm-grid button i{font-style:normal;font-size:22px}
+  #mmore .mm-grid button:active{background:var(--bg4)}
+  #mmore .mm-row{all:unset;display:flex;align-items:center;gap:12px;width:100%;box-sizing:border-box;padding:14px 12px;border-radius:12px;
+    color:var(--text);font:500 15px var(--sans);cursor:pointer}
+  #mmore .mm-row:active{background:var(--bg4)}
+  #mmore .mm-row i{font-style:normal;font-size:18px;width:22px;text-align:center}
+  #mmore .mm-row.danger{color:var(--red)}
+
+  /* ── поля ввода: 16px, иначе iOS зумит страницу при каждом фокусе ── */
+  input,select,textarea{font-size:16px!important}
+  .fsel,select{min-height:40px;padding-top:8px!important;padding-bottom:8px!important}
+  input[type=text],input[type=search],input[type=number],input[type=email],input[type=password],textarea{min-height:40px}
+
+  /* ── тач-цели ── */
+  button,.pb,.btpl,.zrk-add,.tf-btn,.ttype-btn{min-height:38px}
+  .stpill{min-height:0!important;display:inline-flex!important;align-items:center;padding:5px 10px!important;font-size:11px!important;line-height:1!important}
+  .sc6 i,.zst{cursor:pointer}
+  .mox{min-width:40px!important;min-height:40px!important;font-size:22px!important}
+
+  /* ── дашборд ── */
+  .pbar{flex-wrap:wrap!important;gap:8px!important}
+  .pdates{width:100%;display:flex!important;gap:6px;align-items:center}
+  .pdw{flex:1;min-width:0}
+  .pdi{width:100%!important;min-width:0}
+  .cmpt{margin-left:0!important;font-size:13px!important}
+  .pbtns{width:100%;overflow-x:auto;flex-wrap:nowrap!important;gap:6px!important;scrollbar-width:none;padding-bottom:2px;
+    -webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
+  .pbtns::-webkit-scrollbar{display:none}
+  .pbtns .pb{white-space:nowrap;flex-shrink:0;padding:8px 14px!important;font-size:13px!important}
+
+  .hero{grid-template-columns:1fr!important;gap:10px!important;padding:14px!important}
+  .hero .big,.holo-wrap{font-size:clamp(40px,13vw,58px)!important;line-height:1!important;display:flex!important;flex-wrap:wrap;align-items:baseline;gap:2px 10px}
+  #hero-dl,.hero .dl.big{font-size:14px!important;line-height:1.3!important;flex-basis:100%;white-space:normal!important;letter-spacing:0!important;opacity:.85}
+  /* боковые плитки героя: на десктопе три колонки по 120px — на узком экране они не помещаются */
+  .hero .side{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;width:100%}
+  .hero .side>*{min-width:0}
+  .hero .side .k{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .krow{grid-template-columns:1fr 1fr!important;gap:0!important}
+  .kval{font-size:20px!important}
+  .kpi{padding:12px!important}
+  .tape,#hero-tape{font-size:12px}
+
+  /* ── таблица заливов → карточки ── */
+  /* на десктопе у таблицы min-width:720px — именно он распирал карточки за экран */
+  #page-zalivs .zt{min-width:0!important;overflow:visible!important}
+  #page-zalivs .ztwrap{overflow:visible!important;max-width:100%}
+  #page-zalivs .zt,#page-zalivs .zt tbody{display:block;width:100%}
+  #page-zalivs .zt thead{display:none}
+  #page-zalivs .zt tr.zgrp{display:block;padding:14px 4px 6px;background:none!important}
+  #page-zalivs .zt tr.zgrp td{display:block;padding:0!important;border:0!important}
+  #page-zalivs .zt tr.zr2{display:grid;grid-template-columns:14px repeat(3,minmax(0,1fr)) auto;
+    grid-template-areas:"dot name name name geo" ".   ctl  life life life" ".   bud  lq   ctr  sc";
+    gap:8px 10px;align-items:center;padding:12px;margin:0 0 8px;border:1px solid var(--border);border-radius:14px;background:var(--bg2);
+    width:100%;box-sizing:border-box}
+  #page-zalivs .zt tr.zr2.zsel{border-color:var(--gold2,#e8c96a)}
+  #page-zalivs .zt tr.zr2 td{display:block;padding:0!important;border:0!important;min-width:0;width:auto!important}
+  #page-zalivs .zt tr.zr2 td:nth-child(1),#page-zalivs .zt tr.zr2 td:nth-child(11){display:none}
+  #page-zalivs .zt tr.zr2 td:nth-child(2){grid-area:dot;align-self:start;padding-top:5px!important}
+  #page-zalivs .zt tr.zr2 td:nth-child(3){grid-area:ctl}
+  #page-zalivs .zt tr.zr2 td:nth-child(4){grid-area:geo;align-self:start}
+  #page-zalivs .zt tr.zr2 td:nth-child(5){grid-area:name}
+  #page-zalivs .zt tr.zr2 td:nth-child(6){grid-area:life;justify-self:end}
+  #page-zalivs .zt tr.zr2 td:nth-child(7){grid-area:bud}
+  #page-zalivs .zt tr.zr2 td:nth-child(8){grid-area:lq}
+  #page-zalivs .zt tr.zr2 td:nth-child(9){grid-area:ctr}
+  #page-zalivs .zt tr.zr2 td:nth-child(10){grid-area:sc;justify-self:end}
+  #page-zalivs .zt tr.zr2 td:nth-child(n+7):nth-child(-n+9){font-size:14px}
+  #page-zalivs .zt tr.zr2 td:nth-child(7)::before{content:'Бюджет';display:block;font:600 10.5px var(--sans);color:var(--text3);margin-bottom:2px}
+  #page-zalivs .zt tr.zr2 td:nth-child(8)::before{content:'Лиды · кв';display:block;font:600 10.5px var(--sans);color:var(--text3);margin-bottom:2px}
+  #page-zalivs .zt tr.zr2 td:nth-child(9)::before{content:'CTR';display:block;font:600 10.5px var(--sans);color:var(--text3);margin-bottom:2px}
+  #page-zalivs .zt .rkn{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;word-break:break-word;font-size:13.5px;line-height:1.35}
+  #page-zalivs .zt .zsub{flex-wrap:wrap;margin-top:5px}
+  #page-zalivs .zt .zsub .tg,#page-zalivs .zt .zcat{font-size:11px!important}
+  #page-zalivs .zt .sc6 i{width:10px!important;height:10px!important}
+  #page-zalivs .zt tr:not(.zr2):not(.zgrp){display:block;margin:-4px 0 10px}
+  #page-zalivs .zt tr:not(.zr2):not(.zgrp)>td{display:block;padding:10px!important}
+  #page-zalivs .zviews{overflow-x:auto;flex-wrap:nowrap!important;scrollbar-width:none}
+  #page-zalivs .zviews::-webkit-scrollbar{display:none}
+  #page-zalivs .zviews .v{white-space:nowrap;flex-shrink:0}
+  .zsplit{grid-template-columns:1fr!important}
+  .zdp{position:static!important;max-height:none!important}
+  #zdp:has(>.empty:only-child),.zdp:has(>.empty:only-child){display:none!important}
+
+  /* прочие таблицы — горизонтальная прокрутка внутри своего блока, страница не едет */
+  .page table:not(.zt){display:block;overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch}
+  #page-creo .zt{display:block;overflow-x:auto;max-width:100%}
+
+  /* ── модалки → шторки снизу ── */
+  .mo{align-items:flex-end!important;padding:0!important}
+  /* модалки живут внутри #root со своим z-index:1 — поверх нижней панели их не поднять.
+     Поэтому пока открыта модалка или шторка, панель просто уходит */
+  body:has(.mo.open) #mnav,body:has(.drawer.open) #mnav,body:has(.drawer.on) #mnav{transform:translateY(110%);transition:transform .2s}
+  #mnav{transition:transform .2s}
+  .mo .mob,.mbox{width:100%!important;max-width:100%!important;margin:0!important;max-height:92dvh!important;overflow-y:auto!important;
+    border-radius:18px 18px 0 0!important;padding-bottom:calc(16px + var(--sab))!important;animation:mSheet .24s cubic-bezier(.2,.8,.2,1)}
+  @keyframes mSheet{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+  .motit{position:sticky;top:0;z-index:2;background:inherit;padding-top:6px}
+  .drawer{width:100%!important;border-left:0!important;z-index:470!important;padding-top:var(--sat)}
+
+  /* ── сводка TODAY ── */
+  .jt-h{flex-wrap:wrap;gap:4px 12px!important}
+  .jt-ev{gap:12px!important;padding:12px!important}
+
+  /* ── задачи ── */
+  .kanban,.kanban.v8{grid-template-columns:1fr!important;gap:12px!important}
+  .tstat .tsg{grid-template-columns:1fr 1fr!important}
+
+  /* ── журнал: дерево над редактором ── */
+  /* старое правило сдвигало журнал на -10px с обеих сторон — под поля страницы в 12px это давало вылет */
+  .jlay{grid-template-columns:1fr!important;display:flex!important;flex-direction:column;margin:0!important;height:auto!important;width:100%!important}
+  .jsb{width:100%!important;max-width:100%!important;max-height:34dvh;overflow-y:auto;border-right:0!important;border-bottom:1px solid var(--border)}
+
+  /* ── Геннадий: субтитр над нижней панелью, во всю ширину ── */
+  #jv-hud{left:10px!important;right:10px!important;transform:none!important;width:auto!important;max-width:none!important;
+    bottom:calc(var(--mnav) + var(--sab) + 10px)!important}
+  #jv-hud *{white-space:normal}
+  .toast,#toast{bottom:calc(var(--mnav) + var(--sab) + 12px)!important;left:12px!important;right:12px!important;transform:none!important;max-width:none!important}
+
+  /* hover на телефоне залипает — убираем подъём карточек */
+  @media (hover:none){.zr2:hover,.kcard:hover,.jt-ev:hover{transform:none!important}}
+}
+@media (max-width:380px){
+  .byseg .rt-btn{padding:7px 6px!important;font-size:11px!important}
+  #mmore .mm-grid{grid-template-columns:repeat(3,1fr)}
+  #page-zalivs .zt tr.zr2{grid-template-areas:"dot name name name geo" ".   ctl  ctl  ctl  ctl" ".   life life life life" ".   bud  lq   ctr  sc"}
+  #page-zalivs .zt tr.zr2 td:nth-child(6){justify-self:start}
+}
+</style>
 </head>
 <body>
 <div id="root"></div>
@@ -1606,7 +1806,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-09-21 18:19'
+const BUILD='2026-09-22 13:28'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -5265,6 +5465,11 @@ function campKey(name){return(name||'').toLowerCase().replace(/\s+/g,'').slice(0
 // Ядро названия: только буквы и цифры, без ведущего порядкового номера ("8D{13.09}..." → "d1309...").
 // Переживает ручные правки в Meta/CRM — лишние слэши, пробелы, тире, "— 1-2-1" в конце.
 function campCore(name){return(name||'').toLowerCase().replace(/^\s*\d+(?=[a-zа-я])/,'').replace(/[^a-z0-9]/g,'')}
+// Скопированная в Meta кампания первое время носит имя оригинала с хвостом «- Copy».
+// Если связать её в этот момент, она сядет на РК оригинала, а свой ID оригинал потеряет.
+// Так случилось с 25D и 26D. Такие кампании не связываем автоматически — ждём переименования.
+function isMetaCopy(name){return /(^|[\s\-—–_(])(copy|копия|kopia)(\s*\d+)?\s*\)?\s*$/i.test(String(name||'').trim())
+  ||/\s-\s*copy\b/i.test(String(name||''))}
 function fuzzyMatchZaliv(campName,pool){
   const nk=campKey(campName),nc=campCore(campName)
   // 1) совпадение по ядру — самое надёжное
@@ -5301,6 +5506,7 @@ async function importCampaignsFromMeta(){
       if(usedCampIds.has(campIdStr)){skipped++;continue} // already attached to some RK
 
       // 1) exact name match — same RK, just wire up the ID, don't touch anything the person set (cat, budget, tags...)
+      if(isMetaCopy(camp.name)){skipped++;console.warn('импорт: пропущена копия — '+camp.name);continue}   // имя ещё от оригинала
       let target=ZALIVS.find(z=>!z.campaign_id&&normName(z.name)===normName(camp.name))
       // 2) fuzzy prefix match — RK created in CRM before Meta, name got extra suffix ("— 1-2-1") once actually launched in Ads Manager
       if(!target)target=fuzzyMatchZaliv(camp.name,ZALIVS.filter(z=>!z.campaign_id))
@@ -7096,8 +7302,10 @@ async function linkRks(from,to){
   const used=new Set(ZALIVS.filter(z=>z.campaign_id).map(z=>String(z.campaign_id)))
   const normName=s=>s.trim().replace(/\s+/g,' ').toLowerCase()
   let n=0,created=0
+  const copies=[]
   for(const camp of d.campaigns){
     if(used.has(String(camp.campaign_id)))continue
+    if(isMetaCopy(camp.name)){copies.push(camp.name);continue}
     const pool=ZALIVS.filter(z=>!z.campaign_id)
     const t=pool.find(z=>normName(z.name)===normName(camp.name))||fuzzyMatchZaliv(camp.name,pool)
     if(t){
@@ -7125,7 +7333,9 @@ async function linkRks(from,to){
     }
   }
   const tot=n+created
-  if(tot){toast('Привязано: '+n+' · создано: '+created,'ok');rzalivs();rdash()}else toast('Нечего привязывать','info')
+  if(copies.length){console.warn('Пропущено копий из Meta: '+copies.length+' — у них ещё имя оригинала с «Copy». Переименуй в Meta и запусти снова:');copies.forEach(c=>console.warn('   '+c))
+    toast('Пропущено копий: '+copies.length+' — переименуй в Meta','info')}
+  if(tot){toast('Привязано: '+n+' · создано: '+created,'ok');rzalivs();rdash()}else if(!copies.length)toast('Нечего привязывать','info')
   return{linked:n,created}
 }
 // ── Сверка спенда: Meta (все кампании аккаунтов) vs то, что суммирует CRM ──
@@ -7486,5 +7696,82 @@ document.getElementById('li-go')?.addEventListener('click',doAuthLogin)
   // не вошли — init() не запустится, так что заставку убираем сами
   dismissIntro()
 })()
+
+// ══ МОБИЛЬНАЯ НАВИГАЦИЯ ══
+// Внизу — пять главных разделов под большой палец, остальное в шторке «Ещё».
+// Кнопки ничего не дублируют: они нажимают те же пункты меню, что и на десктопе,
+// поэтому вся логика переключения страниц остаётся одна.
+;(function mobileNav(){
+  const MAIN=[['dash','📊','Главная'],['tasks','✅','Задачи'],['zalivs','🚀','Заливы'],['analysis','🔬','Анализ']]
+  const MORE=[['journal','📓','Журнал'],['creo','🎨','Крео'],['sales','💰','Продажи'],['domains','🌐','Домены']]
+  const isMob=()=>matchMedia('(max-width:760px)').matches
+  function build(){
+    if(document.getElementById('mnav'))return
+    const nav=document.createElement('nav');nav.id='mnav';nav.setAttribute('aria-label','Разделы')
+    nav.innerHTML=MAIN.map(([id,ic,t])=>`<button data-go="${id}"><i>${ic}</i>${t}</button>`).join('')
+      +`<button data-go="more"><i>☰</i>Ещё<span class="bdg" id="mnav-bdg" hidden></span></button>`
+    const bg=document.createElement('div');bg.id='mmore-bg'
+    const sh=document.createElement('div');sh.id='mmore';sh.setAttribute('role','dialog')
+    const who=(typeof CURRENT_USER!=='undefined'&&CURRENT_USER)?CURRENT_USER:null
+    sh.innerHTML=`<div class="grab"></div>
+      <div class="mm-me" id="mm-me"></div>
+      <div class="mm-sec">Разделы</div>
+      <div class="mm-grid">${MORE.map(([id,ic,t])=>`<button data-go="${id}"><i>${ic}</i>${t}</button>`).join('')}</div>
+      <div class="mm-sec">Действия</div>
+      <button class="mm-row" data-act="jv"><i>◉</i>Геннадий — брифинг</button>
+      <button class="mm-row" data-act="mic"><i>🎙</i>Микрофон</button>
+      <button class="mm-row" data-act="sync"><i>↻</i>Синхронизация</button>
+      <button class="mm-row" data-act="search"><i>🔍</i>Поиск</button>
+      <button class="mm-row danger" data-act="out"><i>⎋</i>Выйти</button>`
+    document.body.append(nav,bg,sh)
+    // кто вошёл — берём из той же плашки, что на десктопе
+    const me=()=>{const el=document.getElementById('mm-me');if(!el||typeof CURRENT_USER==='undefined'||!CURRENT_USER)return
+      el.innerHTML=`<span class="mm-ava" style="background:${CURRENT_USER.bg||'var(--bg4)'};color:${CURRENT_USER.color||'var(--text)'};border-color:${CURRENT_USER.border||'var(--border)'}">${CURRENT_USER.initials||'?'}</span>
+        <span><b>${CURRENT_USER.name}</b><small>${CURRENT_USER.role||''}</small></span>`}
+
+    const close=()=>{sh.classList.remove('on');bg.classList.remove('on')}
+    const open=()=>{me();sh.classList.add('on');bg.classList.add('on')}
+    bg.onclick=close
+    // свайп вниз закрывает шторку
+    let y0=null
+    sh.addEventListener('touchstart',e=>{if(sh.scrollTop<=0)y0=e.touches[0].clientY},{passive:true})
+    sh.addEventListener('touchmove',e=>{if(y0!==null&&e.touches[0].clientY-y0>70){close();y0=null}},{passive:true})
+    sh.addEventListener('touchend',()=>{y0=null},{passive:true})
+
+    const go=id=>{document.getElementById('nb-'+id)?.click();close();sync()
+      const c=document.querySelector('.content');if(c)c.scrollTo({top:0,behavior:'instant'})}
+    nav.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return
+      if(b.dataset.go==='more'){sh.classList.contains('on')?close():open();return}
+      go(b.dataset.go)})
+    sh.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return
+      if(b.dataset.go){go(b.dataset.go);return}
+      const a=b.dataset.act;close()
+      if(a==='jv')document.getElementById('nb-jv')?.click()
+      else if(a==='mic')document.getElementById('nb-mic')?.click()
+      else if(a==='sync'&&typeof manualSync==='function')manualSync()
+      else if(a==='search')document.getElementById('topbar-search')?.click()
+      else if(a==='out'&&typeof doLogout==='function')doLogout()})
+
+    // подсветка текущего раздела: следим за тем же классом, что и десктопное меню
+    const sync=()=>{
+      const act=document.querySelector('.nav .nb.active')?.id?.replace('nb-','')||'dash'
+      const inMore=MORE.some(m=>m[0]===act)
+      nav.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.go===act||(inMore&&b.dataset.go==='more')))
+      sh.querySelectorAll('.mm-grid button').forEach(b=>b.style.borderColor=b.dataset.go===act?'var(--gold2,#e8c96a)':'')
+    }
+    const nv=document.querySelector('.nav')
+    if(nv)new MutationObserver(sync).observe(nv,{subtree:true,attributes:true,attributeFilter:['class']})
+    sync()
+
+    // счётчик тревог с колокольчика — на кнопку «Ещё», чтобы было видно без шапки
+    const bell=document.getElementById('bell-n')
+    const bsync=()=>{const n=+(bell&&bell.textContent)||0,bd=document.getElementById('mnav-bdg');if(bd){bd.hidden=!n;bd.textContent=n>9?'9+':n}}
+    if(bell)new MutationObserver(bsync).observe(bell,{childList:true,characterData:true,subtree:true})
+    bsync()
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')close()})
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',build);else build()
+})()
+
 </script>
 </body></html>
