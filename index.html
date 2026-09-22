@@ -1806,7 +1806,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-09-22 13:40'
+const BUILD='2026-09-22 13:48'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -7390,6 +7390,8 @@ async function pullAdDomains(zid,apply){
     Object.assign(e,{domain:a.key,ad_id:a.id,ad_name:a.name,adset_id:a.adset_id,adset_name:e.adset_name||null})
     if(JSON.stringify(e)!==before)changed++
   }
+  // «ничего не изменилось» и «ничего не нашлось» — разные вещи, путать их нельзя
+  if(!ads.some(a=>a.key)){console.warn('Ни у одного объявления калька не найдена — записывать нечего. Смотри колонку «ссылка» в таблице выше.');return ads}
   if(!changed){console.log('%c✓ Кальки уже записаны','color:#3DBE8B');return ads}
   await db.from('zalivs').update({adset_domains:arr}).eq('id',z.id)
   z.adset_domains=arr
