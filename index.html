@@ -213,6 +213,45 @@
 <script>
 const SB_URL='https://dkhkowkgiricjxkcngbf.supabase.co'
 const SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRraGtvd2tnaXJpY2p4a2NuZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MTY3NDEsImV4cCI6MjA5NjQ5Mjc0MX0.48HS8eJ6wLPfimRtiz6behWHG1G8xz5_zfrT0cxnGrE'
+
+// ── gcFetch: кэш + backoff для get-campaigns (защита от Meta rate-limit #17) ──
+// Drop-in замена fetch() для эндпоинта get-campaigns. READ-экшены кэшируются на
+// короткий срок (повторное открытие кампании / клик по адсету не бьют Meta заново),
+// а на «User request limit reached» делается ретрай с нарастающей паузой вместо падения.
+const _gcCache=new Map();
+const _gcInflight=new Map();
+const _GC_TTL={get_adsets:600000,get_campaigns:600000,get_ads:600000,get_campaign_insights:150000,get_adset_insights:150000,get_campaign_video:150000,get_bulk_insights:150000};
+function _gcIsRate(err){return /request limit|user request limit|#17\b|\(#17\)|reduce the amount|too many calls|rate limit|try again later/i.test(String(err||''));}
+async function gcFetch(url,opts){
+  let body={};try{body=JSON.parse((opts&&opts.body)||'{}')}catch(e){}
+  const action=body.action||'';
+  const ttl=_GC_TTL[action]||0;         // 0 → не кэшируем (reconcile / set_adset_status и т.п.)
+  const key=(opts&&opts.body)||url;
+  if(ttl){
+    const hit=_gcCache.get(key);
+    if(hit&&(Date.now()-hit.t)<ttl) return {ok:true,status:200,_cached:true,json:async()=>hit.data};
+    // склейка одновременных одинаковых запросов
+    if(_gcInflight.has(key)){const data=await _gcInflight.get(key);return {ok:!!(data&&data.ok),status:200,json:async()=>data};}
+  }
+  let lastStatus=200;
+  const run=(async()=>{
+    let data={ok:false,error:'rate limit'};
+    for(let attempt=0;attempt<3;attempt++){
+      if(attempt) await new Promise(r=>setTimeout(r,2500*attempt)); // 0 → 2.5s → 5s
+      try{
+        const r=await fetch(url,opts);
+        lastStatus=r.status;
+        data=await r.json();
+        if(data&&data.ok){ if(ttl)_gcCache.set(key,{t:Date.now(),data}); return data; }
+        if(!_gcIsRate(data&&data.error)) return data;   // не лимит — не ретраим
+      }catch(e){ data={ok:false,error:e.message}; }
+    }
+    return data;
+  })();
+  if(ttl)_gcInflight.set(key,run.finally(()=>_gcInflight.delete(key)));
+  const data=await run;
+  return {ok:!!(data&&data.ok),status:lastStatus,json:async()=>data};
+}
 const GARNO_URL='https://bnyjwjuejrfalbubdbcv.supabase.co'
 const GARNO_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJueWp3anVlanJmYWxidWJkYmN2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTcyNDQ2NSwiZXhwIjoyMDk1MzAwNDY1fQ.l9ka9b_PzKdu-gock8ZACqODicJDZYCc1laMw_HMBvA'
 // Czech GarnoCRM (pdyzzztwoinepyjprrse) — paste anon/service key here
@@ -2266,7 +2305,7 @@ async function liveChart(from,to,seq){
   let cc=_dailyCache[key]
   if(!cc||Date.now()-cc.at>5*60000){
     try{
-      const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'reconcile',region:CURRENT_REGION,since:from,until:to,daily:true})})
+      const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'reconcile',region:CURRENT_REGION,since:from,until:to,daily:true})})
       const d=await r.json();if(!d.ok||!d.byDay)return
       cc=_dailyCache[key]={at:Date.now(),byDay:d.byDay}
     }catch(e){return}
@@ -2446,7 +2485,7 @@ async function cqlByBuyer3(region){
   const to=jvISO(jvShift(-1)),from=jvISO(jvShift(-6)),mid=jvISO(jvShift(-3))
   let camps=[]
   try{
-    const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',
+    const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',
       headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
       body:JSON.stringify({action:'reconcile',region,since:from,until:to,daily:true})})
     const d=await r.json()
@@ -4320,7 +4359,7 @@ function chartMouseMove(e){
 // ── ind menu on status dot ──
 async function loadBulkMeta(force){if(!force&&Date.now()-_zBulkAt<5*60000)return;const ids=[...new Set(ZALIVS.filter(z=>z.campaign_id&&z.ind!=='off'&&!z.togo).map(z=>String(z.campaign_id)))];if(!ids.length)return
   const td=new Date().toISOString().split('T')[0];setSS('syncing','Метрики из Meta…')
-  try{for(let i=0;i<ids.length;i+=50){const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+50),since:td,until:td,region:CURRENT_REGION})});const d=await r.json();if(d.ok)Object.assign(_zBulk,d.data||{})}
+  try{for(let i=0;i<ids.length;i+=50){const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+50),since:td,until:td,region:CURRENT_REGION})});const d=await r.json();if(d.ok)Object.assign(_zBulk,d.data||{})}
     _zBulkAt=Date.now();rzalivs();setSS('ok','Метрики обновлены');}catch(e){setSS('ok','—');toast('Meta недоступна','err')}}
 function stMenu(e,zid){let m=document.getElementById('stmenu');if(!m){m=document.createElement('div');m.id='stmenu';m.className='indmenu';document.body.appendChild(m)}
   m.innerHTML=['Check','Scale','Test','Proliw','Perezaliw','OFF'].map(s=>`<div onclick="setStatusQuick(${zid},'${s}')"><span class="stpill ${SCLS[s]||''}">${s}</span></div>`).join('')
@@ -4363,9 +4402,9 @@ async function selZaliv(zid){
   if(z.campaign_id&&!_zLiveCache[zid]&&!_zLiveLoading[zid]){_zLiveLoading[zid]=1;loadZaliveLive(zid).finally(()=>{delete _zLiveLoading[zid]})}
 }
 async function loadZalivAdsets(zid){const z=ZALIVS.find(x=>x.id===zid);if(!z?.campaign_id)return
-  try{const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_adsets',campaign_id:z.campaign_id,region:CURRENT_REGION})});const d=await r.json();if(d.ok){_zAdsCache[zid]=d.adsets||[];const zz=ZALIVS.find(x=>x.id===zid);if(zz){const arr=zDomains(zz);let ch=false;(_zAdsCache[zid]).forEach((a,i)=>{const e=arr.find(x=>x.adset_id===a.id)||arr[i];if(!e)return;if(!e.adset_id){e.adset_id=a.id;e.adset_name=a.name;ch=true}if(e.adset_status!==a.status){e.adset_status=a.status;ch=true}});if(ch){zz.adset_domains=arr;db.from('zalivs').update({adset_domains:arr}).eq('id',zid)}}selZaliv(zid)}else toast('Meta: '+(d.error||'ошибка'),'err')}catch(e){toast('Meta недоступна','err')}finally{delete _zAdsLoading[zid]}}
+  try{const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_adsets',campaign_id:z.campaign_id,region:CURRENT_REGION})});const d=await r.json();if(d.ok){_zAdsCache[zid]=d.adsets||[];const zz=ZALIVS.find(x=>x.id===zid);if(zz){const arr=zDomains(zz);let ch=false;(_zAdsCache[zid]).forEach((a,i)=>{const e=arr.find(x=>x.adset_id===a.id)||arr[i];if(!e)return;if(!e.adset_id){e.adset_id=a.id;e.adset_name=a.name;ch=true}if(e.adset_status!==a.status){e.adset_status=a.status;ch=true}});if(ch){zz.adset_domains=arr;db.from('zalivs').update({adset_domains:arr}).eq('id',zid)}}selZaliv(zid)}else toast('Meta: '+(d.error||'ошибка'),'err')}catch(e){toast('Meta недоступна','err')}finally{delete _zAdsLoading[zid]}}
 async function toggleAdset(zid,adsetId,el){const on=!el.classList.contains('on');el.classList.toggle('on',on)
-  try{const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'set_adset_status',adset_id:adsetId,status:on?'ACTIVE':'PAUSED',region:CURRENT_REGION})});const d=await r.json();if(d.ok){const st=on?'ACTIVE':'PAUSED';const a=(_zAdsCache[zid]||[]).find(x=>x.id===adsetId);if(a)a.status=st
+  try{const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'set_adset_status',adset_id:adsetId,status:on?'ACTIVE':'PAUSED',region:CURRENT_REGION})});const d=await r.json();if(d.ok){const st=on?'ACTIVE':'PAUSED';const a=(_zAdsCache[zid]||[]).find(x=>x.id===adsetId);if(a)a.status=st
       const zz=ZALIVS.find(x=>x.id===zid)
       if(zz){const arr=zDomains(zz);const e=arr.find(x=>x.adset_id===adsetId);if(e&&e.adset_status!==st){e.adset_status=st;zz.adset_domains=arr;await db.from('zalivs').update({adset_domains:arr}).eq('id',zid)}}
       if(typeof rdomains==='function'&&document.getElementById('page-domains')?.classList.contains('on'))rdomains()
@@ -4374,7 +4413,7 @@ function zAnKeyOf(a,z){const f=normDate(a.period_from),t=normDate(a.period_to);i
 async function loadZaliveLive(zid){
   const z=ZALIVS.find(x=>x.id===zid);if(!z?.campaign_id)return
   const td=new Date().toISOString().split('T')[0]
-  try{const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since:td,until:td,region:CURRENT_REGION})});const d=await r.json();if(d.ok){_zLiveCache[zid]={...d,at:new Date().toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'})};selZaliv(zid)}else toast('Meta: '+(d.error||'ошибка'),'err')}catch(e){toast('Meta недоступна','err')}
+  try{const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since:td,until:td,region:CURRENT_REGION})});const d=await r.json();if(d.ok){_zLiveCache[zid]={...d,at:new Date().toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'})};selZaliv(zid)}else toast('Meta: '+(d.error||'ошибка'),'err')}catch(e){toast('Meta недоступна','err')}
 }
 
 // ── ZALIVS ──
@@ -4556,7 +4595,7 @@ async function fetchCampaignMetrics(z){
     if(!since&&z.created_at)since=z.created_at.split('T')[0]
     const until=new Date().toISOString().split('T')[0]
 
-    const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
+    const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{
       method:'POST',
       headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
       body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since,until,region:CURRENT_REGION})
@@ -5483,7 +5522,7 @@ async function importCampaignsFromMeta(){
   setSS('syncing','Импорт РК из Meta...')
   try{
     // Читаем кампании напрямую из FB API
-    const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
+    const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{
       method:'POST',
       headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
       body:JSON.stringify({action:'get_campaigns',region:CURRENT_REGION,days:14})
@@ -5832,7 +5871,7 @@ async function fetchCreoAddMetrics(z){
     if(raw){const p=raw.split('.');if(p.length===2){const yr=new Date().getFullYear();since=`${yr}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`}}
     if(!since&&z.created_at)since=z.created_at.split('T')[0]
     const until=new Date().toISOString().split('T')[0]
-    const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
+    const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{
       method:'POST',
       headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
       body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since,until,region:CURRENT_REGION})
@@ -6576,7 +6615,7 @@ async function autoMatchCampaignIds(){
   if(!db)return
   setSS('syncing','Матчинг campaign IDs...')
   try{
-    const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
+    const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{
       method:'POST',
       headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
       body:JSON.stringify({action:'get_campaigns',region:CURRENT_REGION,days:14})
@@ -6845,7 +6884,7 @@ async function generateAnalysis(){
   // Fetch adsets first
   var adsets=[],adsetErr=''
   try{
-    const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
+    const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{
       method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
       body:JSON.stringify({action:'get_adsets',campaign_id:z.campaign_id,region:(typeof zRegion==='function'?zRegion(z):CURRENT_REGION)})
     })
@@ -6890,14 +6929,14 @@ async function loadAdsetResult(adsetId,z,from,to,adsets){
   if(adsetId==='all'){
     // Campaign level
     try{
-      const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
+      const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{
         method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
         body:JSON.stringify({action:'get_campaign_insights',campaign_id:z.campaign_id,since:from,until:to,region:CURRENT_REGION})
       })
       const d=await r.json();if(d.ok)meta=d
     }catch(e){}
     try{
-      const r2=await fetch(SB_URL+'/functions/v1/get-campaigns',{
+      const r2=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{
         method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
         body:JSON.stringify({action:'get_campaign_video',campaign_id:z.campaign_id,since:from,until:to,region:CURRENT_REGION})
       })
@@ -6907,7 +6946,7 @@ async function loadAdsetResult(adsetId,z,from,to,adsets){
   }else{
     // Adset level
     try{
-      const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
+      const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{
         method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
         body:JSON.stringify({action:'get_adset_insights',adset_id:adsetId,since:from,until:to,region:CURRENT_REGION})
       })
@@ -7267,7 +7306,7 @@ function checkLeads(zidOrName,from,to){
 // у остальных ID снимает (сами РК не удаляются — данные остаются).
 async function fixDupes(from,to){
   from=from||'2026-06-01';to=to||new Date().toISOString().slice(0,10)
-  const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'reconcile',region:CURRENT_REGION,since:from,until:to})})
+  const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'reconcile',region:CURRENT_REGION,since:from,until:to})})
   const d=await r.json();if(!d.ok){toast('Сверка: '+(d.error||'ошибка'),'err');return}
   const metaName={};[...(d.campaigns||[]),...(d.other||[])].forEach(c=>{metaName[String(c.campaign_id)]=c.name})
   const byCid={};ZALIVS.filter(z=>z.campaign_id).forEach(z=>{const k=String(z.campaign_id);(byCid[k]=byCid[k]||[]).push(z)})
@@ -7298,7 +7337,7 @@ async function linkRks(from,to){
   from=from||document.getElementById('pd-from')?.value
   to=to||document.getElementById('pd-to')?.value||from
   if(!from){console.log('Укажи период: linkRks("2026-09-15","2026-09-18")');return}
-  const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'reconcile',region:CURRENT_REGION,since:from,until:to})})
+  const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'reconcile',region:CURRENT_REGION,since:from,until:to})})
   const d=await r.json()
   if(!d.ok){toast('Сверка: '+(d.error||'ошибка'),'err');return}
   const used=new Set(ZALIVS.filter(z=>z.campaign_id).map(z=>String(z.campaign_id)))
@@ -7365,7 +7404,7 @@ async function pullAdDomains(zid,apply){
   const z=ZALIVS.find(x=>x.id===(zid||_zSel))   // без аргумента — берём выделенную в списке
   if(!z){console.log('Укажи РК: pullAdDomains(id)');return}
   if(!z.campaign_id){console.log('У этой РК нет campaign_id — сначала привяжи');return}
-  const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',
+  const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',
     headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
     body:JSON.stringify({action:'get_ads',campaign_id:z.campaign_id,region:CURRENT_REGION})})
   const d=await r.json()
@@ -7419,7 +7458,7 @@ window._metaRegion=null
 async function loadMetaRegions(){
   try{
     const to=todayISO(),from=jvISO(jvShift(-60))
-    const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',
+    const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',
       headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
       body:JSON.stringify({action:'reconcile',region:'PL',since:from,until:to})})
     const d=await r.json()
@@ -7493,7 +7532,7 @@ async function syncNames(from,to){
   to=to||document.getElementById('pd-to')?.value||from
   if(!from){console.log('Укажи период: syncNames("2026-09-20")');return}
   console.log('%c⏳ Сверяю имена с Meta · '+from+' → '+to,'font-weight:bold')
-  const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',
+  const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',
     headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
     body:JSON.stringify({action:'reconcile',region:CURRENT_REGION,since:from,until:to})})
   const d=await r.json()
@@ -7531,7 +7570,7 @@ async function whyRegion(from,to){
   from=from||document.getElementById('pd-from')?.value
   to=to||document.getElementById('pd-to')?.value||from
   if(!from){console.log('Укажи период: whyRegion("2026-09-20")');return}
-  const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',
+  const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',
     headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
     body:JSON.stringify({action:'reconcile',region:CURRENT_REGION,since:from,until:to})})
   const d=await r.json()
@@ -7561,7 +7600,7 @@ async function checkSpend(from,to){
   if(!from){console.log('Укажи период: checkSpend("2026-09-13","2026-09-16")');return}
   to=to||from
   console.log('%c⏳ Сверка '+CURRENT_REGION+' · '+from+' → '+to,'font-weight:bold')
-  const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'reconcile',region:CURRENT_REGION,since:from,until:to})})
+  const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'reconcile',region:CURRENT_REGION,since:from,until:to})})
   const d=await r.json()
   if(!d.ok){console.error('Ошибка:',d.error||d);toast('Сверка: '+(d.error||'ошибка'),'err');return}
 
@@ -7610,7 +7649,7 @@ async function checkSpend(from,to){
 }
 // Подпись набора кампаний — чтобы кэш сбрасывался сам, когда РК добавили/привязали/убрали
 function idsSig(ids){let h=0;const s=[...ids].sort().join(',');for(let i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))|0}return ids.length+':'+(h>>>0).toString(36)}
-async function bulkInsights(ids,from,to){const out={};for(let i=0;i<ids.length;i+=50){try{const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+50),since:from,until:to,region:CURRENT_REGION})});const d=await r.json();if(d.ok)Object.assign(out,d.data||{})}catch(e){}}return out}
+async function bulkInsights(ids,from,to){const out={};for(let i=0;i<ids.length;i+=50){try{const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+50),since:from,until:to,region:CURRENT_REGION})});const d=await r.json();if(d.ok)Object.assign(out,d.data||{})}catch(e){}}return out}
 function sumIns(map,ids){let spend=0,clicks=0,imp=0,reach=0;ids.forEach(id=>{const v=map[id];if(!v||v.error)return;spend+=+v.spend||0;clicks+=+v.clicks||0;imp+=+v.impressions||0;reach+=+v.reach||0});return{spend:Math.round(spend*100)/100,clicks,imp,reach,ctr:imp?Math.round(clicks/imp*10000)/100:0}}
 async function heroAllMeta(from,to,seq){const $=id=>document.getElementById(id);const fresh=()=>seq===undefined||seq===_dashSeq;const rks=ZALIVS.filter(z=>!z.togo&&z.campaign_id);const ids=[...new Set(rks.map(z=>String(z.campaign_id)))]
   if(!ids.length){['d-spend','d-daily'].forEach(id=>{const e=$(id);if(e)e.textContent='$0'})
