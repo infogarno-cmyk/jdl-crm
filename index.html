@@ -6888,7 +6888,7 @@ async function generateAnalysis(){
   }
 
   // Fetch adsets first
-  var adsets=[],adsetErr=''
+  var adsets=[],adsetErr='',adsetCached=false
   try{
     const r=await gcFetch(SB_URL+'/functions/v1/get-campaigns',{
       method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
@@ -6900,9 +6900,18 @@ async function generateAnalysis(){
     else{adsetErr=d.error||('HTTP '+r.status);console.warn('Анализ: адсеты не загрузились —',adsetErr,'| campaign_id',z.campaign_id)}
   }catch(e){adsetErr=e.message;console.error('Анализ: адсеты не загрузились —',e)}
 
+  // Фолбэк: Meta упала (лимит #17) → показываем последние адсеты из базы (zalivs.adset_domains),
+  // чтобы анализ не был пустым. Инсайты (spend/ctr) всё равно тянутся живьём и могут быть нули.
+  if(!adsets.length){
+    const seen={}
+    const cached=(z.adset_domains||[]).filter(x=>x&&x.adset_id&&!seen[x.adset_id]&&(seen[x.adset_id]=1))
+      .map(x=>({id:x.adset_id,name:x.adset_name||('адсет '+x.adset_id),status:x.adset_status||'ACTIVE'}))
+    if(cached.length){adsets=cached;adsetCached=true}
+  }
+
   // Show adset selector + load all insights in parallel
   wrap.innerHTML=`<div style="margin-bottom:10px">
-    <div class="elb" style="margin-bottom:5px">Адсеты (${adsets.length})${adsetErr?` <span style="color:var(--red);font-weight:500">· не загрузились: ${String(adsetErr).slice(0,120)}</span>`:''}</div>
+    <div class="elb" style="margin-bottom:5px">Адсеты (${adsets.length})${adsetCached?` <span style="color:var(--purple);font-weight:500">· из кэша (Meta лимит — обновится позже)</span>`:adsetErr?` <span style="color:var(--red);font-weight:500">· не загрузились: ${String(adsetErr).slice(0,120)}</span>`:''}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
       <button class="pb active" onclick="selectAdsetView('all',${zalivId},'${from}','${to}')" data-adset="all">Все / кампания</button>
       ${adsets.map(a=>`<button class="pb" onclick="selectAdsetView('${a.id}',${zalivId},'${from}','${to}')" data-adset="${a.id}" title="${a.name}">${a.name.slice(0,25)}${a.name.length>25?'...':''}</button>`).join('')}
