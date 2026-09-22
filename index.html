@@ -1806,7 +1806,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-09-22 13:48'
+const BUILD='2026-09-22 13:53'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -6843,19 +6843,21 @@ async function generateAnalysis(){
   }
 
   // Fetch adsets first
-  var adsets=[]
+  var adsets=[],adsetErr=''
   try{
     const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
       method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
-      body:JSON.stringify({action:'get_adsets',campaign_id:z.campaign_id,region:CURRENT_REGION})
+      body:JSON.stringify({action:'get_adsets',campaign_id:z.campaign_id,region:(typeof zRegion==='function'?zRegion(z):CURRENT_REGION)})
     })
     const d=await r.json()
     if(d.ok)adsets=d.adsets||[]
-  }catch(e){console.error(e)}
+    // раньше ошибка тут проглатывалась, и анализ молча рисовал «Адсеты (0)»
+    else{adsetErr=d.error||('HTTP '+r.status);console.warn('Анализ: адсеты не загрузились —',adsetErr,'| campaign_id',z.campaign_id)}
+  }catch(e){adsetErr=e.message;console.error('Анализ: адсеты не загрузились —',e)}
 
   // Show adset selector + load all insights in parallel
   wrap.innerHTML=`<div style="margin-bottom:10px">
-    <div class="elb" style="margin-bottom:5px">Адсеты (${adsets.length})</div>
+    <div class="elb" style="margin-bottom:5px">Адсеты (${adsets.length})${adsetErr?` <span style="color:var(--red);font-weight:500">· не загрузились: ${String(adsetErr).slice(0,120)}</span>`:''}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
       <button class="pb active" onclick="selectAdsetView('all',${zalivId},'${from}','${to}')" data-adset="all">Все / кампания</button>
       ${adsets.map(a=>`<button class="pb" onclick="selectAdsetView('${a.id}',${zalivId},'${from}','${to}')" data-adset="${a.id}" title="${a.name}">${a.name.slice(0,25)}${a.name.length>25?'...':''}</button>`).join('')}
