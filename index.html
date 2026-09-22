@@ -1806,7 +1806,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-09-22 13:28'
+const BUILD='2026-09-22 13:40'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -7340,46 +7340,61 @@ async function linkRks(from,to){
 }
 // ── Сверка спенда: Meta (все кампании аккаунтов) vs то, что суммирует CRM ──
 // Показывает ПОЧЕМУ цифры расходятся: не импортированные РК, без campaign_id, в TOGO, не тот регион.
-// Подтянуть домены прямо из объявлений Meta.
-// Домены записаны на уровне объявлений, а не адсетов: в одном адсете может быть
-// пять креативов с разными лендингами, и одним полем «источник адсета» это не описать.
-// Берём не название объявления, а ссылку из самого креатива — она не врёт,
-// в отличие от имён, которые пишутся руками.
+// Подтянуть кальки прямо из объявлений Meta.
+// Калька — это не домен, а ключ в реестре CRM: garno-site.vercel.app/#kalkulator3 → kalkulator3.
+// Именно по этому ключу к РК привязываются лиды и квалы из GarnoCRM, поэтому писать
+// сюда хост нельзя — у всех объявлений он одинаковый, и статистика обнулилась бы.
+function linkKey(u){
+  const keys=new Set(allDKeys())
+  const norm=x=>String(x||'').toLowerCase().replace(/^https?:\/\//,'').replace(/^www\./,'').split(/[?#]/)[0].replace(/\/+$/,'')
+  // свои домены из реестра — по полному адресу
+  const n=norm(u)
+  for(const m of (DOMAIN_META||[]))if(m.custom&&m.url&&n&&n.startsWith(norm(m.url)))return m.key
+  let url;try{url=new URL(String(u||''))}catch(e){return ''}
+  // основной случай: ключ в решётке
+  const h=decodeURIComponent((url.hash||'').replace(/^#\/?/,'')).split(/[?&/]/)[0].toLowerCase()
+  if(h&&keys.has(h))return h
+  // запасной: последний сегмент пути
+  const seg=(url.pathname.split('/').filter(Boolean).pop()||'').toLowerCase()
+  if(seg&&keys.has(seg))return seg
+  return ''
+}
 async function pullAdDomains(zid,apply){
   const z=ZALIVS.find(x=>x.id===(zid||_zSel))   // без аргумента — берём выделенную в списке
-  if(!z){console.log('Укажи РК: pullAdDomains(id). Список — ZALIVS.map(z=>[z.id,z.name])');return}
-  if(!z.campaign_id){console.log('У этой РК нет campaign_id — сначала привяжи: linkRks(...)');return}
+  if(!z){console.log('Укажи РК: pullAdDomains(id)');return}
+  if(!z.campaign_id){console.log('У этой РК нет campaign_id — сначала привяжи');return}
   const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',
     headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
     body:JSON.stringify({action:'get_ads',campaign_id:z.campaign_id,region:CURRENT_REGION})})
   const d=await r.json()
-  if(!d.ok){console.error(d.error||d);
-    if(/Unsupported|action/i.test(JSON.stringify(d)))console.log('Похоже, get-campaigns не передеплоена — в ней ещё нет действия get_ads')
-    return}
-  const ads=d.ads||[]
+  if(!d.ok){console.error(d.error||d);return}
+  const ads=(d.ads||[]).map(a=>{const k=(a.links||[]).map(linkKey).find(Boolean)||'';return Object.assign(a,{key:k})})
   if(!ads.length){console.log('В кампании нет объявлений');return[]}
+  if(ads.every(a=>!a.links))console.warn('get-campaigns не отдаёт ссылки — передеплой её, иначе кальки не определить')
   console.log('%cОбъявления · '+String(z.name).slice(0,50),'font-weight:bold')
-  console.table(ads.map(a=>({объявление:String(a.name).slice(0,40),адсет:a.adset_id,
-    домен:a.domain||'— не найден —',ещё:a.multi?a.domains.slice(1).join(', '):'',статус:a.status})))
-  const noLink=ads.filter(a=>!a.domain)
-  if(noLink.length)console.log('Без ссылки в креативе: '+noLink.length+' — такие бывают у динамических креативов, их придётся указать руками')
-  if(!apply){console.log('Это предпросмотр. Записать в РК — pullAdDomains('+z.id+',true)');return ads}
+  console.table(ads.map(a=>({объявление:String(a.name).slice(0,38),адсет:a.adset_id,калька:a.key||'— не найдена —',
+    ссылка:String((a.links||[])[0]||'').slice(0,52),статус:a.status})))
+  const miss=ads.filter(a=>!a.key)
+  if(miss.length)console.log('Без кальки: '+miss.length+' — ссылка ведёт не на ключ из реестра. Такие не записываю.')
+  if(!apply){console.log('Предпросмотр. Записать — pullAdDomains('+z.id+',true)');return ads}
 
-  const arr=zDomains(z).slice()
-  let i=0,changed=0
+  // Сливаем с тем, что уже заведено при подготовке залива: запись с той же калькой
+  // обновляем, а не дублируем — иначе одна калька считалась бы дважды.
+  const arr=zDomains(z).map(x=>Object.assign({},x))
+  let changed=0
   for(const a of ads){
-    if(!a.domain)continue
-    let e=arr.find(x=>x.ad_id===a.id)
-    if(!e){e={ad:arr.length,ad_id:a.id};arr.push(e)}
-    if(e.domain===a.domain&&e.adset_id===a.adset_id)continue
-    e.ad_id=a.id;e.ad_name=a.name;e.adset_id=a.adset_id;e.domain=a.domain
-    changed++
+    if(!a.key)continue
+    let e=arr.find(x=>x.ad_id===a.id)||arr.find(x=>x.domain===a.key&&!x.ad_id)
+    if(!e){e={ad:arr.length};arr.push(e)}
+    const before=JSON.stringify(e)
+    Object.assign(e,{domain:a.key,ad_id:a.id,ad_name:a.name,adset_id:a.adset_id,adset_name:e.adset_name||null})
+    if(JSON.stringify(e)!==before)changed++
   }
-  if(!changed){console.log('%c✓ Домены уже записаны','color:#3DBE8B');return ads}
+  if(!changed){console.log('%c✓ Кальки уже записаны','color:#3DBE8B');return ads}
   await db.from('zalivs').update({adset_domains:arr}).eq('id',z.id)
   z.adset_domains=arr
-  toast('Записано доменов: '+changed,'ok')
-  console.log('%cЗаписано: '+changed,'color:#3DBE8B')
+  toast('Кальки записаны: '+changed,'ok')
+  console.table(arr.map(x=>({слот:x.ad,калька:x.domain,объявление:String(x.ad_name||'—').slice(0,34),адсет:x.adset_id||'—'})))
   rzalivs();selZaliv(z.id)
   return ads
 }
