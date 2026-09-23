@@ -1806,7 +1806,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-09-23 18:24'
+const BUILD='2026-09-23 18:34'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -1866,7 +1866,8 @@ async function init(){
   if(localStorage.getItem('jdl_buyer')===null&&CURRENT_USER)CURRENT_BUYER=CURRENT_USER.name
   setBuyer(CURRENT_BUYER);setupRT();setSS('ok','Данные загружены');dismissIntro();maybeJdlToday();schemaCheck()
   if(typeof jvRemindersOnStart==='function')setTimeout(jvRemindersOnStart,2500)
-  if(typeof cqlRefresh==='function'){setTimeout(cqlRefresh,8000);setInterval(cqlRefresh,45*60000)}
+  // раз за сессию: это фоновая справка, а не то, ради чего стоит жечь лимит Meta
+  if(typeof cqlRefresh==='function')setTimeout(cqlRefresh,9000)
   // Микрофон сам не включается: слушает только после нажатия на значок.
   // Автостарт раньше держал его открытым всю смену — это лишнее.;setTimeout(()=>{if(typeof jvRemindersOnStart==='function')jvRemindersOnStart()},2500)
 }
@@ -2446,7 +2447,7 @@ async function cqlByBuyer3(region){
   const to=jvISO(jvShift(-1)),from=jvISO(jvShift(-6)),mid=jvISO(jvShift(-3))
   let camps=[]
   try{
-    const r=await metaPost({action:'reconcile',region,since:from,until:to,daily:true})
+    const r=await metaPost({action:'reconcile',region,since:from,until:to,daily:true,opt:true})
     const d=await r.json()
     if(!d||!d.ok){metaNoteLimit(d&&d.error);return null}
     camps=d.campaigns||[]
@@ -7394,12 +7395,12 @@ async function pullAllAdDomains(apply){
 
 // Проверка доступа к Meta: токены, кабинеты, права, лимиты.
 // Один вызов отвечает на вопрос «лимит, мёртвый токен или нет прав» без гаданий.
-async function metaDiag(){
+async function metaDiag(deep){
   console.log('%c🔑 Проверка доступа к Meta','font-weight:bold;font-size:13px')
   try{
     const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',
       headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
-      body:JSON.stringify({action:'selftest',region:CURRENT_REGION})})
+      body:JSON.stringify({action:'selftest',region:CURRENT_REGION,deep:!!deep})})
     const d=await r.json()
     if(!d.ok){console.error('Функция не ответила:',d.error||r.status)
       console.log('Если тут «Unsupported action» — get-campaigns не передеплоена');return}
@@ -7424,11 +7425,22 @@ const MP_TTL={reconcile:5*60e3,get_bulk_insights:5*60e3,get_campaign_insights:5*
   get_campaigns:10*60e3,get_campaign_video:30*60e3}
 const _mpWait={}
 let _mpHits=0,_mpCalls=0
-function metaStats(){console.log('Meta: запросов '+_mpCalls+', взято из кеша '+_mpHits
-  +(metaBlocked()?' · пауза по лимиту ещё '+metaLeft()+' мин':''))}
+function metaStats(){const u=window._metaUsage
+  console.log('Meta: запросов '+_mpCalls+', взято из кеша '+_mpHits
+  +(u?' · корзина '+u.type+' на '+u.pct+'%'+(u.wait_min?' · ждать '+u.wait_min+' мин':''):'')
+  +(metaBlocked()?' · пауза ещё '+metaLeft()+' мин':''))}
 function metaCacheClear(){Object.keys(sessionStorage).filter(k=>k.startsWith('mp:')).forEach(k=>sessionStorage.removeItem(k))
   console.log('Кеш запросов к Meta очищен')}
+window._metaUsage=null
+// Насколько близко к потолку. Выше 80% — придерживаем всё, без чего можно обойтись.
+function metaHot(){return !!(window._metaUsage&&window._metaUsage.pct>=80)}
 async function metaPost(body,force){
+  // необязательные запросы (фон, карта регионов) при заполненной корзине не шлём:
+  // именно они добивали кабинет до отказа
+  if(body&&body.opt&&(metaBlocked()||metaHot())){
+    console.log('Meta: пропускаю фоновый запрос '+body.action+' — корзина на '+((window._metaUsage||{}).pct||'?')+'%')
+    return{ok:true,status:200,json:async()=>({ok:false,skipped:true})}
+  }
   const act=body&&body.action
   const ttl=force?0:(MP_TTL[act]||0)
   const key='mp:'+JSON.stringify(body)
@@ -7445,6 +7457,8 @@ async function metaPost(body,force){
       headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
       body:JSON.stringify(body)})
     const d=await r.json()
+    if(d&&d.usage){window._metaUsage=d.usage
+      if(d.usage.pct>=95)console.warn('Meta: корзина '+d.usage.type+' на '+d.usage.pct+'% — запросы вот-вот начнут отбиваться')}
     if(d&&d.error&&typeof metaNoteLimit==='function')metaNoteLimit(d.error)
     // в кеш кладём только удачные ответы, ошибку запоминать нельзя
     if(ttl&&d&&d.ok){try{sessionStorage.setItem(key,JSON.stringify({at:Date.now(),d}))}catch(e){}}
@@ -7477,7 +7491,7 @@ function metaLeft(){return Math.max(0,Math.ceil((window._metaBlockUntil-Date.now
 // campaign_id → регион и держим её до перезагрузки. Имя — лишь запасной вариант
 // для РК без campaign_id или без спенда за последние 60 дней.
 window._metaRegion=null
-const MR_TTL=6*3600e3   // карта регионов меняется редко — держим 6 часов
+const MR_TTL=24*3600e3   // карта регионов меняется редко — держим 6 часов
 async function loadMetaRegions(force){
   if(window._metaRegion&&!force)return window._metaRegion
   if(!force)try{
@@ -7486,8 +7500,8 @@ async function loadMetaRegions(force){
   }catch(e){}
   if(metaBlocked()&&!force){console.log('Карта регионов: пропускаю, лимит Meta ещё '+metaLeft()+' мин');return null}
   try{
-    const to=todayISO(),from=jvISO(jvShift(-30))
-    const r=await metaPost({action:'reconcile',region:'PL',since:from,until:to})
+    const to=todayISO(),from=jvISO(jvShift(-14))
+    const r=await metaPost({action:'reconcile',region:'PL',since:from,until:to,opt:true})
     const d=await r.json()
     if(!d||!d.ok){metaNoteLimit(d&&d.error);return null}
     const m={}
