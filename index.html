@@ -1806,7 +1806,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-09-23 18:15'
+const BUILD='2026-09-23 18:19'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -7436,6 +7436,9 @@ async function metaDiag(){
     if(!d.ok){console.error('Функция не ответила:',d.error||r.status)
       console.log('Если тут «Unsupported action» — get-campaigns не передеплоена');return}
     console.table(d.accounts)
+    ;(d.accounts||[]).forEach(a=>{if(a.все_корзины&&a.все_корзины.length){
+      console.log('%cКорзины лимитов · кабинет '+a.account+' ('+(a.name||'')+')','font-weight:bold')
+      console.table(a.все_корзины)}})
     if(d.whoami)console.log('Токен принадлежит:',d.whoami.name||d.whoami.error||d.whoami.id,
       '— если это имя человека, а не System User, лимит 17/2446079 будет повторяться')
     console.log('%c'+d.verdict,'font-weight:bold;font-size:13px;color:'+(d.accounts.every(a=>a.ok)?'#3DBE8B':'#E04050'))
