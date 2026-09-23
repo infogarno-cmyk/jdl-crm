@@ -1806,7 +1806,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-09-23 18:03'
+const BUILD='2026-09-23 18:15'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -6845,23 +6845,33 @@ async function generateAnalysis(){
   }
 
   // Fetch adsets first
+  // Состав адсетов меняется редко, а каждый запрос тратит лимит Meta,
+  // который у нас и упёрся. Держим ответ 10 минут — повторные нажатия бесплатны.
   var adsets=[],adsetErr=''
+  const asKey='jdl_adsets_'+z.campaign_id
+  try{const c=JSON.parse(sessionStorage.getItem(asKey)||'null')
+    if(c&&Date.now()-c.at<600e3&&c.a&&c.a.length){adsets=c.a;console.log('Адсеты из кеша ('+Math.round((Date.now()-c.at)/1000)+' с назад)')}
+  }catch(e){}
+  if(!adsets.length)
   try{
     const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{
       method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},
       body:JSON.stringify({action:'get_adsets',campaign_id:z.campaign_id,region:(typeof zRegion==='function'?zRegion(z):CURRENT_REGION)})
     })
     const d=await r.json()
-    if(d.ok)adsets=d.adsets||[]
+    if(d.ok){adsets=d.adsets||[]
+      try{sessionStorage.setItem(asKey,JSON.stringify({at:Date.now(),a:adsets}))}catch(e){}}
     // раньше ошибка тут проглатывалась, и анализ молча рисовал «Адсеты (0)»
-    else{adsetErr=d.error||('HTTP '+r.status)
-      if(metaNoteLimit(adsetErr))adsetErr='Meta упёрлась в свой лимит запросов. Подожди '+metaLeft()+' мин и нажми ещё раз — это не поломка.'
-      console.warn('Анализ: адсеты не загрузились —',d.error||r.status,'| campaign_id',z.campaign_id)}
+    else{
+      // дословный ответ Meta не прячем: без него код ошибки теряется, и остаётся гадать
+      const raw=d.error||('HTTP '+r.status)
+      adsetErr=metaNoteLimit(raw)?('лимит Meta · '+raw):raw
+      console.warn('Анализ: адсеты не загрузились\n  ответ Meta: '+raw+'\n  campaign_id: '+z.campaign_id+'\n  регион запроса: '+(typeof zRegion==='function'?zRegion(z):CURRENT_REGION)+'\n  Проверь доступ: metaDiag()')}
   }catch(e){adsetErr=e.message;console.error('Анализ: адсеты не загрузились —',e)}
 
   // Show adset selector + load all insights in parallel
   wrap.innerHTML=`<div style="margin-bottom:10px">
-    <div class="elb" style="margin-bottom:5px">Адсеты (${adsets.length})${adsetErr?` <span style="color:var(--red);font-weight:500">· не загрузились: ${String(adsetErr).slice(0,120)}</span>`:''}</div>
+    <div class="elb" style="margin-bottom:5px">Адсеты (${adsets.length})${adsetErr?` <span style="color:var(--red);font-weight:500">· не загрузились: ${String(adsetErr).slice(0,220)}</span>`:''}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
       <button class="pb active" onclick="selectAdsetView('all',${zalivId},'${from}','${to}')" data-adset="all">Все / кампания</button>
       ${adsets.map(a=>`<button class="pb" onclick="selectAdsetView('${a.id}',${zalivId},'${from}','${to}')" data-adset="${a.id}" title="${a.name}">${a.name.slice(0,25)}${a.name.length>25?'...':''}</button>`).join('')}
@@ -7426,6 +7436,8 @@ async function metaDiag(){
     if(!d.ok){console.error('Функция не ответила:',d.error||r.status)
       console.log('Если тут «Unsupported action» — get-campaigns не передеплоена');return}
     console.table(d.accounts)
+    if(d.whoami)console.log('Токен принадлежит:',d.whoami.name||d.whoami.error||d.whoami.id,
+      '— если это имя человека, а не System User, лимит 17/2446079 будет повторяться')
     console.log('%c'+d.verdict,'font-weight:bold;font-size:13px;color:'+(d.accounts.every(a=>a.ok)?'#3DBE8B':'#E04050'))
     return d
   }catch(e){console.error('Запрос не ушёл:',e.message)}
