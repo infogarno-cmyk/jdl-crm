@@ -206,6 +206,197 @@
   #page-zalivs .zt tr.zr2 td:nth-child(6){justify-self:start}
 }
 </style>
+<style id="bj-style">
+/* ══════════ BUYER'S JOURNAL ══════════
+   Все классы с префиксом bj-: в CRM полно своих .card, .tag, .chip, и без
+   префикса стили бы перемешались. Оформление — как у утверждённого терминала. */
+#page-bj,.bj-mo{--bjg:#D4AF37;--bjg2:#F0D98A;--bjy:rgba(212,175,55,.1);--bjb:#0C0E14;--bjb3:#11131B;--bjb4:#161923;--bjb5:#1C2030;
+  --bjl:rgba(255,255,255,.07);--bjl2:rgba(255,255,255,.12);--bjl3:rgba(255,255,255,.18);--bjt:#F2F3F7;--bjt2:#A3A8BA;--bjt3:#646A80;
+  --bjgr:#3DBE8B;--bjgrb:rgba(61,190,139,.1);--bjr:#F03A55;--bjrb:rgba(240,58,85,.1);--bjbl:#6E9BFF;--bjblb:rgba(110,155,255,.1);--bjpu:#A07CF5;
+  --bjhi:rgba(255,255,255,.05);--bjm:'JetBrains Mono',ui-monospace,monospace;--bjs:'Manrope',system-ui,sans-serif;--bjd:'Russo One',system-ui,sans-serif;
+  --bjholo:conic-gradient(from 210deg at 50% 50%,#D4AF37,#F0D98A,#6E9BFF,#A07CF5,#F03A55,#D4AF37)}
+#page-bj{padding:0!important;font:13px/1.4 var(--bjs);color:var(--bjt)}
+#page-bj.active{display:flex!important;flex-direction:column;height:100%;min-height:0}
+#page-bj button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+#page-bj input,#page-bj textarea,#page-bj select,.bj-mo input{font:inherit;color:var(--bjt);background:var(--bjb);border:1px solid var(--bjl2);border-radius:8px;padding:8px 10px;outline:none;width:100%;min-width:0}
+#page-bj input:focus,#page-bj textarea:focus,#page-bj select:focus{border-color:var(--bjg);box-shadow:0 0 0 3px var(--bjy)}
+#page-bj textarea{resize:vertical;line-height:1.5}
+#page-bj select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--bjt3) 50%),linear-gradient(135deg,var(--bjt3) 50%,transparent 50%);background-position:calc(100% - 14px) 50%,calc(100% - 9px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:26px}
+#page-bj kbd{font:600 10px var(--bjm);border:1px solid var(--bjl2);border-radius:4px;padding:1px 5px;color:var(--bjt2)}
+@keyframes bjspin{to{transform:rotate(360deg)}}
+@keyframes bjpulse{70%{box-shadow:0 0 0 7px rgba(61,190,139,0)}100%{box-shadow:0 0 0 0 rgba(61,190,139,0)}}
+
+.bj-head{display:flex;align-items:center;gap:16px;padding:10px 18px;border-bottom:1px solid var(--bjl);background:linear-gradient(180deg,var(--bjhi),transparent);flex-shrink:0}
+.bj-ttl b{display:block;font:400 16px var(--bjd);letter-spacing:.08em;text-transform:uppercase}
+.bj-ttl b span{background:linear-gradient(90deg,var(--bjg),var(--bjg2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.bj-ttl small{display:block;font:600 10px var(--bjs);color:var(--bjt3);letter-spacing:.14em;text-transform:uppercase}
+.bj-tick{margin-left:auto;display:flex;gap:20px;font:600 11px var(--bjm);color:var(--bjt3)}.bj-tick b{color:var(--bjt);margin-left:6px}
+.bj-live{display:inline-flex;align-items:center;gap:6px;font:700 10px var(--bjs);letter-spacing:.12em;color:var(--bjgr)}.bj-live i{width:7px;height:7px;border-radius:50%;background:var(--bjgr);animation:bjpulse 1.8s infinite}
+.bj-live.off{color:var(--bjt3)}.bj-live.off i{background:var(--bjt3);animation:none}
+.bj-gbtn{height:30px;padding:0 10px;border-radius:7px;border:1px solid var(--bjl2)!important;background:var(--bjb)!important;font:600 11px var(--bjs)!important;color:var(--bjt2)!important;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.bj-gbtn:hover{color:var(--bjt)!important;border-color:var(--bjl3)!important}
+.bj-new{height:30px;padding:0 11px;border-radius:7px;border:1px solid var(--bjg)!important;background:var(--bjb)!important;font:600 11px var(--bjs)!important;color:var(--bjg2)!important;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.bj-new:hover{background:var(--bjy)!important}
+
+.bj-tools{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--bjl);flex-wrap:wrap;flex-shrink:0}
+.bj-seg{display:inline-flex;gap:6px}
+.bj-seg button{height:30px;padding:0 10px;border-radius:7px;border:1px solid var(--bjl2)!important;background:var(--bjb)!important;font:600 11px var(--bjs)!important;color:var(--bjt2)!important}
+.bj-seg button.on{border-color:var(--bjg)!important;color:var(--bjg2)!important;background:var(--bjy)!important}
+.bj-seg .n{font:600 10px var(--bjm);color:var(--bjt3);margin-left:5px}.bj-seg button.on .n{color:var(--bjg)}
+.bj-srch{position:relative;width:240px}.bj-srch input{height:32px!important;padding:0 10px 0 30px!important;font-size:12px!important}
+.bj-srch svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:13px;height:13px;stroke:var(--bjt3);fill:none;stroke-width:2}
+.bj-tools select{width:auto!important;height:30px;padding:0 26px 0 10px!important;border-radius:7px!important;font:600 11px var(--bjs)!important;color:var(--bjt2)!important}
+.bj-cnt{margin-left:auto;font:600 11px var(--bjm);color:var(--bjt3)}
+
+.bj-body{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 420px}
+.bj-main{min-width:0;min-height:0;overflow:auto;border-right:1px solid var(--bjl)}
+.bj-t{width:100%;min-width:1100px;border-collapse:collapse;font-size:12.5px}
+.bj-t th{position:sticky;top:0;z-index:1;background:var(--bjb3);text-align:left;padding:9px 12px;font:700 10px var(--bjs);letter-spacing:.12em;text-transform:uppercase;color:var(--bjt3);border-bottom:1px solid var(--bjl2);white-space:nowrap}
+.bj-t th[data-k]{cursor:pointer;user-select:none}.bj-t th.s::after{content:' ↓';color:var(--bjg2)}.bj-t th.s.asc::after{content:' ↑'}
+.bj-t td{padding:9px 12px;border-bottom:1px solid var(--bjl);vertical-align:middle;white-space:nowrap}
+.bj-t tbody tr{cursor:pointer}.bj-t tbody tr:hover td{background:var(--bjhi)}
+.bj-t tbody tr.sel td{background:var(--bjy)}.bj-t tbody tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--bjg)}
+.bj-id{font:700 12px var(--bjm);color:var(--bjg2)}
+.bj-kind{font:700 9px var(--bjs);letter-spacing:.1em;text-transform:uppercase;color:var(--bjt3);border:1px solid var(--bjl2);border-radius:6px;padding:2px 7px;background:var(--bjb)}
+.bj-kind.test{color:var(--bjt)}
+.bj-hadi{display:inline-flex;gap:3px}
+.bj-hadi i{width:18px;height:18px;border-radius:5px;display:grid;place-items:center;font:700 9px var(--bjm);font-style:normal;border:1px solid var(--bjl2);color:var(--bjt3)}
+.bj-hadi i.done{background:var(--bjg);border-color:var(--bjg);color:#0b0c10}
+.bj-hadi i.now{border-color:var(--bjg);color:var(--bjg2);box-shadow:0 0 0 2px var(--bjy)}
+.bj-hadi.off i{opacity:.45}
+.bj-sum{white-space:normal!important;min-width:300px;max-width:420px}
+.bj-sum .ch{display:flex;gap:4px;align-items:center;margin-bottom:4px}
+.bj-sum p{margin:0;color:var(--bjt);font-weight:500;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bj-chip{display:inline-flex;height:20px;padding:0 7px;border-radius:6px;align-items:center;font:700 10px var(--bjs);letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--bjl2);color:var(--bjt2);background:var(--bjb)}
+.bj-chip.var{color:var(--bjg2);border-color:rgba(212,175,55,.35);background:var(--bjy)}
+.bj-chip.reg{color:var(--bjbl);border-color:rgba(110,155,255,.35);background:var(--bjblb)}
+.bj-av{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;font:700 9px var(--bjs);flex-shrink:0;background:rgba(110,155,255,.18);color:#6E9BFF}
+.bj-av.I{background:rgba(240,58,85,.18);color:#F03A55}
+.bj-num{font:700 13px var(--bjm)}.bj-num s{color:var(--bjt3);font-weight:500;font-size:11px;margin-right:5px}
+.bj-dl{font:700 11px var(--bjm);padding:2px 6px;border-radius:5px;margin-left:5px}.bj-dl.up{color:var(--bjgr);background:var(--bjgrb)}.bj-dl.dn{color:var(--bjr);background:var(--bjrb)}
+.bj-auto{font:600 9px var(--bjm);color:var(--bjt3);margin-left:5px;letter-spacing:.06em}
+.bj-conf{display:inline-flex;align-items:center;gap:6px;font:700 12px var(--bjm)}
+.bj-conf i{display:inline-block;width:52px;height:6px;border-radius:3px;background:var(--bjb5);overflow:hidden}.bj-conf i b{display:block;height:100%;background:linear-gradient(90deg,var(--bjg),var(--bjg2))}
+.bj-mut{font:500 11px var(--bjm);color:var(--bjt3)}.bj-mut b{color:var(--bjt2);font-weight:600}
+.bj-tag{display:inline-flex;align-items:center;font:700 9px var(--bjs);letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:5px;white-space:nowrap;color:var(--bjt2);background:var(--bjb)}
+.bj-tag.imp{color:var(--bjgr);background:var(--bjgrb)}.bj-tag.rep{color:var(--bjbl);background:var(--bjblb)}.bj-tag.run{color:var(--bjg2);background:var(--bjy)}.bj-tag.fail{color:var(--bjr);background:var(--bjrb)}
+.bj-empty{padding:60px 20px;text-align:center;color:var(--bjt3)}.bj-empty b{display:block;font:400 13px var(--bjd);letter-spacing:.08em;color:var(--bjt2);margin-bottom:6px}
+.bj-empty code{font:600 11px var(--bjm);color:var(--bjg2)}
+
+.bj-kb{display:grid;grid-template-columns:repeat(4,minmax(200px,1fr));gap:12px;padding:14px;min-height:100%}
+.bj-col{display:flex;flex-direction:column;border-radius:16px;border:1px solid var(--bjl);background:linear-gradient(180deg,var(--bjhi),transparent 12%),var(--bjb);min-height:0}
+.bj-col.over{border-color:var(--bjg);box-shadow:0 0 0 1px var(--bjg),0 0 40px rgba(212,175,55,.15)}
+.bj-colh{position:relative;display:flex;align-items:baseline;gap:8px;padding:14px 14px 10px;border-bottom:1px solid var(--bjl);overflow:hidden}
+.bj-colh::before{content:attr(data-w);position:absolute;right:-4px;top:-18px;font:400 84px var(--bjd);color:var(--bjt);opacity:.045;pointer-events:none}
+.bj-colh::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--c,var(--bjl2))}
+.bj-col[data-s=hypothesis]{--c:var(--bjt3)}.bj-col[data-s=action]{--c:var(--bjbl)}.bj-col[data-s=data]{--c:var(--bjpu)}.bj-col[data-s=insight]{--c:var(--bjg)}
+.bj-colh b{font:400 15px var(--bjd);color:var(--bjg2)}.bj-colh span{font:600 10px var(--bjs);letter-spacing:.1em;text-transform:uppercase;color:var(--bjt3)}
+.bj-colh em{margin-left:auto;font:700 11px var(--bjm);font-style:normal;color:var(--bjt3);border:1px solid var(--bjl2);border-radius:6px;padding:1px 7px;background:var(--bjb3)}
+.bj-cards{padding:10px;display:flex;flex-direction:column;gap:8px}
+.bj-card{flex-shrink:0;padding:11px;border-radius:12px;border:1px solid var(--bjl);background:var(--bjb3);cursor:grab;transition:transform .14s,border-color .14s,box-shadow .14s}
+.bj-card:hover{transform:translateY(-1px);border-color:var(--bjl3);box-shadow:0 10px 26px rgba(0,0,0,.35)}
+.bj-card.sel{border-color:var(--bjg);box-shadow:0 0 0 1px var(--bjg)}.bj-card.drag{opacity:.4}
+.bj-card .r{display:flex;align-items:center;gap:6px;margin-bottom:7px}.bj-card .r .bj-av{margin-left:auto}
+.bj-card p{margin:0 0 9px;font:600 12.5px/1.4 var(--bjs);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.bj-card .f{display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;padding-top:9px;border-top:1px solid var(--bjl)}.bj-card .f .bj-tag{margin-left:auto}
+
+.bj-feed{padding:12px 16px 30px;max-width:900px}
+.bj-fday{font:700 10px var(--bjs);letter-spacing:.14em;text-transform:uppercase;color:var(--bjt3);margin:16px 0 6px}
+.bj-fi{display:grid;grid-template-columns:44px 22px 1fr;gap:12px;align-items:start;padding:9px 10px;border-radius:9px;cursor:pointer}
+.bj-fi:hover{background:var(--bjhi)}.bj-fi .t{font:500 11px var(--bjm);color:var(--bjt3);padding-top:3px}
+.bj-fi .b{min-width:0}.bj-fi .h{font:600 12px var(--bjs);color:var(--bjt2)}.bj-fi .h b{color:var(--bjg2);font-family:var(--bjm)}
+.bj-fi .x{margin-top:2px;color:var(--bjt)}.bj-fi.auto .x{color:var(--bjt3)}
+
+.bj-pane{min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;background:var(--bjb);display:flex;flex-direction:column}
+.bj-ph{position:sticky;top:0;z-index:3;padding:12px 16px;border-bottom:1px solid var(--bjl);display:flex;align-items:center;gap:10px;background:linear-gradient(180deg,var(--bjb3),var(--bjb))}
+.bj-hid{position:relative;padding:8px 12px;border-radius:9px;border:1px solid var(--bjl2);background:var(--bjb3);overflow:hidden}
+.bj-hid::before{content:'';position:absolute;inset:-60%;background:var(--bjholo);opacity:.16;animation:bjspin 18s linear infinite}
+.bj-hid span{position:relative;z-index:1;font:700 13px var(--bjm);color:var(--bjg2)}
+.bj-ph .bj-seg{margin-left:auto}
+.bj-xb{width:30px;height:30px;border-radius:8px;border:1px solid var(--bjl2)!important;display:grid;place-items:center;color:var(--bjt3)!important;background:var(--bjb3)!important}
+.bj-pb{padding:12px 16px 20px;display:flex;flex-direction:column;gap:10px}
+.bj-r2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.bj-r4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.bj-fl{display:flex;flex-direction:column;gap:5px;min-width:0}.bj-fl>label{font:700 10px var(--bjs);color:var(--bjt3);letter-spacing:.12em;text-transform:uppercase}
+.bj-tags{display:flex;gap:6px}
+.bj-tags button{flex:1;justify-content:center;height:34px;border-radius:9px;border:1px solid var(--bjl2)!important;background:var(--bjb)!important;color:var(--bjt2)!important;font:700 9.5px var(--bjs)!important;letter-spacing:.08em;text-transform:uppercase}
+.bj-tags button.on.imp{border-color:var(--bjgr)!important;color:var(--bjgr)!important;background:var(--bjgrb)!important}
+.bj-tags button.on.rep{border-color:var(--bjbl)!important;color:var(--bjbl)!important;background:var(--bjblb)!important}
+.bj-tags button.on.run{border-color:var(--bjg)!important;color:var(--bjg2)!important;background:var(--bjy)!important}
+.bj-tags button.on.fail{border-color:var(--bjr)!important;color:var(--bjr)!important;background:var(--bjrb)!important}
+.bj-box{border:1px solid var(--bjl);border-radius:11px;background:var(--bjb3)}
+.bj-bh{display:flex;gap:8px;align-items:baseline;padding:10px 10px 0}
+.bj-bh b{font:400 15px var(--bjd);color:var(--bjg2)}.bj-bh span{font:600 10px var(--bjs);color:var(--bjt3);letter-spacing:.1em;text-transform:uppercase}
+.bj-bh em{margin-left:auto;font:500 10px var(--bjm);color:var(--bjt3);font-style:normal}
+.bj-bb{padding:8px 10px 10px;display:flex;flex-direction:column;gap:8px}
+.bj-box textarea{min-height:64px;font-size:12.5px!important}
+.bj-box.lock{opacity:.5;pointer-events:none}
+.bj-met{display:grid;grid-template-columns:1fr 18px 1fr 1fr;gap:8px;align-items:end}
+.bj-met .ar{color:var(--bjt3);padding-bottom:9px;text-align:center;font:700 14px var(--bjm)}
+.bj-met .ro{height:36px;display:flex;align-items:center;padding:0 10px;border-radius:8px;border:1px solid var(--bjl2);background:var(--bjb);font:700 13px var(--bjm);color:var(--bjg2)}
+.bj-chart svg{display:block;width:100%;height:84px}
+.bj-cap{display:flex;justify-content:space-between;font:500 10px var(--bjm);color:var(--bjt3);margin-top:4px}
+.bj-note{font:500 11px var(--bjs);color:var(--bjt3)}
+.bj-note.warn{color:var(--bjg2)}
+.bj-rki{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:8px 10px;border-radius:8px;border:1px solid var(--bjl);background:var(--bjb)}
+.bj-rki a{color:var(--bjt);text-decoration:none;font:600 11.5px var(--bjm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.bj-rki a:hover{color:var(--bjg2)}
+.bj-rki .v{font:600 11px var(--bjm);color:var(--bjt2);white-space:nowrap}
+.bj-rki .rm{color:var(--bjt3)!important;font-size:14px;width:22px;height:22px;border-radius:5px}.bj-rki .rm:hover{color:var(--bjr)!important}
+.bj-attach{display:flex;gap:6px}.bj-attach select{flex:1}
+.bj-wbtn{height:38px;padding:0 12px;border-radius:9px;border:1px solid var(--bjl2)!important;background:var(--bjb4)!important;font:600 12px var(--bjs)!important;color:var(--bjt)!important;white-space:nowrap}
+.bj-wbtn:hover{border-color:var(--bjl3)!important}
+.bj-wbtn.gold{color:#0b0c10!important;background:linear-gradient(135deg,var(--bjg2),var(--bjg))!important;border-color:transparent!important}
+.bj-range{display:flex;align-items:center;gap:10px}
+.bj-range input{-webkit-appearance:none;appearance:none;height:5px!important;padding:0!important;border:0!important;border-radius:3px;background:linear-gradient(90deg,var(--bjr),#D4A017 50%,var(--bjgr))!important}
+.bj-range input::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#07080C;border:3px solid var(--bjg2)}
+.bj-range input::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#07080C;border:3px solid var(--bjg2)}
+.bj-range b{font:700 16px var(--bjm);min-width:48px;text-align:right}
+.bj-tl{display:flex;flex-direction:column;padding-left:4px}
+.bj-tli{position:relative;padding:3px 0 10px 18px}
+.bj-tli::before{content:'';position:absolute;left:0;top:8px;width:8px;height:8px;border-radius:50%;background:var(--bjt3)}
+.bj-tli.note::before{background:var(--bjg);box-shadow:0 0 0 3px var(--bjy)}
+.bj-tli::after{content:'';position:absolute;left:3.5px;top:17px;bottom:-2px;width:1px;background:var(--bjl2)}.bj-tli:last-child::after{display:none}
+.bj-tli .m{font:500 10px var(--bjm);color:var(--bjt3)}.bj-tli .x{color:var(--bjt2);font-size:12px;margin-top:1px;white-space:pre-wrap;word-break:break-word}.bj-tli.note .x{color:var(--bjt)}
+.bj-addu{display:flex;gap:6px;align-items:flex-end}.bj-addu textarea{min-height:40px!important;height:40px}
+.bj-tsk{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;border:1px solid var(--bjl);background:var(--bjb);cursor:pointer}
+.bj-tsk:hover{border-color:var(--bjl3)}
+.bj-tsk span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bj-tsk.done span{color:var(--bjt3);text-decoration:line-through}
+.bj-tsk small{font:500 10px var(--bjm);color:var(--bjt3)}
+.bj-none{margin:auto;text-align:center;color:var(--bjt3);padding:30px}.bj-none b{display:block;font:400 13px var(--bjd);letter-spacing:.08em;color:var(--bjt2);margin-bottom:6px}
+
+.bj-mo{position:fixed;inset:0;background:rgba(6,8,14,.72);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:480;padding:20px}
+.bj-mo.on{display:flex}
+.bj-mbox{width:min(560px,100%);border-radius:20px;border:1px solid var(--bjl3);background:var(--bjb);box-shadow:0 30px 80px rgba(0,0,0,.6);color:var(--bjt);font:13px/1.4 var(--bjs)}
+.bj-mh{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--bjl)}.bj-mh b{font:400 15px var(--bjd);letter-spacing:.06em;color:var(--bjg2)}
+.bj-mh .bj-xb{margin-left:auto}
+.bj-pick{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:18px 20px}
+.bj-pick button{text-align:left;padding:16px;border-radius:14px;border:1px solid var(--bjl2);background:var(--bjb3);color:var(--bjt);font:inherit;cursor:pointer;transition:border-color .14s,transform .14s}
+.bj-pick button:hover{border-color:var(--bjg);transform:translateY(-1px)}
+.bj-pick b{display:flex;align-items:center;gap:8px;font:400 15px var(--bjd);letter-spacing:.06em;color:var(--bjg2);margin-bottom:6px}
+.bj-pick p{margin:0;color:var(--bjt2);font-size:12px}.bj-pick kbd{margin-left:auto;font:600 10px var(--bjm);border:1px solid var(--bjl2);border-radius:4px;padding:1px 5px;color:var(--bjt2)}
+
+/* связь с тасками и заливами */
+.ttype.bj{color:#F0D98A;border-color:rgba(212,175,55,.4);background:rgba(212,175,55,.1)}
+.tbj{display:inline-block;font:600 10.5px 'JetBrains Mono',monospace;color:#F0D98A;border:1px solid rgba(212,175,55,.3);background:rgba(212,175,55,.08);border-radius:6px;padding:2px 7px;cursor:pointer;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tbj:hover{border-color:#D4AF37}
+#te-bjpick{display:none;margin-top:8px}#te-bjpick.open{display:block}
+.zbj-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.zbj-row a{flex:1;min-width:0;color:#F2F3F7;text-decoration:none;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.zbj-row a b{color:#F0D98A;font-family:'JetBrains Mono',monospace}
+.zbj-row a:hover{color:#F0D98A}
+.zbj-at{display:flex;gap:6px;margin-top:8px}.zbj-at select{flex:1;min-width:0;background:#0C0E14;border:1px solid rgba(255,255,255,.12);border-radius:7px;color:#F2F3F7;padding:6px 8px;font-size:12px}
+.zbj-at button{padding:6px 10px;border-radius:7px;border:1px solid rgba(212,175,55,.45);background:rgba(212,175,55,.1);color:#F0D98A;font-weight:600;font-size:12px;cursor:pointer}
+
+@media(max-width:1000px){
+  .bj-body{grid-template-columns:1fr}
+  .bj-pane{position:fixed;left:0;right:0;bottom:0;height:86dvh;border-top:1px solid var(--bjl2);border-radius:16px 16px 0 0;transform:translateY(105%);transition:transform .25s;z-index:470}
+  .bj-pane.open{transform:none}
+  body:has(.bj-pane.open) #mnav{transform:translateY(110%)}
+  .bj-tick{display:none}.bj-srch{width:100%;order:9}.bj-main{border-right:0}
+  .bj-head{padding:10px 12px;gap:8px}.bj-ttl small,.bj-live{display:none}
+}
+@media(max-width:600px){.bj-pick{grid-template-columns:1fr}.bj-r4{grid-template-columns:1fr 1fr}.bj-tags{flex-wrap:wrap}.bj-gbtn .lb{display:none}}
+/* шапка стала на пункт длиннее — на узких десктопах чуть сжимаем поля пунктов */
+@media(min-width:761px) and (max-width:1380px){.topbar .nav .nb{padding-left:6px!important;padding-right:6px!important}}
+</style>
 </head>
 <body>
 <div id="root"></div>
@@ -1128,6 +1319,7 @@ document.getElementById('root').innerHTML=`
       <div class="nb" id="nb-tasks"><span class="dot"></span>Tasks</div>
       <div class="nb" id="nb-zalivs"><span class="dot"></span>Заливы</div>
       <div class="nb" id="nb-journal"><span class="dot"></span>Журнал</div>
+      <div class="nb" id="nb-bj" title="Buyer's Journal"><span class="dot"></span>Buyer's J.</div>
       <div class="nb" id="nb-analysis"><span class="dot"></span>Анализ</div>
       <div class="nb" id="nb-creo"><span class="dot"></span>Крео</div>
       <div class="nb" id="nb-sales"><span class="dot"></span>Sales</div>
@@ -1240,7 +1432,7 @@ document.getElementById('root').innerHTML=`
       <div class="fhdr" style="margin-bottom:12px"><span class="fhtit">Tasks</span><span style="font-size:11px;color:var(--text3);margin-left:10px">общие для PL и CZ</span></div>
       <div class="fbar" style="margin-bottom:12px;gap:8px;flex-wrap:wrap">
         <select class="fsel" id="tf-u"><option value="">👤 Все</option><option value="Illia">Illia</option><option value="Danya">Danya</option></select>
-        <select class="fsel" id="tf-type"><option value="">Тип: все</option><option value="fdc">FDC</option><option value="prep">Prepare ADS</option><option value="zaliw">Zaliw ADS</option><option value="an">Analyzing ADS</option><option value="vibe">Vibe Code</option><option value="other">Другое</option></select>
+        <select class="fsel" id="tf-type"><option value="">Тип: все</option><option value="fdc">FDC</option><option value="prep">Prepare ADS</option><option value="zaliw">Zaliw ADS</option><option value="an">Analyzing ADS</option><option value="vibe">Vibe Code</option><option value="bj">Buyer's Journal</option><option value="other">Другое</option></select>
         <select class="fsel" id="tf-per"><option value="1">Сегодня</option><option value="7" selected>Неделя</option><option value="30">Месяц</option><option value="0">Всё</option></select>
         <button class="fsel" id="tf-stat-tgl" style="cursor:pointer">📊 Статистика</button>
       </div>
@@ -1317,6 +1509,7 @@ document.getElementById('root').innerHTML=`
     </div>
   </div>
 </div>
+    <div class="page" id="page-bj"></div>
     <div class="page" id="page-journal" style="padding:0">
       <div class="jlay">
         <div class="jsb">
@@ -1422,12 +1615,14 @@ document.getElementById('root').innerHTML=`
       <button class="ttype-btn" data-ttype="zaliw">Zaliw ADS</button>
       <button class="ttype-btn" data-ttype="an">Analyzing ADS</button>
       <button class="ttype-btn" data-ttype="vibe">Vibe Code</button>
+      <button class="ttype-btn" data-ttype="bj">BUYER'S JOURNAL</button>
       <button class="ttype-btn" data-ttype="other">Другое</button>
     </div>
     <div class="rkpick" id="te-rkpick">
       <div class="rkgeo" id="te-rkgeo"><button data-rg="PL" class="on">PLPL</button><button data-rg="PLUA">PLUA</button><button data-rg="CZ">CZCZ</button><button data-rg="CZUA">CZUA</button><span style="margin-left:auto;font-size:10px;color:var(--text3);align-self:center" id="te-rk-sel">РК не выбрана</span></div>
       <div class="rkls" id="te-rkls"></div>
     </div>
+    <div id="te-bjpick"><select class="fi" id="te-bjsel" aria-label="Запись Buyer's Journal"></select></div>
   </div>
   <div class="fl"><label>Дедлайн</label><input class="fi" id="te-deadline" type="date"></div>
   <div class="mofoot"><button class="bcn" data-close="mo-task-edit">Отмена</button><button class="bsv" onclick="saveTaskEdit()">Сохранить</button></div>
@@ -1521,7 +1716,7 @@ function toast(msg,type='ok'){const w=document.getElementById('toast-wrap');cons
 
 // ── EVENTS ──
 // кнопки с именами убраны: вход теперь по почте и паролю, см. doAuthLogin()
-;['dash','zalivs','domains','sales','tasks','journal','creo','analysis'].forEach(id=>document.getElementById('nb-'+id).addEventListener('click',function(){gp(id,this)}))
+;['dash','zalivs','domains','sales','tasks','journal','bj','creo','analysis'].forEach(id=>document.getElementById('nb-'+id).addEventListener('click',function(){gp(id,this)}))
 document.getElementById('sync-btn').addEventListener('click',manualSync)
 document.getElementById('uchip').addEventListener('click',doLogout)
 document.getElementById('lnk-zalivs').addEventListener('click',()=>gp('zalivs',document.getElementById('nb-zalivs')))
@@ -1806,9 +2001,9 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-09-24 22:04'
+const BUILD='2026-09-24 23:15'
 function ver(){
-  const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
+  const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
   console.log('%cJDL CRM · сборка '+BUILD,'font-weight:bold;font-size:13px')
   console.log('на месте:',have.join(', ')||'ничего из нового')
@@ -1868,6 +2063,7 @@ async function init(){
   if(typeof jvRemindersOnStart==='function')setTimeout(jvRemindersOnStart,2500)
   // раз за сессию: это фоновая справка, а не то, ради чего стоит жечь лимит Meta
   if(typeof cqlRefresh==='function')setTimeout(cqlRefresh,9000)
+  if(typeof loadBj==='function')setTimeout(loadBj,2500)
   // Микрофон сам не включается: слушает только после нажатия на значок.
   // Автостарт раньше держал его открытым всю смену — это лишнее.;setTimeout(()=>{if(typeof jvRemindersOnStart==='function')jvRemindersOnStart()},2500)
 }
@@ -2115,6 +2311,7 @@ function gp(id,el){
   };if(id==='sales')rsales()
   if(id==='journal'){rtree();if(curDoc)loadDocById(curDoc)};if(id==='dash')rdash()
   if(id==='creo'){renderCreoPage()}
+  if(id==='bj'&&typeof bjOpen==='function')bjOpen()
   if(id==='zalivs'){loadBulkMeta(false)}
   if(id==='analysis'){initAnalysisPage()}
 }
@@ -4446,6 +4643,7 @@ async function selZaliv(zid){
     <div class="act"><button class="p" onclick="gp('analysis',document.getElementById('nb-analysis'));setTimeout(()=>showNewAnalysisPanelFor(${zid}),300)">Анализ</button><button onclick="addRkTask(${zid},'an')">+ таск</button><button onclick="togZ(${zid});document.getElementById('tc-'+${zid})?.scrollIntoView?.()">Развернуть</button></div>`
   document.getElementById('zdp').scrollTop=0
   if(z.campaign_id&&!_zAdsCache[zid]&&!_zAdsLoading[zid]){_zAdsLoading[zid]=1;loadZalivAdsets(zid)}
+  if(typeof bjRkBlock==='function')bjRkBlock(zid)
   if(z.campaign_id&&!_zLiveCache[zid]&&!_zLiveLoading[zid]){_zLiveLoading[zid]=1;loadZaliveLive(zid).finally(()=>{delete _zLiveLoading[zid]})}
 }
 async function loadZalivAdsets(zid){const z=ZALIVS.find(x=>x.id===zid);if(!z?.campaign_id)return
@@ -4960,9 +5158,9 @@ function rdomains(){rdomRegistry();
 // TASKS v8 — types · RK link · timer · stats · grind · auto FDC · JDL TODAY
 // tasks shared across PL/CZ (no region filter)
 // ══════════════════════════════════════════
-var TTYPES={fdc:'FDC',prep:'Prepare ADS',zaliw:'Zaliw ADS',an:'Analyzing ADS',vibe:'Vibe Code',other:'Другое'}
+var TTYPES={fdc:'FDC',prep:'Prepare ADS',zaliw:'Zaliw ADS',an:'Analyzing ADS',vibe:'Vibe Code',bj:"BUYER'S JOURNAL",other:'Другое'}
 var TTCOL={fdc:'#6E9BFF',prep:'#A07CF5',zaliw:'#D4AF37',an:'#3DBE8B',other:'#5a5a70'}
-var GRIND=[],_teType='',_teRk=null,_teRg='PL',_grindTab='insight',_tmTick=null
+var _teBj=null,GRIND=[],_teType='',_teRk=null,_teRg='PL',_grindTab='insight',_tmTick=null
 var _rkGeoMap={PL:'PL',PLUA:'PLUA',CZ:'CZ',CZUA:'CZUA'}
 
 function todayISO(){return new Date().toISOString().split('T')[0]}
@@ -4975,6 +5173,7 @@ async function saveTk(title,col,who,extra){
   const maxSo=TASKS.filter(t=>t.col===col).reduce((mx,t)=>Math.max(mx,t.sort_order||0),0)
   const row={title:title.trim(),col,assignee:who||'',deadline:extra?.deadline||null,sort_order:maxSo+10,
     ttype:extra?.ttype||'other',rk_id:extra?.rk_id||null,rk_name:extra?.rk_name||null,rk_region:extra?.rk_region||null,
+    ...(extra?.bj_id?{bj_id:extra.bj_id,bj_name:extra.bj_name||null}:{}),
     started_at:col==='process'?new Date().toISOString():null,time_spent:0}
   const{data,error}=await db.from('tasks').insert(row).select().single()
   if(!error&&data){TASKS.push(data);rtasks();return data}
@@ -5027,12 +5226,15 @@ document.querySelectorAll('[data-ttype]').forEach(btn=>btn.addEventListener('cli
   document.querySelectorAll('[data-ttype]').forEach(b=>b.classList.remove('sel'));this.classList.add('sel');_teType=this.dataset.ttype
   const needRk=['fdc','prep','zaliw','an'].includes(_teType)
   document.getElementById('te-rkpick').classList.toggle('open',needRk);if(needRk)renderRkPick()
+  document.getElementById('te-bjpick').classList.toggle('open',_teType==='bj');if(_teType==='bj'&&typeof bjFillTaskPick==='function')bjFillTaskPick(_teBj?.id)
 }))
 
 // ── edit modal ──
 function openTaskEdit(id){
   const t=TASKS.find(x=>x.id===id);if(!t)return
   _taskEditId=id;_teType=t.ttype||'other';_teRk=t.rk_id?{id:t.rk_id,name:t.rk_name,region:t.rk_region}:null
+  _teBj=t.bj_id?{id:t.bj_id,name:t.bj_name}:null
+  document.getElementById('te-bjpick').classList.toggle('open',_teType==='bj');if(_teType==='bj'&&typeof bjFillTaskPick==='function')bjFillTaskPick(_teBj?.id)
   document.getElementById('te-title').value=t.title
   document.getElementById('te-deadline').value=t.deadline||''
   document.querySelectorAll('[data-tass]').forEach(b=>b.classList.toggle('sel',b.dataset.tass===t.assignee))
@@ -5044,7 +5246,8 @@ function openTaskEdit(id){
   document.getElementById('mo-task-edit').classList.add('open')
 }
 function openTaskNew(preset){
-  _taskEditId=null;_teType=preset?.ttype||'other';_teRk=preset?.rk||null
+  _taskEditId=null;_teType=preset?.ttype||'other';_teRk=preset?.rk||null;_teBj=preset?.bj||null
+  document.getElementById('te-bjpick').classList.toggle('open',_teType==='bj');if(_teType==='bj'&&typeof bjFillTaskPick==='function')bjFillTaskPick(_teBj?.id)
   document.getElementById('te-title').value=preset?.title||''
   document.getElementById('te-deadline').value=preset?.deadline||todayISO()
   const me=CURRENT_USER?.name||''
@@ -5064,12 +5267,19 @@ async function saveTaskEdit(){
   const ttype=_teType||'other'
   const rk_id=_teRk?.id||null,rk_name=_teRk?.name||null,rk_region=_teRk?.region||null
   if(!title){toast('Введи название','err');return}
+  // запись журнала: пишем только когда она есть, чтобы без SQL из bj_setup.sql таски не падали
+  const bjSel=_teType==='bj'?(+document.getElementById('te-bjsel')?.value||null):null
+  const bjRow=bjSel?(typeof bjFind==='function'?bjFind(bjSel):null):null
+  const bjx=bjSel?{bj_id:bjSel,bj_name:bjRow?bjTaskName(bjRow):(_teBj?.name||null)}:{}
+  if(_teType==='bj'&&!bjSel){toast('Выбери запись журнала','err');return}
   if(_taskEditId){
     const t=TASKS.find(x=>x.id===_taskEditId);if(!t)return
-    const upd={title,assignee,deadline,ttype,rk_id,rk_name,rk_region,updated_at:new Date().toISOString()}
+    const upd={title,assignee,deadline,ttype,rk_id,rk_name,rk_region,...bjx,updated_at:new Date().toISOString()}
+    if(!bjSel&&t.bj_id){upd.bj_id=null;upd.bj_name=null}
     await db.from('tasks').update(upd).eq('id',_taskEditId);Object.assign(t,upd);toast('Задача обновлена','ok')
   }else{
-    await saveTk(title,deadline===todayISO()?'todo':'all',assignee,{deadline,ttype,rk_id,rk_name,rk_region});toast('Задача создана','ok')
+    await saveTk(title,deadline===todayISO()?'todo':'all',assignee,{deadline,ttype,rk_id,rk_name,rk_region,...bjx});toast('Задача создана','ok')
+    if(bjSel&&typeof bjLogExternal==='function')bjLogExternal(bjSel,'Создана таска «'+title+'»'+(assignee?' → '+assignee:''))
   }
   document.getElementById('mo-task-edit').classList.remove('open');rtasks()
 }
@@ -5178,6 +5388,7 @@ function rtasks(){
   })
   document.querySelectorAll('.tdone[data-id]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();doneTask(+b.dataset.id)}))
   document.querySelectorAll('.trk[data-zid]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const zid=+b.dataset.zid;if(zid)openRk(zid,b.dataset.region||null)}))
+  document.querySelectorAll('.tbj[data-bj]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();if(typeof bjOpenEntry==='function')bjOpenEntry(+b.dataset.bj)}))
   document.querySelectorAll('.kqcn').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.full){const inp=document.querySelector(`#kq-${b.dataset.col} .kqinp`);hideQA(b.dataset.col);openTaskNew({title:inp?.value||''})}else hideQA(b.dataset.col)}))
   document.querySelectorAll('.tdel[data-id]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();document.querySelectorAll('.tdel-confirm.show').forEach(c=>c.classList.remove('show'));btn.nextElementSibling?.classList.add('show')}))
   document.querySelectorAll('.tdel-yes').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();delTkConfirmed(parseInt(btn.dataset.id))}))
@@ -5205,6 +5416,7 @@ function tcard(t){
   const el=taskElapsed(t),tt=t.ttype||'other'
   return`<div class="tcard ${ov?'tdue':isT?'ttoday':''}" draggable="true" id="tc-${t.id}" data-id="${t.id}">
     <div class="tnm">${t.title}</div>
+    ${t.bj_id?`<div style="margin-bottom:6px"><span class="tbj" data-bj="${t.bj_id}" title="Открыть в Buyer's Journal">🧪 ${(t.bj_name||'#'+t.bj_id).replace(/[<>&]/g,'')} →</span></div>`:''}
     ${t.rk_name?`<div style="margin-bottom:6px"><span class="trk" data-zid="${t.rk_id||0}" data-region="${t.rk_region||''}" title="Открыть РК" style="cursor:pointer">${t.rk_region?t.rk_region+' · ':''}${t.rk_name} →</span></div>`:''}
     <div class="tft">
       <span class="ttype ${tt}">${TTYPES[tt]}</span>
@@ -7486,7 +7698,11 @@ async function pullAdDomains(zid,apply){
   z.adset_domains=arr
   toast('Кальки записаны: '+changed,'ok')
   console.table(arr.map(x=>({слот:x.ad,калька:x.domain,объявление:String(x.ad_name||'—').slice(0,34),адсет:x.adset_id||'—'})))
-  rzalivs();selZaliv(z.id)
+  // Карточку обновляем, но в Meta за адсетами лезть незачем: запись уже сделана,
+  // а при закрытом лимите этот запрос только сыпал ошибкой поверх удачной записи.
+  rzalivs()
+  if(!metaBlocked()&&!metaHot())selZaliv(z.id)
+  else console.log('Карточку не открываю: лимит Meta. Кальки записаны, обнови страницу позже.')
   return ads
 }
 // Пройтись по всем активным РК региона разом
@@ -7903,7 +8119,7 @@ document.getElementById('li-go')?.addEventListener('click',doAuthLogin)
 // поэтому вся логика переключения страниц остаётся одна.
 ;(function mobileNav(){
   const MAIN=[['dash','📊','Главная'],['tasks','✅','Задачи'],['zalivs','🚀','Заливы'],['analysis','🔬','Анализ']]
-  const MORE=[['journal','📓','Журнал'],['creo','🎨','Крео'],['sales','💰','Продажи'],['domains','🌐','Домены']]
+  const MORE=[['journal','📓','Журнал'],['bj','🧪',"Buyer's J."],['creo','🎨','Крео'],['sales','💰','Продажи'],['domains','🌐','Домены']]
   const isMob=()=>matchMedia('(max-width:760px)').matches
   function build(){
     if(document.getElementById('mnav'))return
@@ -7972,6 +8188,393 @@ document.getElementById('li-go')?.addEventListener('click',doAuthLogin)
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',build);else build()
 })()
+
+
+/* ══════════════════════════════════════════════════════════════════
+   BUYER'S JOURNAL
+   Записи HADI: гипотезы и тесты. Цифры тестов считаются из прикреплённых РК:
+   расход, показы и клики — из Meta одним общим запросом на все живые тесты,
+   лиды и квалы — из source_daily по калькам РК. Закрытый тест сохраняет
+   снимок цифр и больше в Meta не ходит — это бережёт лимит кабинетов.
+   ══════════════════════════════════════════════════════════════════ */
+var BJ=[],BJ_OK=null,BJ_ERR='',_bjLoaded=false,_bjLoading=null
+const BJ_VARS=['Сетап залива','Крео','Аудитория','Бюджет','Лендинг','Оффер','Пиксель','Гео']
+const BJ_KMS=['CPL','CQL','CTR','CPM','CR','Квалы','% Creo']
+const BJ_UNIT={CPL:'$',CQL:'$',CPM:'$',CTR:'%',CR:'%','Квалы':'','% Creo':'%'}
+const BJ_LOWER=new Set(['CPL','CQL','CPM'])
+const BJ_STEPS=['hypothesis','action','data','insight'],BJ_STL={hypothesis:'Гипотеза',action:'Действие',data:'Данные',insight:'Инсайт'}
+const BJ_TAGS={imp:'Внедрить',rep:'Повторить',run:'В работе',fail:'Провал'}
+let bjView='table',bjKind='',bjTagF='',bjBuyerF='',bjRegF='',bjQ='',bjSel=null,bjSortK='upd',bjSortAsc=false,bjFeedNotes=false
+const bjEsc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))
+const bjL=name=>name==='Illia'?'I':'D'
+const bjFid=t=>{const d=String(t.date||'');return t.id+d.slice(8,10)+d.slice(5,7)+d.slice(2,4)}
+const bjDD=s=>s?String(s).slice(8,10)+'.'+String(s).slice(5,7):'—'
+const bjHM=ts=>{const d=new Date(ts);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+const bjLocalDay=ts=>{const d=new Date(ts);return new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)}
+const bjAddD=(s,n)=>{const d=new Date(s+'T12:00');d.setDate(d.getDate()+n);return new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)}
+const bjShort=(s,n)=>{s=String(s||'');return s.length>n?s.slice(0,n-1)+'…':s}
+function bjAgo(ts){const m=Math.round((Date.now()-new Date(ts))/6e4);if(m<1)return'сейчас';if(m<60)return m+' мин';const h=Math.round(m/60);if(h<24)return h+' ч';return Math.round(h/24)+' д'}
+const bjFind=id=>BJ.find(t=>t.id===id)
+const bjStepI=t=>BJ_STEPS.indexOf(t.step)
+const bjLast=t=>(t.upd||[]).reduce((m,u)=>u.at>m?u.at:m,t.created_at||String(t.date))
+const bjMe=()=>(typeof CURRENT_USER!=='undefined'&&CURRENT_USER&&CURRENT_USER.name)||'—'
+
+/* ── загрузка и сохранение ── */
+function bjNorm(r){r.rk_ids=Array.isArray(r.rk_ids)?r.rk_ids.map(Number):[];r.upd=Array.isArray(r.upd)?r.upd:[];r.conf=r.conf??50;return r}
+async function loadBj(){
+  if(_bjLoading)return _bjLoading
+  _bjLoading=(async()=>{
+    try{const{data,error}=await db.from('bj_entries').select('*').order('id',{ascending:false})
+      if(error)throw error;BJ=(data||[]).map(bjNorm);BJ_OK=true;BJ_ERR=''}
+    catch(e){BJ_OK=false;BJ_ERR=e.message||String(e)}
+    _bjLoaded=true;_bjLoading=null})()
+  return _bjLoading}
+const BJ_COLS=['kind','date','buyer','region','variable','km','before','target','after_manual','conf','step','tag','h','a','d','i','rk_ids','started','ended','upd','snap']
+const _bjT={}
+function bjSave(t){clearTimeout(_bjT[t.id]);_bjT[t.id]=setTimeout(async()=>{
+  const row={updated_at:new Date().toISOString()};BJ_COLS.forEach(k=>row[k]=t[k]??null)
+  const{error}=await db.from('bj_entries').update(row).eq('id',t.id)
+  const s=document.getElementById('bj-saved')
+  if(error){toast("Buyer's Journal: "+error.message,'err');if(s)s.textContent='не сохранилось'}
+  else if(s)s.textContent='сохранено · '+bjHM(new Date())},350)}
+function bjLog(t,text,auto){t.upd.push({at:new Date().toISOString(),by:bjMe(),text,auto:auto?1:0});bjSave(t)}
+async function bjCreate(kind,pre){
+  const row=Object.assign({kind,date:todayISO(),buyer:bjMe()==='Illia'?'Illia':'Danya',region:CURRENT_REGION,variable:'Крео',km:'CPL',
+    before:null,target:null,after_manual:null,conf:50,step:'hypothesis',tag:null,h:'',a:'',d:'',i:'',rk_ids:[],started:null,ended:null,snap:null,
+    upd:[{at:new Date().toISOString(),by:bjMe(),text:kind==='test'?'Тест создан':'Гипотеза создана',auto:1}]},pre||{})
+  const{data,error}=await db.from('bj_entries').insert(row).select().single()
+  if(error){toast("Buyer's Journal: "+error.message,'err');return null}
+  const t=bjNorm(data);BJ.unshift(t);return t}
+
+/* ── цифры из РК ── */
+let BJ_RK={},BJ_SRC=null,BJ_SRC_FROM=null,BJ_META=null,BJ_META_FROM=null,BJ_META_ERR=''
+const bjZ=()=>({spend:0,impr:0,clicks:0,leads:0,quals:0})
+const bjAdd=(a,r)=>{a.spend+=r.spend;a.impr+=r.impr;a.clicks+=r.clicks;a.leads+=r.leads;a.quals+=r.quals;return a}
+// Метрика — от сумм за окно, а не средним дневных: иначе день с 1 лидом весит как день с 20
+function bjKm(km,a){if(!a)return null
+  switch(km){case'CPL':return a.leads?a.spend/a.leads:null;case'CQL':return a.quals?a.spend/a.quals:null
+    case'CTR':return a.impr?a.clicks/a.impr*100:null;case'CPM':return a.impr?a.spend/a.impr*1000:null
+    case'CR':return a.clicks?a.leads/a.clicks*100:null;case'Квалы':return a.quals;default:return null}}
+function bjFmt(km,v){if(v==null||!isFinite(v))return'—';if(km==='Квалы')return String(Math.round(v))
+  if(BJ_UNIT[km]==='%')return v.toFixed(km==='CTR'?2:1)+'%';return(v>=100?Math.round(v):v.toFixed(1))+'$'}
+function bjDelta(t,after){if(after==null||!t.before)return null;const p=(after-t.before)/t.before*100;return{p:Math.round(p),good:BJ_LOWER.has(t.km)?p<0:p>0}}
+// Источник лида: калька с буквой баера спереди или сзади — dkalkulator3, cz2i.
+// Сверяем прямо со списком калек РК: общий реестр знает только открытый регион.
+function bjSrcKey(src,keys){const s=String(src||'').toLowerCase().trim();if(keys.has(s))return{l:''}
+  const a=s[0],b=s.slice(-1)
+  if((a==='d'||a==='i')&&keys.has(s.slice(1)))return{l:a}
+  if((b==='d'||b==='i')&&keys.has(s.slice(0,-1)))return{l:b}
+  return null}
+const bjNeedsLive=t=>t.kind==='test'&&t.rk_ids.length&&t.km!=='% Creo'&&!(t.ended&&t.snap)
+async function bjEnsureData(force){
+  const ids=[...new Set(BJ.flatMap(t=>t.rk_ids))].filter(id=>force||!BJ_RK[id])
+  if(ids.length){const{data}=await db.from('zalivs').select('id,name,region,buyer,campaign_id,adset_domains,geo,created_at').in('id',ids);(data||[]).forEach(z=>BJ_RK[z.id]=z)}
+  const live=BJ.filter(bjNeedsLive);if(!live.length)return
+  let from=live.reduce((m,t)=>{const s=t.started||t.date;return s<m?s:m},todayISO())
+  const cap=bjAddD(todayISO(),-45);if(from<cap)from=cap
+  if(force||!BJ_SRC||BJ_SRC_FROM>from){
+    const{data}=await db.from('source_daily').select('day,source,leads,quals,region').gte('day',from).limit(20000)
+    BJ_SRC=data||[];BJ_SRC_FROM=from}
+  if(force||!BJ_META||BJ_META_FROM>from){
+    if(typeof metaBlocked==='function'&&(metaBlocked()||(typeof metaHot==='function'&&metaHot()))){BJ_META_ERR='Meta на паузе по лимиту — расход подтянется позже'}
+    else try{
+      const r=await metaPost({action:'reconcile',region:'PL',since:from,until:todayISO(),daily:true});const d=await r.json()
+      if(d&&d.ok){BJ_META=[...(d.campaigns||[]),...(d.other||[])];BJ_META_FROM=from;BJ_META_ERR=''}
+      else BJ_META_ERR=(d&&d.error)||'Meta не ответила'
+    }catch(e){BJ_META_ERR=e.message}}
+  // закрытые тесты без снимка — фиксируем цифры один раз
+  BJ.filter(t=>t.kind==='test'&&t.ended&&!t.snap&&t.rk_ids.length).forEach(t=>{
+    const m=bjMetrics(t,true);if(m.after==null||m.metaMissing)return
+    t.snap={after:m.after,points:m.points,days:m.days,from:m.from,to:m.to,perRk:m.perRk,at:new Date().toISOString()};bjSave(t)})
+}
+function bjMetrics(t,live){
+  const km=t.km,derivable=km!=='% Creo'
+  if(t.kind!=='test'||!t.rk_ids.length||!derivable)return{auto:false,after:t.after_manual??null,points:[],days:0,perRk:[],derivable}
+  if(!live&&t.ended&&t.snap)return Object.assign({auto:true,derivable,snap:true},t.snap)
+  const from=t.started||t.date,to=t.ended&&t.ended<todayISO()?t.ended:todayISO()
+  const needMeta=['CPL','CQL','CTR','CPM','CR'].includes(km),byDay={},perRk=[]
+  for(const id of t.rk_ids){const z=BJ_RK[id];if(!z)continue;const tot=bjZ()
+    if(z.campaign_id&&BJ_META)BJ_META.forEach(r=>{if(String(r.campaign_id)!==String(z.campaign_id)||!r.day||r.day<from||r.day>to)return
+      const o=byDay[r.day]||(byDay[r.day]=bjZ()),x={spend:+r.spend||0,impr:+r.imp||0,clicks:+r.clicks||0,leads:0,quals:0};bjAdd(o,x);bjAdd(tot,x)})
+    const keys=new Set((typeof zDomains==='function'?zDomains(z):[]).map(d=>String(d.domain||'').toLowerCase().trim()).filter(Boolean))
+    const L=z.buyer==='Illia'?'i':z.buyer==='Danya'?'d':''
+    if(keys.size&&BJ_SRC)BJ_SRC.forEach(r=>{if(r.region&&z.region&&r.region!==z.region)return;if(!r.day||r.day<from||r.day>to)return
+      const m=bjSrcKey(r.source,keys);if(!m||(m.l&&L&&m.l!==L))return
+      const o=byDay[r.day]||(byDay[r.day]=bjZ()),x={spend:0,impr:0,clicks:0,leads:+r.leads||0,quals:+r.quals||0};bjAdd(o,x);bjAdd(tot,x)})
+    perRk.push({id:z.id,name:z.name,region:z.region,tot,v:bjKm(km,tot)})}
+  const days=Object.keys(byDay).sort(),total=Object.values(byDay).reduce(bjAdd,bjZ())
+  const metaMissing=needMeta&&!BJ_META
+  return{auto:true,derivable,metaMissing,from,to,perRk,total,days:days.length,
+    after:days.length&&!metaMissing?bjKm(km,total):null,
+    points:days.map(d=>({day:d,v:metaMissing?null:bjKm(km,byDay[d])}))}}
+
+/* ── график ── */
+function bjSpark(pts,o){o=o||{};const w=o.w||72,h=o.h||20,vals=pts.map(p=>p.v).filter(v=>v!=null)
+  if(vals.length<2)return o.big?`<div class="bj-note" style="padding:26px 0;text-align:center">${pts.length?'Нужно минимум два дня данных':'Нет данных за окно теста'}</div>`:'<span class="bj-mut">—</span>'
+  const ext=[...vals];if(o.before!=null)ext.push(o.before);if(o.target!=null)ext.push(o.target)
+  let mn=Math.min(...ext),mx=Math.max(...ext);if(mx===mn){mx+=1;mn-=1}
+  const pad=o.big?8:2,X=i=>pad+i/(pts.length-1)*(w-pad*2),Y=v=>h-pad-(v-mn)/(mx-mn)*(h-pad*2)
+  const segs=[];let cur=[];pts.forEach((p,i)=>{if(p.v==null){if(cur.length)segs.push(cur);cur=[]}else cur.push([X(i),Y(p.v)])});if(cur.length)segs.push(cur)
+  const col=o.good==null?'#D4AF37':o.good?'#3DBE8B':'#F03A55';let g=''
+  if(o.big&&o.before!=null)g+=`<line x1="0" x2="${w}" y1="${Y(o.before)}" y2="${Y(o.before)}" stroke="#646A80" stroke-dasharray="4 4"/>`
+  if(o.big&&o.target!=null)g+=`<line x1="0" x2="${w}" y1="${Y(o.target)}" y2="${Y(o.target)}" stroke="#A3A8BA" stroke-dasharray="1 3"/>`
+  segs.forEach(s=>{g+=`<polyline fill="none" stroke="${col}" stroke-width="${o.big?2:1.6}" stroke-linejoin="round" stroke-linecap="round" points="${s.map(p=>p.join(',')).join(' ')}"/>`})
+  if(o.big)pts.forEach((p,i)=>{if(p.v!=null)g+=`<circle cx="${X(i)}" cy="${Y(p.v)}" r="3" fill="#11131B" stroke="${col}" stroke-width="1.6"><title>${bjDD(p.day)} · ${bjFmt(o.km,p.v)}</title></circle>`})
+  else{const l=segs.at(-1).at(-1);g+=`<circle cx="${l[0]}" cy="${l[1]}" r="2.2" fill="${col}"/>`}
+  return`<svg viewBox="0 0 ${w} ${h}" width="${o.big?'100%':w}" height="${h}" aria-hidden="true">${g}</svg>`}
+
+/* ── каркас страницы ── */
+function bjShell(){const p=document.getElementById('page-bj');if(!p||p.dataset.ready)return;p.dataset.ready='1'
+  p.innerHTML=`<div class="bj-head"><div class="bj-ttl"><b>BUYER'S <span>JOURNAL</span></b><small>HADI · гипотезы и тесты команды</small></div>
+    <div class="bj-tick" id="bj-tick"></div><span class="bj-live" id="bj-live"><i></i>LIVE</span>
+    <button class="bj-gbtn" id="bj-refresh" title="Перечитать цифры из Meta и source_daily">↻<span class="lb"> Цифры</span></button>
+    <button class="bj-gbtn" id="bj-task">✓<span class="lb"> Таска</span></button>
+    <button class="bj-new" id="bj-new">＋ Новая <kbd>N</kbd></button></div>
+  <div class="bj-tools">
+    <div class="bj-seg" id="bj-vseg"><button data-v="table" class="on">Таблица</button><button data-v="kanban">Канбан</button><button data-v="feed">Лента<span class="n" id="bj-nfeed"></span></button></div>
+    <div class="bj-seg" id="bj-kseg"><button data-k="" class="on">Все</button><button data-k="test">Тесты<span class="n" id="bj-nt"></span></button><button data-k="hyp">Гипотезы<span class="n" id="bj-nh"></span></button></div>
+    <div class="bj-srch"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="bj-q" placeholder="Поиск · ID, текст, РК"></div>
+    <select id="bj-ftag" aria-label="Тег"><option value="">Все теги</option><option value="imp">Внедрить</option><option value="rep">Повторить</option><option value="run">В работе</option><option value="fail">Провал</option></select>
+    <select id="bj-fbuyer" aria-label="Баер"><option value="">Все баеры</option><option>Danya</option><option>Illia</option></select>
+    <select id="bj-freg" aria-label="Регион"><option value="">PL + CZ</option><option>PL</option><option>CZ</option></select>
+    <span class="bj-cnt" id="bj-cnt"></span></div>
+  <div class="bj-body"><main class="bj-main" id="bj-main"></main><aside class="bj-pane" id="bj-pane"></aside></div>`
+  if(!document.getElementById('bj-mo-new'))document.body.insertAdjacentHTML('beforeend',`<div class="bj-mo" id="bj-mo-new"><div class="bj-mbox">
+    <div class="bj-mh"><b>Что заводим?</b><button class="bj-xb" data-bjclose aria-label="Закрыть">✕</button></div>
+    <div class="bj-pick"><button id="bj-new-h"><b>Гипотеза <kbd>H</kbd></b><p>Идея без теста. Формулируешь, ставишь уверенность — запустишь позже.</p></button>
+    <button id="bj-new-t"><b>Тест <kbd>T</kbd></b><p>Сразу с планом: гипотеза, действие, метрика и РК, с которых тянутся цифры.</p></button></div></div></div>`)
+  const $=id=>document.getElementById(id)
+  const seg=(id,a,v)=>$(id).querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset[a]===v))
+  $('bj-vseg').onclick=e=>{const b=e.target.closest('button');if(!b)return;bjView=b.dataset.v;seg('bj-vseg','v',bjView);bjRenderMain()}
+  $('bj-kseg').onclick=e=>{const b=e.target.closest('button');if(!b)return;bjKind=b.dataset.k;seg('bj-kseg','k',bjKind);bjRenderMain()}
+  $('bj-q').oninput=e=>{bjQ=e.target.value.trim().toLowerCase();bjRenderMain()}
+  $('bj-ftag').onchange=e=>{bjTagF=e.target.value;bjRenderMain()}
+  $('bj-fbuyer').onchange=e=>{bjBuyerF=e.target.value;bjRenderMain()}
+  $('bj-freg').onchange=e=>{bjRegF=e.target.value;bjRenderMain()}
+  $('bj-new').onclick=()=>$('bj-mo-new').classList.add('on')
+  $('bj-new-h').onclick=()=>bjNewKind('hyp');$('bj-new-t').onclick=()=>bjNewKind('test')
+  document.querySelectorAll('#bj-mo-new [data-bjclose]').forEach(b=>b.onclick=()=>$('bj-mo-new').classList.remove('on'))
+  $('bj-mo-new').addEventListener('click',e=>{if(e.target.id==='bj-mo-new')e.currentTarget.classList.remove('on')})
+  $('bj-task').onclick=()=>{const t=bjFind(bjSel);openTaskNew({ttype:'bj',bj:t?{id:t.id,name:bjTaskName(t)}:null})}
+  $('bj-refresh').onclick=async()=>{toast('Перечитываю цифры…','info');await bjEnsureData(true);bjRender();toast('Цифры обновлены','ok')}
+  $('bj-main').addEventListener('click',e=>{
+    const fb=e.target.closest('[data-bjfn]');if(fb){bjFeedNotes=fb.dataset.bjfn==='1';bjRenderMain();return}
+    const th=e.target.closest('th[data-k]');if(th){const k=th.dataset.k;if(bjSortK===k)bjSortAsc=!bjSortAsc;else{bjSortK=k;bjSortAsc=k==='km'};bjRenderMain();return}
+    const r=e.target.closest('[data-bjn]');if(!r)return;bjSel=+r.dataset.bjn;bjRenderMain();bjRenderPane()})
+  document.addEventListener('keydown',bjKeys)
+}
+function bjTaskName(t){return '#'+bjFid(t)+' · '+bjShort(t.h||(t.kind==='test'?'тест':'гипотеза'),60)}
+async function bjNewKind(kind){document.getElementById('bj-mo-new').classList.remove('on')
+  const t=await bjCreate(kind);if(!t)return;bjSel=t.id;bjKind='';bjRender()
+  setTimeout(()=>document.querySelector('#bj-pane [data-f=h]')?.focus(),60)}
+function bjKeys(e){
+  const pg=document.getElementById('page-bj');if(!pg||!pg.classList.contains('active'))return
+  const typing=/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName),mo=document.getElementById('bj-mo-new')
+  if(mo&&mo.classList.contains('on')&&!typing){const k=e.key.toLowerCase();if(k==='h'){bjNewKind('hyp');return}if(k==='t'){bjNewKind('test');return}if(e.key==='Escape'){mo.classList.remove('on');return}}
+  if(typing)return
+  const k=e.key.toLowerCase()
+  if(k==='n'&&!e.metaKey&&!e.ctrlKey){e.preventDefault();mo.classList.add('on');return}
+  if(e.key==='Escape'&&bjSel!=null){bjSel=null;bjRender();return}
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){if(bjView==='feed')return;e.preventDefault();const r=bjRows();if(!r.length)return
+    let i=r.findIndex(t=>t.id===bjSel);i=e.key==='ArrowDown'?Math.min(r.length-1,i+1):Math.max(0,i-1);bjSel=r[i].id;bjRenderMain();bjRenderPane()
+    document.querySelector('#bj-main tr.sel,#bj-main .bj-card.sel')?.scrollIntoView({block:'nearest'})}}
+
+/* ── открыть раздел / запись ── */
+async function bjOpen(){bjShell();if(!_bjLoaded){document.getElementById('bj-main').innerHTML='<div class="bj-empty"><b>Загружаю…</b></div>';await loadBj()}
+  bjRender();await bjEnsureData();bjRender()}
+function bjOpenEntry(id){const nb=document.getElementById('nb-bj');if(nb)gp('bj',nb);bjSel=+id;setTimeout(()=>{bjRenderMain();bjRenderPane()},60)}
+
+/* ── выборка и рендер ── */
+function bjRows(){
+  const r=BJ.filter(t=>{if(bjKind&&t.kind!==bjKind)return false;if(bjTagF&&t.tag!==bjTagF)return false
+    if(bjBuyerF&&t.buyer!==bjBuyerF)return false;if(bjRegF&&t.region!==bjRegF)return false
+    if(bjQ){const s=[bjFid(t),t.h,t.a,t.d,t.i,t.variable,t.km,...t.rk_ids.map(id=>BJ_RK[id]?.name||'')].join(' ').toLowerCase();if(!s.includes(bjQ))return false}
+    return true})
+  const key=t=>bjSortK==='upd'?bjLast(t):bjSortK==='conf'?t.conf:bjSortK==='n'?t.id:bjSortK==='tag'?(t.tag||''):t[bjSortK]
+  return r.sort((a,b)=>{const x=key(a),y=key(b);return(x>y?1:x<y?-1:0)*(bjSortAsc?1:-1)})}
+function bjRender(){if(!document.getElementById('bj-main'))return;bjRenderTick();bjRenderMain();bjRenderPane()}
+function bjRenderTick(){
+  const c=k=>BJ.filter(t=>t.tag===k).length
+  document.getElementById('bj-tick').innerHTML=`<span>ТЕСТОВ<b>${BJ.filter(t=>t.kind==='test').length}</b></span><span>ГИПОТЕЗ<b>${BJ.filter(t=>t.kind==='hyp').length}</b></span><span>В РАБОТЕ<b>${c('run')}</b></span><span>ВНЕДРИТЬ<b>${c('imp')}</b></span><span>ПРОВАЛ<b>${c('fail')}</b></span>`
+  document.getElementById('bj-nt').textContent=BJ.filter(t=>t.kind==='test').length
+  document.getElementById('bj-nh').textContent=BJ.filter(t=>t.kind==='hyp').length
+  document.getElementById('bj-nfeed').textContent=BJ.reduce((a,t)=>a+t.upd.filter(u=>!u.auto).length,0)
+  const lv=document.getElementById('bj-live');lv.classList.toggle('off',!!BJ_META_ERR);lv.title=BJ_META_ERR||'Цифры Meta актуальны'}
+function bjRenderMain(){const m=document.getElementById('bj-main');if(!m)return
+  if(BJ_OK===false){m.innerHTML=`<div class="bj-empty"><b>Нет таблицы журнала</b>Выполни в Supabase SQL из файла <code>bj_setup.sql</code> и обнови страницу.<br><br><span style="font-size:11px">${bjEsc(BJ_ERR)}</span></div>`;return}
+  if(bjView==='kanban')bjKanban();else if(bjView==='feed')bjFeed();else bjTable()}
+function bjHadi(t){const i=bjStepI(t);return`<span class="bj-hadi ${t.kind==='hyp'?'off':''}">${['H','A','D','I'].map((l,k)=>`<i class="${k<i?'done':k===i?'now':''}">${l}</i>`).join('')}</span>`}
+function bjTable(){const r=bjRows(),m=document.getElementById('bj-main');document.getElementById('bj-cnt').textContent=r.length+' / '+BJ.length
+  if(!r.length){m.innerHTML=BJ.length?`<div class="bj-empty"><b>Ничего не нашлось</b>Сними фильтры</div>`:`<div class="bj-empty"><b>Журнал пуст</b>Заведи первую гипотезу — кнопка «＋ Новая» или <kbd>N</kbd></div>`;return}
+  const th=(k,l)=>k?`<th data-k="${k}" class="${bjSortK===k?'s'+(bjSortAsc?' asc':''):''}">${l}</th>`:`<th>${l}</th>`
+  m.innerHTML=`<table class="bj-t"><thead><tr>${th('n','ID')}${th('','Тип')}${th('','HADI')}${th('','Суть')}${th('km','KM')}${th('','Было → стало')}${th('','Тренд')}${th('','РК')}${th('conf','Увер.')}${th('tag','Тег')}${th('upd','Обновлено')}</tr></thead><tbody>
+  ${r.map(t=>{const x=bjMetrics(t),d=bjDelta(t,x.after)
+    return`<tr data-bjn="${t.id}" class="${t.id===bjSel?'sel':''}">
+    <td><span class="bj-id">#${bjFid(t)}</span></td>
+    <td><span class="bj-kind ${t.kind}">${t.kind==='test'?'Тест':'Гипотеза'}</span></td>
+    <td>${bjHadi(t)}</td>
+    <td class="bj-sum"><div class="ch"><span class="bj-chip var">${bjEsc(t.variable)}</span><span class="bj-chip reg">${t.region}</span><span class="bj-av ${bjL(t.buyer)}" title="${bjEsc(t.buyer)}">${bjL(t.buyer)}</span></div><p>${bjEsc(t.h)||'<span style="color:var(--bjt3)">Без формулировки</span>'}</p></td>
+    <td><span class="bj-chip">${bjEsc(t.km)}</span></td>
+    <td><span class="bj-num">${x.after!=null?`<s>${bjFmt(t.km,t.before)}</s>${bjFmt(t.km,x.after)}`:bjFmt(t.km,t.before)}</span>${d?`<span class="bj-dl ${d.good?'up':'dn'}">${d.p>0?'+':''}${d.p}%</span>`:''}${x.auto?'<span class="bj-auto">AUTO</span>':''}</td>
+    <td>${t.kind==='test'?bjSpark(x.points,{good:d?d.good:null}):'<span class="bj-mut">—</span>'}</td>
+    <td><span class="bj-mut" title="${bjEsc(t.rk_ids.map(id=>BJ_RK[id]?.name||('#'+id)).join('\n'))}">${t.rk_ids.length||'—'}</span></td>
+    <td><span class="bj-conf"><i><b style="width:${t.conf}%"></b></i>${t.conf}%</span></td>
+    <td>${t.tag?`<span class="bj-tag ${t.tag}">${BJ_TAGS[t.tag]}</span>`:'<span class="bj-mut">—</span>'}</td>
+    <td><span class="bj-mut">${bjAgo(bjLast(t))} · <b>${t.upd.filter(u=>!u.auto).length}</b></span></td></tr>`}).join('')}</tbody></table>`}
+function bjKanban(){const r=bjRows(),m=document.getElementById('bj-main');document.getElementById('bj-cnt').textContent=r.length+' / '+BJ.length
+  m.innerHTML=`<div class="bj-kb">${BJ_STEPS.map((s,k)=>{const list=r.filter(t=>t.step===s)
+    return`<section class="bj-col" data-s="${s}"><div class="bj-colh" data-w="${'HADI'[k]}"><b>${'HADI'[k]}</b><span>${BJ_STL[s]}</span><em>${list.length}</em></div>
+      <div class="bj-cards">${list.map(t=>{const x=bjMetrics(t),d=bjDelta(t,x.after)
+        return`<article class="bj-card ${t.id===bjSel?'sel':''}" draggable="true" data-bjn="${t.id}">
+        <div class="r"><span class="bj-id">#${bjFid(t)}</span><span class="bj-kind ${t.kind}">${t.kind==='test'?'Тест':'Гипотеза'}</span><span class="bj-av ${bjL(t.buyer)}">${bjL(t.buyer)}</span></div>
+        <p>${bjEsc(t.h)||'<span style="color:var(--bjt3)">Без формулировки</span>'}</p>
+        <div class="f"><span class="bj-chip">${bjEsc(t.km)}</span><span class="bj-num" style="font-size:12px">${bjFmt(t.km,x.after??t.before)}</span>${d?`<span class="bj-dl ${d.good?'up':'dn'}">${d.p>0?'+':''}${d.p}%</span>`:''}${t.tag?`<span class="bj-tag ${t.tag}">${BJ_TAGS[t.tag]}</span>`:''}</div></article>`}).join('')||'<div class="bj-note" style="text-align:center;padding:18px 0">Пусто</div>'}</div></section>`}).join('')}</div>`
+  let dragId=null
+  m.querySelectorAll('.bj-card').forEach(c=>{c.addEventListener('dragstart',e=>{dragId=+c.dataset.bjn;c.classList.add('drag');e.dataTransfer.effectAllowed='move'});c.addEventListener('dragend',()=>c.classList.remove('drag'))})
+  m.querySelectorAll('.bj-col').forEach(c=>{c.addEventListener('dragover',e=>{e.preventDefault();c.classList.add('over')});c.addEventListener('dragleave',()=>c.classList.remove('over'))
+    c.addEventListener('drop',e=>{e.preventDefault();c.classList.remove('over');const t=bjFind(dragId);if(t)bjMove(t,c.dataset.s)})})}
+function bjFeed(){const all=[],m=document.getElementById('bj-main')
+  bjRows().forEach(t=>t.upd.forEach(u=>{if(!bjFeedNotes||!u.auto)all.push({t,u})}))
+  all.sort((a,b)=>new Date(b.u.at)-new Date(a.u.at))
+  document.getElementById('bj-cnt').textContent=all.length+' событий'
+  const seg=`<div class="bj-seg" style="margin-bottom:6px"><button data-bjfn="0" class="${bjFeedNotes?'':'on'}">Все события</button><button data-bjfn="1" class="${bjFeedNotes?'on':''}">Только заметки</button></div>`
+  if(!all.length){m.innerHTML=`<div class="bj-feed">${seg}<div class="bj-empty"><b>Пусто</b>Здесь появляются обновления по записям журнала</div></div>`;return}
+  let h='<div class="bj-feed">'+seg,day='',today=todayISO()
+  all.forEach(({t,u})=>{const d=bjLocalDay(u.at);if(d!==day){day=d;h+=`<div class="bj-fday">${d===today?'Сегодня':bjDD(d)}</div>`}
+    h+=`<div class="bj-fi ${u.auto?'auto':''}" data-bjn="${t.id}"><span class="t">${bjHM(u.at)}</span><span class="bj-av ${bjL(u.by)}">${bjL(u.by)}</span>
+      <div class="b"><div class="h">${u.auto?'Изменение':'Обновление'} по <b>#${bjFid(t)}</b> · ${bjEsc(bjShort(t.h,70))}</div><div class="x">${bjEsc(u.text)}</div></div></div>`})
+  m.innerHTML=h+'</div>'}
+
+/* ── шаги ── */
+function bjMove(t,s){const to=BJ_STEPS.indexOf(s),from=bjStepI(t);if(to===from)return
+  if(to>from+1){toast('По одному шагу за раз','info');return}
+  if(to>0&&!t.h){toast('Сначала сформулируй гипотезу','info');bjSel=t.id;bjRender();return}
+  if(to>=1&&t.kind==='hyp'){t.kind='test';bjLog(t,'Гипотеза стала тестом',1)}
+  if(to===2&&!t.a){toast('Опиши действие','info');bjSel=t.id;bjRender();return}
+  if(to===2&&!t.started){t.started=todayISO();if(!t.tag){t.tag='run';bjLog(t,'Тест запущен · тег «В работе»',1)}}
+  if(to===3&&!t.ended)t.ended=todayISO()
+  t.step=s;bjLog(t,'Шаг: '+BJ_STL[s],1);bjRender()}
+async function bjAttach(t,id){if(t.rk_ids.includes(id))return
+  if(!BJ_RK[id]){const{data}=await db.from('zalivs').select('id,name,region,buyer,campaign_id,adset_domains,geo,created_at').eq('id',id).single();if(data)BJ_RK[id]=data}
+  const z=BJ_RK[id]
+  if(t.kind==='hyp'){t.kind='test';bjLog(t,'Гипотеза стала тестом — прикреплена РК',1)}
+  t.rk_ids.push(id)
+  // окно теста по умолчанию — со дня создания РК, чтобы цифры совпали с кабинетом
+  if(!t.started){t.started=(z&&z.created_at?String(z.created_at).slice(0,10):todayISO());if(t.step==='hypothesis')t.step=t.h?'data':'action';if(!t.tag)t.tag='run'}
+  t.snap=null
+  bjLog(t,'Прикреплена РК '+bjShort(z?z.name:'#'+id,44),1)
+  await bjEnsureData();bjRender()}
+
+/* ── панель записи ── */
+let _bjPaneSel=null
+function bjRenderPane(){const t=bjFind(bjSel),p=document.getElementById('bj-pane');if(!p)return
+  const fresh=_bjPaneSel!==bjSel;_bjPaneSel=bjSel
+  if(!t){p.classList.remove('open');p.innerHTML=`<div class="bj-none"><b>Выбери запись</b><kbd>↑</kbd> <kbd>↓</kbd> листать · <kbd>N</kbd> новая</div>`;return}
+  p.classList.add('open')
+  const x=bjMetrics(t),d=bjDelta(t,x.after),i=bjStepI(t),isT=t.kind==='test',cw=Math.max(240,(p.clientWidth||420)-58)
+  const opt=(a,v)=>a.map(o=>`<option ${o===v?'selected':''}>${o}</option>`).join('')
+  const pool=(window._ALL_ZALIVS||ZALIVS||[]).filter(z=>(z.region||'PL')===t.region&&!t.rk_ids.includes(z.id)).sort((a,b)=>b.id-a.id).slice(0,80)
+  const tasks=(typeof TASKS!=='undefined'?TASKS:[]).filter(k=>k.bj_id===t.id)
+  const winNote=x.auto?(x.snap?'снимок цифр закрытого теста':x.metaMissing?(BJ_META_ERR||'Meta не ответила'):`считаю от сумм за ${bjDD(x.from)}–${bjDD(x.to)}, не средним по дням`):''
+  p.innerHTML=`
+  <div class="bj-ph"><span class="bj-hid"><span>#${bjFid(t)}</span></span><span class="bj-mut" id="bj-saved"></span>
+    <div class="bj-seg"><button data-kind="hyp" class="${!isT?'on':''}">Гипотеза</button><button data-kind="test" class="${isT?'on':''}">Тест</button></div>
+    <button class="bj-xb" id="bj-px" aria-label="Закрыть">✕</button></div>
+  <div class="bj-pb">
+    <div class="bj-r4">
+      <div class="bj-fl"><label>Переменная</label><select data-f="variable">${opt(BJ_VARS,t.variable)}</select></div>
+      <div class="bj-fl"><label>KM</label><select data-f="km">${opt(BJ_KMS,t.km)}</select></div>
+      <div class="bj-fl"><label>Регион</label><select data-f="region">${opt(['PL','CZ'],t.region)}</select></div>
+      <div class="bj-fl"><label>Баер</label><select data-f="buyer">${opt(['Danya','Illia'],t.buyer)}</select></div></div>
+    <div class="bj-fl"><label>Тег</label><div class="bj-tags">${Object.entries(BJ_TAGS).map(([k,v])=>`<button class="${k} ${t.tag===k?'on':''}" data-tag="${k}">${v}</button>`).join('')}</div></div>
+    ${isT?`<div class="bj-box"><div class="bj-bh"><b>${bjEsc(t.km)}</b><span>цифры теста</span><em>${x.auto?`${x.days} д · ${t.rk_ids.length} РК`:x.derivable?'прикрепи РК — посчитается само':'вручную'}</em></div><div class="bj-bb">
+      <div class="bj-met"><div class="bj-fl"><label>Было</label><input type="number" step="0.1" data-f="before" value="${t.before??''}"></div><span class="ar">→</span>
+        <div class="bj-fl"><label>Стало${x.auto?' · auto':''}</label>${x.auto?`<div class="ro">${bjFmt(t.km,x.after)}</div>`:`<input type="number" step="0.1" data-f="after_manual" value="${t.after_manual??''}">`}</div>
+        <div class="bj-fl"><label>Цель</label><input type="number" step="0.1" data-f="target" value="${t.target??''}"></div></div>
+      <div class="bj-note ${x.metaMissing?'warn':''}">Δ к «было»: ${d?`<b style="color:${d.good?'var(--bjgr)':'var(--bjr)'}">${d.p>0?'+':''}${d.p}% · ${d.good?'лучше':'хуже'}</b>`:'—'}${winNote?' · '+bjEsc(winNote):''}</div>
+      ${x.auto?`<div class="bj-chart">${bjSpark(x.points,{w:cw,h:84,big:true,before:t.before,target:t.target,km:t.km,good:d?d.good:null})}<div class="bj-cap"><span>${bjDD(x.points[0]?.day)}</span><span>╌ было ${bjFmt(t.km,t.before)} · ┈ цель ${bjFmt(t.km,t.target)}</span><span>${bjDD(x.points.at(-1)?.day)}</span></div></div>`:''}
+    </div></div>
+    <div class="bj-box"><div class="bj-bh"><b>РК</b><span>откуда тянутся цифры</span><em>${t.rk_ids.length}</em></div><div class="bj-bb">
+      ${(x.perRk||[]).map(k=>`<div class="bj-rki"><a href="#" data-rk="${k.id}" data-rg="${k.region||t.region}" title="${bjEsc(k.name)} — открыть">${bjEsc(k.name)}</a><span class="v">${Math.round(k.tot.spend)}$ · ${k.tot.leads} л · ${k.tot.quals} кв · ${bjFmt(t.km,k.v)}</span><button class="rm" data-unrk="${k.id}" aria-label="Открепить">✕</button></div>`).join('')}
+      ${t.rk_ids.filter(id=>!(x.perRk||[]).some(k=>k.id===id)).map(id=>`<div class="bj-rki"><a href="#" data-rk="${id}" data-rg="${t.region}">#${id} ${bjEsc(BJ_RK[id]?.name||'')}</a><span class="v">загружаю…</span><button class="rm" data-unrk="${id}" aria-label="Открепить">✕</button></div>`).join('')}
+      <div class="bj-attach"><select id="bj-addrk" aria-label="РК"><option value="">${pool.length?'РК региона '+t.region+'…':'Нет РК в '+t.region}</option>${pool.map(z=>`<option value="${z.id}">${bjEsc(z.name)}</option>`).join('')}</select><button class="bj-wbtn" id="bj-addrk-go">Прикрепить</button></div>
+    </div></div>`:''}
+    <div class="bj-box"><div class="bj-bh"><b>H</b><span>гипотеза</span><em>${bjDD(t.date)}</em></div><div class="bj-bb">
+      <textarea data-f="h" data-log="Обновлена формулировка гипотезы" placeholder="Если …, то …, потому что …">${bjEsc(t.h)}</textarea>
+      <div class="bj-fl"><label>Уверенность</label><div class="bj-range"><input type="range" min="0" max="100" step="5" data-f="conf" value="${t.conf}"><b id="bj-cv">${t.conf}%</b></div></div>
+      ${!isT?`<button class="bj-wbtn" id="bj-totest">▶ Превратить в тест</button>`:''}</div></div>
+    ${isT?`<div class="bj-box"><div class="bj-bh"><b>A</b><span>действие</span><em>${t.started?'старт '+bjDD(t.started):'не запущен'}</em></div><div class="bj-bb">
+      <textarea data-f="a" data-log="Обновлено действие" placeholder="Адсеты, бюджет, срок, что сравниваем">${bjEsc(t.a)}</textarea>
+      ${!t.started?`<button class="bj-wbtn gold" id="bj-launch">▶ Запустить тест</button>`:`<div class="bj-r2"><div class="bj-fl"><label>Старт</label><input type="date" data-f="started" value="${t.started}"></div><div class="bj-fl"><label>Финиш</label><input type="date" data-f="ended" value="${t.ended||''}"></div></div>`}</div></div>
+    <div class="bj-box ${i<2?'lock':''}"><div class="bj-bh"><b>D</b><span>данные</span><em>${x.auto?x.days+' д':''}</em></div><div class="bj-bb">
+      <textarea data-f="d" data-log="Обновлены данные" placeholder="Что показали цифры, устойчивость по дням, что мешало">${bjEsc(t.d)}</textarea>
+      ${i===2?`<button class="bj-wbtn" id="bj-toins">Завершить → инсайт</button>`:''}</div></div>
+    <div class="bj-box ${i<3?'lock':''}"><div class="bj-bh"><b>I</b><span>инсайт</span><em>${t.ended?bjDD(t.ended):''}</em></div><div class="bj-bb">
+      <textarea data-f="i" data-log="Записан инсайт" placeholder="Что мы теперь знаем — одним предложением">${bjEsc(t.i)}</textarea>
+      ${t.i?`<button class="bj-wbtn" id="bj-next">↳ Следующая гипотеза из инсайта</button>`:''}</div></div>`:''}
+    <div class="bj-box"><div class="bj-bh"><b>✓</b><span>таски</span><em>${tasks.filter(k=>k.col!=='done').length} открыто</em></div><div class="bj-bb">
+      ${tasks.map(k=>`<div class="bj-tsk ${k.col==='done'?'done':''}" data-tid="${k.id}"><span>${bjEsc(k.title)}</span><small>${bjEsc(k.assignee||'—')} · ${bjDD(k.deadline)}</small></div>`).join('')}
+      <button class="bj-wbtn" id="bj-mktask">＋ Таска по этой записи</button></div></div>
+    <div class="bj-box"><div class="bj-bh"><b>↻</b><span>обновления</span><em>${t.upd.length}</em></div><div class="bj-bb">
+      <div class="bj-addu"><textarea id="bj-utxt" placeholder="Что нового по записи? ⌘↵ — добавить"></textarea><button class="bj-wbtn gold" id="bj-uadd">Добавить</button></div>
+      <div class="bj-tl">${t.upd.slice().reverse().map(u=>`<div class="bj-tli ${u.auto?'':'note'}"><div class="m">${bjDD(bjLocalDay(u.at))} ${bjHM(u.at)} · ${bjEsc(u.by)}</div><div class="x">${bjEsc(u.text)}</div></div>`).join('')}</div></div></div>
+    <button class="bj-wbtn" id="bj-del" style="align-self:flex-start;color:var(--bjt3)!important">Удалить запись</button>
+  </div>`
+  bjBindPane(t);if(fresh)p.scrollTop=0}
+function bjBindPane(t){const p=document.getElementById('bj-pane'),$=id=>document.getElementById(id)
+  const labels={variable:'Переменная',km:'KM',region:'Регион',buyer:'Баер',before:'Было',target:'Цель',after_manual:'Стало',conf:'Уверенность',started:'Старт',ended:'Финиш'}
+  p.querySelectorAll('[data-f]').forEach(el=>{const f=el.dataset.f,num=['before','target','after_manual','conf'].includes(f);let was=t[f]
+    el.addEventListener('input',()=>{t[f]=num?(el.value===''?null:+el.value):(el.value||null);if(f==='conf')$('bj-cv').textContent=el.value+'%';bjSave(t)})
+    // в историю — один раз, когда поле отпустили, а не на каждую букву
+    el.addEventListener('change',()=>{if(was===t[f])return
+      if(el.tagName==='TEXTAREA')bjLog(t,el.dataset.log||'Обновлён текст',1)
+      else bjLog(t,`${labels[f]}: ${was??'—'} → ${t[f]??'—'}${f==='conf'?'%':''}`,1)
+      if(['started','ended','km'].includes(f))t.snap=null
+      was=t[f];bjRenderMain();if(['km','started','ended','region'].includes(f))bjRenderPane()})})
+  p.querySelectorAll('[data-kind]').forEach(b=>b.onclick=()=>{const k=b.dataset.kind;if(k===t.kind)return
+    if(k==='hyp'&&(t.started||t.rk_ids.length)){toast('Тест уже запущен — в гипотезу не вернуть','info');return}
+    t.kind=k;if(k==='hyp')t.step='hypothesis';bjLog(t,'Тип: '+(k==='test'?'Тест':'Гипотеза'),1);bjRender()})
+  p.querySelectorAll('[data-tag]').forEach(b=>b.onclick=()=>{const k=b.dataset.tag;t.tag=t.tag===k?null:k;bjLog(t,t.tag?'Тег: '+BJ_TAGS[t.tag]:'Тег снят',1);bjRender()})
+  $('bj-px').onclick=()=>{bjSel=null;bjRender()}
+  const tt=$('bj-totest');if(tt)tt.onclick=()=>{t.kind='test';bjLog(t,'Гипотеза стала тестом',1);bjRender()}
+  const ln=$('bj-launch');if(ln)ln.onclick=()=>{if(!t.a){toast('Опиши действие','info');return}bjMove(t,'data')}
+  const ti=$('bj-toins');if(ti)ti.onclick=()=>bjMove(t,'insight')
+  const nx=$('bj-next');if(nx)nx.onclick=async()=>{const n=await bjCreate('hyp',{buyer:t.buyer,region:t.region,variable:t.variable,km:t.km,before:bjMetrics(t).after??t.before})
+    if(!n)return;n.upd[0].text='Гипотеза создана из инсайта #'+bjFid(t);bjSave(n);bjLog(t,'Создана следующая гипотеза #'+bjFid(n),1);bjSel=n.id;bjRender()
+    setTimeout(()=>document.querySelector('#bj-pane [data-f=h]')?.focus(),60)}
+  p.querySelectorAll('[data-rk]').forEach(a=>a.onclick=e=>{e.preventDefault();if(typeof openRk==='function')openRk(+a.dataset.rk,a.dataset.rg)})
+  p.querySelectorAll('[data-unrk]').forEach(b=>b.onclick=()=>{const id=+b.dataset.unrk;t.rk_ids=t.rk_ids.filter(v=>v!==id);t.snap=null;bjLog(t,'Откреплена РК '+bjShort(BJ_RK[id]?.name||'#'+id,40),1);bjRender()})
+  const ab=$('bj-addrk-go');if(ab)ab.onclick=()=>{const id=+$('bj-addrk').value;if(!id){toast('Выбери РК','info');return}bjAttach(t,id)}
+  p.querySelectorAll('[data-tid]').forEach(r=>r.onclick=()=>openTaskEdit(+r.dataset.tid))
+  $('bj-mktask').onclick=()=>openTaskNew({ttype:'bj',bj:{id:t.id,name:bjTaskName(t)}})
+  const add=()=>{const v=$('bj-utxt').value.trim();if(!v)return;bjLog(t,v,0);bjRenderPane();bjRenderMain();bjRenderTick();toast('Обновление добавлено','ok')}
+  $('bj-uadd').onclick=add
+  $('bj-utxt').onkeydown=e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();add()}}
+  $('bj-del').onclick=async()=>{if(!confirm('Удалить #'+bjFid(t)+'?'))return
+    const{error}=await db.from('bj_entries').delete().eq('id',t.id);if(error){toast(error.message,'err');return}
+    BJ=BJ.filter(v=>v!==t);bjSel=null;bjRender();toast('Удалено','ok')}}
+
+/* ── связь с тасками: выбор записи в форме таски ── */
+function bjFillTaskPick(selId){const s=document.getElementById('te-bjsel');if(!s)return
+  const fill=()=>{s.innerHTML='<option value="">— выбрать запись —</option>'+BJ.map(t=>`<option value="${t.id}" ${t.id===selId?'selected':''}>${bjEsc(bjTaskName(t))}</option>`).join('')}
+  if(!_bjLoaded){s.innerHTML='<option>Загружаю…</option>';loadBj().then(fill)}else fill()}
+function bjLogExternal(id,text){const t=bjFind(+id);if(t)bjLog(t,text,1)}
+
+/* ── блок в карточке залива ── */
+function bjRkBlock(zid){const dp=document.getElementById('zdp');if(!dp)return
+  const z=(ZALIVS||[]).find(v=>v.id===zid);if(!z)return
+  const put=()=>{dp.querySelector('.zbj')?.remove()
+    const linked=BJ.filter(t=>t.rk_ids.includes(zid)),cand=BJ.filter(t=>!t.rk_ids.includes(zid)&&t.region===(z.region||CURRENT_REGION))
+    const b=document.createElement('div');b.className='blk zbj';b.style.borderLeft='2px solid #D4AF37'
+    b.innerHTML=BJ_OK===false?`<h4>Buyer's Journal</h4><div style="font-size:12px;color:#646A80">Нет таблицы — выполни bj_setup.sql</div>`
+      :`<h4>Buyer's Journal <span style="color:#646A80">${linked.length}</span></h4>
+      ${linked.map(t=>`<div class="zbj-row"><a href="#" data-bjgo="${t.id}"><b>#${bjFid(t)}</b> · ${bjEsc(bjShort(t.h||'без формулировки',60))}</a>${t.tag?`<span class="bj-tag ${t.tag}" style="font:700 9px Manrope,sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border-radius:5px">${BJ_TAGS[t.tag]}</span>`:''}</div>`).join('')||'<div style="font-size:12px;color:#646A80">Не прикреплена ни к одной записи</div>'}
+      <div class="zbj-at"><select id="zbj-sel"><option value="">${cand.length?'Прикрепить к записи…':'Нет записей в '+(z.region||CURRENT_REGION)}</option>${cand.map(t=>`<option value="${t.id}">${bjEsc(bjTaskName(t))}</option>`).join('')}</select><button id="zbj-go">Прикрепить</button></div>`
+    const act=dp.querySelector('.act');if(act)act.before(b);else dp.appendChild(b)
+    b.querySelectorAll('[data-bjgo]').forEach(a=>a.onclick=e=>{e.preventDefault();bjOpenEntry(+a.dataset.bjgo)})
+    const go=b.querySelector('#zbj-go');if(go)go.onclick=async()=>{const id=+b.querySelector('#zbj-sel').value;if(!id){toast('Выбери запись','info');return}
+      await bjAttach(bjFind(id),zid);put();toast('Прикреплено к #'+bjFid(bjFind(id)),'ok')}}
+  if(!_bjLoaded)loadBj().then(put);else put()}
 
 </script>
 </body></html>
