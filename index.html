@@ -1806,7 +1806,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-09-24 22:00'
+const BUILD='2026-09-24 22:04'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -7432,23 +7432,24 @@ async function linkRks(from,to){
 function linkKey(u){
   const keys=new Set(allDKeys())
   const norm=x=>String(x||'').toLowerCase().replace(/^https?:\/\//,'').replace(/^www\./,'').split(/[?#]/)[0].replace(/\/+$/,'')
-  // Свои домены из реестра — по полному адресу.
-  // url обязан быть непустым: с пустой строкой начинается любой адрес,
-  // и тогда первая же запись забирала все объявления себе.
+  let url;try{url=new URL(String(u||''))}catch(e){return ''}
+  // 1) Калька из решётки — самый точный признак. Проверяем ПЕРВОЙ:
+  //    запись в реестре с адресом самого сайта иначе перехватывала бы все ссылки на нём.
+  const h=decodeURIComponent((url.hash||'').replace(/^#\/?/,'')).split(/[?&/]/)[0].toLowerCase()
+  if(h&&keys.has(h))return h
+  // 2) Последний сегмент пути
+  const seg=(url.pathname.split('/').filter(Boolean).pop()||'').toLowerCase()
+  if(seg&&keys.has(seg))return seg
+  // 3) Свой домен из реестра — только если в записи указан адрес с путём,
+  //    голый хост не годится: на одном хосте живут все кальки сразу
   const n=norm(u)
   if(n)for(const m of (DOMAIN_META||[])){
     const mu=norm(m.url)
-    if(m.custom&&mu&&mu.length>3&&n.startsWith(mu))return m.key
+    if(m.custom&&mu&&mu.includes('/')&&n.startsWith(mu))return m.key
   }
-  let url;try{url=new URL(String(u||''))}catch(e){return ''}
-  // основной случай: ключ в решётке
-  const h=decodeURIComponent((url.hash||'').replace(/^#\/?/,'')).split(/[?&/]/)[0].toLowerCase()
-  if(h&&keys.has(h))return h
-  // запасной: последний сегмент пути
-  const seg=(url.pathname.split('/').filter(Boolean).pop()||'').toLowerCase()
-  if(seg&&keys.has(seg))return seg
   return ''
 }
+
 async function pullAdDomains(zid,apply){
   const z=ZALIVS.find(x=>x.id===(zid||_zSel))   // без аргумента — берём выделенную в списке
   if(!z){console.log('Укажи РК: pullAdDomains(id)');return}
