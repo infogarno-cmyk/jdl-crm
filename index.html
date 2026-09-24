@@ -1806,9 +1806,9 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-09-23 18:34'
+const BUILD='2026-09-24 22:00'
 function ver(){
-  const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
+  const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
   console.log('%cJDL CRM · сборка '+BUILD,'font-weight:bold;font-size:13px')
   console.log('на месте:',have.join(', ')||'ничего из нового')
@@ -1861,7 +1861,7 @@ async function init(){
   const today=new Date().toISOString().split('T')[0]
   ;['pd-from','pd-to','sp-from','sp-to'].forEach(id=>document.getElementById(id).value=today)
   dbInit()
-  await Promise.all([loadZ(),loadD(),loadT(),loadJ(),loadM(),loadSales(),loadTemplates(),loadCreoReports(),loadCreoLib(),loadRkAnalyses(),loadInsights(),loadGrind(),loadAllZalivs(),loadSrcDaily(),loadAdsetSrc(),loadDomainMeta()])
+  await Promise.all([loadZ(),loadD(),loadT(),loadJ(),loadM(),loadSales(),loadSalesAll(),loadTemplates(),loadCreoReports(),loadCreoLib(),loadRkAnalyses(),loadInsights(),loadGrind(),loadAllZalivs(),loadSrcDaily(),loadAdsetSrc(),loadDomainMeta()])
   rolloverTodayTasks();scheduleRollover();repairRegions().then(backfillFdc)
   if(localStorage.getItem('jdl_buyer')===null&&CURRENT_USER)CURRENT_BUYER=CURRENT_USER.name
   setBuyer(CURRENT_BUYER);setupRT();setSS('ok','Данные загружены');dismissIntro();maybeJdlToday();schemaCheck()
@@ -1871,7 +1871,61 @@ async function init(){
   // Микрофон сам не включается: слушает только после нажатия на значок.
   // Автостарт раньше держал его открытым всю смену — это лишнее.;setTimeout(()=>{if(typeof jvRemindersOnStart==='function')jvRemindersOnStart()},2500)
 }
-async function loadDomainMeta(){if(!db)return;try{const{data}=await db.from('domain_meta').select('*').eq('region',CURRENT_REGION);DOMAIN_META=data||[]}catch(e){DOMAIN_META=[]}}
+// ── Воронки ──
+// Раньше список был вписан прямо в разметку в пяти местах. Теперь он общий и
+// пополняется из любой выпадашки. Хранится в domain_meta под служебным ключом,
+// чтобы не заводить отдельную таблицу и не трогать политики доступа;
+// custom там не ставим, поэтому в списке калек эта строка не появляется.
+const FUNNELS_DEFAULT=['Калькулятор','Визита','Проект','Лид-магнит']
+const FUNNELS_KEY='__funnels'
+var FUNNELS=FUNNELS_DEFAULT.slice()
+function funnelRow(){return (DOMAIN_META||[]).find(m=>m.key===FUNNELS_KEY)}
+function loadFunnels(){
+  const r=funnelRow()
+  if(r&&r.url){try{const a=JSON.parse(r.url);if(Array.isArray(a)&&a.length)FUNNELS=a}catch(e){}}
+  else FUNNELS=FUNNELS_DEFAULT.slice()
+  fillFunnelSelects()
+}
+async function saveFunnels(list){
+  FUNNELS=list.filter(Boolean)
+  fillFunnelSelects()
+  if(!db)return
+  const r=funnelRow(),url=JSON.stringify(FUNNELS)
+  if(r){await db.from('domain_meta').update({url,updated_at:new Date().toISOString()}).eq('id',r.id);r.url=url}
+  else{const{data}=await db.from('domain_meta')
+    .insert({region:CURRENT_REGION,key:FUNNELS_KEY,custom:false,url,updated_at:new Date().toISOString()}).select().single()
+    if(data)DOMAIN_META.push(data)}
+}
+// Заполняем все выпадашки воронок, сохраняя выбранное значение
+function fillFunnelSelects(){
+  document.querySelectorAll('select[id$="-funnel"]').forEach(sel=>{
+    const cur=sel.value
+    const withEmpty=sel.querySelector('option[value=""]')
+    const empty=withEmpty?`<option value="">${withEmpty.textContent}</option>`:''
+    sel.innerHTML=empty+FUNNELS.map(f=>`<option value="${f}">${f}</option>`).join('')
+      +'<option value="__add">＋ Новая воронка…</option>'
+    if(cur&&FUNNELS.includes(cur))sel.value=cur
+    else if(!empty&&FUNNELS.length)sel.value=FUNNELS[0]
+  })
+}
+// Выбор «＋ Новая воронка…» заводит её на месте
+document.addEventListener('change',async e=>{
+  const sel=e.target
+  if(!sel||sel.tagName!=='SELECT'||!/-funnel$/.test(sel.id||'')||sel.value!=='__add')return
+  const name=(prompt('Название новой воронки')||'').trim()
+  if(!name){sel.value=FUNNELS[0]||'';return}
+  if(!FUNNELS.includes(name))await saveFunnels([...FUNNELS,name])
+  sel.value=name
+  if(typeof toast==='function')toast('Воронка добавлена: '+name,'ok')
+})
+// Управление списком из консоли
+function funnels(list){
+  if(!list){console.log('Воронки: '+FUNNELS.join(', ')
+    +'\n  добавить/заменить: funnels(["Калькулятор","Визита","Своя"])');return FUNNELS}
+  return saveFunnels(list).then(()=>{console.log('Сохранено: '+FUNNELS.join(', '));return FUNNELS})
+}
+
+async function loadDomainMeta(){if(!db)return;try{const{data}=await db.from('domain_meta').select('*').eq('region',CURRENT_REGION);DOMAIN_META=data||[];loadFunnels()}catch(e){DOMAIN_META=[]}}
 function dMeta(key){return DOMAIN_META.find(m=>m.key===key)||{}}
 function allDKeys(){return[...DKEYS,...DOMAIN_META.filter(m=>m.custom&&!DKEYS.includes(m.key)).map(m=>m.key)]}
 async function setDomainBuyer(key,buyer){const m=DOMAIN_META.find(x=>x.key===key);const row={region:CURRENT_REGION,key,buyer:buyer||null,updated_at:new Date().toISOString()}
@@ -1911,7 +1965,10 @@ async function setAdsetSource(zid,adsetId,adsetName,source){allSources();const e
   else if(ex){await db.from('adset_sources').update({source}).eq('id',ex.id);ex.source=source}
   else{const{data}=await db.from('adset_sources').insert({zaliv_id:zid,adset_id:adsetId,adset_name:adsetName,source,region:CURRENT_REGION}).select().single();if(data)ADSET_SRC.push(data)}
   toast(source?'Источник привязан: '+source:'Привязка снята','ok');selZaliv(zid);rzalivs()}
-async function loadAllZalivs(){if(!db)return;const{data}=await db.from('zalivs').select('id,name,geo,buyer,region,created_at').order('created_at',{ascending:false});window._ALL_ZALIVS=data||[]}
+// togo и ind нужны, чтобы понимать, какая РК в работе. Без них zWorking() пропускал всё подряд.
+async function loadAllZalivs(){if(!db)return;const{data}=await db.from('zalivs')
+  .select('id,name,geo,buyer,region,created_at,togo,ind,campaign_id')
+  .order('created_at',{ascending:false});window._ALL_ZALIVS=data||[]}
 
 async function schemaCheck(){if(!db)return;const probes=[['tasks','rk_id,ttype,started_at,time_spent,done_at'],['grind','id'],['zalivs','cat,togo,adset_domains'],['source_daily','id'],['metrics_daily','region']];const miss=[]
   for(const[t,cols]of probes){const{error}=await db.from(t).select(cols).limit(1);if(error&&/does not exist|schema cache|not find/i.test(error.message))miss.push(t+' ('+cols+')')}
@@ -1925,7 +1982,7 @@ async function switchRegion(region){
   populateGeoSelectors()
   setSS('syncing','Переключение на '+region+'...')
   // Reload all region-scoped data
-  await Promise.all([loadZ(),loadD(),loadM(),loadSales(),loadCreoReports(),loadCreoLib(),loadRkAnalyses(),loadInsights(),loadAllZalivs(),loadSrcDaily(),loadAdsetSrc(),loadDomainMeta()])
+  await Promise.all([loadZ(),loadD(),loadM(),loadSales(),loadSalesAll(),loadCreoReports(),loadCreoLib(),loadRkAnalyses(),loadInsights(),loadAllZalivs(),loadSrcDaily(),loadAdsetSrc(),loadDomainMeta()])
   // Re-render whatever page is active
   rdash()
   _zSel=null;const _dp=document.getElementById('zdp');if(_dp)_dp.innerHTML='<div class="empty">Выбери РК</div>'
@@ -2016,6 +2073,30 @@ async function loadSales(){
     }
   }catch(e){console.log('Sales:',e)}
 }
+// Продажи по обоим регионам сразу: у Польши и Чехии разные базы GarnoCRM,
+// поэтому забираем из двух и помечаем каждую продажу регионом.
+// Суммы НЕ складываем: злотые и кроны — разные валюты.
+var SALES_ALL=[]
+async function loadSalesAll(){
+  const src=[{region:'PL',url:GARNO_URL,key:GARNO_KEY},{region:'CZ',url:GARNO_CZ_URL,key:GARNO_CZ_KEY}]
+  const out=[]
+  await Promise.all(src.map(async g=>{
+    if(!g.key||String(g.key).startsWith('PASTE_'))return
+    try{
+      const r=await fetch(g.url+'/rest/v1/garnocrm?select=data&id=eq.1',{headers:{'apikey':g.key,'Authorization':'Bearer '+g.key}})
+      if(!r.ok)return
+      const arr=await r.json()
+      const rows=arr&&arr[0]&&arr[0].data&&arr[0].data.sales
+      if(!rows)return
+      rows.filter(x=>{const q=(x.source||'').toLowerCase()
+        return !q.includes('шоу')&&!q.includes('showroom')&&!q.includes('salon')&&!q.includes('show')})
+        .forEach(x=>out.push(Object.assign({},x,{_region:g.region})))
+    }catch(e){console.log('Продажи '+g.region+':',e.message)}
+  }))
+  SALES_ALL=out
+  return out
+}
+
 async function loadTemplates(){
   if(!db)return
   try{const{data,error}=await db.from('zaliv_templates').select('*').order('created_at',{ascending:false});if(!error)TEMPLATES=data||[];else TEMPLATES=JSON.parse(localStorage.getItem('jdl_templates')||'[]')}
@@ -3844,7 +3925,7 @@ async function jvTodayData(){
   const byType={};ins.forEach(g=>{const t=g.gtype||'insight';byType[t]=(byType[t]||0)+1})
 
   // 4. РК в работе — оба баера, все гео, дроп включительно, выключенные не в счёт
-  const mine=zWorkingAll()
+  const mine=zWorkingBoth()
   const byGeo={};mine.forEach(z=>{const g=z.geo||z.region||'—';byGeo[g]=(byGeo[g]||0)+1})
 
   // 5. задачи на сегодня — только на экран, голосом здесь не читаются
@@ -3918,7 +3999,9 @@ async function jvPhaseToday(){
 
   // 1) Продажи — без перечисления источников, они видны на экране
   if(S.sales.n){
-    await jvSay(`Продаж ${S.sales.n}, на ${Math.round(S.sales.sum).toLocaleString('ru')} ${cur()==='Kč'?'крон':'злотых'}.`,at('sales'),null)
+    const parts=(S.sales.byRegion||[]).map(r=>
+      `${r.region==='CZ'?'Чехия':'Польша'} — ${r.n}, на ${Math.round(r.sum).toLocaleString('ru')} ${r.cur}`)
+    await jvSay(`Продаж за сутки ${S.sales.n}. `+(parts.join('. ')||'')+'.',at('sales'),null)
   }else await jvSay('Продаж за сутки нет.',at('sales'),null)
 
   // 2) Вчера по обоим регионам
@@ -3937,8 +4020,10 @@ async function jvPhaseToday(){
 
   // 4) РК в работе — общим числом и по гео, без разбора по баерам
   if(S.rk.n){
-    let s=`В работе ${S.rk.n} ${jvPlural(S.rk.n,'кампания','кампании','кампаний')}: `
-      +S.rk.geo.map(([g,n])=>`${g} — ${n}`).join(', ')+'.'
+    let s=`В работе ${S.rk.n} ${jvPlural(S.rk.n,'кампания','кампании','кампаний')}`
+    if(S.rk.regions&&S.rk.regions.length>1)
+      s+=': '+S.rk.regions.map(([r,k])=>`${r==='CZ'?'Чехия':'Польша'} — ${k}`).join(', ')
+    s+='. По гео: '+S.rk.geo.map(([g,k])=>`${g} — ${k}`).join(', ')+'.'
     await jvSay(s,at('rk'),null)
   }else await jvSay('Активных кампаний нет.',at('rk'),null)
 
@@ -4395,7 +4480,8 @@ function zCpl(z){const a=RK_ANALYSES.filter(x=>x.zaliv_id===z.id).sort((p,q)=>(q
 // «В работе» = не в to-go и не выключена. Дроп считается: кампания работает, её просто не трогают.
 // Это правило используют и раздел «Мои активные», и сводка Геннадия — чтобы цифры совпадали.
 function zWorking(z){return !!z&&!z.togo&&z.ind!=='off'}
-function zWorkingAll(){return (ZALIVS||[]).filter(zWorking)}
+function zWorkingAll(){return (ZALIVS||[]).filter(zWorking)}                       // текущий регион
+function zWorkingBoth(){return ((window._ALL_ZALIVS||[]).length?window._ALL_ZALIVS:ZALIVS||[]).filter(zWorking)}  // оба региона
 function zViewFilter(z){const me=CURRENT_BUYER||'';if(_zView==='togo')return !!z.togo;if(z.togo)return false;switch(_zView){case'mine':return zWorking(z)&&(!me||z.buyer===me);case'noan':return zNeedsAn(z);case'test':return z.cat==='test';default:return true}}
 function spbs(z){return Array.from({length:7},(_,i)=>`<button class="spb${z.score===i?' s'+i:''}" data-zid="${z.id}" data-sc="${i}">${i}</button>`).join('')}
 
@@ -5166,10 +5252,16 @@ async function jtSections(){
 
   // 1) Продажи и с каких калькуляторов
   const pdt=s=>{if(!s)return null;if(s.includes('-'))return new Date(s);const p=s.split('.');return p.length===3?new Date(p[2]+'-'+p[1]+'-'+p[0]):null}
-  const sales=(SALES_DATA||[]).filter(s=>{const d=pdt(s.createdAt);return d&&d.getTime()>=since})
+  if(!SALES_ALL.length)await loadSalesAll()
+  const pool=SALES_ALL.length?SALES_ALL:(SALES_DATA||[]).map(x=>Object.assign({},x,{_region:CURRENT_REGION}))
+  const sales=pool.filter(s=>{const d=pdt(s.createdAt);return d&&d.getTime()>=since})
   const bySrc={}
   sales.forEach(s=>{const k=(srcParse(s.source||'').key)||(s.source||'без источника');bySrc[k]=(bySrc[k]||0)+1})
-  S.sales={n:sales.length,sum:sales.reduce((a,s)=>a+(+s.saleAmount||0),0),
+  // по регионам отдельно: складывать злотые с кронами нельзя
+  const reg={}
+  sales.forEach(s=>{const r=s._region||'PL';const o=reg[r]||(reg[r]={n:0,sum:0});o.n++;o.sum+=+s.saleAmount||0})
+  S.sales={n:sales.length,
+           byRegion:[['PL','злотых'],['CZ','крон']].filter(([r])=>reg[r]).map(([r,cur])=>({region:r,cur,...reg[r]})),
            src:Object.entries(bySrc).sort((a,b)=>b[1]-a[1])}
 
   // 2) Вчера по обоим регионам
@@ -5180,11 +5272,14 @@ async function jtSections(){
 
   // 4) РК в работе — активные кампании обоих баеров по всем гео.
   // «В работе» = не в to-go и не выключена. На дропе кампания тоже в работе, её просто не трогают.
-  const work=zWorkingAll()
+  const work=zWorkingBoth()
   const byGeo={},byBuyer={}
+  const byReg={}
   work.forEach(z=>{const g=z.geo||z.region||'—';byGeo[g]=(byGeo[g]||0)+1
-                   const b=z.buyer||'без баера';byBuyer[b]=(byBuyer[b]||0)+1})
+                   const b=z.buyer||'без баера';byBuyer[b]=(byBuyer[b]||0)+1
+                   const r=z.region||'PL';byReg[r]=(byReg[r]||0)+1})
   S.rk={n:work.length,
+        regions:Object.entries(byReg).sort((a,b)=>b[1]-a[1]),
         geo:Object.entries(byGeo).sort((a,b)=>b[1]-a[1]),
         buyers:Object.entries(byBuyer).sort((a,b)=>b[1]-a[1]),
         drop:work.filter(z=>z.ind==='drop').length,
@@ -5218,7 +5313,9 @@ async function openJdlToday(){
 
   <div class="jt-sec">1 · Продажи</div>
   <div class="jt-ev" data-jt="sales"><i style="background:#3DBE8B;color:#3DBE8B"></i><div>
-    <b style="color:#3DBE8B">${S.sales.n?`Продаж ${S.sales.n} — ${money(S.sales.sum)} ${cur()}`:'Продаж за сутки нет'}</b>
+    <b style="color:#3DBE8B">${S.sales.n?`Продаж ${S.sales.n}`:'Продаж за сутки нет'}</b>
+    ${S.sales.n&&S.sales.byRegion?`<p style="color:#D4AF37">${S.sales.byRegion.map(r=>
+      `${r.region==='CZ'?'Чехия':'Польша'} — ${r.n} · ${money(r.sum)} ${r.region==='CZ'?'Kč':'zł'}`).join(' · ')}</p>`:''}
     ${S.sales.src.length?`<p>${S.sales.src.map(([k,n])=>`${k} — ${n}`).join(' · ')}</p>`:''}</div></div>
 
   <div class="jt-sec">2 · Вчера по регионам</div>
@@ -5234,7 +5331,8 @@ async function openJdlToday(){
   <div class="jt-sec">4 · РК в работе${S.rk.drop?' · на дропе '+S.rk.drop:''}</div>
   <div class="jt-ev" data-jt="rk"><i style="background:#6E9BFF;color:#6E9BFF"></i><div>
     <b style="color:#6E9BFF">${S.rk.n?`${S.rk.n} ${jvPlural(S.rk.n,'кампания','кампании','кампаний')}`:'Активных кампаний нет'}</b>
-    ${S.rk.buyers&&S.rk.buyers.length?`<p style="color:#D4AF37">${S.rk.buyers.map(([b,n])=>`${b} — ${n}`).join(' · ')}</p>`:''}
+    ${S.rk.regions&&S.rk.regions.length?`<p style="color:#D4AF37">${S.rk.regions.map(([r,n])=>`${r==='CZ'?'Чехия':'Польша'} — ${n}`).join(' · ')}</p>`:''}
+    ${S.rk.buyers&&S.rk.buyers.length?`<p>${S.rk.buyers.map(([b,n])=>`${b} — ${n}`).join(' · ')}</p>`:''}
     ${S.rk.geo.length?`<p>${S.rk.geo.map(([g,n])=>`${g} — ${n}`).join(' · ')}</p>`:''}</div></div>
 
   <div class="jt-sec">5 · Задачи на сегодня</div>
@@ -7334,9 +7432,14 @@ async function linkRks(from,to){
 function linkKey(u){
   const keys=new Set(allDKeys())
   const norm=x=>String(x||'').toLowerCase().replace(/^https?:\/\//,'').replace(/^www\./,'').split(/[?#]/)[0].replace(/\/+$/,'')
-  // свои домены из реестра — по полному адресу
+  // Свои домены из реестра — по полному адресу.
+  // url обязан быть непустым: с пустой строкой начинается любой адрес,
+  // и тогда первая же запись забирала все объявления себе.
   const n=norm(u)
-  for(const m of (DOMAIN_META||[]))if(m.custom&&m.url&&n&&n.startsWith(norm(m.url)))return m.key
+  if(n)for(const m of (DOMAIN_META||[])){
+    const mu=norm(m.url)
+    if(m.custom&&mu&&mu.length>3&&n.startsWith(mu))return m.key
+  }
   let url;try{url=new URL(String(u||''))}catch(e){return ''}
   // основной случай: ключ в решётке
   const h=decodeURIComponent((url.hash||'').replace(/^#\/?/,'')).split(/[?&/]/)[0].toLowerCase()
