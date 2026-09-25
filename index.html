@@ -248,7 +248,10 @@
 .bj-tools select{width:auto!important;height:30px;padding:0 26px 0 10px!important;border-radius:7px!important;font:600 11px var(--bjs)!important;color:var(--bjt2)!important}
 .bj-cnt{margin-left:auto;font:600 11px var(--bjm);color:var(--bjt3)}
 
-.bj-body{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 420px}
+.bj-body{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr)}
+.bj-body.sel{grid-template-columns:minmax(0,1fr) 460px}
+.bj-body:not(.sel) .bj-pane{display:none}
+.bj-body:not(.sel) .bj-main{border-right:0}
 .bj-main{min-width:0;min-height:0;overflow:auto;border-right:1px solid var(--bjl)}
 .bj-t{width:100%;min-width:1100px;border-collapse:collapse;font-size:12.5px}
 .bj-t th{position:sticky;top:0;z-index:1;background:var(--bjb3);text-align:left;padding:9px 12px;font:700 10px var(--bjs);letter-spacing:.12em;text-transform:uppercase;color:var(--bjt3);border-bottom:1px solid var(--bjl2);white-space:nowrap}
@@ -337,7 +340,7 @@
 .bj-cap{display:flex;justify-content:space-between;font:500 10px var(--bjm);color:var(--bjt3);margin-top:4px}
 .bj-note{font:500 11px var(--bjs);color:var(--bjt3)}
 .bj-note.warn{color:var(--bjg2)}
-.bj-rki{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:8px 10px;border-radius:8px;border:1px solid var(--bjl);background:var(--bjb)}
+.bj-rki{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:8px 10px;border-radius:8px;border:1px solid var(--bjl);background:var(--bjb)}
 .bj-rki a{color:var(--bjt);text-decoration:none;font:600 11.5px var(--bjm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.bj-rki a:hover{color:var(--bjg2)}
 .bj-rki .v{font:600 11px var(--bjm);color:var(--bjt2);white-space:nowrap}
 .bj-rki .rm{color:var(--bjt3)!important;font-size:14px;width:22px;height:22px;border-radius:5px}.bj-rki .rm:hover{color:var(--bjr)!important}
@@ -394,8 +397,35 @@
   .bj-head{padding:10px 12px;gap:8px}.bj-ttl small,.bj-live{display:none}
 }
 @media(max-width:600px){.bj-pick{grid-template-columns:1fr}.bj-r4{grid-template-columns:1fr 1fr}.bj-tags{flex-wrap:wrap}.bj-gbtn .lb{display:none}}
-/* шапка стала на пункт длиннее — на узких десктопах чуть сжимаем поля пунктов */
-@media(min-width:761px) and (max-width:1380px){.topbar .nav .nb{padding-left:6px!important;padding-right:6px!important}}
+
+/* v2: название, регионы, метрики вручную */
+.bj-sum p.tt{font-weight:700!important;color:var(--bjt)}
+.bj-sum p.hh{margin-top:3px!important;color:var(--bjt3)!important;font-size:11.5px;-webkit-line-clamp:1!important}
+.bj-dl{color:var(--bjt2);background:var(--bjb)}
+.bj-title{font:400 17px var(--bjd)!important;letter-spacing:.03em;padding:10px 12px!important;background:var(--bjb3)!important}
+.bj-r3{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px}
+.bj-regs button{flex:1;height:36px!important}
+.bj-kms{display:flex;flex-wrap:wrap;gap:6px}
+.bj-kms button{height:28px;padding:0 10px;border-radius:7px;border:1px solid var(--bjl2)!important;background:var(--bjb)!important;font:700 10.5px var(--bjm)!important;color:var(--bjt2)!important}
+.bj-kms button.on{border-color:var(--bjg)!important;color:var(--bjg2)!important;background:var(--bjy)!important}
+.bj-mcard{border:1px solid var(--bjl);border-radius:10px;background:var(--bjb);padding:10px;display:flex;flex-direction:column;gap:8px}
+.bj-mhd{display:flex;align-items:center;gap:6px}
+.bj-mhd b{font:700 13px var(--bjm);color:var(--bjg2);margin-right:auto}
+.bj-mhd select{width:auto!important;height:28px;padding:0 24px 0 8px!important;font-size:11px!important}
+.bj-mx{width:26px;height:26px;border-radius:6px;color:var(--bjt3)!important}.bj-mx:hover{color:var(--bjr)!important}
+.bj-mrec{display:grid;grid-template-columns:130px 1fr auto;gap:6px}
+.bj-mrec .bj-wbtn{height:36px}
+.bj-mpts{display:flex;flex-wrap:wrap;gap:5px}
+.bj-mpts span{display:inline-flex;align-items:center;gap:4px;font:600 10.5px var(--bjm);color:var(--bjt2);border:1px solid var(--bjl);border-radius:6px;padding:2px 3px 2px 7px;background:var(--bjb3)}
+.bj-mpts button{color:var(--bjt3)!important;width:18px;height:18px;border-radius:4px;font-size:11px}.bj-mpts button:hover{color:var(--bjr)!important}
+.bj-rki .n{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:600 11.5px var(--bjm);color:var(--bjt)}
+.bj-rki .n i{font-style:normal}
+.bj-go{height:28px;padding:0 10px;border-radius:7px;border:1px solid rgba(212,175,55,.45)!important;background:var(--bjy)!important;color:var(--bjg2)!important;font:600 11px var(--bjs)!important;white-space:nowrap}
+.bj-go:hover{border-color:var(--bjg)!important}
+@media(max-width:1000px){.bj-body.sel{grid-template-columns:1fr}.bj-body:not(.sel) .bj-pane{display:flex}.bj-r3{grid-template-columns:1fr 1fr}.bj-r3>:first-child{grid-column:1/-1}}
+@media(max-width:600px){.bj-mrec{grid-template-columns:1fr 1fr}.bj-mrec .bj-wbtn{grid-column:1/-1}}
+/* старый «Журнал» убран из меню; данные документов остаются в базе */
+#nb-journal{display:none!important}
 </style>
 </head>
 <body>
@@ -2001,7 +2031,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-09-24 23:15'
+const BUILD='2026-09-25 23:16'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -2063,7 +2093,7 @@ async function init(){
   if(typeof jvRemindersOnStart==='function')setTimeout(jvRemindersOnStart,2500)
   // раз за сессию: это фоновая справка, а не то, ради чего стоит жечь лимит Meta
   if(typeof cqlRefresh==='function')setTimeout(cqlRefresh,9000)
-  if(typeof loadBj==='function')setTimeout(loadBj,2500)
+  if(typeof loadBj==='function')setTimeout(()=>{if(!_bjLoaded)loadBj()},2500)
   // Микрофон сам не включается: слушает только после нажатия на значок.
   // Автостарт раньше держал его открытым всю смену — это лишнее.;setTimeout(()=>{if(typeof jvRemindersOnStart==='function')jvRemindersOnStart()},2500)
 }
@@ -3060,7 +3090,7 @@ function jvParse(raw){
   if(has('домен','лендинг'))return{cmd:'page',arg:'domains'}
   if(has('дашборд','статистик','статк','главн'))return{cmd:'page',arg:'dash'}
   if(has('крео','креатив'))return{cmd:'page',arg:'creo'}
-  if(has('журнал','заметк'))return{cmd:'page',arg:'journal'}
+  if(has('журнал','заметк','гипотез'))return{cmd:'page',arg:'bj'}
   if(has('анализ'))return{cmd:'page',arg:'analysis'}
   if(has('продаж','sales','сейлз'))return{cmd:'page',arg:'sales'}
   if(has('что произошло','что случилось','события','тудей','today','за сутки'))return{cmd:'today'}
@@ -8119,7 +8149,7 @@ document.getElementById('li-go')?.addEventListener('click',doAuthLogin)
 // поэтому вся логика переключения страниц остаётся одна.
 ;(function mobileNav(){
   const MAIN=[['dash','📊','Главная'],['tasks','✅','Задачи'],['zalivs','🚀','Заливы'],['analysis','🔬','Анализ']]
-  const MORE=[['journal','📓','Журнал'],['bj','🧪',"Buyer's J."],['creo','🎨','Крео'],['sales','💰','Продажи'],['domains','🌐','Домены']]
+  const MORE=[['bj','🧪',"Buyer's J."],['creo','🎨','Крео'],['sales','💰','Продажи'],['domains','🌐','Домены']]
   const isMob=()=>matchMedia('(max-width:760px)').matches
   function build(){
     if(document.getElementById('mnav'))return
@@ -8192,18 +8222,16 @@ document.getElementById('li-go')?.addEventListener('click',doAuthLogin)
 
 /* ══════════════════════════════════════════════════════════════════
    BUYER'S JOURNAL
-   Записи HADI: гипотезы и тесты. Цифры тестов считаются из прикреплённых РК:
-   расход, показы и клики — из Meta одним общим запросом на все живые тесты,
-   лиды и квалы — из source_daily по калькам РК. Закрытый тест сохраняет
-   снимок цифр и больше в Meta не ходит — это бережёт лимит кабинетов.
+   Записи HADI: гипотезы и тесты. Метрики вписываются вручную: было до теста,
+   сегодняшнее значение, цель — график строится по этим записям. РК к записи
+   прикрепляются как связь: из записи можно перейти в РК, из РК — в запись.
    ══════════════════════════════════════════════════════════════════ */
-var BJ=[],BJ_OK=null,BJ_ERR='',_bjLoaded=false,_bjLoading=null
+var BJ=[],BJ_OK=null,BJ_ERR='',_bjLoaded=false,_bjLoading=null,BJ_RK={}
 const BJ_VARS=['Сетап залива','Крео','Аудитория','Бюджет','Лендинг','Оффер','Пиксель','Гео']
-const BJ_KMS=['CPL','CQL','CTR','CPM','CR','Квалы','% Creo']
-const BJ_UNIT={CPL:'$',CQL:'$',CPM:'$',CTR:'%',CR:'%','Квалы':'','% Creo':'%'}
-const BJ_LOWER=new Set(['CPL','CQL','CPM'])
+const BJ_KM_STD=['CPL','CQL','CTR','CPM','CR','Квалы','Спенд','% Creo']
 const BJ_STEPS=['hypothesis','action','data','insight'],BJ_STL={hypothesis:'Гипотеза',action:'Действие',data:'Данные',insight:'Инсайт'}
 const BJ_TAGS={imp:'Внедрить',rep:'Повторить',run:'В работе',fail:'Провал'}
+const BJ_DIRL={down:'↓ лучше',up:'↑ лучше',none:'без оценки'}
 let bjView='table',bjKind='',bjTagF='',bjBuyerF='',bjRegF='',bjQ='',bjSel=null,bjSortK='upd',bjSortAsc=false,bjFeedNotes=false
 const bjEsc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))
 const bjL=name=>name==='Illia'?'I':'D'
@@ -8211,16 +8239,41 @@ const bjFid=t=>{const d=String(t.date||'');return t.id+d.slice(8,10)+d.slice(5,7
 const bjDD=s=>s?String(s).slice(8,10)+'.'+String(s).slice(5,7):'—'
 const bjHM=ts=>{const d=new Date(ts);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
 const bjLocalDay=ts=>{const d=new Date(ts);return new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)}
-const bjAddD=(s,n)=>{const d=new Date(s+'T12:00');d.setDate(d.getDate()+n);return new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)}
 const bjShort=(s,n)=>{s=String(s||'');return s.length>n?s.slice(0,n-1)+'…':s}
 function bjAgo(ts){const m=Math.round((Date.now()-new Date(ts))/6e4);if(m<1)return'сейчас';if(m<60)return m+' мин';const h=Math.round(m/60);if(h<24)return h+' ч';return Math.round(h/24)+' д'}
 const bjFind=id=>BJ.find(t=>t.id===id)
 const bjStepI=t=>BJ_STEPS.indexOf(t.step)
 const bjLast=t=>(t.upd||[]).reduce((m,u)=>u.at>m?u.at:m,t.created_at||String(t.date))
 const bjMe=()=>(typeof CURRENT_USER!=='undefined'&&CURRENT_USER&&CURRENT_USER.name)||'—'
+// регион записи: один или оба — хранится как 'PL', 'CZ' или 'PL+CZ'
+const bjRegs=t=>String(t.region||'PL').split('+').filter(Boolean)
+const bjRegJoin=a=>['PL','CZ'].filter(r=>a.includes(r)).join('+')   // Польша всегда первой
+const bjTitle=t=>t.title||t.h||(t.kind==='test'?'Тест без названия':'Гипотеза без названия')
+
+/* ── метрики: вписываются руками ── */
+const bjDefUnit=n=>['CPL','CQL','CPM','Спенд'].includes(n)?'$':['CTR','CR','% Creo'].includes(n)?'%':n==='Квалы'?'шт':''
+const bjDefDir=n=>['CPL','CQL','CPM'].includes(n)?'down':n==='Спенд'?'none':'up'
+const bjNewMetric=n=>({name:n,unit:bjDefUnit(n),dir:bjDefDir(n),before:null,target:null,points:[]})
+const bjPts=m=>(m.points||[]).slice().sort((a,b)=>a.day<b.day?-1:1)
+const bjNow=m=>{const p=bjPts(m);return p.length?p[p.length-1].v:null}
+function bjMFmt(m,v){if(v==null||v===''||!isFinite(v))return'—';v=+v
+  if(m.unit==='$')return(Math.abs(v)>=100?Math.round(v):+v.toFixed(2))+'$'
+  if(m.unit==='%')return(+v.toFixed(2))+'%'
+  if(m.unit==='шт')return String(Math.round(v))
+  return String(+v.toFixed(2))}
+function bjMDelta(m){const now=bjNow(m);if(now==null||m.before==null||!+m.before)return null
+  const p=(now-m.before)/Math.abs(m.before)*100;return{p:Math.round(p),good:m.dir==='down'?p<0:m.dir==='up'?p>0:null}}
+// ряд для графика: «было» на старте, дальше — то, что вписано по дням
+function bjSeries(t,m){const out=[];if(m.before!=null&&m.before!=='')out.push({day:t.started||t.date,v:+m.before});bjPts(m).forEach(p=>out.push({day:p.day,v:+p.v}));return out}
 
 /* ── загрузка и сохранение ── */
-function bjNorm(r){r.rk_ids=Array.isArray(r.rk_ids)?r.rk_ids.map(Number):[];r.upd=Array.isArray(r.upd)?r.upd:[];r.conf=r.conf??50;return r}
+function bjNorm(r){r.rk_ids=Array.isArray(r.rk_ids)?r.rk_ids.map(Number):[];r.upd=Array.isArray(r.upd)?r.upd:[];r.conf=r.conf??50
+  // старые записи: одна метрика в колонках km/before/target — переносим в новый список
+  if(!Array.isArray(r.metrics)||!r.metrics.length){const m=bjNewMetric(r.km||'CPL');m.before=r.before??null;m.target=r.target??null
+    if(r.after_manual!=null)m.points=[{day:r.ended||String(r.updated_at||r.date).slice(0,10),v:+r.after_manual}]
+    r.metrics=[m]}
+  r.metrics.forEach(m=>{m.points=Array.isArray(m.points)?m.points:[];if(!m.dir)m.dir=bjDefDir(m.name);if(m.unit==null)m.unit=bjDefUnit(m.name)})
+  return r}
 async function loadBj(){
   if(_bjLoading)return _bjLoading
   _bjLoading=(async()=>{
@@ -8229,120 +8282,61 @@ async function loadBj(){
     catch(e){BJ_OK=false;BJ_ERR=e.message||String(e)}
     _bjLoaded=true;_bjLoading=null})()
   return _bjLoading}
-const BJ_COLS=['kind','date','buyer','region','variable','km','before','target','after_manual','conf','step','tag','h','a','d','i','rk_ids','started','ended','upd','snap']
+const BJ_COLS=['kind','date','title','buyer','region','variable','conf','step','tag','h','a','d','i','rk_ids','started','ended','upd','metrics']
 const _bjT={}
 function bjSave(t){clearTimeout(_bjT[t.id]);_bjT[t.id]=setTimeout(async()=>{
   const row={updated_at:new Date().toISOString()};BJ_COLS.forEach(k=>row[k]=t[k]??null)
+  // совместимость со старыми колонками — первая метрика
+  const m0=t.metrics[0];row.km=m0?m0.name:null;row.before=m0&&m0.before!=null&&m0.before!==''?+m0.before:null;row.target=m0&&m0.target!=null&&m0.target!==''?+m0.target:null
   const{error}=await db.from('bj_entries').update(row).eq('id',t.id)
   const s=document.getElementById('bj-saved')
-  if(error){toast("Buyer's Journal: "+error.message,'err');if(s)s.textContent='не сохранилось'}
+  if(error){toast(/title|metrics/.test(error.message)?"Buyer's Journal: выполни bj_update.sql в Supabase":"Buyer's Journal: "+error.message,'err');if(s)s.textContent='не сохранилось'}
   else if(s)s.textContent='сохранено · '+bjHM(new Date())},350)}
 function bjLog(t,text,auto){t.upd.push({at:new Date().toISOString(),by:bjMe(),text,auto:auto?1:0});bjSave(t)}
 async function bjCreate(kind,pre){
-  const row=Object.assign({kind,date:todayISO(),buyer:bjMe()==='Illia'?'Illia':'Danya',region:CURRENT_REGION,variable:'Крео',km:'CPL',
-    before:null,target:null,after_manual:null,conf:50,step:'hypothesis',tag:null,h:'',a:'',d:'',i:'',rk_ids:[],started:null,ended:null,snap:null,
+  const row=Object.assign({kind,date:todayISO(),title:'',buyer:bjMe()==='Illia'?'Illia':'Danya',region:CURRENT_REGION,variable:'Крео',
+    conf:50,step:'hypothesis',tag:null,h:'',a:'',d:'',i:'',rk_ids:[],started:null,ended:null,metrics:[bjNewMetric('CPL')],km:'CPL',
     upd:[{at:new Date().toISOString(),by:bjMe(),text:kind==='test'?'Тест создан':'Гипотеза создана',auto:1}]},pre||{})
   const{data,error}=await db.from('bj_entries').insert(row).select().single()
-  if(error){toast("Buyer's Journal: "+error.message,'err');return null}
+  if(error){toast(/title|metrics/.test(error.message)?"Buyer's Journal: выполни bj_update.sql в Supabase":"Buyer's Journal: "+error.message,'err');return null}
   const t=bjNorm(data);BJ.unshift(t);return t}
-
-/* ── цифры из РК ── */
-let BJ_RK={},BJ_SRC=null,BJ_SRC_FROM=null,BJ_META=null,BJ_META_FROM=null,BJ_META_ERR=''
-const bjZ=()=>({spend:0,impr:0,clicks:0,leads:0,quals:0})
-const bjAdd=(a,r)=>{a.spend+=r.spend;a.impr+=r.impr;a.clicks+=r.clicks;a.leads+=r.leads;a.quals+=r.quals;return a}
-// Метрика — от сумм за окно, а не средним дневных: иначе день с 1 лидом весит как день с 20
-function bjKm(km,a){if(!a)return null
-  switch(km){case'CPL':return a.leads?a.spend/a.leads:null;case'CQL':return a.quals?a.spend/a.quals:null
-    case'CTR':return a.impr?a.clicks/a.impr*100:null;case'CPM':return a.impr?a.spend/a.impr*1000:null
-    case'CR':return a.clicks?a.leads/a.clicks*100:null;case'Квалы':return a.quals;default:return null}}
-function bjFmt(km,v){if(v==null||!isFinite(v))return'—';if(km==='Квалы')return String(Math.round(v))
-  if(BJ_UNIT[km]==='%')return v.toFixed(km==='CTR'?2:1)+'%';return(v>=100?Math.round(v):v.toFixed(1))+'$'}
-function bjDelta(t,after){if(after==null||!t.before)return null;const p=(after-t.before)/t.before*100;return{p:Math.round(p),good:BJ_LOWER.has(t.km)?p<0:p>0}}
-// Источник лида: калька с буквой баера спереди или сзади — dkalkulator3, cz2i.
-// Сверяем прямо со списком калек РК: общий реестр знает только открытый регион.
-function bjSrcKey(src,keys){const s=String(src||'').toLowerCase().trim();if(keys.has(s))return{l:''}
-  const a=s[0],b=s.slice(-1)
-  if((a==='d'||a==='i')&&keys.has(s.slice(1)))return{l:a}
-  if((b==='d'||b==='i')&&keys.has(s.slice(0,-1)))return{l:b}
-  return null}
-const bjNeedsLive=t=>t.kind==='test'&&t.rk_ids.length&&t.km!=='% Creo'&&!(t.ended&&t.snap)
-async function bjEnsureData(force){
-  const ids=[...new Set(BJ.flatMap(t=>t.rk_ids))].filter(id=>force||!BJ_RK[id])
-  if(ids.length){const{data}=await db.from('zalivs').select('id,name,region,buyer,campaign_id,adset_domains,geo,created_at').in('id',ids);(data||[]).forEach(z=>BJ_RK[z.id]=z)}
-  const live=BJ.filter(bjNeedsLive);if(!live.length)return
-  let from=live.reduce((m,t)=>{const s=t.started||t.date;return s<m?s:m},todayISO())
-  const cap=bjAddD(todayISO(),-45);if(from<cap)from=cap
-  if(force||!BJ_SRC||BJ_SRC_FROM>from){
-    const{data}=await db.from('source_daily').select('day,source,leads,quals,region').gte('day',from).limit(20000)
-    BJ_SRC=data||[];BJ_SRC_FROM=from}
-  if(force||!BJ_META||BJ_META_FROM>from){
-    if(typeof metaBlocked==='function'&&(metaBlocked()||(typeof metaHot==='function'&&metaHot()))){BJ_META_ERR='Meta на паузе по лимиту — расход подтянется позже'}
-    else try{
-      const r=await metaPost({action:'reconcile',region:'PL',since:from,until:todayISO(),daily:true});const d=await r.json()
-      if(d&&d.ok){BJ_META=[...(d.campaigns||[]),...(d.other||[])];BJ_META_FROM=from;BJ_META_ERR=''}
-      else BJ_META_ERR=(d&&d.error)||'Meta не ответила'
-    }catch(e){BJ_META_ERR=e.message}}
-  // закрытые тесты без снимка — фиксируем цифры один раз
-  BJ.filter(t=>t.kind==='test'&&t.ended&&!t.snap&&t.rk_ids.length).forEach(t=>{
-    const m=bjMetrics(t,true);if(m.after==null||m.metaMissing)return
-    t.snap={after:m.after,points:m.points,days:m.days,from:m.from,to:m.to,perRk:m.perRk,at:new Date().toISOString()};bjSave(t)})
-}
-function bjMetrics(t,live){
-  const km=t.km,derivable=km!=='% Creo'
-  if(t.kind!=='test'||!t.rk_ids.length||!derivable)return{auto:false,after:t.after_manual??null,points:[],days:0,perRk:[],derivable}
-  if(!live&&t.ended&&t.snap)return Object.assign({auto:true,derivable,snap:true},t.snap)
-  const from=t.started||t.date,to=t.ended&&t.ended<todayISO()?t.ended:todayISO()
-  const needMeta=['CPL','CQL','CTR','CPM','CR'].includes(km),byDay={},perRk=[]
-  for(const id of t.rk_ids){const z=BJ_RK[id];if(!z)continue;const tot=bjZ()
-    if(z.campaign_id&&BJ_META)BJ_META.forEach(r=>{if(String(r.campaign_id)!==String(z.campaign_id)||!r.day||r.day<from||r.day>to)return
-      const o=byDay[r.day]||(byDay[r.day]=bjZ()),x={spend:+r.spend||0,impr:+r.imp||0,clicks:+r.clicks||0,leads:0,quals:0};bjAdd(o,x);bjAdd(tot,x)})
-    const keys=new Set((typeof zDomains==='function'?zDomains(z):[]).map(d=>String(d.domain||'').toLowerCase().trim()).filter(Boolean))
-    const L=z.buyer==='Illia'?'i':z.buyer==='Danya'?'d':''
-    if(keys.size&&BJ_SRC)BJ_SRC.forEach(r=>{if(r.region&&z.region&&r.region!==z.region)return;if(!r.day||r.day<from||r.day>to)return
-      const m=bjSrcKey(r.source,keys);if(!m||(m.l&&L&&m.l!==L))return
-      const o=byDay[r.day]||(byDay[r.day]=bjZ()),x={spend:0,impr:0,clicks:0,leads:+r.leads||0,quals:+r.quals||0};bjAdd(o,x);bjAdd(tot,x)})
-    perRk.push({id:z.id,name:z.name,region:z.region,tot,v:bjKm(km,tot)})}
-  const days=Object.keys(byDay).sort(),total=Object.values(byDay).reduce(bjAdd,bjZ())
-  const metaMissing=needMeta&&!BJ_META
-  return{auto:true,derivable,metaMissing,from,to,perRk,total,days:days.length,
-    after:days.length&&!metaMissing?bjKm(km,total):null,
-    points:days.map(d=>({day:d,v:metaMissing?null:bjKm(km,byDay[d])}))}}
+// названия РК — для списка и ссылок; цифры из РК больше не тянем
+async function bjLoadRks(){const ids=[...new Set(BJ.flatMap(t=>t.rk_ids))].filter(id=>!BJ_RK[id]);if(!ids.length)return
+  const{data}=await db.from('zalivs').select('id,name,region,buyer,created_at').in('id',ids);(data||[]).forEach(z=>BJ_RK[z.id]=z)}
 
 /* ── график ── */
-function bjSpark(pts,o){o=o||{};const w=o.w||72,h=o.h||20,vals=pts.map(p=>p.v).filter(v=>v!=null)
-  if(vals.length<2)return o.big?`<div class="bj-note" style="padding:26px 0;text-align:center">${pts.length?'Нужно минимум два дня данных':'Нет данных за окно теста'}</div>`:'<span class="bj-mut">—</span>'
-  const ext=[...vals];if(o.before!=null)ext.push(o.before);if(o.target!=null)ext.push(o.target)
+function bjSpark(pts,o){o=o||{};const w=o.w||72,h=o.h||20,vals=pts.map(p=>p.v).filter(v=>v!=null&&isFinite(v))
+  if(vals.length<2)return o.big?`<div class="bj-note" style="padding:14px 0;text-align:center">${vals.length?'Впиши значение ещё за один день — появится график':'Впиши «было» и значение за сегодня'}</div>`:'<span class="bj-mut">—</span>'
+  const ext=[...vals];if(o.target!=null&&o.target!==''&&isFinite(o.target))ext.push(+o.target)
   let mn=Math.min(...ext),mx=Math.max(...ext);if(mx===mn){mx+=1;mn-=1}
   const pad=o.big?8:2,X=i=>pad+i/(pts.length-1)*(w-pad*2),Y=v=>h-pad-(v-mn)/(mx-mn)*(h-pad*2)
-  const segs=[];let cur=[];pts.forEach((p,i)=>{if(p.v==null){if(cur.length)segs.push(cur);cur=[]}else cur.push([X(i),Y(p.v)])});if(cur.length)segs.push(cur)
   const col=o.good==null?'#D4AF37':o.good?'#3DBE8B':'#F03A55';let g=''
-  if(o.big&&o.before!=null)g+=`<line x1="0" x2="${w}" y1="${Y(o.before)}" y2="${Y(o.before)}" stroke="#646A80" stroke-dasharray="4 4"/>`
-  if(o.big&&o.target!=null)g+=`<line x1="0" x2="${w}" y1="${Y(o.target)}" y2="${Y(o.target)}" stroke="#A3A8BA" stroke-dasharray="1 3"/>`
-  segs.forEach(s=>{g+=`<polyline fill="none" stroke="${col}" stroke-width="${o.big?2:1.6}" stroke-linejoin="round" stroke-linecap="round" points="${s.map(p=>p.join(',')).join(' ')}"/>`})
-  if(o.big)pts.forEach((p,i)=>{if(p.v!=null)g+=`<circle cx="${X(i)}" cy="${Y(p.v)}" r="3" fill="#11131B" stroke="${col}" stroke-width="1.6"><title>${bjDD(p.day)} · ${bjFmt(o.km,p.v)}</title></circle>`})
-  else{const l=segs.at(-1).at(-1);g+=`<circle cx="${l[0]}" cy="${l[1]}" r="2.2" fill="${col}"/>`}
+  if(o.big&&o.target!=null&&o.target!==''&&isFinite(o.target))g+=`<line x1="0" x2="${w}" y1="${Y(+o.target)}" y2="${Y(+o.target)}" stroke="#A3A8BA" stroke-dasharray="1 3"/>`
+  g+=`<polyline fill="none" stroke="${col}" stroke-width="${o.big?2:1.6}" stroke-linejoin="round" stroke-linecap="round" points="${pts.map((p,i)=>X(i)+','+Y(p.v)).join(' ')}"/>`
+  if(o.big)pts.forEach((p,i)=>{g+=`<circle cx="${X(i)}" cy="${Y(p.v)}" r="3" fill="#11131B" stroke="${col}" stroke-width="1.6"><title>${bjDD(p.day)} · ${o.fmt?o.fmt(p.v):p.v}</title></circle>`})
+  else g+=`<circle cx="${X(pts.length-1)}" cy="${Y(pts[pts.length-1].v)}" r="2.2" fill="${col}"/>`
   return`<svg viewBox="0 0 ${w} ${h}" width="${o.big?'100%':w}" height="${h}" aria-hidden="true">${g}</svg>`}
 
 /* ── каркас страницы ── */
 function bjShell(){const p=document.getElementById('page-bj');if(!p||p.dataset.ready)return;p.dataset.ready='1'
   p.innerHTML=`<div class="bj-head"><div class="bj-ttl"><b>BUYER'S <span>JOURNAL</span></b><small>HADI · гипотезы и тесты команды</small></div>
-    <div class="bj-tick" id="bj-tick"></div><span class="bj-live" id="bj-live"><i></i>LIVE</span>
-    <button class="bj-gbtn" id="bj-refresh" title="Перечитать цифры из Meta и source_daily">↻<span class="lb"> Цифры</span></button>
+    <div class="bj-tick" id="bj-tick"></div>
     <button class="bj-gbtn" id="bj-task">✓<span class="lb"> Таска</span></button>
     <button class="bj-new" id="bj-new">＋ Новая <kbd>N</kbd></button></div>
   <div class="bj-tools">
     <div class="bj-seg" id="bj-vseg"><button data-v="table" class="on">Таблица</button><button data-v="kanban">Канбан</button><button data-v="feed">Лента<span class="n" id="bj-nfeed"></span></button></div>
     <div class="bj-seg" id="bj-kseg"><button data-k="" class="on">Все</button><button data-k="test">Тесты<span class="n" id="bj-nt"></span></button><button data-k="hyp">Гипотезы<span class="n" id="bj-nh"></span></button></div>
-    <div class="bj-srch"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="bj-q" placeholder="Поиск · ID, текст, РК"></div>
+    <div class="bj-srch"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="bj-q" placeholder="Поиск · название, текст, РК"></div>
     <select id="bj-ftag" aria-label="Тег"><option value="">Все теги</option><option value="imp">Внедрить</option><option value="rep">Повторить</option><option value="run">В работе</option><option value="fail">Провал</option></select>
     <select id="bj-fbuyer" aria-label="Баер"><option value="">Все баеры</option><option>Danya</option><option>Illia</option></select>
     <select id="bj-freg" aria-label="Регион"><option value="">PL + CZ</option><option>PL</option><option>CZ</option></select>
     <span class="bj-cnt" id="bj-cnt"></span></div>
-  <div class="bj-body"><main class="bj-main" id="bj-main"></main><aside class="bj-pane" id="bj-pane"></aside></div>`
+  <div class="bj-body" id="bj-body"><main class="bj-main" id="bj-main"></main><aside class="bj-pane" id="bj-pane"></aside></div>
+  <datalist id="bj-varlist">${BJ_VARS.map(v=>`<option value="${v}">`).join('')}</datalist>`
   if(!document.getElementById('bj-mo-new'))document.body.insertAdjacentHTML('beforeend',`<div class="bj-mo" id="bj-mo-new"><div class="bj-mbox">
     <div class="bj-mh"><b>Что заводим?</b><button class="bj-xb" data-bjclose aria-label="Закрыть">✕</button></div>
     <div class="bj-pick"><button id="bj-new-h"><b>Гипотеза <kbd>H</kbd></b><p>Идея без теста. Формулируешь, ставишь уверенность — запустишь позже.</p></button>
-    <button id="bj-new-t"><b>Тест <kbd>T</kbd></b><p>Сразу с планом: гипотеза, действие, метрика и РК, с которых тянутся цифры.</p></button></div></div></div>`)
+    <button id="bj-new-t"><b>Тест <kbd>T</kbd></b><p>Сразу с планом: гипотеза, действие, метрики и РК.</p></button></div></div></div>`)
   const $=id=>document.getElementById(id)
   const seg=(id,a,v)=>$(id).querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset[a]===v))
   $('bj-vseg').onclick=e=>{const b=e.target.closest('button');if(!b)return;bjView=b.dataset.v;seg('bj-vseg','v',bjView);bjRenderMain()}
@@ -8356,17 +8350,16 @@ function bjShell(){const p=document.getElementById('page-bj');if(!p||p.dataset.r
   document.querySelectorAll('#bj-mo-new [data-bjclose]').forEach(b=>b.onclick=()=>$('bj-mo-new').classList.remove('on'))
   $('bj-mo-new').addEventListener('click',e=>{if(e.target.id==='bj-mo-new')e.currentTarget.classList.remove('on')})
   $('bj-task').onclick=()=>{const t=bjFind(bjSel);openTaskNew({ttype:'bj',bj:t?{id:t.id,name:bjTaskName(t)}:null})}
-  $('bj-refresh').onclick=async()=>{toast('Перечитываю цифры…','info');await bjEnsureData(true);bjRender();toast('Цифры обновлены','ok')}
   $('bj-main').addEventListener('click',e=>{
     const fb=e.target.closest('[data-bjfn]');if(fb){bjFeedNotes=fb.dataset.bjfn==='1';bjRenderMain();return}
-    const th=e.target.closest('th[data-k]');if(th){const k=th.dataset.k;if(bjSortK===k)bjSortAsc=!bjSortAsc;else{bjSortK=k;bjSortAsc=k==='km'};bjRenderMain();return}
+    const th=e.target.closest('th[data-k]');if(th){const k=th.dataset.k;if(bjSortK===k)bjSortAsc=!bjSortAsc;else{bjSortK=k;bjSortAsc=k==='title'};bjRenderMain();return}
     const r=e.target.closest('[data-bjn]');if(!r)return;bjSel=+r.dataset.bjn;bjRenderMain();bjRenderPane()})
   document.addEventListener('keydown',bjKeys)
 }
-function bjTaskName(t){return '#'+bjFid(t)+' · '+bjShort(t.h||(t.kind==='test'?'тест':'гипотеза'),60)}
+function bjTaskName(t){return '#'+bjFid(t)+' · '+bjShort(bjTitle(t),60)}
 async function bjNewKind(kind){document.getElementById('bj-mo-new').classList.remove('on')
   const t=await bjCreate(kind);if(!t)return;bjSel=t.id;bjKind='';bjRender()
-  setTimeout(()=>document.querySelector('#bj-pane [data-f=h]')?.focus(),60)}
+  setTimeout(()=>document.querySelector('#bj-pane [data-f=title]')?.focus(),60)}
 function bjKeys(e){
   const pg=document.getElementById('page-bj');if(!pg||!pg.classList.contains('active'))return
   const typing=/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName),mo=document.getElementById('bj-mo-new')
@@ -8381,16 +8374,16 @@ function bjKeys(e){
 
 /* ── открыть раздел / запись ── */
 async function bjOpen(){bjShell();if(!_bjLoaded){document.getElementById('bj-main').innerHTML='<div class="bj-empty"><b>Загружаю…</b></div>';await loadBj()}
-  bjRender();await bjEnsureData();bjRender()}
+  bjRender();await bjLoadRks();bjRender()}
 function bjOpenEntry(id){const nb=document.getElementById('nb-bj');if(nb)gp('bj',nb);bjSel=+id;setTimeout(()=>{bjRenderMain();bjRenderPane()},60)}
 
 /* ── выборка и рендер ── */
 function bjRows(){
   const r=BJ.filter(t=>{if(bjKind&&t.kind!==bjKind)return false;if(bjTagF&&t.tag!==bjTagF)return false
-    if(bjBuyerF&&t.buyer!==bjBuyerF)return false;if(bjRegF&&t.region!==bjRegF)return false
-    if(bjQ){const s=[bjFid(t),t.h,t.a,t.d,t.i,t.variable,t.km,...t.rk_ids.map(id=>BJ_RK[id]?.name||'')].join(' ').toLowerCase();if(!s.includes(bjQ))return false}
+    if(bjBuyerF&&t.buyer!==bjBuyerF)return false;if(bjRegF&&!bjRegs(t).includes(bjRegF))return false
+    if(bjQ){const s=[bjFid(t),t.title,t.h,t.a,t.d,t.i,t.variable,...t.metrics.map(m=>m.name),...t.rk_ids.map(id=>BJ_RK[id]?.name||'')].join(' ').toLowerCase();if(!s.includes(bjQ))return false}
     return true})
-  const key=t=>bjSortK==='upd'?bjLast(t):bjSortK==='conf'?t.conf:bjSortK==='n'?t.id:bjSortK==='tag'?(t.tag||''):t[bjSortK]
+  const key=t=>bjSortK==='upd'?bjLast(t):bjSortK==='conf'?t.conf:bjSortK==='n'?t.id:bjSortK==='tag'?(t.tag||''):bjSortK==='title'?bjTitle(t).toLowerCase():t[bjSortK]
   return r.sort((a,b)=>{const x=key(a),y=key(b);return(x>y?1:x<y?-1:0)*(bjSortAsc?1:-1)})}
 function bjRender(){if(!document.getElementById('bj-main'))return;bjRenderTick();bjRenderMain();bjRenderPane()}
 function bjRenderTick(){
@@ -8398,25 +8391,28 @@ function bjRenderTick(){
   document.getElementById('bj-tick').innerHTML=`<span>ТЕСТОВ<b>${BJ.filter(t=>t.kind==='test').length}</b></span><span>ГИПОТЕЗ<b>${BJ.filter(t=>t.kind==='hyp').length}</b></span><span>В РАБОТЕ<b>${c('run')}</b></span><span>ВНЕДРИТЬ<b>${c('imp')}</b></span><span>ПРОВАЛ<b>${c('fail')}</b></span>`
   document.getElementById('bj-nt').textContent=BJ.filter(t=>t.kind==='test').length
   document.getElementById('bj-nh').textContent=BJ.filter(t=>t.kind==='hyp').length
-  document.getElementById('bj-nfeed').textContent=BJ.reduce((a,t)=>a+t.upd.filter(u=>!u.auto).length,0)
-  const lv=document.getElementById('bj-live');lv.classList.toggle('off',!!BJ_META_ERR);lv.title=BJ_META_ERR||'Цифры Meta актуальны'}
+  document.getElementById('bj-nfeed').textContent=BJ.reduce((a,t)=>a+t.upd.filter(u=>!u.auto).length,0)}
 function bjRenderMain(){const m=document.getElementById('bj-main');if(!m)return
   if(BJ_OK===false){m.innerHTML=`<div class="bj-empty"><b>Нет таблицы журнала</b>Выполни в Supabase SQL из файла <code>bj_setup.sql</code> и обнови страницу.<br><br><span style="font-size:11px">${bjEsc(BJ_ERR)}</span></div>`;return}
   if(bjView==='kanban')bjKanban();else if(bjView==='feed')bjFeed();else bjTable()}
 function bjHadi(t){const i=bjStepI(t);return`<span class="bj-hadi ${t.kind==='hyp'?'off':''}">${['H','A','D','I'].map((l,k)=>`<i class="${k<i?'done':k===i?'now':''}">${l}</i>`).join('')}</span>`}
+const bjRegChips=t=>bjRegs(t).map(r=>`<span class="bj-chip reg">${r}</span>`).join('')
+// сводка по главной метрике — первой в списке
+function bjMCell(t){const m=t.metrics[0];if(!m)return'<span class="bj-mut">—</span>'
+  const now=bjNow(m),d=bjMDelta(m),more=t.metrics.length-1
+  return`<span class="bj-chip">${bjEsc(m.name)}</span> <span class="bj-num">${now!=null?`<s>${bjMFmt(m,m.before)}</s>${bjMFmt(m,now)}`:bjMFmt(m,m.before)}</span>${d?`<span class="bj-dl ${d.good==null?'':d.good?'up':'dn'}">${d.p>0?'+':''}${d.p}%</span>`:''}${more?`<span class="bj-mut" style="margin-left:6px">+${more}</span>`:''}`}
 function bjTable(){const r=bjRows(),m=document.getElementById('bj-main');document.getElementById('bj-cnt').textContent=r.length+' / '+BJ.length
-  if(!r.length){m.innerHTML=BJ.length?`<div class="bj-empty"><b>Ничего не нашлось</b>Сними фильтры</div>`:`<div class="bj-empty"><b>Журнал пуст</b>Заведи первую гипотезу — кнопка «＋ Новая» или <kbd>N</kbd></div>`;return}
+  if(!r.length){m.innerHTML=BJ.length?`<div class="bj-empty"><b>Ничего не нашлось</b>Сними фильтры</div>`:`<div class="bj-empty"><b>Журнал пуст</b>Заведи первую запись — кнопка «＋ Новая» или <kbd>N</kbd></div>`;return}
   const th=(k,l)=>k?`<th data-k="${k}" class="${bjSortK===k?'s'+(bjSortAsc?' asc':''):''}">${l}</th>`:`<th>${l}</th>`
-  m.innerHTML=`<table class="bj-t"><thead><tr>${th('n','ID')}${th('','Тип')}${th('','HADI')}${th('','Суть')}${th('km','KM')}${th('','Было → стало')}${th('','Тренд')}${th('','РК')}${th('conf','Увер.')}${th('tag','Тег')}${th('upd','Обновлено')}</tr></thead><tbody>
-  ${r.map(t=>{const x=bjMetrics(t),d=bjDelta(t,x.after)
+  m.innerHTML=`<table class="bj-t"><thead><tr>${th('n','ID')}${th('','Тип')}${th('','HADI')}${th('title','Название')}${th('','Метрика: было → сейчас')}${th('','Тренд')}${th('','РК')}${th('conf','Увер.')}${th('tag','Тег')}${th('upd','Обновлено')}</tr></thead><tbody>
+  ${r.map(t=>{const m0=t.metrics[0],d=m0?bjMDelta(m0):null
     return`<tr data-bjn="${t.id}" class="${t.id===bjSel?'sel':''}">
     <td><span class="bj-id">#${bjFid(t)}</span></td>
     <td><span class="bj-kind ${t.kind}">${t.kind==='test'?'Тест':'Гипотеза'}</span></td>
     <td>${bjHadi(t)}</td>
-    <td class="bj-sum"><div class="ch"><span class="bj-chip var">${bjEsc(t.variable)}</span><span class="bj-chip reg">${t.region}</span><span class="bj-av ${bjL(t.buyer)}" title="${bjEsc(t.buyer)}">${bjL(t.buyer)}</span></div><p>${bjEsc(t.h)||'<span style="color:var(--bjt3)">Без формулировки</span>'}</p></td>
-    <td><span class="bj-chip">${bjEsc(t.km)}</span></td>
-    <td><span class="bj-num">${x.after!=null?`<s>${bjFmt(t.km,t.before)}</s>${bjFmt(t.km,x.after)}`:bjFmt(t.km,t.before)}</span>${d?`<span class="bj-dl ${d.good?'up':'dn'}">${d.p>0?'+':''}${d.p}%</span>`:''}${x.auto?'<span class="bj-auto">AUTO</span>':''}</td>
-    <td>${t.kind==='test'?bjSpark(x.points,{good:d?d.good:null}):'<span class="bj-mut">—</span>'}</td>
+    <td class="bj-sum"><div class="ch"><span class="bj-chip var">${bjEsc(t.variable||'—')}</span>${bjRegChips(t)}<span class="bj-av ${bjL(t.buyer)}" title="${bjEsc(t.buyer)}">${bjL(t.buyer)}</span></div><p class="tt">${bjEsc(bjTitle(t))}</p>${t.title&&t.h?`<p class="hh">${bjEsc(t.h)}</p>`:''}</td>
+    <td>${bjMCell(t)}</td>
+    <td>${m0?bjSpark(bjSeries(t,m0),{good:d?d.good:null}):'<span class="bj-mut">—</span>'}</td>
     <td><span class="bj-mut" title="${bjEsc(t.rk_ids.map(id=>BJ_RK[id]?.name||('#'+id)).join('\n'))}">${t.rk_ids.length||'—'}</span></td>
     <td><span class="bj-conf"><i><b style="width:${t.conf}%"></b></i>${t.conf}%</span></td>
     <td>${t.tag?`<span class="bj-tag ${t.tag}">${BJ_TAGS[t.tag]}</span>`:'<span class="bj-mut">—</span>'}</td>
@@ -8424,11 +8420,10 @@ function bjTable(){const r=bjRows(),m=document.getElementById('bj-main');documen
 function bjKanban(){const r=bjRows(),m=document.getElementById('bj-main');document.getElementById('bj-cnt').textContent=r.length+' / '+BJ.length
   m.innerHTML=`<div class="bj-kb">${BJ_STEPS.map((s,k)=>{const list=r.filter(t=>t.step===s)
     return`<section class="bj-col" data-s="${s}"><div class="bj-colh" data-w="${'HADI'[k]}"><b>${'HADI'[k]}</b><span>${BJ_STL[s]}</span><em>${list.length}</em></div>
-      <div class="bj-cards">${list.map(t=>{const x=bjMetrics(t),d=bjDelta(t,x.after)
-        return`<article class="bj-card ${t.id===bjSel?'sel':''}" draggable="true" data-bjn="${t.id}">
+      <div class="bj-cards">${list.map(t=>`<article class="bj-card ${t.id===bjSel?'sel':''}" draggable="true" data-bjn="${t.id}">
         <div class="r"><span class="bj-id">#${bjFid(t)}</span><span class="bj-kind ${t.kind}">${t.kind==='test'?'Тест':'Гипотеза'}</span><span class="bj-av ${bjL(t.buyer)}">${bjL(t.buyer)}</span></div>
-        <p>${bjEsc(t.h)||'<span style="color:var(--bjt3)">Без формулировки</span>'}</p>
-        <div class="f"><span class="bj-chip">${bjEsc(t.km)}</span><span class="bj-num" style="font-size:12px">${bjFmt(t.km,x.after??t.before)}</span>${d?`<span class="bj-dl ${d.good?'up':'dn'}">${d.p>0?'+':''}${d.p}%</span>`:''}${t.tag?`<span class="bj-tag ${t.tag}">${BJ_TAGS[t.tag]}</span>`:''}</div></article>`}).join('')||'<div class="bj-note" style="text-align:center;padding:18px 0">Пусто</div>'}</div></section>`}).join('')}</div>`
+        <p>${bjEsc(bjTitle(t))}</p>
+        <div class="f">${bjMCell(t)}${t.tag?`<span class="bj-tag ${t.tag}">${BJ_TAGS[t.tag]}</span>`:''}</div></article>`).join('')||'<div class="bj-note" style="text-align:center;padding:18px 0">Пусто</div>'}</div></section>`}).join('')}</div>`
   let dragId=null
   m.querySelectorAll('.bj-card').forEach(c=>{c.addEventListener('dragstart',e=>{dragId=+c.dataset.bjn;c.classList.add('drag');e.dataTransfer.effectAllowed='move'});c.addEventListener('dragend',()=>c.classList.remove('drag'))})
   m.querySelectorAll('.bj-col').forEach(c=>{c.addEventListener('dragover',e=>{e.preventDefault();c.classList.add('over')});c.addEventListener('dragleave',()=>c.classList.remove('over'))
@@ -8442,10 +8437,10 @@ function bjFeed(){const all=[],m=document.getElementById('bj-main')
   let h='<div class="bj-feed">'+seg,day='',today=todayISO()
   all.forEach(({t,u})=>{const d=bjLocalDay(u.at);if(d!==day){day=d;h+=`<div class="bj-fday">${d===today?'Сегодня':bjDD(d)}</div>`}
     h+=`<div class="bj-fi ${u.auto?'auto':''}" data-bjn="${t.id}"><span class="t">${bjHM(u.at)}</span><span class="bj-av ${bjL(u.by)}">${bjL(u.by)}</span>
-      <div class="b"><div class="h">${u.auto?'Изменение':'Обновление'} по <b>#${bjFid(t)}</b> · ${bjEsc(bjShort(t.h,70))}</div><div class="x">${bjEsc(u.text)}</div></div></div>`})
+      <div class="b"><div class="h">${u.auto?'Изменение':'Обновление'} по <b>#${bjFid(t)}</b> · ${bjEsc(bjShort(bjTitle(t),70))}</div><div class="x">${bjEsc(u.text)}</div></div></div>`})
   m.innerHTML=h+'</div>'}
 
-/* ── шаги ── */
+/* ── шаги и РК ── */
 function bjMove(t,s){const to=BJ_STEPS.indexOf(s),from=bjStepI(t);if(to===from)return
   if(to>from+1){toast('По одному шагу за раз','info');return}
   if(to>0&&!t.h){toast('Сначала сформулируй гипотезу','info');bjSel=t.id;bjRender();return}
@@ -8455,58 +8450,74 @@ function bjMove(t,s){const to=BJ_STEPS.indexOf(s),from=bjStepI(t);if(to===from)r
   if(to===3&&!t.ended)t.ended=todayISO()
   t.step=s;bjLog(t,'Шаг: '+BJ_STL[s],1);bjRender()}
 async function bjAttach(t,id){if(t.rk_ids.includes(id))return
-  if(!BJ_RK[id]){const{data}=await db.from('zalivs').select('id,name,region,buyer,campaign_id,adset_domains,geo,created_at').eq('id',id).single();if(data)BJ_RK[id]=data}
+  if(!BJ_RK[id]){const{data}=await db.from('zalivs').select('id,name,region,buyer,created_at').eq('id',id).single();if(data)BJ_RK[id]=data}
   const z=BJ_RK[id]
   if(t.kind==='hyp'){t.kind='test';bjLog(t,'Гипотеза стала тестом — прикреплена РК',1)}
+  // РК из региона, которого нет в записи, — добавляем регион, а не отказываем
+  if(z&&z.region&&!bjRegs(t).includes(z.region)){t.region=bjRegJoin([...bjRegs(t),z.region])}
   t.rk_ids.push(id)
-  // окно теста по умолчанию — со дня создания РК, чтобы цифры совпали с кабинетом
   if(!t.started){t.started=(z&&z.created_at?String(z.created_at).slice(0,10):todayISO());if(t.step==='hypothesis')t.step=t.h?'data':'action';if(!t.tag)t.tag='run'}
-  t.snap=null
-  bjLog(t,'Прикреплена РК '+bjShort(z?z.name:'#'+id,44),1)
-  await bjEnsureData();bjRender()}
+  bjLog(t,'Прикреплена РК '+bjShort(z?z.name:'#'+id,44),1);bjRender()}
 
 /* ── панель записи ── */
 let _bjPaneSel=null
-function bjRenderPane(){const t=bjFind(bjSel),p=document.getElementById('bj-pane');if(!p)return
+function bjMetricCard(t,m,idx){const d=bjMDelta(m),now=bjNow(m),pts=bjPts(m),cw=Math.max(240,(document.getElementById('bj-pane')?.clientWidth||440)-78)
+  const ul=['$','%','шт',''],dirs=['down','up','none']
+  return`<div class="bj-mcard" data-mi="${idx}">
+    <div class="bj-mhd"><b>${bjEsc(m.name)}</b>
+      <select data-mf="unit" aria-label="Единица">${ul.map(u=>`<option value="${u}" ${m.unit===u?'selected':''}>${u||'—'}</option>`).join('')}</select>
+      <select data-mf="dir" aria-label="Что считается лучше">${dirs.map(v=>`<option value="${v}" ${m.dir===v?'selected':''}>${BJ_DIRL[v]}</option>`).join('')}</select>
+      <button class="bj-mx" data-mdel="${idx}" aria-label="Убрать метрику">✕</button></div>
+    <div class="bj-met">
+      <div class="bj-fl"><label>Было</label><input type="number" step="any" data-mf="before" value="${m.before??''}" placeholder="до теста"></div><span class="ar">→</span>
+      <div class="bj-fl"><label>Сейчас</label><div class="ro">${bjMFmt(m,now)}</div></div>
+      <div class="bj-fl"><label>Цель</label><input type="number" step="any" data-mf="target" value="${m.target??''}"></div></div>
+    <div class="bj-mrec"><input type="date" data-mrd value="${todayISO()}" aria-label="День"><input type="number" step="any" data-mrv placeholder="значение за день" aria-label="Значение"><button class="bj-wbtn gold" data-mrec="${idx}">Записать</button></div>
+    <div class="bj-note">Δ к «было»: ${d?`<b style="color:${d.good==null?'var(--bjt2)':d.good?'var(--bjgr)':'var(--bjr)'}">${d.p>0?'+':''}${d.p}%${d.good==null?'':d.good?' · лучше':' · хуже'}</b>`:'—'}</div>
+    <div class="bj-chart">${bjSpark(bjSeries(t,m),{w:cw,h:74,big:true,target:m.target,good:d?d.good:null,fmt:v=>bjMFmt(m,v)})}${pts.length?`<div class="bj-cap"><span>${bjDD(bjSeries(t,m)[0]?.day)}</span><span>┈ цель ${bjMFmt(m,m.target)}</span><span>${bjDD(pts[pts.length-1].day)}</span></div>`:''}</div>
+    ${pts.length?`<div class="bj-mpts">${pts.map(p=>`<span>${bjDD(p.day)} · ${bjMFmt(m,p.v)}<button data-mpdel="${idx}" data-day="${p.day}" aria-label="Удалить значение">✕</button></span>`).join('')}</div>`:''}
+  </div>`}
+function bjRenderPane(){const t=bjFind(bjSel),p=document.getElementById('bj-pane'),body=document.getElementById('bj-body');if(!p)return
   const fresh=_bjPaneSel!==bjSel;_bjPaneSel=bjSel
-  if(!t){p.classList.remove('open');p.innerHTML=`<div class="bj-none"><b>Выбери запись</b><kbd>↑</kbd> <kbd>↓</kbd> листать · <kbd>N</kbd> новая</div>`;return}
+  // без выбранной записи панели нет вовсе — таблица на всю ширину
+  body?.classList.toggle('sel',!!t)
+  if(!t){p.classList.remove('open');p.innerHTML='';return}
   p.classList.add('open')
-  const x=bjMetrics(t),d=bjDelta(t,x.after),i=bjStepI(t),isT=t.kind==='test',cw=Math.max(240,(p.clientWidth||420)-58)
-  const opt=(a,v)=>a.map(o=>`<option ${o===v?'selected':''}>${o}</option>`).join('')
-  const pool=(window._ALL_ZALIVS||ZALIVS||[]).filter(z=>(z.region||'PL')===t.region&&!t.rk_ids.includes(z.id)).sort((a,b)=>b.id-a.id).slice(0,80)
+  const i=bjStepI(t),isT=t.kind==='test',regs=bjRegs(t)
+  const pool=(window._ALL_ZALIVS||ZALIVS||[]).filter(z=>regs.includes(z.region||'PL')&&!t.rk_ids.includes(z.id)).sort((a,b)=>b.id-a.id).slice(0,120)
   const tasks=(typeof TASKS!=='undefined'?TASKS:[]).filter(k=>k.bj_id===t.id)
-  const winNote=x.auto?(x.snap?'снимок цифр закрытого теста':x.metaMissing?(BJ_META_ERR||'Meta не ответила'):`считаю от сумм за ${bjDD(x.from)}–${bjDD(x.to)}, не средним по дням`):''
+  const used=new Set(t.metrics.map(m=>m.name))
   p.innerHTML=`
   <div class="bj-ph"><span class="bj-hid"><span>#${bjFid(t)}</span></span><span class="bj-mut" id="bj-saved"></span>
     <div class="bj-seg"><button data-kind="hyp" class="${!isT?'on':''}">Гипотеза</button><button data-kind="test" class="${isT?'on':''}">Тест</button></div>
     <button class="bj-xb" id="bj-px" aria-label="Закрыть">✕</button></div>
   <div class="bj-pb">
-    <div class="bj-r4">
-      <div class="bj-fl"><label>Переменная</label><select data-f="variable">${opt(BJ_VARS,t.variable)}</select></div>
-      <div class="bj-fl"><label>KM</label><select data-f="km">${opt(BJ_KMS,t.km)}</select></div>
-      <div class="bj-fl"><label>Регион</label><select data-f="region">${opt(['PL','CZ'],t.region)}</select></div>
-      <div class="bj-fl"><label>Баер</label><select data-f="buyer">${opt(['Danya','Illia'],t.buyer)}</select></div></div>
+    <input class="bj-title" data-f="title" data-log="Изменено название" value="${bjEsc(t.title||'')}" placeholder="Название записи">
+    <div class="bj-r3">
+      <div class="bj-fl"><label>Переменная</label><input data-f="variable" list="bj-varlist" value="${bjEsc(t.variable||'')}" placeholder="выбери или впиши"></div>
+      <div class="bj-fl"><label>Регион</label><div class="bj-seg bj-regs">${['PL','CZ'].map(r=>`<button data-reg="${r}" class="${regs.includes(r)?'on':''}">${r}</button>`).join('')}</div></div>
+      <div class="bj-fl"><label>Баер</label><select data-f="buyer">${['Danya','Illia'].map(o=>`<option ${o===t.buyer?'selected':''}>${o}</option>`).join('')}</select></div></div>
     <div class="bj-fl"><label>Тег</label><div class="bj-tags">${Object.entries(BJ_TAGS).map(([k,v])=>`<button class="${k} ${t.tag===k?'on':''}" data-tag="${k}">${v}</button>`).join('')}</div></div>
-    ${isT?`<div class="bj-box"><div class="bj-bh"><b>${bjEsc(t.km)}</b><span>цифры теста</span><em>${x.auto?`${x.days} д · ${t.rk_ids.length} РК`:x.derivable?'прикрепи РК — посчитается само':'вручную'}</em></div><div class="bj-bb">
-      <div class="bj-met"><div class="bj-fl"><label>Было</label><input type="number" step="0.1" data-f="before" value="${t.before??''}"></div><span class="ar">→</span>
-        <div class="bj-fl"><label>Стало${x.auto?' · auto':''}</label>${x.auto?`<div class="ro">${bjFmt(t.km,x.after)}</div>`:`<input type="number" step="0.1" data-f="after_manual" value="${t.after_manual??''}">`}</div>
-        <div class="bj-fl"><label>Цель</label><input type="number" step="0.1" data-f="target" value="${t.target??''}"></div></div>
-      <div class="bj-note ${x.metaMissing?'warn':''}">Δ к «было»: ${d?`<b style="color:${d.good?'var(--bjgr)':'var(--bjr)'}">${d.p>0?'+':''}${d.p}% · ${d.good?'лучше':'хуже'}</b>`:'—'}${winNote?' · '+bjEsc(winNote):''}</div>
-      ${x.auto?`<div class="bj-chart">${bjSpark(x.points,{w:cw,h:84,big:true,before:t.before,target:t.target,km:t.km,good:d?d.good:null})}<div class="bj-cap"><span>${bjDD(x.points[0]?.day)}</span><span>╌ было ${bjFmt(t.km,t.before)} · ┈ цель ${bjFmt(t.km,t.target)}</span><span>${bjDD(x.points.at(-1)?.day)}</span></div></div>`:''}
+
+    <div class="bj-box"><div class="bj-bh"><b>KM</b><span>метрики · вписываешь сам</span><em>${t.metrics.length}</em></div><div class="bj-bb">
+      <div class="bj-kms">${[...BJ_KM_STD,...t.metrics.map(m=>m.name).filter(n=>!BJ_KM_STD.includes(n))].map(n=>`<button data-km="${bjEsc(n)}" class="${used.has(n)?'on':''}">${bjEsc(n)}</button>`).join('')}</div>
+      <div class="bj-attach"><input id="bj-kmother" placeholder="Другое — впиши свою метрику"><button class="bj-wbtn" id="bj-kmadd">Добавить</button></div>
+      ${t.metrics.map((m,k)=>bjMetricCard(t,m,k)).join('')||'<div class="bj-note">Выбери метрику выше.</div>'}
     </div></div>
-    <div class="bj-box"><div class="bj-bh"><b>РК</b><span>откуда тянутся цифры</span><em>${t.rk_ids.length}</em></div><div class="bj-bb">
-      ${(x.perRk||[]).map(k=>`<div class="bj-rki"><a href="#" data-rk="${k.id}" data-rg="${k.region||t.region}" title="${bjEsc(k.name)} — открыть">${bjEsc(k.name)}</a><span class="v">${Math.round(k.tot.spend)}$ · ${k.tot.leads} л · ${k.tot.quals} кв · ${bjFmt(t.km,k.v)}</span><button class="rm" data-unrk="${k.id}" aria-label="Открепить">✕</button></div>`).join('')}
-      ${t.rk_ids.filter(id=>!(x.perRk||[]).some(k=>k.id===id)).map(id=>`<div class="bj-rki"><a href="#" data-rk="${id}" data-rg="${t.region}">#${id} ${bjEsc(BJ_RK[id]?.name||'')}</a><span class="v">загружаю…</span><button class="rm" data-unrk="${id}" aria-label="Открепить">✕</button></div>`).join('')}
-      <div class="bj-attach"><select id="bj-addrk" aria-label="РК"><option value="">${pool.length?'РК региона '+t.region+'…':'Нет РК в '+t.region}</option>${pool.map(z=>`<option value="${z.id}">${bjEsc(z.name)}</option>`).join('')}</select><button class="bj-wbtn" id="bj-addrk-go">Прикрепить</button></div>
-    </div></div>`:''}
+
+    <div class="bj-box"><div class="bj-bh"><b>РК</b><span>прикреплённые заливы</span><em>${t.rk_ids.length}</em></div><div class="bj-bb">
+      ${t.rk_ids.map(id=>{const z=BJ_RK[id];return`<div class="bj-rki"><span class="n" title="${bjEsc(z?.name||'')}">${z?`<i class="bj-chip reg" style="margin-right:6px">${z.region||''}</i>`:''}${bjEsc(z?.name||'#'+id)}</span><button class="bj-go" data-rk="${id}" data-rg="${z?.region||''}">Открыть →</button><button class="rm" data-unrk="${id}" aria-label="Открепить">✕</button></div>`}).join('')}
+      <div class="bj-attach"><select id="bj-addrk" aria-label="РК"><option value="">${pool.length?'РК · '+regs.join(' + ')+'…':'Нет РК в '+regs.join(' + ')}</option>${pool.map(z=>`<option value="${z.id}">${z.region||''} · ${bjEsc(z.name)}</option>`).join('')}</select><button class="bj-wbtn" id="bj-addrk-go">Прикрепить</button></div>
+    </div></div>
+
     <div class="bj-box"><div class="bj-bh"><b>H</b><span>гипотеза</span><em>${bjDD(t.date)}</em></div><div class="bj-bb">
-      <textarea data-f="h" data-log="Обновлена формулировка гипотезы" placeholder="Если …, то …, потому что …">${bjEsc(t.h)}</textarea>
+      <textarea data-f="h" data-log="Обновлена гипотеза" placeholder="Если …, то …, потому что …">${bjEsc(t.h)}</textarea>
       <div class="bj-fl"><label>Уверенность</label><div class="bj-range"><input type="range" min="0" max="100" step="5" data-f="conf" value="${t.conf}"><b id="bj-cv">${t.conf}%</b></div></div>
       ${!isT?`<button class="bj-wbtn" id="bj-totest">▶ Превратить в тест</button>`:''}</div></div>
     ${isT?`<div class="bj-box"><div class="bj-bh"><b>A</b><span>действие</span><em>${t.started?'старт '+bjDD(t.started):'не запущен'}</em></div><div class="bj-bb">
       <textarea data-f="a" data-log="Обновлено действие" placeholder="Адсеты, бюджет, срок, что сравниваем">${bjEsc(t.a)}</textarea>
       ${!t.started?`<button class="bj-wbtn gold" id="bj-launch">▶ Запустить тест</button>`:`<div class="bj-r2"><div class="bj-fl"><label>Старт</label><input type="date" data-f="started" value="${t.started}"></div><div class="bj-fl"><label>Финиш</label><input type="date" data-f="ended" value="${t.ended||''}"></div></div>`}</div></div>
-    <div class="bj-box ${i<2?'lock':''}"><div class="bj-bh"><b>D</b><span>данные</span><em>${x.auto?x.days+' д':''}</em></div><div class="bj-bb">
+    <div class="bj-box ${i<2?'lock':''}"><div class="bj-bh"><b>D</b><span>данные</span></div><div class="bj-bb">
       <textarea data-f="d" data-log="Обновлены данные" placeholder="Что показали цифры, устойчивость по дням, что мешало">${bjEsc(t.d)}</textarea>
       ${i===2?`<button class="bj-wbtn" id="bj-toins">Завершить → инсайт</button>`:''}</div></div>
     <div class="bj-box ${i<3?'lock':''}"><div class="bj-bh"><b>I</b><span>инсайт</span><em>${t.ended?bjDD(t.ended):''}</em></div><div class="bj-bb">
@@ -8522,28 +8533,58 @@ function bjRenderPane(){const t=bjFind(bjSel),p=document.getElementById('bj-pane
   </div>`
   bjBindPane(t);if(fresh)p.scrollTop=0}
 function bjBindPane(t){const p=document.getElementById('bj-pane'),$=id=>document.getElementById(id)
-  const labels={variable:'Переменная',km:'KM',region:'Регион',buyer:'Баер',before:'Было',target:'Цель',after_manual:'Стало',conf:'Уверенность',started:'Старт',ended:'Финиш'}
-  p.querySelectorAll('[data-f]').forEach(el=>{const f=el.dataset.f,num=['before','target','after_manual','conf'].includes(f);let was=t[f]
-    el.addEventListener('input',()=>{t[f]=num?(el.value===''?null:+el.value):(el.value||null);if(f==='conf')$('bj-cv').textContent=el.value+'%';bjSave(t)})
+  const labels={variable:'Переменная',buyer:'Баер',conf:'Уверенность',started:'Старт',ended:'Финиш',title:'Название'}
+  p.querySelectorAll('[data-f]').forEach(el=>{const f=el.dataset.f,num=f==='conf';let was=t[f]
+    el.addEventListener('input',()=>{t[f]=num?(el.value===''?null:+el.value):(el.value||null);if(f==='conf')$('bj-cv').textContent=el.value+'%';bjSave(t)
+      if(f==='title')bjRenderMain()})
     // в историю — один раз, когда поле отпустили, а не на каждую букву
     el.addEventListener('change',()=>{if(was===t[f])return
-      if(el.tagName==='TEXTAREA')bjLog(t,el.dataset.log||'Обновлён текст',1)
-      else bjLog(t,`${labels[f]}: ${was??'—'} → ${t[f]??'—'}${f==='conf'?'%':''}`,1)
-      if(['started','ended','km'].includes(f))t.snap=null
-      was=t[f];bjRenderMain();if(['km','started','ended','region'].includes(f))bjRenderPane()})})
+      if(el.tagName==='TEXTAREA'||f==='title')bjLog(t,el.dataset.log||'Обновлён текст',1)
+      else bjLog(t,`${labels[f]||f}: ${was??'—'} → ${t[f]??'—'}${f==='conf'?'%':''}`,1)
+      was=t[f];bjRenderMain()})})
+  p.querySelectorAll('[data-reg]').forEach(b=>b.onclick=()=>{const r=b.dataset.reg,cur=bjRegs(t)
+    const nx=cur.includes(r)?cur.filter(x=>x!==r):[...cur,r]
+    if(!nx.length){toast('Нужен хотя бы один регион','info');return}
+    t.region=bjRegJoin(nx);bjLog(t,'Регион: '+bjRegs(t).join(' + '),1);bjRender()})
   p.querySelectorAll('[data-kind]').forEach(b=>b.onclick=()=>{const k=b.dataset.kind;if(k===t.kind)return
     if(k==='hyp'&&(t.started||t.rk_ids.length)){toast('Тест уже запущен — в гипотезу не вернуть','info');return}
     t.kind=k;if(k==='hyp')t.step='hypothesis';bjLog(t,'Тип: '+(k==='test'?'Тест':'Гипотеза'),1);bjRender()})
   p.querySelectorAll('[data-tag]').forEach(b=>b.onclick=()=>{const k=b.dataset.tag;t.tag=t.tag===k?null:k;bjLog(t,t.tag?'Тег: '+BJ_TAGS[t.tag]:'Тег снят',1);bjRender()})
+  // метрики
+  const addKm=name=>{name=String(name||'').trim();if(!name)return
+    if(t.metrics.some(m=>m.name.toLowerCase()===name.toLowerCase())){toast('Такая метрика уже есть','info');return}
+    t.metrics.push(bjNewMetric(name));bjLog(t,'Добавлена метрика '+name,1);bjRender()}
+  p.querySelectorAll('[data-km]').forEach(b=>b.onclick=()=>{const n=b.dataset.km,ix=t.metrics.findIndex(m=>m.name===n)
+    if(ix<0){addKm(n);return}
+    const m=t.metrics[ix];if((m.points.length||m.before!=null)&&!confirm('Убрать метрику '+n+' вместе с вписанными значениями?'))return
+    t.metrics.splice(ix,1);bjLog(t,'Убрана метрика '+n,1);bjRender()})
+  $('bj-kmadd').onclick=()=>{addKm($('bj-kmother').value)}
+  $('bj-kmother').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();addKm(e.target.value)}}
+  p.querySelectorAll('.bj-mcard').forEach(card=>{const m=t.metrics[+card.dataset.mi]
+    card.querySelectorAll('[data-mf]').forEach(el=>{const f=el.dataset.mf;let was=m[f]
+      el.addEventListener('change',()=>{let v=el.value;if(f==='before'||f==='target')v=v===''?null:+v;if(was===v)return
+        m[f]=v;bjLog(t,`${m.name} · ${f==='before'?'было':f==='target'?'цель':f==='unit'?'единица':'лучше'}: ${f==='dir'?BJ_DIRL[v]:(v??'—')}`,1);was=v;bjRender()})})
+    const rec=card.querySelector('[data-mrec]');rec.onclick=()=>{const day=card.querySelector('[data-mrd]').value||todayISO(),raw=card.querySelector('[data-mrv]').value
+      if(raw===''){toast('Впиши значение','info');return}
+      const v=+raw,ex=m.points.find(x=>x.day===day);if(ex)ex.v=v;else m.points.push({day,v})
+      bjLog(t,`${m.name}: ${bjMFmt(m,v)} на ${bjDD(day)}`,1);bjRender()}
+    card.querySelector('[data-mrv]').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();rec.click()}}})
+  p.querySelectorAll('[data-mdel]').forEach(b=>b.onclick=()=>{const m=t.metrics[+b.dataset.mdel]
+    if((m.points.length||m.before!=null)&&!confirm('Убрать метрику '+m.name+' вместе с вписанными значениями?'))return
+    t.metrics.splice(+b.dataset.mdel,1);bjLog(t,'Убрана метрика '+m.name,1);bjRender()})
+  p.querySelectorAll('[data-mpdel]').forEach(b=>b.onclick=()=>{const m=t.metrics[+b.dataset.mpdel],day=b.dataset.day
+    m.points=m.points.filter(x=>x.day!==day);bjLog(t,`${m.name}: удалено значение за ${bjDD(day)}`,1);bjRender()})
   $('bj-px').onclick=()=>{bjSel=null;bjRender()}
   const tt=$('bj-totest');if(tt)tt.onclick=()=>{t.kind='test';bjLog(t,'Гипотеза стала тестом',1);bjRender()}
   const ln=$('bj-launch');if(ln)ln.onclick=()=>{if(!t.a){toast('Опиши действие','info');return}bjMove(t,'data')}
   const ti=$('bj-toins');if(ti)ti.onclick=()=>bjMove(t,'insight')
-  const nx=$('bj-next');if(nx)nx.onclick=async()=>{const n=await bjCreate('hyp',{buyer:t.buyer,region:t.region,variable:t.variable,km:t.km,before:bjMetrics(t).after??t.before})
-    if(!n)return;n.upd[0].text='Гипотеза создана из инсайта #'+bjFid(t);bjSave(n);bjLog(t,'Создана следующая гипотеза #'+bjFid(n),1);bjSel=n.id;bjRender()
-    setTimeout(()=>document.querySelector('#bj-pane [data-f=h]')?.focus(),60)}
-  p.querySelectorAll('[data-rk]').forEach(a=>a.onclick=e=>{e.preventDefault();if(typeof openRk==='function')openRk(+a.dataset.rk,a.dataset.rg)})
-  p.querySelectorAll('[data-unrk]').forEach(b=>b.onclick=()=>{const id=+b.dataset.unrk;t.rk_ids=t.rk_ids.filter(v=>v!==id);t.snap=null;bjLog(t,'Откреплена РК '+bjShort(BJ_RK[id]?.name||'#'+id,40),1);bjRender()})
+  const nx=$('bj-next');if(nx)nx.onclick=async()=>{
+    const ms=t.metrics.map(m=>Object.assign(bjNewMetric(m.name),{unit:m.unit,dir:m.dir,before:bjNow(m)??m.before}))
+    const n=await bjCreate('hyp',{buyer:t.buyer,region:t.region,variable:t.variable,metrics:ms});if(!n)return
+    n.upd[0].text='Гипотеза создана из инсайта #'+bjFid(t);bjSave(n);bjLog(t,'Создана следующая гипотеза #'+bjFid(n),1);bjSel=n.id;bjRender()
+    setTimeout(()=>document.querySelector('#bj-pane [data-f=title]')?.focus(),60)}
+  p.querySelectorAll('[data-rk]').forEach(a=>a.onclick=e=>{e.preventDefault();if(typeof openRk==='function')openRk(+a.dataset.rk,a.dataset.rg||null)})
+  p.querySelectorAll('[data-unrk]').forEach(b=>b.onclick=()=>{const id=+b.dataset.unrk;t.rk_ids=t.rk_ids.filter(v=>v!==id);bjLog(t,'Откреплена РК '+bjShort(BJ_RK[id]?.name||'#'+id,40),1);bjRender()})
   const ab=$('bj-addrk-go');if(ab)ab.onclick=()=>{const id=+$('bj-addrk').value;if(!id){toast('Выбери РК','info');return}bjAttach(t,id)}
   p.querySelectorAll('[data-tid]').forEach(r=>r.onclick=()=>openTaskEdit(+r.dataset.tid))
   $('bj-mktask').onclick=()=>openTaskNew({ttype:'bj',bj:{id:t.id,name:bjTaskName(t)}})
@@ -8564,12 +8605,12 @@ function bjLogExternal(id,text){const t=bjFind(+id);if(t)bjLog(t,text,1)}
 function bjRkBlock(zid){const dp=document.getElementById('zdp');if(!dp)return
   const z=(ZALIVS||[]).find(v=>v.id===zid);if(!z)return
   const put=()=>{dp.querySelector('.zbj')?.remove()
-    const linked=BJ.filter(t=>t.rk_ids.includes(zid)),cand=BJ.filter(t=>!t.rk_ids.includes(zid)&&t.region===(z.region||CURRENT_REGION))
+    const reg=z.region||CURRENT_REGION,linked=BJ.filter(t=>t.rk_ids.includes(zid)),cand=BJ.filter(t=>!t.rk_ids.includes(zid)&&bjRegs(t).includes(reg))
     const b=document.createElement('div');b.className='blk zbj';b.style.borderLeft='2px solid #D4AF37'
     b.innerHTML=BJ_OK===false?`<h4>Buyer's Journal</h4><div style="font-size:12px;color:#646A80">Нет таблицы — выполни bj_setup.sql</div>`
       :`<h4>Buyer's Journal <span style="color:#646A80">${linked.length}</span></h4>
-      ${linked.map(t=>`<div class="zbj-row"><a href="#" data-bjgo="${t.id}"><b>#${bjFid(t)}</b> · ${bjEsc(bjShort(t.h||'без формулировки',60))}</a>${t.tag?`<span class="bj-tag ${t.tag}" style="font:700 9px Manrope,sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border-radius:5px">${BJ_TAGS[t.tag]}</span>`:''}</div>`).join('')||'<div style="font-size:12px;color:#646A80">Не прикреплена ни к одной записи</div>'}
-      <div class="zbj-at"><select id="zbj-sel"><option value="">${cand.length?'Прикрепить к записи…':'Нет записей в '+(z.region||CURRENT_REGION)}</option>${cand.map(t=>`<option value="${t.id}">${bjEsc(bjTaskName(t))}</option>`).join('')}</select><button id="zbj-go">Прикрепить</button></div>`
+      ${linked.map(t=>`<div class="zbj-row"><a href="#" data-bjgo="${t.id}"><b>#${bjFid(t)}</b> · ${bjEsc(bjShort(bjTitle(t),60))}</a>${t.tag?`<span class="bj-tag ${t.tag}" style="font:700 9px Manrope,sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border-radius:5px">${BJ_TAGS[t.tag]}</span>`:''}</div>`).join('')||'<div style="font-size:12px;color:#646A80">Не прикреплена ни к одной записи</div>'}
+      <div class="zbj-at"><select id="zbj-sel"><option value="">${cand.length?'Прикрепить к записи…':'Нет записей в '+reg}</option>${cand.map(t=>`<option value="${t.id}">${bjEsc(bjTaskName(t))}</option>`).join('')}</select><button id="zbj-go">Прикрепить</button></div>`
     const act=dp.querySelector('.act');if(act)act.before(b);else dp.appendChild(b)
     b.querySelectorAll('[data-bjgo]').forEach(a=>a.onclick=e=>{e.preventDefault();bjOpenEntry(+a.dataset.bjgo)})
     const go=b.querySelector('#zbj-go');if(go)go.onclick=async()=>{const id=+b.querySelector('#zbj-sel').value;if(!id){toast('Выбери запись','info');return}
