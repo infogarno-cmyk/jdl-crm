@@ -2036,7 +2036,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-03 20:24'
+const BUILD='2026-10-03 23:08'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -6215,11 +6215,14 @@ async function fetchCreoAddMetrics(z){
 }
 
 function _buildCreoAddModalWithMeta(z, meta){
+  // Meta знает расход и свои «лиды» пикселя, но не квалов. Квалы — только из CRM,
+  // по калькам этой РК; раньше здесь стоял жёсткий ноль, и CQL в крео всегда был пустым.
+  const src=typeof zSrcStats==='function'?zSrcStats(z):null,hasSrc=!!(src&&src.sources&&src.sources.length)
   const spend=meta?meta.spend:0
-  const totalLeads=meta?meta.leads:0
-  const totalQuals=0
-  const autoCpl=meta?meta.cpl:0
-  const autoCql=0
+  const totalLeads=hasSrc?src.leads:(meta?meta.leads:0)   // лиды CRM — как на дашборде
+  const totalQuals=hasSrc?src.quals:0
+  const autoCpl=totalLeads>0?Math.round(spend/totalLeads*100)/100:(meta?meta.cpl:0)
+  const autoCql=totalQuals>0?Math.round(spend/totalQuals*100)/100:0
   const avgCtr=meta?meta.ctr:0
   const dateStart=z.date||new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
   const dateEndFmt=new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
@@ -6243,6 +6246,9 @@ function _buildCreoAddModalFallback(z){
     totalQuals+=r.quals||0
   })
   spend=Math.round(spend*100)/100
+  // лиды и квалы — этой РК по её калькам, а не всего региона
+  const src=typeof zSrcStats==='function'?zSrcStats(z):null
+  if(src&&src.sources&&src.sources.length){totalLeads=src.leads;totalQuals=src.quals}
   const autoCpl=totalLeads>0?Math.round(spend/totalLeads*100)/100:0
   const autoCql=totalQuals>0?Math.round(spend/totalQuals*100)/100:0
   const avgCtr=metrics.length?Math.round(metrics.reduce((s,r)=>s+parseFloat(r.ctr||0),0)/metrics.length*100)/100:0
