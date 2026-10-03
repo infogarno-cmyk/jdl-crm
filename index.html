@@ -377,6 +377,10 @@
 .bj-pick b{display:flex;align-items:center;gap:8px;font:400 15px var(--bjd);letter-spacing:.06em;color:var(--bjg2);margin-bottom:6px}
 .bj-pick p{margin:0;color:var(--bjt2);font-size:12px}.bj-pick kbd{margin-left:auto;font:600 10px var(--bjm);border:1px solid var(--bjl2);border-radius:4px;padding:1px 5px;color:var(--bjt2)}
 
+/* Creatives — белое свечение */
+.ttype.creo{color:#fff;border-color:rgba(255,255,255,.6);background:rgba(255,255,255,.08);box-shadow:0 0 10px rgba(255,255,255,.28);text-shadow:0 0 6px rgba(255,255,255,.55)}
+.ttype-btn[data-ttype=creo].sel{color:#fff;border-color:#fff;background:rgba(255,255,255,.1);box-shadow:0 0 12px rgba(255,255,255,.35)}
+.kqt[data-t=creo].on{box-shadow:0 0 8px rgba(255,255,255,.4);text-shadow:0 0 6px rgba(255,255,255,.5)}
 /* связь с тасками и заливами */
 .ttype.bj{color:#F0D98A;border-color:rgba(212,175,55,.4);background:rgba(212,175,55,.1)}
 .tbj{display:inline-block;font:600 10.5px 'JetBrains Mono',monospace;color:#F0D98A;border:1px solid rgba(212,175,55,.3);background:rgba(212,175,55,.08);border-radius:6px;padding:2px 7px;cursor:pointer;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1462,7 +1466,7 @@ document.getElementById('root').innerHTML=`
       <div class="fhdr" style="margin-bottom:12px"><span class="fhtit">Tasks</span><span style="font-size:11px;color:var(--text3);margin-left:10px">общие для PL и CZ</span></div>
       <div class="fbar" style="margin-bottom:12px;gap:8px;flex-wrap:wrap">
         <select class="fsel" id="tf-u"><option value="">👤 Все</option><option value="Illia">Illia</option><option value="Danya">Danya</option></select>
-        <select class="fsel" id="tf-type"><option value="">Тип: все</option><option value="fdc">FDC</option><option value="prep">Prepare ADS</option><option value="zaliw">Zaliw ADS</option><option value="an">Analyzing ADS</option><option value="vibe">Vibe Code</option><option value="bj">Buyer's Journal</option><option value="other">Другое</option></select>
+        <select class="fsel" id="tf-type"><option value="">Тип: все</option><option value="fdc">FDC</option><option value="prep">Prepare ADS</option><option value="zaliw">Zaliw ADS</option><option value="an">Analyzing ADS</option><option value="vibe">Vibe Code</option><option value="creo">Creatives</option><option value="bj">Buyer's Journal</option><option value="other">Другое</option></select>
         <select class="fsel" id="tf-per"><option value="1">Сегодня</option><option value="7" selected>Неделя</option><option value="30">Месяц</option><option value="0">Всё</option></select>
         <button class="fsel" id="tf-stat-tgl" style="cursor:pointer">📊 Статистика</button>
       </div>
@@ -1645,6 +1649,7 @@ document.getElementById('root').innerHTML=`
       <button class="ttype-btn" data-ttype="zaliw">Zaliw ADS</button>
       <button class="ttype-btn" data-ttype="an">Analyzing ADS</button>
       <button class="ttype-btn" data-ttype="vibe">Vibe Code</button>
+      <button class="ttype-btn" data-ttype="creo">Creatives</button>
       <button class="ttype-btn" data-ttype="bj">BUYER'S JOURNAL</button>
       <button class="ttype-btn" data-ttype="other">Другое</button>
     </div>
@@ -2031,7 +2036,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-09-25 23:16'
+const BUILD='2026-10-03 20:24'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -5019,6 +5024,37 @@ function addCreoInline(id){
 var moCat=''
 function parseCatFromName(n){const u=(n||'').toUpperCase();if(/\bMWP\b/.test(u))return'mwp';if(/\bTRASH\b/.test(u))return'trash';if(/\bTEST/.test(u))return'test';return''}
 function parseBudgetFromName(n){const m=(n||'').match(/\/(\d+)\$/);return m?+m[1]:0}
+// ── Сквозной номер РК: у каждого баера свой счётчик, D — Danya, I — Illia ──
+// Следующий номер = наибольший среди всех заливов обоих регионов + 1.
+// Нижняя граница — номера, которые были на момент внедрения, чтобы счётчик
+// не откатился, если часть старых РК в CRM не заведена.
+const RK_NO_FLOOR={D:42,I:32}
+const rkLetter=buyer=>buyer==='Illia'?'I':'D'
+const RK_NO_RE=/^\s*(\d+)\s*([DdIi])(?=[{\s/_\-.]|$)/
+function rkNextNo(L){
+  let mx=RK_NO_FLOOR[L]||0
+  const seen=new Set(),all=[...(window._ALL_ZALIVS||[]),...(ZALIVS||[])]
+  for(const z of all){if(seen.has(z.id))continue;seen.add(z.id)
+    const m=RK_NO_RE.exec(z.name||'');if(m&&m[2].toUpperCase()===L)mx=Math.max(mx,+m[1])}
+  return mx+1}
+// Ставим номер в начало: уже пронумерованное не трогаем, старое «D{дата}» дополняем числом
+function rkWithNo(name,L){name=String(name||'')
+  if(RK_NO_RE.test(name))return name
+  const no=rkNextNo(L)+L
+  if(/^\s*[DdIi](?=\{)/.test(name))return name.replace(/^\s*[DdIi]/,no)
+  return no+name.replace(/^\s+/,'')}
+function rkNoPrefill(){const mn=document.getElementById('mn'),mb=document.getElementById('mb');if(!mn)return
+  const L=rkLetter(mb?.value||CURRENT_USER?.name),no=rkNextNo(L)+L
+  mn.value=rkWithNo(mn.value,L)
+  mn.dataset.autono=no
+  rkCaretEnd(mn)
+  const h=document.getElementById('mo-date-hint');if(h&&!h.textContent)h.textContent='№ '+no+' — следующий у '+(L==='I'?'Illia':'Danya')}
+// курсор — за номером: иначе текст печатается перед ним и номер оказывается в конце имени
+function rkCaretEnd(el){requestAnimationFrame(()=>{try{const L=el.value.length;el.setSelectionRange(L,L)}catch(e){}})}
+// сменили баера в форме — меняем и автономер, если он ещё наш
+function rkNoSwap(){const mn=document.getElementById('mn'),mb=document.getElementById('mb');if(!mn||!mn.dataset.autono)return
+  const old=mn.dataset.autono,L=rkLetter(mb.value),no=rkNextNo(L)+L
+  if(mn.value.startsWith(old)){mn.value=no+mn.value.slice(old.length);mn.dataset.autono=no}}
 function autoFillFromName(){const n=document.getElementById('mn').value
   const cat=parseCatFromName(n);moCat=cat;document.querySelectorAll('#mo-cat [data-mcat]').forEach(b=>b.classList.toggle('sel',b.dataset.mcat===cat))
   const b=parseBudgetFromName(n);if(b){document.getElementById('mr').value=b;if(!document.getElementById('ma').value)document.getElementById('ma').value=b}
@@ -5029,9 +5065,15 @@ function moAdsRender(){const w=document.getElementById('mo-ads');if(!w)return;co
 var moAds=[]
 document.getElementById('btn-add-ad')?.addEventListener('click',()=>{if(moAds.length<6){moAds.push({ad:moAds.length+1,domain:''});moAdsRender()}})
 document.getElementById('mn').addEventListener('input',autoFillFromName)
+document.getElementById('mb')?.addEventListener('change',rkNoSwap)
+document.getElementById('mn').addEventListener('focus',e=>{const el=e.target;if(el.dataset.autono&&el.value===el.dataset.autono)rkCaretEnd(el)})
 document.querySelectorAll('#mo-cat [data-mcat]').forEach(b=>b.addEventListener('click',function(){moCat=this.dataset.mcat;document.querySelectorAll('#mo-cat [data-mcat]').forEach(x=>x.classList.toggle('sel',x===this))}))
 async function svz(togo){
-  const name=document.getElementById('mn').value.trim()
+  const mbv=document.getElementById('mb')?.value||CURRENT_USER?.name,mnEl=document.getElementById('mn')
+  let raw=mnEl.value.trim();const auto=mnEl.dataset.autono
+  // если номер всё же уехал в конец — снимаем его оттуда, в начало он встанет сам
+  if(auto&&raw.endsWith(auto)&&!raw.startsWith(auto))raw=raw.slice(0,-auto.length).trim()
+  const name=rkWithNo(raw,rkLetter(mbv))
   if(!name||!moGeo){toast('Укажи GEO и название','err');return}
   const goals=[...document.querySelectorAll('.mgoal-input')].map(i=>i.value.trim()).filter(Boolean)
   const nd=parseDateFromCampName(name);const today=nd||new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
@@ -5188,8 +5230,8 @@ function rdomains(){rdomRegistry();
 // TASKS v8 — types · RK link · timer · stats · grind · auto FDC · JDL TODAY
 // tasks shared across PL/CZ (no region filter)
 // ══════════════════════════════════════════
-var TTYPES={fdc:'FDC',prep:'Prepare ADS',zaliw:'Zaliw ADS',an:'Analyzing ADS',vibe:'Vibe Code',bj:"BUYER'S JOURNAL",other:'Другое'}
-var TTCOL={fdc:'#6E9BFF',prep:'#A07CF5',zaliw:'#D4AF37',an:'#3DBE8B',other:'#5a5a70'}
+var TTYPES={fdc:'FDC',prep:'Prepare ADS',zaliw:'Zaliw ADS',an:'Analyzing ADS',vibe:'Vibe Code',creo:'Creatives',bj:"BUYER'S JOURNAL",other:'Другое'}
+var TTCOL={fdc:'#6E9BFF',prep:'#A07CF5',zaliw:'#D4AF37',an:'#3DBE8B',vibe:'#40C8B9',creo:'#FFFFFF',bj:'#F0D98A',other:'#5a5a70'}
 var _teBj=null,GRIND=[],_teType='',_teRk=null,_teRg='PL',_grindTab='insight',_tmTick=null
 var _rkGeoMap={PL:'PL',PLUA:'PLUA',CZ:'CZ',CZUA:'CZUA'}
 
@@ -5399,7 +5441,7 @@ function rtasks(){
       <div class="kcards" id="kl-${c.id}">${tasks.map(t=>tcard(t)).join('')}</div>
       <button class="kadd" data-col="${c.id}">+ Add a card</button>
       <div class="kqwrap" id="kq-${c.id}" data-col="${c.id}"><input class="kqinp" placeholder="Название…" data-col="${c.id}" data-who="${who}">
-        <div class="kqchips">${Object.keys(TTYPES).map(k=>`<span class="kqt" data-t="${k}" style="--tc:${TTCOL[k]}">${TTYPES[k]}</span>`).join('')}</div>
+        <div class="kqchips">${Object.keys(TTYPES).filter(k=>k!=='bj').map(k=>`<span class="kqt" data-t="${k}" style="--tc:${TTCOL[k]}">${TTYPES[k]}</span>`).join('')}</div>
         <div class="kqrk" style="display:none"><div class="kqgeo">${['PL','PLUA','CZ','CZUA'].map((g,i)=>`<span class="kqg${i?'':' on'}" data-g="${g}">${({PL:'PLPL',PLUA:'PLUA',CZ:'CZCZ',CZUA:'CZUA'})[g]}</span>`).join('')}</div><select class="kqrksel"><option value="">— выбрать РК —</option></select></div>
         <div class="kqdate"><span class="kqd on" data-d="0">Сегодня</span><span class="kqd" data-d="1">Завтра</span><input type="date" class="kqdi" title="Выбрать дату"></div>
         <div class="kqfoot"><button class="kqsv" data-col="${c.id}" data-who="${who}">Создать</button><button class="kqcn" data-col="${c.id}" data-full="1" title="Полная форма">✎</button><button class="kqcn" data-col="${c.id}">✕</button></div></div>
@@ -6761,6 +6803,7 @@ function openMoZaliv(tpl=null){
   document.getElementById('mr').value=''
   document.getElementById('mcreo-list').innerHTML=''
   document.getElementById('mg-list').innerHTML=''
+  setTimeout(rkNoPrefill,0)
   if(tpl){
     moGeo=tpl.geo||'';moScore=tpl.score||0
     document.getElementById('mn').value=tpl.name_template||''
