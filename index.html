@@ -2036,7 +2036,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-14 16:22'
+const BUILD='2026-10-14 16:52'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -2167,7 +2167,12 @@ async function setDomainNote(key){const m=DOMAIN_META.find(x=>x.key===key);const
 async function addCustomDomain(){const key=(prompt('Ключ домена (как в источнике GarnoCRM), напр. landing5')||'').trim().toLowerCase();if(!key)return;if(allDKeys().includes(key)){toast('Такой уже есть','err');return}const url=(prompt('Ссылка (полная)','https://')||'').trim()
   const{data,error}=await db.from('domain_meta').insert({region:CURRENT_REGION,key,custom:true,url,updated_at:new Date().toISOString()}).select().single();if(error){toast('Ошибка: '+error.message,'err');return}DOMAIN_META.push(data);rdomRegistry();toast('Домен добавлен: '+key,'ok')}
 async function delCustomDomain(key){const m=DOMAIN_META.find(x=>x.key===key&&x.custom);if(!m)return;if(!confirm('Удалить '+key+'?'))return;await db.from('domain_meta').delete().eq('id',m.id);DOMAIN_META=DOMAIN_META.filter(x=>x.id!==m.id);rdomRegistry()}
-async function loadSrcDaily(){if(!db)return;const since=new Date(Date.now()-90*864e5).toISOString().split('T')[0];const{data}=await db.from('source_daily').select('*').eq('region',CURRENT_REGION).gte('day',since);SRC_DAILY=data||[]}
+// Supabase отдаёт не больше 1000 строк за запрос. 90 дней × десятки источников — больше,
+// и раньше хвост молча отрезался: лиды за случайные дни просто пропадали. Теперь страницами.
+async function loadSrcDaily(){if(!db)return;const since=new Date(Date.now()-90*864e5).toISOString().split('T')[0];const all=[]
+  for(let off=0;off<50000;off+=1000){const{data,error}=await db.from('source_daily').select('*').eq('region',CURRENT_REGION).gte('day',since).order('day',{ascending:true}).order('source',{ascending:true}).range(off,off+999)
+    if(error||!data)break;all.push(...data);if(data.length<1000)break}
+  SRC_DAILY=all;_srcOwnSig=''}
 async function loadAdsetSrc(){ADSET_SRC=[]}
 // ── domain registry helpers ──
 function dPixel(key){const n=+(key.replace('kalkulator','')||0);return n>=11?'NEW':'OLD'}
@@ -2180,17 +2185,50 @@ function zDomains(z){const a=z.adset_domains;return Array.isArray(a)?a:[]}
 function lockedDomains(){const m={};ZALIVS.forEach(z=>{if(z.togo||z.ind==='off')return;zDomains(z).forEach(d=>{if(d.adset_status==='PAUSED')return;if(d.domain&&!m[d.domain])m[d.domain]={z,ad:d.ad}})});return m}
 function domainOptions(site,curKey,selfZid,buyer){const lk=lockedDomains();const me=buyer||document.getElementById('mb')?.value||CURRENT_BUYER||'';const keys=allDKeys().slice().sort((a,b)=>{const ma=dMeta(a).buyer,mb=dMeta(b).buyer;const sa=ma===me?0:ma?2:1,sb=mb===me?0:mb?2:1;return sa-sb});return keys.map(k=>{const L=lk[k];const busy=L&&L.z.id!==selfZid;const m=dMeta(k);const own=m.buyer?(m.buyer===me?' · мой':' · '+m.buyer):'';return`<option value="${k}"${k===curKey?' selected':''}${busy?' disabled':''}>${k}${m.custom?'':(dPixel(k)==='NEW'?' · new px':' · old px')}${own}${busy?' — занят: '+L.z.name.slice(0,24):''}</option>`}).join('')}
 // source → {letter, key}
-function srcParse(src){src=(src||'').toLowerCase().trim().replace(/\s+/g,' ');const keys=new Set(allDKeys());if(keys.has(src))return{letter:'',key:src}
+const normKey=k=>String(k||'').toLowerCase().trim().replace(/\s+/g,' ')
+let _rkKeySig='',_rkKeys=new Set()
+function srcKeySet(){const sig=DKEYS.length+':'+DOMAIN_META.length+':'+ZALIVS.length+':'+ZALIVS.reduce((a,z)=>a+zDomains(z).length,0)
+  if(sig!==_rkKeySig){_rkKeys=new Set([...allDKeys().map(normKey),...ZALIVS.flatMap(z=>zDomains(z).map(d=>normKey(d.domain)))].filter(Boolean));_rkKeySig=sig}
+  return _rkKeys}
+function srcParse(src){src=normKey(src);const keys=srcKeySet();if(keys.has(src))return{letter:'',key:src}
   const pre=src.match(/^([id])(.+)$/);if(pre&&keys.has(pre[2]))return{letter:pre[1].toUpperCase(),key:pre[2]}
   const suf=src.match(/^(.+)([id])$/);if(suf&&keys.has(suf[1]))return{letter:suf[2].toUpperCase(),key:suf[1]}
   const pk=src.match(/^([id])(kalkulator\d*)$/);if(pk)return{letter:pk[1].toUpperCase(),key:pk[2]}
   const k=src.match(/^(kalkulator\d*)$/);if(k)return{letter:'',key:k[1]};return{letter:'',key:src}}
 function allSources(){const s=new Set([...SRC_DAILY.map(r=>r.source),...ADSET_SRC.map(m=>m.source)]);const arr=[...s].filter(x=>x&&x!=='(none)').sort();const dl=document.getElementById('srclist');if(dl)dl.innerHTML=arr.map(x=>`<option value="${x}">`).join('');return arr}
 // leads/quals from GarnoCRM for a zaliv (or one adset) over a period, via mapped sources
-function srcStats(zid,adsetId,from,to){const z=ZALIVS.find(x=>x.id===zid);if(!z)return null;const doms=zDomains(z).filter(d=>d.domain&&(adsetId?(d.adset_id===adsetId):true));const keys=new Set(doms.map(d=>d.domain));if(!keys.size)return null
-  const bl=z.buyer==='Illia'?'I':z.buyer==='Danya'?'D':'';let leads=0,quals=0;SRC_DAILY.forEach(r=>{const p=srcParse(r.source);if(!keys.has(p.key))return;if(p.letter&&bl&&p.letter!==bl)return;if((!from||r.day>=from)&&(!to||r.day<=to)){leads+=r.leads||0;quals+=r.quals||0}});return{leads,quals,sources:[...keys]}}
+// ── Чья РК получает лид ──
+// Калька переходит из РК в РК: kalkulator3 сначала стоял в 25D, потом в 31D. Раньше лиды
+// с неё считались обеим РК навсегда — старая выключенная РК продолжала «получать» лиды
+// новой, а лид без буквы баера уходил и Дане, и Илье. Теперь за каждый день лид кальки
+// достаётся последней запущенной к этому дню РК с этой калькой (и с этим баером, если
+// буква в источнике есть). Две РК, запущенные в один день на одну кальку, делят её поровну
+// в смысле «обе видят лид» — различить их по данным источника нельзя.
+let _srcOwnSig='',_srcOwnIdx={}
+function zStartISO(z){const d=(z.date||parseDateFromCampName(z.name||'')||'').replace(',','.');const p=d.split('.')
+  const ca=z.created_at?String(z.created_at).slice(0,10):''
+  if(p.length===2&&+p[0]&&+p[1]){let y=ca?+ca.slice(0,4):new Date().getFullYear()
+    // дата в имени — декабрь, а РК заведена в январе: это прошлый год
+    if(ca&&+p[1]===12&&+ca.slice(5,7)===1)y--
+    return y+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0')}
+  return ca||'0000-00-00'}
+const zLetter=z=>z.buyer==='Illia'?'I':z.buyer==='Danya'?'D':(typeof parseBuyerFromName==='function'?(parseBuyerFromName(z.name||'')==='Illia'?'I':parseBuyerFromName(z.name||'')==='Danya'?'D':''):'')
+function srcOwnIndex(){const sig=ZALIVS.length+':'+ZALIVS.map(z=>z.id+'|'+(z.togo?1:0)+'|'+zDomains(z).map(d=>d.domain).join(',')+'|'+(z.buyer||'')).join(';')
+  if(sig===_srcOwnSig)return _srcOwnIdx;const idx={}
+  ZALIVS.forEach(z=>{if(z.togo)return;const st=zStartISO(z),L=zLetter(z)
+    new Set(zDomains(z).map(d=>normKey(d.domain)).filter(Boolean)).forEach(k=>{(idx[k]||(idx[k]=[])).push({id:z.id,st,L})})})
+  Object.values(idx).forEach(a=>a.sort((x,y)=>x.st<y.st?-1:x.st>y.st?1:0))
+  _srcOwnSig=sig;_srcOwnIdx=idx;return idx}
+function srcRowOwners(r,p){p=p||srcParse(r.source);const list=srcOwnIndex()[p.key];if(!list)return new Set()
+  const cand=list.filter(x=>!p.letter||!x.L||x.L===p.letter);if(!cand.length)return new Set()
+  let ok=cand.filter(x=>x.st<=r.day)
+  // лид раньше даты в имени РК (опечатка в дате, ранний старт) — отдаём самой ранней
+  if(!ok.length)ok=[cand[0]]
+  const top=ok[ok.length-1].st;return new Set(ok.filter(x=>x.st===top).map(x=>x.id))}
+function srcStats(zid,adsetId,from,to){const z=ZALIVS.find(x=>x.id===zid);if(!z)return null;const doms=zDomains(z).filter(d=>d.domain&&(adsetId?(d.adset_id===adsetId):true));const keys=new Set(doms.map(d=>normKey(d.domain)));if(!keys.size)return null
+  const bl=z.buyer==='Illia'?'I':z.buyer==='Danya'?'D':'';let leads=0,quals=0;SRC_DAILY.forEach(r=>{const p=srcParse(r.source);if(!keys.has(p.key))return;if(p.letter&&bl&&p.letter!==bl)return;if(!srcRowOwners(r,p).has(zid))return;if((!from||r.day>=from)&&(!to||r.day<=to)){leads+=r.leads||0;quals+=r.quals||0}});return{leads,quals,sources:[...keys]}}
 async function setAdsetDomain(zid,adIdx,adsetId,adsetName,domain){const z=ZALIVS.find(x=>x.id===zid);if(!z)return;const arr=zDomains(z).slice();let e=arr.find(d=>adsetId?d.adset_id===adsetId:d.ad===adIdx);if(!e){e={ad:adIdx};arr.push(e)}e.adset_id=adsetId||e.adset_id||null;e.adset_name=adsetName||e.adset_name||null;e.domain=domain||'';z.adset_domains=arr.filter(d=>d.domain);await db.from('zalivs').update({adset_domains:z.adset_domains}).eq('id',zid);toast(domain?'Домен привязан: '+domain:'Домен снят','ok');selZaliv(zid);rzalivs()}
-function zSrcStats(z){const d=z.date||parseDateFromCampName(z.name);let from=null;if(d){const p=d.split('.');if(p.length===2)from=`${new Date().getFullYear()}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`}return srcStats(z.id,null,from,null)}
+function zSrcStats(z){const st=zStartISO(z);return srcStats(z.id,null,st==='0000-00-00'?null:st,null)}
 async function setAdsetSource(zid,adsetId,adsetName,source){allSources();const ex=ADSET_SRC.find(m=>m.zaliv_id===zid&&m.adset_id===adsetId)
   if(!source){if(ex){await db.from('adset_sources').delete().eq('id',ex.id);ADSET_SRC=ADSET_SRC.filter(m=>m.id!==ex.id)}}
   else if(ex){await db.from('adset_sources').update({source}).eq('id',ex.id);ex.source=source}
@@ -2776,7 +2814,9 @@ async function cqlByBuyer3(region){
   camps.forEach(r=>{const b=buyerOf[String(r.campaign_id)];if(!b||!r.day)return;box(b,r.day).s+=+r.spend||0})
   ;(SRC_DAILY||[]).forEach(r=>{
     if(!r.day||r.day<from||r.day>to)return
-    const b=srcBuyer(r.source);if(!b)return
+    let b=srcBuyer(r.source)
+    if(!b){const own=[...srcRowOwners(r)];const z=own.length===1?ZALIVS.find(x=>x.id===own[0]):null;b=z?z.buyer||'':''}
+    if(!b)return
     box(b,r.day).q+=+r.quals||0})
 
   const out=[]
@@ -7619,7 +7659,7 @@ function checkLeads(zidOrName,from,to){
   }))
   if(!(_zAdsCache[z.id]||[]).length)console.log('%cАдсеты не загружены — открой РК в Заливах, чтобы они подтянулись','color:#D4AF37')
 
-  const keys=new Set(doms.filter(x=>x.domain).map(x=>x.domain))
+  const keys=new Set(doms.filter(x=>x.domain).map(x=>normKey(x.domain)))
   if(!keys.size){console.log('%cНи одного домена не привязано — CRM не может посчитать лиды вовсе','color:#E04050;font-weight:bold');return}
 
   const bl=z.buyer==='Illia'?'I':z.buyer==='Danya'?'D':''
@@ -7627,7 +7667,7 @@ function checkLeads(zidOrName,from,to){
   SRC_DAILY.forEach(r=>{
     if((from&&r.day<from)||(to&&r.day>to))return
     const p=srcParse(r.source)
-    if(keys.has(p.key)&&(!p.letter||!bl||p.letter===bl)){
+    if(keys.has(p.key)&&(!p.letter||!bl||p.letter===bl)&&srcRowOwners(r,p).has(z.id)){
       leads+=r.leads||0;quals+=r.quals||0
       matched[r.source]=(matched[r.source]||0)+(r.leads||0)
     }else unmatched[r.source]=(unmatched[r.source]||0)+(r.leads||0)
@@ -8143,9 +8183,9 @@ async function rdashBuyer(buyer){
   const ids=[...new Set(rks.filter(z=>z.campaign_id).map(z=>String(z.campaign_id)))]
   $('hero-rk').textContent=rks.filter(z=>z.ind!=='off').length;$('hero-rkall').textContent=rks.length
   // leads/quals by buyer LETTER in GarnoCRM source (dkalkulator8 → Danya); letterless sources via RK domains; analyses as last fallback
-  const bl=buyer==='Illia'?'I':'D';const doms=new Set();rks.forEach(z=>zDomains(z).forEach(d=>d.domain&&doms.add(d.domain)))
+  const bl=buyer==='Illia'?'I':'D';const doms=new Set();rks.forEach(z=>zDomains(z).forEach(d=>d.domain&&doms.add(normKey(d.domain))))
   let leads=0,quals=0,any=false
-  SRC_DAILY.forEach(r=>{if((from&&r.day<from)||(to&&r.day>to))return;const p=srcParse(r.source);if(p.letter===bl||(!p.letter&&doms.has(p.key))){leads+=r.leads||0;quals+=r.quals||0;any=true}})
+  SRC_DAILY.forEach(r=>{if((from&&r.day<from)||(to&&r.day>to))return;const p=srcParse(r.source);if(p.letter===bl||(!p.letter&&doms.has(p.key)&&[...srcRowOwners(r,p)].some(id=>rks.some(z=>z.id===id)))){leads+=r.leads||0;quals+=r.quals||0;any=true}})
   if(!any){const seen=new Set();RK_ANALYSES.filter(a=>a.buyer===buyer&&normDate(a.period_from)>=from&&normDate(a.period_from)<=to).forEach(a=>{if(seen.has(a.zaliv_id))return;seen.add(a.zaliv_id);leads+=a.leads||0;quals+=a.quals||0})}
   heroCountUp($('hero-l'),leads,v=>Math.round(v));heroCountUp($('hero-q'),quals,v=>Math.round(v))
   setKpi('d-daily',leads,'#2ea043');setKpi('d-roi',quals,'#4080ff')
