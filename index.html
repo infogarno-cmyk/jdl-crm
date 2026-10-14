@@ -430,6 +430,18 @@
 @media(max-width:600px){.bj-mrec{grid-template-columns:1fr 1fr}.bj-mrec .bj-wbtn{grid-column:1/-1}}
 /* старый «Журнал» убран из меню; данные документов остаются в базе */
 #nb-journal{display:none!important}
+/* конструктор залива и ручная правка */
+.mo-auto{float:right;font-weight:400;color:var(--text3);font-size:10px;text-transform:none;letter-spacing:0}.mo-auto a{color:#F0D98A}
+.mo-px{height:36px;display:flex;align-items:center;padding:0 10px;border-radius:8px;border:1px dashed var(--border2);font:700 12px var(--mono);color:var(--text3)}.mo-px.on{color:#F0D98A;border-style:solid;border-color:rgba(212,175,55,.4)}
+.mo-gear{margin-left:6px;width:20px;height:20px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;line-height:1;cursor:pointer;vertical-align:middle}.mo-gear:hover{color:var(--text);border-color:var(--border3)}
+.mo-edit{margin:-4px 0 12px;padding:10px;border-radius:10px;border:1px solid var(--border2);background:var(--bg3)}
+.mo-edh{font:700 10px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
+.mo-edl{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.mo-edc{display:inline-flex;align-items:center;gap:4px;padding:3px 4px 3px 9px;border-radius:7px;border:1px solid var(--border2);font-size:12px}
+.mo-edc button{border:0;background:transparent;color:var(--text3);cursor:pointer;font-size:14px;width:18px}.mo-edc button:hover{color:#F03A55}
+.mo-eda{display:flex;gap:6px}.mo-eda .fi{flex:1}
+.zman .zm-sub{font:700 10px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin:8px 0 6px}
+.zman .zm-row{display:flex;gap:6px;align-items:center;margin-bottom:5px}.zman .zm-ad{font-size:10.5px;color:var(--text3);width:34px;flex-shrink:0}
+.zman .zm-in{flex:1;min-width:0;font-size:12px;padding:6px 9px}.zman .zm-empty{font-size:11px;color:var(--text3);margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -1593,13 +1605,16 @@ document.getElementById('root').innerHTML=`
 <div class="mo" id="mo-zaliv"><div class="mob">
   <div class="motit">+ Новый залив <button class="mox" data-close="mo-zaliv">×</button></div>
   <div class="fl"><label>GEO</label><div class="gowrap" id="mo-geos"></div></div>
-  <div class="fl"><label>Название РК</label><input class="fi" id="mn" placeholder="D{дата}PL/PH1./garno/kalk"></div>
-  <div class="fl2"><div class="fl" style="margin-bottom:0"><label>AD Budget $</label><input class="fi" id="ma" type="number" placeholder="10"></div><div class="fl" style="margin-bottom:0"><label>RK Budget $</label><input class="fi" id="mr" type="number" placeholder="10"></div></div>
-  <div class="fl2"><div class="fl" style="margin-bottom:0"><label>Баер</label><select class="fi" id="mb"><option value="Illia">Illia</option><option value="Danya">Danya</option></select></div><div class="fl" style="margin-bottom:0"><label>Воронка</label><select class="fi" id="mf"><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div></div>
+  <div class="fl2"><div class="fl" style="margin-bottom:0"><label>Дата запуска</label><input class="fi" id="mdate" type="date"></div><div class="fl" style="margin-bottom:0"><label>Пиксель <span style="color:var(--text3);font-weight:400">· по доменам</span></label><div class="mo-px" id="mo-px">—</div></div></div>
+  <div class="fl"><label>Название РК <span class="mo-auto" id="mn-auto">собирается само</span></label><input class="fi" id="mn" placeholder="43D{15.10}PLPL/ABO/MWP/Калькулятор/PIXEL OLD /30$"></div>
+  <div class="fl2"><div class="fl" style="margin-bottom:0"><label>AD Budget $</label><input class="fi" id="ma" type="number" placeholder="15"></div><div class="fl" style="margin-bottom:0"><label>RK Budget $</label><input class="fi" id="mr" type="number" placeholder="30"></div></div>
+  <div class="fl2"><div class="fl" style="margin-bottom:0"><label>Баер</label><select class="fi" id="mb"><option value="Illia">Illia</option><option value="Danya">Danya</option></select></div><div class="fl" style="margin-bottom:0"><label>&nbsp;</label><select class="fi" id="mf" style="display:none"><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div></div>
+  <div class="fl"><label>Воронка <button type="button" class="mo-gear" data-edit="funnels" title="Добавить или удалить воронки">⚙</button></label><div class="gowrap" id="mo-funnels"></div></div>
   <div class="fl"><label>Score (0–6)</label><div style="display:flex;gap:4px" id="mo-score"><button class="spb s0" data-score="0">0</button><button class="spb" data-score="1">1</button><button class="spb" data-score="2">2</button><button class="spb" data-score="3">3</button><button class="spb" data-score="4">4</button><button class="spb" data-score="5">5</button><button class="spb" data-score="6">6</button></div></div>
   <div class="fl" style="display:none"><select class="fi" id="md"><option value="">— выбрать —</option></select><div id="mcreo-list"></div><button class="addg" id="btn-add-creo" style="display:none">+ Крео</button></div>
   <div class="fl"><label>Адсеты → домены <span style="color:var(--text3);font-weight:400">· свободные из реестра</span></label><div id="mo-ads"></div><button class="addg" id="btn-add-ad" type="button">+ адсет</button></div>
-  <div class="fl"><label>Категория <span style="color:var(--text3);font-weight:400">· из названия: TEST / MWP / TRASH</span></label><div class="gowrap" id="mo-cat"><div class="go" data-mcat="">—</div><div class="go" data-mcat="mwp">MWP</div><div class="go" data-mcat="test">TEST</div><div class="go" data-mcat="trash">TRASH</div></div></div>
+  <div class="fl"><label>Категория <button type="button" class="mo-gear" data-edit="cats" title="Добавить или удалить категории">⚙</button></label><div class="gowrap" id="mo-cat"></div></div>
+  <div class="mo-edit" id="mo-edit" hidden></div>
   <div class="fl"><label>Цели</label><div id="mg-list"></div><button class="addg" id="btn-add-goal">+ Цель</button></div>
   <div class="rkpv" id="mo-prev">D{дата}GEO/PH1./garno/kalk\LEADS/budget$</div>
   <div class="mofoot"><button class="bcn" id="btn-save-as-tpl" style="border-color:var(--border3)">💾 Шаблон</button><button class="bcn" id="btn-togo" title="Сохранить в TOGO — архив готовых РК без даты и бюджета" style="border-color:rgba(160,124,245,.4);color:var(--purple)">⏳ В TOGO</button><button class="bcn" data-close="mo-zaliv">Отмена</button><button class="bsv" id="btn-create-zaliv">Создать</button></div>
@@ -1865,7 +1880,8 @@ document.getElementById('df-q').addEventListener('input',rdomains)
 document.getElementById('btn-new-domain').addEventListener('click',()=>document.getElementById('mo-domain').classList.add('open'))
 document.getElementById('tf-u').addEventListener('change',rtasks)
 document.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',function(){document.getElementById(this.dataset.close).classList.remove('open')}))
-document.querySelectorAll('.mo').forEach(mo=>mo.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open')}))
+// форму нового залива клик мимо полей больше не закрывает — терялось всё заполненное
+document.querySelectorAll('.mo').forEach(mo=>mo.addEventListener('click',function(e){if(e.target===this&&this.id!=='mo-zaliv')this.classList.remove('open')}))
 // ── GEO selectors are region-dependent: render + bind here ──
 function populateGeoSelectors(){
   const cfg=regionCfg()
@@ -2036,7 +2052,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-14 17:13'
+const BUILD='2026-10-14 17:39'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -2460,6 +2476,18 @@ function openDrawer(){const{al}=buildEvents();document.getElementById('drawer-ls
 document.getElementById('bell')?.addEventListener('click',openDrawer)
 
 // ── HERO (dashboard top) ──
+// Плашка KPI: число «докручивается» от прошлого значения. Раньше живые цифры из Meta
+// вписывались сразу текстом — и анимация пропадала там, где ответ уже лежал в кеше.
+function kpiAnim(el,text,dur=800){if(!el)return;text=String(text)
+  const m=text.match(/^(\D*?)(-?\d+(?:\.\d+)?)(.*)$/)
+  if(!m){el._kpiTok=(el._kpiTok||0)+1;el.textContent=text;el.dataset.kv='';return}
+  const pre=m[1],num=+m[2],suf=m[3],dec=(m[2].split('.')[1]||'').length
+  const from=parseFloat(el.dataset.kv);el.dataset.kv=num
+  if(!isFinite(from)||from===num){if(el.textContent!==text&&isFinite(from)){el.textContent=text;return}}
+  const start=isFinite(from)?from:0,tok=el._kpiTok=(el._kpiTok||0)+1,t0=performance.now()
+  const st=t=>{if(el._kpiTok!==tok)return;const p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,3)
+    el.textContent=p<1?pre+(start+(num-start)*e).toFixed(dec)+suf:text;if(p<1)requestAnimationFrame(st)}
+  requestAnimationFrame(st)}
 function heroCountUp(el,to,fmt,dur=800){const from=parseFloat(el.dataset.v||'0'),t0=performance.now();el.dataset.v=to;const st=t=>{const p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,3);el.textContent=fmt(from+(to-from)*e);if(p<1)requestAnimationFrame(st)};requestAnimationFrame(st)}
 function heroRender(spend,leads,quals,daily,from,to){
   const $=id=>document.getElementById(id);if(!$('hero-tick'))return
@@ -4715,6 +4743,7 @@ async function selZaliv(zid){
       <div class="blk"><h4>Анализы <span>${keys.size} из ${zLCM(z).length}</span></h4><div class="anh">${zLCM(z).map(m=>{const a=an.find(x=>zAnKeyOf(x,z)===m[2]);if(a)return`<div class="an" onclick="gp('analysis',document.getElementById('nb-analysis'));setTimeout(()=>selectAnZaliv(${zid}),300)"><b>${m[1]}</b><span>$${a.cpl||0}</span><small>CPL · ${a.leads||0} л / ${a.quals||0} кв</small></div>`;if(z.ind!=='off'&&d>=Math.ceil(m[0]))return`<div class="an due" onclick="gp('analysis',document.getElementById('nb-analysis'));setTimeout(()=>{showNewAnalysisPanelFor(${zid});setTimeout(()=>document.querySelector('[data-apreset=\\'${m[2]}\\']')?.click(),150)},300)"><b>${m[1]} · пора</b><span style="color:var(--text3)">создать</span><small>метрики из Meta</small></div>`;return`<div class="an next"><b>${m[1]}</b><span style="color:#3E4457">—</span><small>${z.ind==='off'?'выкл.':'через '+Math.ceil(m[0]-d)+' дн.'}</small></div>`}).join('')}</div></div>
       <div class="blk" style="border-left:2px solid var(--purple)"><h4>Адсет → домен <span id="zdp-ads-n">${_zAdsCache[zid]?_zAdsCache[zid].length+' адсетов':''}</span></h4><div style="font-size:11px;color:var(--text3);margin:-4px 0 10px">В GarnoCRM источник лида = <b style="color:var(--text)">${z.buyer==='Illia'?'I':'D'}</b> + ключ домена (например <span class="mono">${z.buyer==='Illia'?'I':'D'}kalkulator3</span>). Лиды и квалы считаются сами.</div>${!_zAdsCache[zid]&&zDomains(z).length?`<div style="margin-bottom:8px">${zDomains(z).map(d=>`<div class="zad"><div></div><div class="n">AD${d.ad}<small>${d.domain} · <a class="dlnk" href="${dUrl(siteForGeo(z.geo),d.domain)}" target="_blank">открыть</a></small></div></div>`).join('')}</div>`:''}<div id="zdp-ads">${_zAdsCache[zid]?_zAdsCache[zid].map(a=>{const st=srcStats(zid,a.id);return`<div class="zad"><div class="sw ${a.status==='ACTIVE'?'on':''}" onclick="toggleAdset(${zid},'${a.id}',this)"></div><div class="n">${a.name}<small>${a.status==='ACTIVE'?'активен':'выключен'}${a.daily_budget?' · $'+(a.daily_budget/100).toFixed(0)+'/д':''}${st?` · <span style="color:var(--green)">${st.leads} л / ${st.quals} кв</span>`:''}</small><select class="srcsel" onchange="setAdsetDomain(${zid},${_zAdsCache[zid].indexOf(a)+1},'${a.id}','${a.name.replace(/'/g,'')}',this.value)"><option value="">— домен / калькулятор —</option>${domainOptions(siteForGeo(z.geo),(zDomains(z).find(d=>d.adset_id===a.id)||zDomains(z)[_zAdsCache[zid].indexOf(a)]||{}).domain,zid)}</select></div></div>`}).join('')||'<span style="font-size:11px;color:var(--text3)">нет адсетов</span>':z.campaign_id?'<span class="clnk" onclick="loadZalivAdsets('+zid+')">⚡ загрузить адсеты</span>':'<span style="font-size:11px;color:var(--text3)">нет campaign_id</span>'}</div>
         ${(()=>{const s=zSrcStats(z);return s?`<div style="margin-top:10px;font-size:11px;color:var(--text3)">Из GarnoCRM по привязкам: <b style="color:var(--text)">${s.leads}</b> лидов · <b style="color:var(--green)">${s.quals}</b> квалов · ${s.sources.join(', ')}</div>`:'<div style="margin-top:10px;font-size:11px;color:#3E4457">Привяжи источники к адсетам — лиды и квалы будут считаться сами</div>'})()}</div>
+      ${zManualBlk(z)}
       <div class="blk"><h4>Крео <span>${(z.creos||[]).length}</span></h4><div class="crs">${(z.creos||[]).slice(0,6).map((cn,j)=>{const lib=CREO_LIB.find(x=>x.name===cn);const g=['linear-gradient(160deg,#4a3a1a,#8a6a24)','linear-gradient(160deg,#1f3a5a,#3c6a9a)','linear-gradient(160deg,#3a2456,#6a44a0)','linear-gradient(160deg,#1e4a3a,#2f7a5a)'][j%4];return`<div class="cr" onclick="openCreoInfo('${cn.replace(/'/g,'')}')"><i style="background:${lib?.screenshot_url?'url('+lib.screenshot_url+') center/cover':g}"></i><div><b>${cn}</b><span>${lib?'CTR '+(lib.avg_ctr||0)+'% · CPL $'+(lib.avg_cpl||0):'—'}</span></div></div>`}).join('')||'<span style="font-size:11px;color:var(--text3)">нет</span>'}</div></div>
       <div class="blk"><h4>Домен</h4>${z.domain?`<a class="dlnk" href="https://${z.domain}" target="_blank">${z.domain}</a>`:'<span style="font-size:11px;color:var(--text3)">—</span>'}${z.campaign_id?`<div style="font:10.5px var(--mono);color:var(--text3);margin-top:6px">campaign_id ${z.campaign_id}</div>`:''}</div>
       <div class="blk"><h4>Инсайты</h4><textarea class="note" id="zdp-ins" onchange="db.from('zalivs').update({insights:this.value}).eq('id',${zid});const zz=ZALIVS.find(x=>x.id===${zid});if(zz)zz.insights=this.value;toast('Сохранено','ok')" placeholder="Что видишь по этой РК…">${(z.insights||'').replace(/</g,'&lt;')}</textarea></div>
@@ -5107,7 +5136,7 @@ function autoFillFromName(){const n=document.getElementById('mn').value
   const d=parseDateFromCampName(n);const el=document.getElementById('mo-date-hint');if(el)el.textContent=d?'дата из названия: '+d:''
 }
 function moAdsRender(){const w=document.getElementById('mo-ads');if(!w)return;const site=siteForGeo(moGeo||'PL');w.innerHTML=(moAds.length?moAds:[{ad:1,domain:''}]).map((r,i)=>`<div style="display:flex;gap:6px;align-items:center;margin-bottom:5px"><span class="mono" style="font-size:10.5px;color:var(--text3);width:34px">AD${i+1}</span><select class="fi" data-adi="${i}" style="flex:1;font-size:12px;padding:6px 9px"><option value="">— домен —</option>${domainOptions(site,r.domain,null,document.getElementById('mb')?.value)}</select>${r.domain?`<a class="dlnk" href="${dUrl(site,r.domain)}" target="_blank" style="font-size:11px">↗</a>`:''}${i>0?`<button type="button" class="rmbtn" data-adrm="${i}">×</button>`:''}</div>`).join('')
-  if(!moAds.length)moAds=[{ad:1,domain:''}];w.querySelectorAll('[data-adi]').forEach(s=>s.onchange=()=>{moAds[+s.dataset.adi].domain=s.value;moAdsRender()});w.querySelectorAll('[data-adrm]').forEach(b=>b.onclick=()=>{moAds.splice(+b.dataset.adrm,1);moAdsRender()})}
+  if(!moAds.length)moAds=[{ad:1,domain:''}];w.querySelectorAll('[data-adi]').forEach(s=>s.onchange=()=>{moAds[+s.dataset.adi].domain=s.value;moAdsRender();moBuild(false)});w.querySelectorAll('[data-adrm]').forEach(b=>b.onclick=()=>{moAds.splice(+b.dataset.adrm,1);moAdsRender();moBuild(false)})}
 var moAds=[]
 document.getElementById('btn-add-ad')?.addEventListener('click',()=>{if(moAds.length<6){moAds.push({ad:moAds.length+1,domain:''});moAdsRender()}})
 document.getElementById('mn').addEventListener('input',autoFillFromName)
@@ -5125,7 +5154,7 @@ async function svz(togo){
   const nd=parseDateFromCampName(name);const today=nd||new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
   const score=togo?0:(moScore||3)
   const adset_domains=moAds.filter(a=>a.domain).map((a,i)=>({ad:i+1,domain:a.domain}))
-  const row={geo:moGeo,name,ad_budget:parseFloat(document.getElementById('ma').value)||0,rk_budget:parseFloat(document.getElementById('mr').value)||parseBudgetFromName(name),domain:adset_domains[0]?dUrl(siteForGeo(moGeo),adset_domains[0].domain):'',adset_domains,creos:[],goals,ind:togo?'off':'profit',status:togo?'Test':'Check',insights:'',buyer:document.getElementById('mb').value,funnel:document.getElementById('mf').value,score,date:togo?null:today,region:CURRENT_REGION,cat:moCat||parseCatFromName(name),togo:!!togo}
+  const row={geo:moGeo,name,ad_budget:parseFloat(document.getElementById('ma').value)||0,rk_budget:parseFloat(document.getElementById('mr').value)||parseBudgetFromName(name),domain:adset_domains[0]?dUrl(siteForGeo(moGeo),adset_domains[0].domain):'',adset_domains,creos:[],goals,ind:togo?'off':'profit',status:togo?'Test':'Check',insights:'',buyer:document.getElementById('mb').value,funnel:_moFunnel||document.getElementById('mf').value,score,date:togo?null:today,region:CURRENT_REGION,cat:moCat||parseCatFromName(name),togo:!!togo}
   const{data,error}=await db.from('zalivs').insert(row).select().single()
   if(!error&&data){ZALIVS.unshift(data);(window._ALL_ZALIVS||[]).unshift(data);document.getElementById('mo-zaliv').classList.remove('open');toast(togo?'Сохранено в TOGO':'Залив создан · FDC-таска добавлена','ok');rzalivs();if(!togo)autoFdcTask(data)}
   else toast('Ошибка: '+JSON.stringify(error),'err')
@@ -5141,7 +5170,7 @@ async function saveAsTemplate(){
   if(!moGeo){toast('Выбери GEO','err');return}
   const creos=[...document.querySelectorAll('.mcreo-input')].map(i=>i.value.trim()).filter(Boolean)
   const goals=[...document.querySelectorAll('.mgoal-input')].map(i=>i.value.trim()).filter(Boolean)
-  const tpl={id:'tpl_'+Date.now(),name,geo:moGeo,name_template:document.getElementById('mn').value.trim(),ad_budget:parseFloat(document.getElementById('ma').value)||0,rk_budget:parseFloat(document.getElementById('mr').value)||0,buyer:document.getElementById('mb').value,funnel:document.getElementById('mf').value,score:moScore,creos,goals,created_at:new Date().toISOString()}
+  const tpl={id:'tpl_'+Date.now(),name,geo:moGeo,name_template:document.getElementById('mn').value.trim(),ad_budget:parseFloat(document.getElementById('ma').value)||0,rk_budget:parseFloat(document.getElementById('mr').value)||0,buyer:document.getElementById('mb').value,funnel:_moFunnel||document.getElementById('mf').value,score:moScore,creos,goals,created_at:new Date().toISOString()}
   try{const{error}=await db.from('zaliv_templates').insert(tpl);if(!error){TEMPLATES.unshift(tpl);toast(`Шаблон «${name}» сохранён`,'ok');return}}catch(e){}
   TEMPLATES.unshift(tpl);localStorage.setItem('jdl_templates',JSON.stringify(TEMPLATES));toast(`Шаблон «${name}» сохранён`,'ok')
 }
@@ -6834,14 +6863,7 @@ function updDomains(){
   sel.innerHTML='<option value="">— выбрать —</option>'+f.map(d=>`<option value="${d.url}">${d.url}</option>`).join('')
 }
 
-function updPrev(){
-  const el=document.getElementById('mo-prev')
-  if(!el)return
-  const g=moGeo||'GEO'
-  const b=document.getElementById('mr')?.value||'budget'
-  const today=new Date().toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
-  el.textContent=`D{${today}}${g}/PH1./garno/kalk\LEADS/${b}$`
-}
+function updPrev(){if(typeof moBuild==='function')moBuild(false)}
 
 function openMoZaliv(tpl=null){
   moGeo='';moScore=3;moCat=''
@@ -6855,7 +6877,7 @@ function openMoZaliv(tpl=null){
   document.getElementById('mr').value=''
   document.getElementById('mcreo-list').innerHTML=''
   document.getElementById('mg-list').innerHTML=''
-  setTimeout(rkNoPrefill,0)
+  setTimeout(()=>moInit(tpl),0)
   if(tpl){
     moGeo=tpl.geo||'';moScore=tpl.score||0
     document.getElementById('mn').value=tpl.name_template||''
@@ -8158,13 +8180,13 @@ async function heroAllMeta(from,to,seq){const $=id=>document.getElementById(id);
   // ── KPI strip must show the SAME live spend as the hero above it (was summing stale metrics_daily) ──
   const pd=window._dashPeriod
   if(pd){
-    const sp=$('d-spend');if(sp){sp.textContent='$'+Math.round(S.spend);sp.style.color='var(--yellow)'}
-    const dd=$('d-daily');if(dd)dd.textContent='$'+Math.round(S.spend/(pd.days||1))
+    const sp=$('d-spend');if(sp){kpiAnim(sp,'$'+Math.round(S.spend));sp.style.color='var(--yellow)'}
+    const dd=$('d-daily');if(dd)kpiAnim(dd,'$'+Math.round(S.spend/(pd.days||1)))
     const cplN=pd.leads>0?S.spend/pd.leads:0,cqlN=pd.quals>0?S.spend/pd.quals:0
-    const ce=$('d-cpl');if(ce){ce.textContent=cplN?'$'+cplN.toFixed(1):'—'
+    const ce=$('d-cpl');if(ce){kpiAnim(ce,cplN?'$'+cplN.toFixed(1):'—')
       ce.style.color=cplN>0&&cplN<10?'var(--green)':cplN<=13&&cplN>0?'var(--yellow)':cplN>0?'var(--red)':'var(--text)'
       ce.style.textShadow=cplN>0&&cplN<10?'0 0 12px rgba(46,160,67,.7)':cplN<=13&&cplN>0?'0 0 12px rgba(212,160,23,.7)':cplN>0?'0 0 12px rgba(224,64,80,.6)':''}
-    const qe=$('d-cql');if(qe){qe.textContent=cqlN?'$'+cqlN.toFixed(1):'—'
+    const qe=$('d-cql');if(qe){kpiAnim(qe,cqlN?'$'+cqlN.toFixed(1):'—')
       qe.style.color=cqlN>0&&cqlN<25?'var(--green)':cqlN<=35&&cqlN>0?'var(--yellow)':cqlN>0?'var(--red)':'var(--text)'
       qe.style.textShadow=cqlN>0&&cqlN<25?'0 0 12px rgba(46,160,67,.7)':cqlN<=35&&cqlN>0?'0 0 12px rgba(212,160,23,.7)':cqlN>0?'0 0 12px rgba(224,64,80,.6)':''}
     // Точные числа кладём отдельно: на экране в этот момент ещё крутится анимация счётчика,
@@ -8185,9 +8207,9 @@ async function heroAllMeta(from,to,seq){const $=id=>document.getElementById(id);
 async function buyerSpend(buyer,from,to){
   try{const r=await metaPost(spendBody(from,to));const d=await r.json()
     if(!d.ok)return{spend:0,clicks:0,imp:0,ctr:0}
-    let spend=0,clicks=0,imp=0
-    ;(d.campaigns||[]).forEach(c=>{if(parseBuyerFromName(c.name||'')!==buyer)return;spend+=+c.spend||0;clicks+=+c.clicks||0;imp+=+c.imp||0})
-    return{spend:Math.round(spend*100)/100,clicks,imp,ctr:imp?Math.round(clicks/imp*10000)/100:0}}
+    let spend=0,clicks=0,imp=0,rkSpend=0;const rkIds=new Set(ZALIVS.filter(z=>!z.togo&&z.campaign_id&&parseBuyerFromName(z.name)===buyer).map(z=>String(z.campaign_id)))
+    ;(d.campaigns||[]).forEach(c=>{if(rkIds.has(String(c.campaign_id)))rkSpend+=+c.spend||0;if(parseBuyerFromName(c.name||'')!==buyer)return;spend+=+c.spend||0;clicks+=+c.clicks||0;imp+=+c.imp||0})
+    return{spend:Math.round(spend*100)/100,rkSpend:Math.round(rkSpend*100)/100,clicks,imp,ctr:imp?Math.round(clicks/imp*10000)/100:0}}
   catch(e){return{spend:0,clicks:0,imp:0,ctr:0}}}
 // Кампании кабинета без буквы баера в имени — их спенд никому не достаётся. Консоль: spendNoBuyer()
 async function spendNoBuyer(from,to){from=from||document.getElementById('pd-from')?.value;to=to||document.getElementById('pd-to')?.value
@@ -8201,7 +8223,7 @@ async function rdashBuyer(buyer){
   const $=id=>document.getElementById(id)
   const setLabel=(idx,txt)=>{const labs=document.querySelectorAll('#page-dash .krow .klab');if(labs[idx])labs[idx].textContent=txt}
   setLabel(0,'SPEND '+buyer.toUpperCase());setLabel(1,'ЛИДЫ');setLabel(2,'CPL');setLabel(3,'CQL');setLabel(4,'КВАЛЫ');setLabel(5,'CTR AVG')
-  const setKpi=(id,val,color)=>{const el=$(id);if(el){el.textContent=val;if(color)el.style.color=color;el.style.textShadow=''}}
+  const setKpi=(id,val,color)=>{const el=$(id);if(el){kpiAnim(el,val);if(color)el.style.color=color;el.style.textShadow=''}}
   ;['d-spend','d-daily','d-cpl','d-cql','d-roi','d-ctr'].forEach(id=>{const p=$(id+'-prev');if(p)p.textContent='';const a=$(id+'-arr');if(a)a.textContent=''})
   const ctit=$('chart-title');if(ctit)ctit.textContent='Динамика · '+buyer
   // buyer RKs (by letter in name), all regions loaded for this region
@@ -8228,7 +8250,13 @@ async function rdashBuyer(buyer){
   const S=cc.cur,P=cc.prev
   heroCountUp($('hero-tick'),S.spend,v=>v.toLocaleString('ru',{minimumFractionDigits:2,maximumFractionDigits:2}).replace(',','.'))
   heroDelta(S.spend,P.spend);heroCountUp($('hero-daily'),S.spend/days,v=>'$'+Math.round(v))
-  const cpl=leads?Math.round(S.spend/leads*100)/100:0,cql=quals?Math.round(S.spend/quals*100)/100:0
+  // CPL и CQL — по РК баера: спенд его РК из CRM, делённый на лиды и квалы, засчитанные этим же РК.
+  // Кампании, не заведённые в CRM, и лиды, не дошедшие ни до одной РК, в расчёт не идут.
+  let rkL=0,rkQ=0;rks.forEach(z=>{const x=srcStats(z.id,null,from,to);if(x){rkL+=x.leads;rkQ+=x.quals}})
+  const rkS=S.rkSpend||0
+  const cpl=rkL?Math.round(rkS/rkL*100)/100:0,cql=rkQ?Math.round(rkS/rkQ*100)/100:0
+  const ttl='по РК: $'+rkS+' спенда · '+rkL+' лид. · '+rkQ+' квал.'
+  ;['d-cpl','d-cql'].forEach(id=>{const e=$(id);if(e)e.title=ttl})
   setKpi('d-spend','$'+S.spend,'var(--yellow)')
   setKpi('d-cpl',cpl?'$'+cpl:'—',cpl?(cpl<12?'var(--green)':cpl<=15?'var(--yellow)':'var(--red)'):'var(--text3)')
   setKpi('d-cql',cql?'$'+cql:'—',cql?(cql<40?'var(--green)':cql<=55?'var(--yellow)':'var(--red)'):'var(--text3)')
@@ -8342,6 +8370,111 @@ document.getElementById('li-go')?.addEventListener('click',doAuthLogin)
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',build);else build()
 })()
 
+
+/* ══════════ Конструктор названия нового залива ══════════
+   № + {завтрашняя дата} + GEO + /ABO/ + категория + /воронка + /PIXEL OLD|NEW + /бюджет$.
+   Пока название не трогали руками, оно собирается само из полей формы. Начал править
+   руками — сборка останавливается, «↺ собрать» возвращает её. */
+const MO_GEO_CODE={PL:'PLPL',PLUA:'PLUA',CZ:'CZCZ',CZUA:'CZUA'}
+const CATS_DEFAULT=['MWP','TEST','TRASH'],CATS_KEY='__cats'
+var CATS=CATS_DEFAULT.slice()
+let _moManual=false,_moMaTouched=false,_moFunnel=''
+function catsRow(){return(DOMAIN_META||[]).find(m=>m.key===CATS_KEY)}
+function loadCats(){const r=catsRow();CATS=CATS_DEFAULT.slice();if(r&&r.url){try{const a=JSON.parse(r.url);if(Array.isArray(a))CATS=a}catch(e){}}}
+async function saveCats(list){CATS=list.filter(Boolean);if(!db)return
+  const r=catsRow(),url=JSON.stringify(CATS)
+  const{data,error}=r?await db.from('domain_meta').update({url,updated_at:new Date().toISOString()}).eq('id',r.id).select().single()
+    :await db.from('domain_meta').insert({region:CURRENT_REGION,key:CATS_KEY,custom:false,url,updated_at:new Date().toISOString()}).select().single()
+  if(error){toast('Категории не сохранились: '+error.message,'err');return}
+  if(r)r.url=url;else if(data)DOMAIN_META.push(data)}
+const moEsc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))
+function moTomorrow(){const d=new Date();d.setDate(d.getDate()+1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+// пиксель домена: kalkulator 1–10 — OLD, 11–20 — NEW; свой домен — если у него проставлен пиксель
+function moPixelOf(key){if(!key)return'';if(DKEYS.includes(key))return dPixel(key);const p=String(dMeta(key).pixel||'').toUpperCase();return p==='OLD'||p==='NEW'?p:''}
+function moPixel(){const s=new Set((moAds||[]).map(a=>moPixelOf(a.domain)).filter(Boolean));return s.has('OLD')&&s.has('NEW')?'OLD + NEW':s.has('OLD')?'OLD':s.has('NEW')?'NEW':''}
+function moChips(){
+  const cw=document.getElementById('mo-cat');if(cw)cw.innerHTML=`<div class="go ${!moCat?'sel':''}" data-mcat="">—</div>`+CATS.map(c=>`<div class="go ${moCat===c.toLowerCase()?'sel':''}" data-mcat="${moEsc(c.toLowerCase())}" data-lbl="${moEsc(c)}">${moEsc(c)}</div>`).join('')
+  const mf=document.getElementById('mf');if(mf){mf.innerHTML=FUNNELS.map(f=>`<option value="${moEsc(f)}">${moEsc(f)}</option>`).join('');if(_moFunnel&&FUNNELS.includes(_moFunnel))mf.value=_moFunnel;_moFunnel=mf.value}
+  const fw=document.getElementById('mo-funnels');if(fw)fw.innerHTML=FUNNELS.map(f=>`<div class="go ${_moFunnel===f?'sel':''}" data-mfun="${moEsc(f)}">${moEsc(f)}</div>`).join('')}
+function moBuild(force){
+  const mn=document.getElementById('mn');if(!mn)return
+  const px=moPixel(),pxEl=document.getElementById('mo-px');if(pxEl){pxEl.textContent=px||'— выбери домен —';pxEl.classList.toggle('on',!!px)}
+  const L=rkLetter(document.getElementById('mb')?.value||CURRENT_USER?.name),no=rkNextNo(L)+L
+  const dv=document.getElementById('mdate')?.value||moTomorrow(),dm=dv.slice(8,10)+'.'+dv.slice(5,7)
+  const geo=MO_GEO_CODE[moGeo]||moGeo||'GEO'
+  const catLbl=(CATS.find(c=>c.toLowerCase()===moCat)||'').toString()
+  const rk=document.getElementById('mr')?.value||''
+  const name=`${no}{${dm}}${geo}/ABO`+(catLbl?'/'+catLbl:'')+(_moFunnel?'/'+_moFunnel:'')+(px?'/PIXEL '+px:'')+(rk?' /'+rk+'$':'')
+  const pv=document.getElementById('mo-prev');if(pv)pv.textContent=name
+  const au=document.getElementById('mn-auto');if(au)au.innerHTML=_moManual?'ручное · <a href="#" id="mn-rebuild">↺ собрать</a>':'собирается само'
+  if(_moManual&&!force)return
+  _moManual=false;mn.value=name;mn.dataset.autono=no
+  if(au)au.textContent='собирается само'}
+function moInit(tpl){
+  _moMaTouched=false;_moFunnel=document.getElementById('mf')?.value||FUNNELS[0]||''
+  const md=document.getElementById('mdate');if(md)md.value=moTomorrow()
+  const ma=document.getElementById('ma'),mr=document.getElementById('mr')
+  if(mr&&!mr.value)mr.value=30
+  if(ma&&!ma.value)ma.value=Math.round((+mr.value||30)/2*100)/100
+  if(tpl&&tpl.ad_budget)_moMaTouched=true
+  loadCats();moChips()
+  _moManual=!!(tpl&&tpl.name_template)
+  if(_moManual){rkNoPrefill();moBuild(false)}else moBuild(true)
+  const ed=document.getElementById('mo-edit');if(ed){ed.hidden=true;ed.innerHTML=''}}
+// правка списков категорий и воронок прямо в форме
+function moEditList(kind){const ed=document.getElementById('mo-edit');if(!ed)return
+  if(!ed.hidden&&ed.dataset.kind===kind){ed.hidden=true;return}
+  const list=kind==='cats'?CATS:FUNNELS
+  ed.dataset.kind=kind;ed.hidden=false
+  ed.innerHTML=`<div class="mo-edh">${kind==='cats'?'Категории':'Воронки'} · правка списка</div>
+    <div class="mo-edl">${list.map((x,i)=>`<span class="mo-edc">${moEsc(x)}<button type="button" data-edrm="${i}" aria-label="Удалить">×</button></span>`).join('')||'<span style="color:var(--text3);font-size:11px">пусто</span>'}</div>
+    <div class="mo-eda"><input class="fi" id="mo-ednew" placeholder="${kind==='cats'?'Новая категория, например GLOBAL':'Новая воронка'}"><button type="button" class="bsv" id="mo-edadd">Добавить</button></div>`
+  const save=async nl=>{if(kind==='cats')await saveCats(nl);else await saveFunnels(nl);moChips();moEditList(kind);moEditList(kind);moBuild(false)}
+  ed.querySelectorAll('[data-edrm]').forEach(b=>b.onclick=()=>{const nl=list.slice();const gone=nl.splice(+b.dataset.edrm,1)[0]
+    if(kind==='cats'&&moCat===String(gone).toLowerCase())moCat='';if(kind==='funnels'&&_moFunnel===gone)_moFunnel=nl[0]||'';save(nl)})
+  const add=()=>{const v=document.getElementById('mo-ednew').value.trim();if(!v)return
+    if(list.some(x=>x.toLowerCase()===v.toLowerCase())){toast('Уже есть','info');return}
+    const val=kind==='cats'?v.toUpperCase():v;save([...list,val])}
+  document.getElementById('mo-edadd').onclick=add
+  document.getElementById('mo-ednew').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();add()}}
+  document.getElementById('mo-ednew').focus()}
+// события формы — делегированием, чипы перерисовываются
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#mo-zaliv'))return
+  const c=e.target.closest('#mo-cat [data-mcat]');if(c){moCat=c.dataset.mcat;document.querySelectorAll('#mo-cat [data-mcat]').forEach(x=>x.classList.toggle('sel',x===c));moBuild(false);return}
+  const f=e.target.closest('#mo-funnels [data-mfun]');if(f){_moFunnel=f.dataset.mfun;const mf=document.getElementById('mf');if(mf)mf.value=_moFunnel;document.querySelectorAll('#mo-funnels [data-mfun]').forEach(x=>x.classList.toggle('sel',x===f));moBuild(false);return}
+  const g=e.target.closest('[data-edit]');if(g){e.preventDefault();moEditList(g.dataset.edit);return}
+  if(e.target.id==='mn-rebuild'){e.preventDefault();moBuild(true)}})
+document.addEventListener('input',e=>{const id=e.target.id
+  if(id==='mn'&&e.isTrusted){_moManual=true;const au=document.getElementById('mn-auto');if(au)au.innerHTML='ручное · <a href="#" id="mn-rebuild">↺ собрать</a>'}
+  if(id==='mr'){const ma=document.getElementById('ma');if(ma&&!_moMaTouched)ma.value=e.target.value?Math.round(+e.target.value/2*100)/100:'';moBuild(false)}
+  if(id==='ma'&&e.isTrusted)_moMaTouched=true
+  if(id==='mdate')moBuild(false)})
+document.addEventListener('change',e=>{if(e.target.id==='mb')moBuild(false)})
+
+/* ══════════ Ручная правка адсетов и целей в карточке залива ══════════ */
+function zManualBlk(z){const ads=zDomains(z),site=siteForGeo(z.geo),goals=Array.isArray(z.goals)?z.goals:[]
+  return`<div class="blk zman"><h4>Адсеты и цели <span>вручную</span></h4>
+    <div class="zm-sub">Адсеты · калька в каждом</div>
+    ${ads.map((d,i)=>`<div class="zm-row"><span class="mono zm-ad">AD${d.ad||i+1}</span><input class="fi zm-in" data-zm="adname" data-zid="${z.id}" data-i="${i}" value="${moEsc(d.adset_name||'')}" placeholder="название адсета"><select class="fi zm-in" data-zm="addom" data-zid="${z.id}" data-i="${i}"><option value="">— калька —</option>${domainOptions(site,d.domain,z.id,z.buyer)}</select><button type="button" class="rmbtn" data-zm="addel" data-zid="${z.id}" data-i="${i}" aria-label="Удалить адсет">×</button></div>`).join('')||'<div class="zm-empty">адсетов нет</div>'}
+    <button type="button" class="addg" data-zm="adadd" data-zid="${z.id}">+ адсет</button>
+    <div class="zm-sub">Цели</div>
+    ${goals.map((g,i)=>`<div class="zm-row"><input class="fi zm-in" data-zm="goal" data-zid="${z.id}" data-i="${i}" value="${moEsc(g)}"><button type="button" class="rmbtn" data-zm="gdel" data-zid="${z.id}" data-i="${i}" aria-label="Удалить цель">×</button></div>`).join('')||'<div class="zm-empty">целей нет</div>'}
+    <button type="button" class="addg" data-zm="gadd" data-zid="${z.id}">+ цель</button></div>`}
+async function zmSave(z,upd,msg){Object.assign(z,upd);const{error}=await db.from('zalivs').update(upd).eq('id',z.id)
+  if(error){toast('Не сохранилось: '+error.message,'err');return}
+  toast(msg||'Сохранено','ok');_srcOwnSig='';_rkKeySig='';selZaliv(z.id);rzalivs()}
+document.addEventListener('click',e=>{const b=e.target.closest('button[data-zm]');if(!b)return
+  const z=ZALIVS.find(x=>x.id===+b.dataset.zid);if(!z)return;const i=+b.dataset.i,k=b.dataset.zm
+  if(k==='adadd'){const a=zDomains(z).slice();const nx=a.reduce((m,d)=>Math.max(m,+d.ad||0),0)+1;a.push({ad:nx,domain:'',adset_name:''});zmSave(z,{adset_domains:a},'Адсет добавлен')}
+  if(k==='addel'){const a=zDomains(z).slice();if(a[i]&&a[i].domain&&!confirm('Убрать AD'+(a[i].ad||i+1)+' с калькой '+a[i].domain+'? Лиды по ней перестанут считаться этой РК.'))return;a.splice(i,1);zmSave(z,{adset_domains:a},'Адсет убран')}
+  if(k==='gadd'){const g=(Array.isArray(z.goals)?z.goals:[]).slice();g.push('');zmSave(z,{goals:g},'Цель добавлена')}
+  if(k==='gdel'){const g=(Array.isArray(z.goals)?z.goals:[]).slice();g.splice(i,1);zmSave(z,{goals:g},'Цель убрана')}})
+document.addEventListener('change',e=>{const el=e.target.closest('[data-zm]');if(!el||el.tagName==='BUTTON')return
+  const z=ZALIVS.find(x=>x.id===+el.dataset.zid);if(!z)return;const i=+el.dataset.i,k=el.dataset.zm
+  if(k==='adname'||k==='addom'){const a=zDomains(z).map(d=>({...d}));if(!a[i])return;if(k==='adname')a[i].adset_name=el.value.trim();else a[i].domain=el.value
+    zmSave(z,{adset_domains:a},k==='addom'?(el.value?'Калька '+el.value+' → AD'+(a[i].ad||i+1):'Калька снята'):'Название адсета сохранено')}
+  if(k==='goal'){const g=(Array.isArray(z.goals)?z.goals:[]).slice();g[i]=el.value.trim();zmSave(z,{goals:g.filter((x,j)=>x||j!==i)},'Цель сохранена')}})
 
 /* ══════════════════════════════════════════════════════════════════
    BUYER'S JOURNAL
