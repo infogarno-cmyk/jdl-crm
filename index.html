@@ -2036,7 +2036,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-03 23:08'
+const BUILD='2026-10-14 16:22'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -2248,8 +2248,12 @@ async function manualSync(){
 }
 function setupRT(){
   if(!db)return
+  // Сто событий подряд → одна перерисовка через 3 с; в фоновой вкладке — когда её откроют
+  const _rtT={},_rtDirty={}
+  const rt=(k,fn)=>()=>{clearTimeout(_rtT[k]);_rtT[k]=setTimeout(()=>{if(document.hidden){_rtDirty[k]=fn;return}fn()},3000)}
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)return;for(const k of Object.keys(_rtDirty)){const f=_rtDirty[k];delete _rtDirty[k];f()}})
   db.channel('jdl-rt')
-    .on('postgres_changes',{event:'*',schema:'public',table:'zalivs'},()=>loadZ().then(rzalivs))
+    .on('postgres_changes',{event:'*',schema:'public',table:'zalivs'},rt('z',()=>loadZ().then(rzalivs)))
     .on('postgres_changes',{event:'*',schema:'public',table:'tasks'},()=>{
       // Block RT reload while saving or for 2s after save
       if(_saveOrderTimer||_taskSaveBlock)return
@@ -2258,7 +2262,7 @@ function setupRT(){
     .on('postgres_changes',{event:'*',schema:'public',table:'domains'},()=>loadD().then(rdomains))
     .on('postgres_changes',{event:'*',schema:'public',table:'grind'},()=>loadGrind().then(renderDGrind))
     .on('postgres_changes',{event:'*',schema:'public',table:'journal_docs'},()=>loadJ().then(rtree))
-    .on('postgres_changes',{event:'*',schema:'public',table:'metrics_daily'},()=>loadM().then(()=>{rdash();if(expZ){const el=document.getElementById('ex-metrics-'+expZ);if(el){const z=ZALIVS.find(x=>x.id===expZ);if(z)el.innerHTML=getZalivMetrics(z)}}}))
+    .on('postgres_changes',{event:'*',schema:'public',table:'metrics_daily'},rt('m',()=>loadM().then(()=>{rdash();if(expZ){const el=document.getElementById('ex-metrics-'+expZ);if(el){const z=ZALIVS.find(x=>x.id===expZ);if(z)el.innerHTML=getZalivMetrics(z)}}})))
     .on('postgres_changes',{event:'*',schema:'public',table:'creo_reports'},()=>loadCreoReports().then(rcreo))
     .on('postgres_changes',{event:'*',schema:'public',table:'creo_library'},()=>loadCreoLib().then(renderCreoPage))
     .subscribe()
@@ -4638,7 +4642,7 @@ function chartMouseMove(e){
 // ── ind menu on status dot ──
 async function loadBulkMeta(force){if(!force&&Date.now()-_zBulkAt<5*60000)return;const ids=[...new Set(ZALIVS.filter(z=>z.campaign_id&&z.ind!=='off'&&!z.togo).map(z=>String(z.campaign_id)))];if(!ids.length)return
   const td=new Date().toISOString().split('T')[0];setSS('syncing','Метрики из Meta…')
-  try{for(let i=0;i<ids.length;i+=50){const r=await metaPost({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+50),since:td,until:td,region:CURRENT_REGION});const d=await r.json();if(d.ok)Object.assign(_zBulk,d.data||{})}
+  try{for(let i=0;i<ids.length;i+=200){const r=await metaPost({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+200),since:td,until:td,region:CURRENT_REGION});const d=await r.json();if(d.ok)Object.assign(_zBulk,d.data||{})}
     _zBulkAt=Date.now();rzalivs();setSS('ok','Метрики обновлены');}catch(e){setSS('ok','—');toast('Meta недоступна','err')}}
 function stMenu(e,zid){let m=document.getElementById('stmenu');if(!m){m=document.createElement('div');m.id='stmenu';m.className='indmenu';document.body.appendChild(m)}
   m.innerHTML=['Check','Scale','Test','Proliw','Perezaliw','OFF'].map(s=>`<div onclick="setStatusQuick(${zid},'${s}')"><span class="stpill ${SCLS[s]||''}">${s}</span></div>`).join('')
@@ -4692,6 +4696,8 @@ async function toggleAdset(zid,adsetId,el){const on=!el.classList.contains('on')
 function zAnKeyOf(a,z){const f=normDate(a.period_from),t=normDate(a.period_to);if(!f||!t)return'';const span=Math.round((new Date(t)-new Date(f))/864e5);const raw=z.date||parseDateFromCampName(z.name)||'1.1';const p=raw.split('.');const d0=new Date(new Date().getFullYear(),+p[1]-1,+p[0]);const off=Math.round((new Date(f)-d0)/864e5);if(span===0&&off===0)return'1dc';if(span===0&&off===1)return'2dc';if(span===1&&off===0)return'kwartal';if(span===1&&off>=2&&off%2===0)return(off/2+1)+'k';if(span===2&&off===0)return'kwartal';return span===1?'2k':'kwartal'}
 async function loadZaliveLive(zid){
   const z=ZALIVS.find(x=>x.id===zid);if(!z?.campaign_id)return
+  const b=_zBulk[String(z.campaign_id)]
+  if(b&&!b.error&&Date.now()-_zBulkAt<10*60000){_zLiveCache[zid]={ok:true,...b,at:new Date(_zBulkAt).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'})};selZaliv(zid);return}
   const td=new Date().toISOString().split('T')[0]
   try{const r=await metaPost({action:'get_campaign_insights',campaign_id:z.campaign_id,since:td,until:td,region:CURRENT_REGION});const d=await r.json();if(d.ok){_zLiveCache[zid]={...d,at:new Date().toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'})};selZaliv(zid)}else toast('Meta: '+(d.error||'ошибка'),'err')}catch(e){toast('Meta недоступна','err')}
 }
@@ -7840,6 +7846,8 @@ async function metaPost(body,force){
     console.log('Meta: пропускаю фоновый запрос '+body.action+' — корзина на '+((window._metaUsage||{}).pct||'?')+'%')
     return{ok:true,status:200,json:async()=>({ok:false,skipped:true})}
   }
+  // ручное обновление — мимо общего кеша на сервере тоже
+  if(force&&body)body={...body,force:true}
   const act=body&&body.action
   const ttl=force?0:(MP_TTL[act]||0)
   const key='mp:'+JSON.stringify(body)
@@ -8086,7 +8094,7 @@ async function checkSpend(from,to){
 }
 // Подпись набора кампаний — чтобы кэш сбрасывался сам, когда РК добавили/привязали/убрали
 function idsSig(ids){let h=0;const s=[...ids].sort().join(',');for(let i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))|0}return ids.length+':'+(h>>>0).toString(36)}
-async function bulkInsights(ids,from,to){const out={};for(let i=0;i<ids.length;i+=50){try{const r=await metaPost({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+50),since:from,until:to,region:CURRENT_REGION});const d=await r.json();if(d.ok)Object.assign(out,d.data||{})}catch(e){}}return out}
+async function bulkInsights(ids,from,to){const out={};for(let i=0;i<ids.length;i+=200){try{const r=await metaPost({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+200),since:from,until:to,region:CURRENT_REGION});const d=await r.json();if(d.ok)Object.assign(out,d.data||{})}catch(e){}}return out}
 function sumIns(map,ids){let spend=0,clicks=0,imp=0,reach=0;ids.forEach(id=>{const v=map[id];if(!v||v.error)return;spend+=+v.spend||0;clicks+=+v.clicks||0;imp+=+v.impressions||0;reach+=+v.reach||0});return{spend:Math.round(spend*100)/100,clicks,imp,reach,ctr:imp?Math.round(clicks/imp*10000)/100:0}}
 async function heroAllMeta(from,to,seq){const $=id=>document.getElementById(id);const fresh=()=>seq===undefined||seq===_dashSeq;const rks=ZALIVS.filter(z=>!z.togo&&z.campaign_id);const ids=[...new Set(rks.map(z=>String(z.campaign_id)))]
   if(!ids.length){['d-spend','d-daily'].forEach(id=>{const e=$(id);if(e)e.textContent='$0'})
