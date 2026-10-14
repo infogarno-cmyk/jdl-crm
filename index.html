@@ -2052,7 +2052,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-14 17:39'
+const BUILD='2026-10-14 17:55'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -2409,14 +2409,9 @@ function gp(id,el){
   if(id==='analysis'){initAnalysisPage()}
 }
 
-function countUp(el,target,pre='',suf='',dur=800){
-  const n=parseFloat(target);if(isNaN(n)){el.textContent=target;return}
-  const start=Date.now();const timer=setInterval(()=>{
-    const p=Math.min((Date.now()-start)/dur,1),e=1-Math.pow(1-p,3),cur=n*e
-    el.textContent=pre+(Number.isInteger(n)?Math.round(cur):cur.toFixed(1))+suf
-    if(p>=1){clearInterval(timer);el.textContent=pre+target+suf}
-  },16)
-}
+function countUp(el,target,pre='',suf='',dur=800){if(!el)return;const n=parseFloat(target)
+  if(isNaN(n)){kpiAnim(el,String(target));return}
+  kpiAnim(el,pre+(Number.isInteger(n)?String(n):String(target))+suf,dur)}
 // ── DASHBOARD ──
 
 
@@ -2478,16 +2473,29 @@ document.getElementById('bell')?.addEventListener('click',openDrawer)
 // ── HERO (dashboard top) ──
 // Плашка KPI: число «докручивается» от прошлого значения. Раньше живые цифры из Meta
 // вписывались сразу текстом — и анимация пропадала там, где ответ уже лежал в кеше.
-function kpiAnim(el,text,dur=800){if(!el)return;text=String(text)
+// Единственный аниматор плашек KPI. Счёт идёт от нуля при каждой новой отрисовке, как раньше.
+// Если цифра пришла, пока прошлая ещё крутится (сначала из базы, потом живая из Meta), —
+// докручивается от того, что уже на экране, без рывка назад. Та же цифра повторно — не крутим.
+function kpiAnim(el,text,dur=900){if(!el)return;text=String(text)
   const m=text.match(/^(\D*?)(-?\d+(?:\.\d+)?)(.*)$/)
-  if(!m){el._kpiTok=(el._kpiTok||0)+1;el.textContent=text;el.dataset.kv='';return}
+  const tok=el._kpiTok=(el._kpiTok||0)+1
+  if(!m){el._kpiRun=false;el.textContent=text;el._kpiLast=text;return}
+  if(!el._kpiRun&&el.textContent===text)return
   const pre=m[1],num=+m[2],suf=m[3],dec=(m[2].split('.')[1]||'').length
-  const from=parseFloat(el.dataset.kv);el.dataset.kv=num
-  if(!isFinite(from)||from===num){if(el.textContent!==text&&isFinite(from)){el.textContent=text;return}}
-  const start=isFinite(from)?from:0,tok=el._kpiTok=(el._kpiTok||0)+1,t0=performance.now()
-  const st=t=>{if(el._kpiTok!==tok)return;const p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,3)
-    el.textContent=p<1?pre+(start+(num-start)*e).toFixed(dec)+suf:text;if(p<1)requestAnimationFrame(st)}
-  requestAnimationFrame(st)}
+  const cur=el.textContent.match(/^(\D*?)(-?\d+(?:\.\d+)?)(.*)$/)
+  const start=el._kpiRun&&cur&&cur[1]===pre&&cur[3]===suf?+cur[2]:0
+  const lo=Math.min(start,num),hi=Math.max(start,num);let t0=0   // отсчёт с первого кадра: при загрузке страницы первые кадры задерживаются
+  el._kpiRun=true
+  const st=t=>{if(el._kpiTok!==tok)return
+    // кто-то вписал текст в плашку напрямую — уступаем ему
+    if(el._kpiLast!==undefined&&el.textContent!==el._kpiLast){el._kpiRun=false;return}
+    if(!t0)t0=t
+    const p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,3)
+    const v=Math.min(hi,Math.max(lo,start+(num-start)*e))
+    el.textContent=p<1?pre+v.toFixed(dec)+suf:text;el._kpiLast=el.textContent
+    if(p<1)requestAnimationFrame(st);else el._kpiRun=false}
+  el._kpiLast=el.textContent;requestAnimationFrame(st)}
+
 function heroCountUp(el,to,fmt,dur=800){const from=parseFloat(el.dataset.v||'0'),t0=performance.now();el.dataset.v=to;const st=t=>{const p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,3);el.textContent=fmt(from+(to-from)*e);if(p<1)requestAnimationFrame(st)};requestAnimationFrame(st)}
 function heroRender(spend,leads,quals,daily,from,to){
   const $=id=>document.getElementById(id);if(!$('hero-tick'))return
