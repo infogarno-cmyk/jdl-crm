@@ -2036,7 +2036,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-14 16:52'
+const BUILD='2026-10-14 17:04'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -2632,7 +2632,7 @@ async function liveChart(from,to,seq){
   const mByDay={};METRICS.forEach(m=>{mByDay[m.day]=m})
   const rows=[]
   for(let t=new Date(from+'T00:00:00');t<=new Date(to+'T00:00:00');t=new Date(+t+864e5)){
-    const day=t.toISOString().slice(0,10),m=mByDay[day]||{}
+    const day=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'),m=mByDay[day]||{}
     const b=cc.byDay[day]||{spend:0,imp:0,clicks:0}
     const sp=b.spend||0
     // CTR тоже живой: из metrics_daily дни без строки давали 0 и линия ложилась на дно
@@ -4682,7 +4682,7 @@ function chartMouseMove(e){
 // ── ind menu on status dot ──
 async function loadBulkMeta(force){if(!force&&Date.now()-_zBulkAt<5*60000)return;const ids=[...new Set(ZALIVS.filter(z=>z.campaign_id&&z.ind!=='off'&&!z.togo).map(z=>String(z.campaign_id)))];if(!ids.length)return
   const td=new Date().toISOString().split('T')[0];setSS('syncing','Метрики из Meta…')
-  try{for(let i=0;i<ids.length;i+=200){const r=await metaPost({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+200),since:td,until:td,region:CURRENT_REGION});const d=await r.json();if(d.ok)Object.assign(_zBulk,d.data||{})}
+  try{for(let i=0;i<ids.length;i+=60){const r=await metaPost({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+60),since:td,until:td,region:CURRENT_REGION});const d=await r.json();if(d.ok)Object.assign(_zBulk,d.data||{})}
     _zBulkAt=Date.now();rzalivs();setSS('ok','Метрики обновлены');}catch(e){setSS('ok','—');toast('Meta недоступна','err')}}
 function stMenu(e,zid){let m=document.getElementById('stmenu');if(!m){m=document.createElement('div');m.id='stmenu';m.className='indmenu';document.body.appendChild(m)}
   m.innerHTML=['Check','Scale','Test','Proliw','Perezaliw','OFF'].map(s=>`<div onclick="setStatusQuick(${zid},'${s}')"><span class="stpill ${SCLS[s]||''}">${s}</span></div>`).join('')
@@ -8134,14 +8134,20 @@ async function checkSpend(from,to){
 }
 // Подпись набора кампаний — чтобы кэш сбрасывался сам, когда РК добавили/привязали/убрали
 function idsSig(ids){let h=0;const s=[...ids].sort().join(',');for(let i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))|0}return ids.length+':'+(h>>>0).toString(36)}
-async function bulkInsights(ids,from,to){const out={};for(let i=0;i<ids.length;i+=200){try{const r=await metaPost({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+200),since:from,until:to,region:CURRENT_REGION});const d=await r.json();if(d.ok)Object.assign(out,d.data||{})}catch(e){}}return out}
+async function bulkInsights(ids,from,to){const out={};for(let i=0;i<ids.length;i+=60){try{const r=await metaPost({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+60),since:from,until:to,region:CURRENT_REGION});const d=await r.json();if(d.ok)Object.assign(out,d.data||{})}catch(e){}}return out}
 function sumIns(map,ids){let spend=0,clicks=0,imp=0,reach=0;ids.forEach(id=>{const v=map[id];if(!v||v.error)return;spend+=+v.spend||0;clicks+=+v.clicks||0;imp+=+v.impressions||0;reach+=+v.reach||0});return{spend:Math.round(spend*100)/100,clicks,imp,reach,ctr:imp?Math.round(clicks/imp*10000)/100:0}}
+// Спенд региона целиком — по кабинету, как в Ads Manager. Тот же запрос, что у графика
+// (одинаковое тело → один поход в Meta на оба), поэтому лишней нагрузки нет.
+async function regionSpend(from,to){
+  try{const r=await metaPost({action:'reconcile',region:CURRENT_REGION,since:from,until:to,daily:true});const d=await r.json()
+    if(!d.ok||!d.byDay)return{spend:0,clicks:0,imp:0,ctr:0}
+    let spend=0,clicks=0,imp=0;Object.values(d.byDay).forEach(b=>{spend+=+b.spend||0;clicks+=+b.clicks||0;imp+=+b.imp||0})
+    return{spend:Math.round(spend*100)/100,clicks,imp,ctr:imp?Math.round(clicks/imp*10000)/100:0}}
+  catch(e){return{spend:0,clicks:0,imp:0,ctr:0}}}
 async function heroAllMeta(from,to,seq){const $=id=>document.getElementById(id);const fresh=()=>seq===undefined||seq===_dashSeq;const rks=ZALIVS.filter(z=>!z.togo&&z.campaign_id);const ids=[...new Set(rks.map(z=>String(z.campaign_id)))]
-  if(!ids.length){['d-spend','d-daily'].forEach(id=>{const e=$(id);if(e)e.textContent='$0'})
-    window._liveKpi={spend:0,leads:0,quals:0,cpl:0,cql:0,days:1};window._liveSeq=(seq===undefined?_dashSeq:seq);return}
   const days=Math.max(1,Math.round((new Date(to)-new Date(from))/864e5)+1),pTo=new Date(new Date(from)-864e5).toISOString().slice(0,10),pFrom=new Date(new Date(from)-days*864e5).toISOString().slice(0,10)
   const key='ALL|'+from+'|'+to+'|'+CURRENT_REGION+'|'+idsSig(ids);let cc=_buyerCache[key]
-  if(!cc||Date.now()-cc.at>5*60000){const[cur,prev]=await Promise.all([bulkInsights(ids,from,to),document.getElementById('cmp-tgl')?.classList.contains('on')?bulkInsights(ids,pFrom,pTo):Promise.resolve({})]);cc=_buyerCache[key]={at:Date.now(),cur:sumIns(cur,ids),prev:sumIns(prev,ids)};if(CURRENT_BUYER){window._liveSeq=(seq===undefined?_dashSeq:seq);return}}
+  if(!cc||Date.now()-cc.at>5*60000){const[cur,prev]=await Promise.all([regionSpend(from,to),document.getElementById('cmp-tgl')?.classList.contains('on')?regionSpend(pFrom,pTo):Promise.resolve({spend:0})]);cc=_buyerCache[key]={at:Date.now(),cur,prev};if(CURRENT_BUYER){window._liveSeq=(seq===undefined?_dashSeq:seq);return}}
   if(!fresh())return
   const S=cc.cur,P=cc.prev
   heroCountUp($('hero-tick'),S.spend,v=>v.toLocaleString('ru',{minimumFractionDigits:2,maximumFractionDigits:2}).replace(',','.'));heroDelta(S.spend,P.spend);heroCountUp($('hero-daily'),S.spend/days,v=>'$'+Math.round(v))
