@@ -2036,7 +2036,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-14 17:04'
+const BUILD='2026-10-14 17:13'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -8138,8 +8138,11 @@ async function bulkInsights(ids,from,to){const out={};for(let i=0;i<ids.length;i
 function sumIns(map,ids){let spend=0,clicks=0,imp=0,reach=0;ids.forEach(id=>{const v=map[id];if(!v||v.error)return;spend+=+v.spend||0;clicks+=+v.clicks||0;imp+=+v.impressions||0;reach+=+v.reach||0});return{spend:Math.round(spend*100)/100,clicks,imp,reach,ctr:imp?Math.round(clicks/imp*10000)/100:0}}
 // Спенд региона целиком — по кабинету, как в Ads Manager. Тот же запрос, что у графика
 // (одинаковое тело → один поход в Meta на оба), поэтому лишней нагрузки нет.
+function spendBody(from,to){const days=Math.round((new Date(to)-new Date(from))/864e5)+1
+  return days<=31?{action:'reconcile',region:CURRENT_REGION,since:from,until:to,daily:true}:{action:'reconcile',region:CURRENT_REGION,since:from,until:to}}
 async function regionSpend(from,to){
-  try{const r=await metaPost({action:'reconcile',region:CURRENT_REGION,since:from,until:to,daily:true});const d=await r.json()
+  try{const r=await metaPost(spendBody(from,to));const d=await r.json()
+    if(d.ok&&!d.byDay)return{spend:Math.round((+d.total||0)*100)/100,clicks:(d.campaigns||[]).reduce((a,c)=>a+(+c.clicks||0),0),imp:(d.campaigns||[]).reduce((a,c)=>a+(+c.imp||0),0),ctr:0}
     if(!d.ok||!d.byDay)return{spend:0,clicks:0,imp:0,ctr:0}
     let spend=0,clicks=0,imp=0;Object.values(d.byDay).forEach(b=>{spend+=+b.spend||0;clicks+=+b.clicks||0;imp+=+b.imp||0})
     return{spend:Math.round(spend*100)/100,clicks,imp,ctr:imp?Math.round(clicks/imp*10000)/100:0}}
@@ -8176,6 +8179,23 @@ async function heroAllMeta(from,to,seq){const $=id=>document.getElementById(id);
   }
   window._liveSeq=(seq===undefined?_dashSeq:seq)   // цифры на экране настоящие — голосу можно читать
   }
+// Спенд баера — по всем кампаниям кабинета с его буквой в имени (25D{…} — Даня, 18I{…} — Илья),
+// а не только по РК, заведённым в CRM. Раньше незаведённые кампании выпадали, и сумма
+// по баерам не сходилась с кабинетом. Запрос тот же, что у общего вида и графика.
+async function buyerSpend(buyer,from,to){
+  try{const r=await metaPost(spendBody(from,to));const d=await r.json()
+    if(!d.ok)return{spend:0,clicks:0,imp:0,ctr:0}
+    let spend=0,clicks=0,imp=0
+    ;(d.campaigns||[]).forEach(c=>{if(parseBuyerFromName(c.name||'')!==buyer)return;spend+=+c.spend||0;clicks+=+c.clicks||0;imp+=+c.imp||0})
+    return{spend:Math.round(spend*100)/100,clicks,imp,ctr:imp?Math.round(clicks/imp*10000)/100:0}}
+  catch(e){return{spend:0,clicks:0,imp:0,ctr:0}}}
+// Кампании кабинета без буквы баера в имени — их спенд никому не достаётся. Консоль: spendNoBuyer()
+async function spendNoBuyer(from,to){from=from||document.getElementById('pd-from')?.value;to=to||document.getElementById('pd-to')?.value
+  const r=await metaPost({action:'reconcile',region:CURRENT_REGION,since:from,until:to,daily:true});const d=await r.json();if(!d.ok){console.log('Meta:',d.error);return}
+  const by={};(d.campaigns||[]).forEach(c=>{const b=parseBuyerFromName(c.name||'')||'— без буквы —';const k=b+'|'+c.name;by[k]=(by[k]||0)+(+c.spend||0)})
+  const rows=Object.entries(by).map(([k,v])=>({баер:k.split('|')[0],кампания:k.split('|').slice(1).join('|'),спенд:Math.round(v*100)/100})).sort((a,b)=>b.спенд-a.спенд)
+  console.table(rows);const t=b=>Math.round(rows.filter(x=>x.баер===b).reduce((a,x)=>a+x.спенд,0)*100)/100
+  console.log('Danya',t('Danya'),'· Illia',t('Illia'),'· без буквы',t('— без буквы —'));return rows}
 async function rdashBuyer(buyer){
   const from=document.getElementById('pd-from')?.value,to=document.getElementById('pd-to')?.value
   const $=id=>document.getElementById(id)
@@ -8195,15 +8215,15 @@ async function rdashBuyer(buyer){
   if(!any){const seen=new Set();RK_ANALYSES.filter(a=>a.buyer===buyer&&normDate(a.period_from)>=from&&normDate(a.period_from)<=to).forEach(a=>{if(seen.has(a.zaliv_id))return;seen.add(a.zaliv_id);leads+=a.leads||0;quals+=a.quals||0})}
   heroCountUp($('hero-l'),leads,v=>Math.round(v));heroCountUp($('hero-q'),quals,v=>Math.round(v))
   setKpi('d-daily',leads,'#2ea043');setKpi('d-roi',quals,'#4080ff')
-  if(!ids.length){setKpi('d-spend','$0','var(--yellow)');setKpi('d-cpl','—');setKpi('d-cql','—');setKpi('d-ctr','—');heroCountUp($('hero-tick'),0,v=>'0.00');heroDelta(0,0)
+  if(false){setKpi('d-spend','$0','var(--yellow)');setKpi('d-cpl','—');setKpi('d-cql','—');setKpi('d-ctr','—');heroCountUp($('hero-tick'),0,v=>'0.00');heroDelta(0,0)
     window._liveKpi={spend:0,leads,quals,cpl:0,cql:0,days:1,region:CURRENT_REGION,buyer};return}
   // spend etc from Meta (bulk), cached 5 min
   const days=Math.max(1,Math.round((new Date(to)-new Date(from))/864e5)+1)
   const pTo=new Date(new Date(from)-864e5).toISOString().slice(0,10),pFrom=new Date(new Date(from)-days*864e5).toISOString().slice(0,10)
   const key=buyer+'|'+from+'|'+to+'|'+CURRENT_REGION+'|'+idsSig(ids);let cc=_buyerCache[key]
   if(!cc||Date.now()-cc.at>5*60000){setKpi('d-spend','⏳','var(--yellow)');setKpi('d-cpl','⏳','var(--text3)');setKpi('d-cql','⏳','var(--text3)');setKpi('d-ctr','⏳','var(--text3)')
-    const[cur,prev]=await Promise.all([bulkInsights(ids,from,to),document.getElementById('cmp-tgl')?.classList.contains('on')?bulkInsights(ids,pFrom,pTo):Promise.resolve({})])
-    cc=_buyerCache[key]={at:Date.now(),cur:sumIns(cur,ids),prev:sumIns(prev,ids)}
+    const[cur,prev]=await Promise.all([buyerSpend(buyer,from,to),document.getElementById('cmp-tgl')?.classList.contains('on')?buyerSpend(buyer,pFrom,pTo):Promise.resolve({spend:0})])
+    cc=_buyerCache[key]={at:Date.now(),cur,prev}
     if(CURRENT_BUYER!==buyer)return}
   const S=cc.cur,P=cc.prev
   heroCountUp($('hero-tick'),S.spend,v=>v.toLocaleString('ru',{minimumFractionDigits:2,maximumFractionDigits:2}).replace(',','.'))
