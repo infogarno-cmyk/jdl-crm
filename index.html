@@ -470,7 +470,8 @@ var REGION_GEOS={
   CZ:{main:'CZ',ua:'CZUA',flag:'🇨🇿',creoMain:'CZ',creoUa:'UACZ'}
 }
 var ZALIVS=[],DOMAINS=[],TASKS=[],METRICS=[],SALES_DATA=[],TEMPLATES=[],SRC_DAILY=[],ADSET_SRC=[]
-var SITES={PL:{base:'https://garno-site.vercel.app/#',geos:['PL','PLUA'],label:'Польский трафик · PLPL + PLUA'},CZ:{base:'https://garno-site-cz.vercel.app/#',geos:['CZ','CZUA'],label:'Чешский трафик · CZCZ + CZUA'}}
+// оба сайта переехали на свои домены (PL — garnofurniture.com, CZ — garnofurniturecz.com); ключи калек (#kalkulator3 и т.д.) те же, лиды считаются как раньше
+var SITES={PL:{base:'https://garnofurniture.com/#',geos:['PL','PLUA'],label:'Польский трафик · PLPL + PLUA'},CZ:{base:'https://garnofurniturecz.com/#',geos:['CZ','CZUA'],label:'Чешский трафик · CZCZ + CZUA'}}
 var DKEYS=['kalkulator',...Array.from({length:20},(_,i)=>'kalkulator'+(i+1))],DOMAIN_META=[]
 const SCLS={Check:'sc',Scale:'ss',OFF:'so',Test:'st',Proliw:'sp',Perezaliw:'sz'}
 var expZ=null,dragId=null,moGeo='',moScore=0,domGeoSel=[],deGeoSel=[],deEditId=null
@@ -2052,7 +2053,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-14 17:55'
+const BUILD='2026-10-14 19:13'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -7793,7 +7794,7 @@ async function linkRks(from,to){
 // ── Сверка спенда: Meta (все кампании аккаунтов) vs то, что суммирует CRM ──
 // Показывает ПОЧЕМУ цифры расходятся: не импортированные РК, без campaign_id, в TOGO, не тот регион.
 // Подтянуть кальки прямо из объявлений Meta.
-// Калька — это не домен, а ключ в реестре CRM: garno-site.vercel.app/#kalkulator3 → kalkulator3.
+// Калька — это не домен, а ключ в реестре CRM: garnofurniture.com/?lang=pl#kalkulator3 → kalkulator3 (хост любой — решает решётка).
 // Именно по этому ключу к РК привязываются лиды и квалы из GarnoCRM, поэтому писать
 // сюда хост нельзя — у всех объявлений он одинаковый, и статистика обнулилась бы.
 function linkKey(u){
