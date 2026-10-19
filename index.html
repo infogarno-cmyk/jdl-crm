@@ -2071,7 +2071,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-17 15:14'
+const BUILD='2026-10-19 14:09'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -2324,6 +2324,9 @@ function setupRT(){
   // Сто событий подряд → одна перерисовка через 3 с; в фоновой вкладке — когда её откроют
   const _rtT={},_rtDirty={}
   const rt=(k,fn)=>()=>{clearTimeout(_rtT[k]);_rtT[k]=setTimeout(()=>{if(document.hidden){_rtDirty[k]=fn;return}fn()},3000)}
+  let _hidAt=0
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){_hidAt=Date.now();return}
+    if(_hidAt&&Date.now()-_hidAt>60000&&!_saveOrderTimer&&!_taskSaveBlock)loadT().then(()=>{if(typeof rtasks==='function')rtasks()})})
   document.addEventListener('visibilitychange',()=>{if(document.hidden)return;for(const k of Object.keys(_rtDirty)){const f=_rtDirty[k];delete _rtDirty[k];f()}})
   db.channel('jdl-rt')
     .on('postgres_changes',{event:'*',schema:'public',table:'zalivs'},rt('z',()=>loadZ().then(rzalivs)))
@@ -5353,7 +5356,8 @@ async function saveTk(title,col,who,extra){
   if(!error&&data){TASKS.push(data);rtasks();return data}
   if(error)toast('Ошибка: '+error.message,'err')
 }
-async function delTkConfirmed(id){await db.from('tasks').delete().eq('id',id);TASKS=TASKS.filter(t=>t.id!==id);rtasks()}
+async function delTkConfirmed(id){const dt=TASKS.find(t=>t.id===id);if(dt&&dt.ttype==='fdc'&&dt.rk_id){try{const s=JSON.parse(localStorage.getItem('jdl_fdc_seen')||'{}');s[dt.rk_id]=1;localStorage.setItem('jdl_fdc_seen',JSON.stringify(s))}catch(e){}}
+  await db.from('tasks').delete().eq('id',id);TASKS=TASKS.filter(t=>t.id!==id);rtasks()}
 
 // ── column change with timer ──
 async function moveTask(t,newCol){
@@ -5371,7 +5375,7 @@ var _saveOrderTimer=null,_taskSaveBlock=false
 async function saveTaskOrder(){
   clearTimeout(_saveOrderTimer);_taskSaveBlock=true
   _saveOrderTimer=setTimeout(async()=>{
-    for(let i=0;i<TASKS.length;i++){const t=TASKS[i];await db.from('tasks').update({sort_order:i*10,col:t.col,updated_at:new Date().toISOString()}).eq('id',t.id)}
+    for(let i=0;i<TASKS.length;i++){const t=TASKS[i],so=i*10;if(t.sort_order===so)continue;t.sort_order=so;await db.from('tasks').update({sort_order:so}).eq('id',t.id)}
     _saveOrderTimer=null;setTimeout(()=>{_taskSaveBlock=false},1000)
   },500)
 }
@@ -5473,6 +5477,10 @@ async function autoFdcTask(z){
   if(!z||!db||z.togo||z.ind==='off')return
   const nm=(z.name||'').trim().toLowerCase()
   if(TASKS.some(t=>t.ttype==='fdc'&&(t.rk_id===z.id||(t.rk_name||'').trim().toLowerCase()===nm)))return
+  // удалённую FDC-таску не воскрешаем: помним РК, по которым она уже заводилась
+  let seen={};try{seen=JSON.parse(localStorage.getItem('jdl_fdc_seen')||'{}')}catch(e){}
+  if(seen[z.id])return
+  try{seen[z.id]=1;localStorage.setItem('jdl_fdc_seen',JSON.stringify(seen))}catch(e){}
   const d=parseDateFromCampName(z.name);let dl=todayISO()
   if(d){const p=d.split('.');if(p.length===2)dl=`${new Date().getFullYear()}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`}
   const who=parseBuyerFromName(z.name)||z.buyer||''
@@ -5484,7 +5492,7 @@ async function autoFdcTask(z){
 // ── clear done ──
 async function clearDone(){
   const doneTasks=TASKS.filter(t=>t.col==='done');if(!doneTasks.length)return
-  for(const t of doneTasks)await db.from('tasks').update({col:'archived'}).eq('id',t.id)
+  for(const t of doneTasks)await db.from('tasks').update({col:'archived'}).eq('id',t.id).eq('col','done')
   TASKS.forEach(t=>{if(t.col==='done')t.col='archived'});rtasks();moneyRain();toast('Готовые задачи убраны в архив (статистика сохранена)','ok')
 }
 
@@ -5497,7 +5505,7 @@ function moneyRain(){const box=document.createElement('div');box.style.cssText='
 async function doneTask(id){const t=TASKS.find(x=>x.id===id);if(!t)return;await moveTask(t,'done');rtasks()}
 function rolloverTodayTasks(){
   const td=todayISO(),h=new Date().getHours();let n=0
-  TASKS.forEach(t=>{if(t.col!=='all'||!t.deadline||t.deadline>td)return;if(t.ttype==='fdc'&&t.deadline===td&&h<9)return;t.col='todo';db.from('tasks').update({col:'todo',updated_at:new Date().toISOString()}).eq('id',t.id);n++})
+  TASKS.forEach(t=>{if(t.col!=='all'||!t.deadline||t.deadline>td)return;if(t.ttype==='fdc'&&t.deadline===td&&h<9)return;t.col='todo';db.from('tasks').update({col:'todo',updated_at:new Date().toISOString()}).eq('id',t.id).eq('col','all');n++})
   if(n){rtasks();if(typeof rdash==='function')rdash();toast('В TO DO: '+n+' задач на сегодня','ok')}return n
 }
 function scheduleRollover(){const now=new Date();const t0=new Date(now);t0.setHours(24,0,5,0);const t9=new Date(now);t9.setHours(9,0,5,0);if(t9<=now)t9.setDate(t9.getDate()+1);const next=Math.min(t0-now,t9-now);setTimeout(()=>{rolloverTodayTasks();scheduleRollover()},next)}
