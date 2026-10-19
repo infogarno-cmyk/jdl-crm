@@ -2071,7 +2071,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-19 18:38'
+const BUILD='2026-10-19 18:54'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -4744,18 +4744,35 @@ function chartMouseMove(e){
 
 // ── ind menu on status dot ──
 // Статусы адсетов всех живых РК одним запросом. Адсет выключили в Ads Manager — домен освобождается сам.
+// Какой адсет Meta относится к какой записи «AD → калька» в РК.
+// Раньше — только по adset_id, а у доменов, вписанных при создании залива, его нет:
+// статус не находился, и домен навсегда оставался занятым. Теперь по порядку:
+// adset_id → калька в названии адсета (kalkulator3 / kalk3) → номер AD1, AD2 в названии →
+// остаток по порядку создания, если записей и адсетов поровну.
+function matchAdsets(arr,list){const res={},used=new Set()
+  arr.forEach((e,i)=>{if(e.adset_id){const a=list.find(x=>x.id===e.adset_id);if(a){res[i]=a;used.add(a.id)}}})
+  const flat=x=>String(x||'').toLowerCase().replace(/[\s_]+/g,'')
+  const keyIn=(name,k)=>{k=flat(k);if(!k)return false;const nm=flat(name);let p=nm.indexOf(k);while(p>=0){const nx=nm[p+k.length];if(!nx||!/[a-z0-9]/.test(nx))return true;p=nm.indexOf(k,p+1)}return false}
+  const adNo=nm=>{const m=String(nm||'').match(/(?:^|[^a-z])ad\s*0*(\d+)/i);return m?+m[1]:null}
+  arr.forEach((e,i)=>{if(res[i]||!e.domain)return
+    let c=list.filter(a=>keyIn(a.name,e.domain)||keyIn(a.name,String(e.domain).replace(/^kalkulator/i,'kalk')))
+    if(c.length!==1&&e.ad)c=list.filter(a=>adNo(a.name)===+e.ad)
+    if(c.length===1){res[i]=c[0];used.add(c[0].id)}})
+  const ri=arr.map((e,i)=>i).filter(i=>!res[i]),rl=list.filter(a=>!used.has(a.id)).sort((x,y)=>String(x.created_time||x.id).localeCompare(String(y.created_time||y.id)))
+  if(ri.length&&ri.length===rl.length)ri.forEach((i,j)=>{res[i]=rl[j]})
+  return res}
 var _adStAt=0
 async function refreshAdsetStatuses(force){if(!force&&Date.now()-_adStAt<10*60000)return;_adStAt=Date.now()
   const rks=ZALIVS.filter(z=>z.campaign_id&&!z.togo&&z.ind!=='off'&&zDomains(z).length);if(!rks.length)return
   let d;try{const r=await metaPost({action:'adset_statuses',campaign_ids:[...new Set(rks.map(z=>String(z.campaign_id)))]});d=await r.json()}catch(e){return}
-  if(!d||!d.ok||!Array.isArray(d.adsets))return
+  if(!d||!d.ok||!Array.isArray(d.adsets)){console.warn('Статусы адсетов: функция get-campaigns старая — задеплой новую');return}
   const byCamp={};d.adsets.forEach(a=>{(byCamp[String(a.campaign_id)]||(byCamp[String(a.campaign_id)]=[])).push(a)})
   let changed=0
   for(const z of rks){const list=byCamp[String(z.campaign_id)];if(!list)continue
     const arr=zDomains(z).map(x=>({...x}));let ch=false
     const allOff=list.every(a=>!adsetLive(a.effective_status||a.status))
-    arr.forEach((e,i)=>{let a=e.adset_id?list.find(x=>x.id===e.adset_id):null
-      if(!a&&list.length===1&&arr.length===1)a=list[0]
+    const mt=matchAdsets(arr,list)
+    arr.forEach((e,i)=>{const a=mt[i]
       const st=a?(a.effective_status||a.status):(allOff?'CAMPAIGN_PAUSED':null)
       if(a&&!e.adset_id){e.adset_id=a.id;e.adset_name=e.adset_name||a.name;ch=true}
       if(st&&e.adset_status!==st){e.adset_status=st;ch=true}})
@@ -4808,14 +4825,14 @@ async function selZaliv(zid){
   if(z.campaign_id&&!_zLiveCache[zid]&&!_zLiveLoading[zid]){_zLiveLoading[zid]=1;loadZaliveLive(zid).finally(()=>{delete _zLiveLoading[zid]})}
 }
 async function loadZalivAdsets(zid){const z=ZALIVS.find(x=>x.id===zid);if(!z?.campaign_id)return
-  try{const r=await metaPost({action:'get_adsets',campaign_id:z.campaign_id,region:CURRENT_REGION});const d=await r.json();if(d.ok){_zAdsCache[zid]=d.adsets||[];const zz=ZALIVS.find(x=>x.id===zid);if(zz){const arr=zDomains(zz);let ch=false;(_zAdsCache[zid]).forEach((a,i)=>{const e=arr.find(x=>x.adset_id===a.id)||arr[i];if(!e)return;if(!e.adset_id){e.adset_id=a.id;e.adset_name=a.name;ch=true}const st=a.effective_status||a.status;if(e.adset_status!==st){e.adset_status=st;ch=true}});if(ch){zz.adset_domains=arr;db.from('zalivs').update({adset_domains:arr}).eq('id',zid)}}selZaliv(zid)}else toast('Meta: '+(d.error||'ошибка'),'err')}catch(e){toast('Meta недоступна','err')}finally{delete _zAdsLoading[zid]}}
+  try{const r=await metaPost({action:'get_adsets',campaign_id:z.campaign_id,region:CURRENT_REGION});const d=await r.json();if(d.ok){_zAdsCache[zid]=d.adsets||[];const zz=ZALIVS.find(x=>x.id===zid);if(zz){const arr=zDomains(zz).map(x=>({...x}));let ch=false;const mt=matchAdsets(arr,_zAdsCache[zid]);arr.forEach((e,i)=>{const a=mt[i];if(!a)return;if(!e.adset_id){e.adset_id=a.id;e.adset_name=e.adset_name||a.name;ch=true}const st=a.effective_status||a.status;if(e.adset_status!==st){e.adset_status=st;ch=true}});if(ch){zz.adset_domains=arr;db.from('zalivs').update({adset_domains:arr}).eq('id',zid)}}selZaliv(zid)}else toast('Meta: '+(d.error||'ошибка'),'err')}catch(e){toast('Meta недоступна','err')}finally{delete _zAdsLoading[zid]}}
 async function toggleAdset(zid,adsetId,el){const on=!el.classList.contains('on');el.classList.toggle('on',on)
   try{const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'set_adset_status',adset_id:adsetId,status:on?'ACTIVE':'PAUSED',region:CURRENT_REGION})});const d=await r.json();if(d.ok){const st=on?'ACTIVE':'PAUSED';const a=(_zAdsCache[zid]||[]).find(x=>x.id===adsetId);if(a)a.status=st
       const zz=ZALIVS.find(x=>x.id===zid)
       // запись домена могла быть без adset_id (заведена руками) — тогда по позиции адсета, как при загрузке
-      if(zz){const arr=zDomains(zz).map(x=>({...x}));const ix=(_zAdsCache[zid]||[]).findIndex(x=>x.id===adsetId)
-        const e=arr.find(x=>x.adset_id===adsetId)||(ix>=0&&arr[ix]&&!arr[ix].adset_id?arr[ix]:null)
-        if(e){e.adset_id=adsetId;e.adset_status=st;zz.adset_domains=arr;await db.from('zalivs').update({adset_domains:arr}).eq('id',zid)}}
+      if(zz){const arr=zDomains(zz).map(x=>({...x}));const mt=matchAdsets(arr,_zAdsCache[zid]||[{id:adsetId}]);let hit=false
+        arr.forEach((e,i)=>{if(mt[i]&&mt[i].id===adsetId){e.adset_id=adsetId;e.adset_status=st;hit=true}})
+        if(hit){zz.adset_domains=arr;await db.from('zalivs').update({adset_domains:arr}).eq('id',zid)}}
       try{Object.keys(sessionStorage).forEach(k=>{if(k.startsWith('mp:')&&/get_adsets|adset_statuses/.test(k))sessionStorage.removeItem(k)})}catch(e){}
       if(typeof rdomains==='function'&&document.getElementById('page-domains')?.classList.contains('active'))rdomains()
       toast('Адсет '+(on?'включён':'выключен')+(on?'':' · домен освобождён'),'ok')}else{el.classList.toggle('on',!on);toast('Meta: '+(d.error||'ошибка'),'err')}}catch(e){el.classList.toggle('on',!on);toast('Meta недоступна','err')}}
