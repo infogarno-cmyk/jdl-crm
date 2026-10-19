@@ -2071,7 +2071,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-19 14:09'
+const BUILD='2026-10-19 18:38'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -2217,7 +2217,11 @@ function zDomains(z){const a=z.adset_domains;return Array.isArray(a)?a:[]}
 // key → {z, ad} for active RKs of current region
 // A domain is busy only while BOTH the RK and its own adset are live.
 // adset_status is persisted on each mapping so the registry knows without hitting Meta.
-function lockedDomains(){const m={};ZALIVS.forEach(z=>{if(z.togo||z.ind==='off')return;zDomains(z).forEach(d=>{if(d.adset_status==='PAUSED')return;if(d.domain&&!m[d.domain])m[d.domain]={z,ad:d.ad}})});return m}
+// Живые статусы адсета. Всё остальное — PAUSED, CAMPAIGN_PAUSED, ARCHIVED, DELETED… — домен не держит.
+// Раньше свободным считался только ровно PAUSED, и адсет выключенной кампании держал домен.
+const ADSET_LIVE=new Set(['ACTIVE','IN_PROCESS','WITH_ISSUES','PENDING_REVIEW','PREAPPROVED','PENDING_BILLING_INFO'])
+const adsetLive=st=>!st||ADSET_LIVE.has(String(st).toUpperCase())
+function lockedDomains(){const m={};ZALIVS.forEach(z=>{if(z.togo||z.ind==='off')return;zDomains(z).forEach(d=>{if(!adsetLive(d.adset_status))return;if(d.domain&&!m[d.domain])m[d.domain]={z,ad:d.ad}})});return m}
 function domainOptions(site,curKey,selfZid,buyer){const lk=lockedDomains();const me=buyer||document.getElementById('mb')?.value||CURRENT_BUYER||'';const keys=allDKeys().slice().sort((a,b)=>{const ma=dMeta(a).buyer,mb=dMeta(b).buyer;const sa=ma===me?0:ma?2:1,sb=mb===me?0:mb?2:1;return sa-sb});return keys.map(k=>{const L=lk[k];const busy=L&&L.z.id!==selfZid;const m=dMeta(k);const own=m.buyer?(m.buyer===me?' · мой':' · '+m.buyer):'';return`<option value="${k}"${k===curKey?' selected':''}${busy?' disabled':''}>${k}${m.custom?'':(dPixel(k)==='NEW'?' · new px':' · old px')}${own}${busy?' — занят: '+L.z.name.slice(0,24):''}</option>`}).join('')}
 // source → {letter, key}
 const normKey=k=>String(k||'').toLowerCase().trim().replace(/\s+/g,' ')
@@ -2427,7 +2431,8 @@ function gp(id,el){
   if(id==='journal'){rtree();if(curDoc)loadDocById(curDoc)};if(id==='dash')rdash()
   if(id==='creo'){renderCreoPage()}
   if(id==='bj'&&typeof bjOpen==='function')bjOpen()
-  if(id==='zalivs'){loadBulkMeta(false)}
+  if(id==='zalivs'){loadBulkMeta(false);refreshAdsetStatuses()}
+  if(id==='domains'){refreshAdsetStatuses()}
   if(id==='analysis'){initAnalysisPage()}
 }
 
@@ -4738,6 +4743,24 @@ function chartMouseMove(e){
 }
 
 // ── ind menu on status dot ──
+// Статусы адсетов всех живых РК одним запросом. Адсет выключили в Ads Manager — домен освобождается сам.
+var _adStAt=0
+async function refreshAdsetStatuses(force){if(!force&&Date.now()-_adStAt<10*60000)return;_adStAt=Date.now()
+  const rks=ZALIVS.filter(z=>z.campaign_id&&!z.togo&&z.ind!=='off'&&zDomains(z).length);if(!rks.length)return
+  let d;try{const r=await metaPost({action:'adset_statuses',campaign_ids:[...new Set(rks.map(z=>String(z.campaign_id)))]});d=await r.json()}catch(e){return}
+  if(!d||!d.ok||!Array.isArray(d.adsets))return
+  const byCamp={};d.adsets.forEach(a=>{(byCamp[String(a.campaign_id)]||(byCamp[String(a.campaign_id)]=[])).push(a)})
+  let changed=0
+  for(const z of rks){const list=byCamp[String(z.campaign_id)];if(!list)continue
+    const arr=zDomains(z).map(x=>({...x}));let ch=false
+    const allOff=list.every(a=>!adsetLive(a.effective_status||a.status))
+    arr.forEach((e,i)=>{let a=e.adset_id?list.find(x=>x.id===e.adset_id):null
+      if(!a&&list.length===1&&arr.length===1)a=list[0]
+      const st=a?(a.effective_status||a.status):(allOff?'CAMPAIGN_PAUSED':null)
+      if(a&&!e.adset_id){e.adset_id=a.id;e.adset_name=e.adset_name||a.name;ch=true}
+      if(st&&e.adset_status!==st){e.adset_status=st;ch=true}})
+    if(ch){z.adset_domains=arr;changed++;db.from('zalivs').update({adset_domains:arr}).eq('id',z.id)}}
+  if(changed){if(document.getElementById('page-domains')?.classList.contains('active')&&typeof rdomains==='function')rdomains();if(document.getElementById('page-zalivs')?.classList.contains('active'))rzalivs()}}
 async function loadBulkMeta(force){if(!force&&Date.now()-_zBulkAt<5*60000)return;const ids=[...new Set(ZALIVS.filter(z=>z.campaign_id&&z.ind!=='off'&&!z.togo).map(z=>String(z.campaign_id)))];if(!ids.length)return
   const td=new Date().toISOString().split('T')[0];setSS('syncing','Метрики из Meta…')
   try{for(let i=0;i<ids.length;i+=60){const r=await metaPost({action:'get_bulk_insights',campaign_ids:ids.slice(i,i+60),since:td,until:td,region:CURRENT_REGION});const d=await r.json();if(d.ok)Object.assign(_zBulk,d.data||{})}
@@ -4785,12 +4808,16 @@ async function selZaliv(zid){
   if(z.campaign_id&&!_zLiveCache[zid]&&!_zLiveLoading[zid]){_zLiveLoading[zid]=1;loadZaliveLive(zid).finally(()=>{delete _zLiveLoading[zid]})}
 }
 async function loadZalivAdsets(zid){const z=ZALIVS.find(x=>x.id===zid);if(!z?.campaign_id)return
-  try{const r=await metaPost({action:'get_adsets',campaign_id:z.campaign_id,region:CURRENT_REGION});const d=await r.json();if(d.ok){_zAdsCache[zid]=d.adsets||[];const zz=ZALIVS.find(x=>x.id===zid);if(zz){const arr=zDomains(zz);let ch=false;(_zAdsCache[zid]).forEach((a,i)=>{const e=arr.find(x=>x.adset_id===a.id)||arr[i];if(!e)return;if(!e.adset_id){e.adset_id=a.id;e.adset_name=a.name;ch=true}if(e.adset_status!==a.status){e.adset_status=a.status;ch=true}});if(ch){zz.adset_domains=arr;db.from('zalivs').update({adset_domains:arr}).eq('id',zid)}}selZaliv(zid)}else toast('Meta: '+(d.error||'ошибка'),'err')}catch(e){toast('Meta недоступна','err')}finally{delete _zAdsLoading[zid]}}
+  try{const r=await metaPost({action:'get_adsets',campaign_id:z.campaign_id,region:CURRENT_REGION});const d=await r.json();if(d.ok){_zAdsCache[zid]=d.adsets||[];const zz=ZALIVS.find(x=>x.id===zid);if(zz){const arr=zDomains(zz);let ch=false;(_zAdsCache[zid]).forEach((a,i)=>{const e=arr.find(x=>x.adset_id===a.id)||arr[i];if(!e)return;if(!e.adset_id){e.adset_id=a.id;e.adset_name=a.name;ch=true}const st=a.effective_status||a.status;if(e.adset_status!==st){e.adset_status=st;ch=true}});if(ch){zz.adset_domains=arr;db.from('zalivs').update({adset_domains:arr}).eq('id',zid)}}selZaliv(zid)}else toast('Meta: '+(d.error||'ошибка'),'err')}catch(e){toast('Meta недоступна','err')}finally{delete _zAdsLoading[zid]}}
 async function toggleAdset(zid,adsetId,el){const on=!el.classList.contains('on');el.classList.toggle('on',on)
   try{const r=await fetch(SB_URL+'/functions/v1/get-campaigns',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'set_adset_status',adset_id:adsetId,status:on?'ACTIVE':'PAUSED',region:CURRENT_REGION})});const d=await r.json();if(d.ok){const st=on?'ACTIVE':'PAUSED';const a=(_zAdsCache[zid]||[]).find(x=>x.id===adsetId);if(a)a.status=st
       const zz=ZALIVS.find(x=>x.id===zid)
-      if(zz){const arr=zDomains(zz);const e=arr.find(x=>x.adset_id===adsetId);if(e&&e.adset_status!==st){e.adset_status=st;zz.adset_domains=arr;await db.from('zalivs').update({adset_domains:arr}).eq('id',zid)}}
-      if(typeof rdomains==='function'&&document.getElementById('page-domains')?.classList.contains('on'))rdomains()
+      // запись домена могла быть без adset_id (заведена руками) — тогда по позиции адсета, как при загрузке
+      if(zz){const arr=zDomains(zz).map(x=>({...x}));const ix=(_zAdsCache[zid]||[]).findIndex(x=>x.id===adsetId)
+        const e=arr.find(x=>x.adset_id===adsetId)||(ix>=0&&arr[ix]&&!arr[ix].adset_id?arr[ix]:null)
+        if(e){e.adset_id=adsetId;e.adset_status=st;zz.adset_domains=arr;await db.from('zalivs').update({adset_domains:arr}).eq('id',zid)}}
+      try{Object.keys(sessionStorage).forEach(k=>{if(k.startsWith('mp:')&&/get_adsets|adset_statuses/.test(k))sessionStorage.removeItem(k)})}catch(e){}
+      if(typeof rdomains==='function'&&document.getElementById('page-domains')?.classList.contains('active'))rdomains()
       toast('Адсет '+(on?'включён':'выключен')+(on?'':' · домен освобождён'),'ok')}else{el.classList.toggle('on',!on);toast('Meta: '+(d.error||'ошибка'),'err')}}catch(e){el.classList.toggle('on',!on);toast('Meta недоступна','err')}}
 function zAnKeyOf(a,z){const f=normDate(a.period_from),t=normDate(a.period_to);if(!f||!t)return'';const span=Math.round((new Date(t)-new Date(f))/864e5);const raw=z.date||parseDateFromCampName(z.name)||'1.1';const p=raw.split('.');const d0=new Date(new Date().getFullYear(),+p[1]-1,+p[0]);const off=Math.round((new Date(f)-d0)/864e5);if(span===0&&off===0)return'1dc';if(span===0&&off===1)return'2dc';if(span===1&&off===0)return'kwartal';if(span===1&&off>=2&&off%2===0)return(off/2+1)+'k';if(span===2&&off===0)return'kwartal';return span===1?'2k':'kwartal'}
 async function loadZaliveLive(zid){
@@ -5362,12 +5389,14 @@ async function delTkConfirmed(id){const dt=TASKS.find(t=>t.id===id);if(dt&&dt.tt
 // ── column change with timer ──
 async function moveTask(t,newCol){
   if(t.col===newCol)return
-  const now=new Date().toISOString();const upd={col:newCol,updated_at:now}
+  const now=new Date().toISOString();const upd={col:newCol,updated_at:now,col_set_at:now}
   if(newCol==='process'){upd.started_at=now}
   else if(t.col==='process'&&t.started_at){upd.time_spent=(t.time_spent||0)+Math.round((Date.now()-new Date(t.started_at).getTime())/1000);upd.started_at=null}
   if(newCol==='done'){upd.done_at=now}
   Object.assign(t,upd)
-  const{error}=await db.from('tasks').update(upd).eq('id',t.id)
+  let{error}=await db.from('tasks').update(upd).eq('id',t.id)
+  // колонки col_set_at ещё нет (не выполнен tasks_guard.sql) — пишем без неё
+  if(error&&/col_set_at/.test(error.message||'')){delete upd.col_set_at;({error}=await db.from('tasks').update(upd).eq('id',t.id))}
   if(error){const r2=await db.from('tasks').update({col:newCol,updated_at:now}).eq('id',t.id);if(r2.error)toast('Ошибка: '+r2.error.message,'err');else toast('Таймер не сохранён — выполни SQL для tasks','err')}
 }
 
@@ -5477,6 +5506,7 @@ async function autoFdcTask(z){
   if(!z||!db||z.togo||z.ind==='off')return
   const nm=(z.name||'').trim().toLowerCase()
   if(TASKS.some(t=>t.ttype==='fdc'&&(t.rk_id===z.id||(t.rk_name||'').trim().toLowerCase()===nm)))return
+  if(z.fdc_at)return
   // удалённую FDC-таску не воскрешаем: помним РК, по которым она уже заводилась
   let seen={};try{seen=JSON.parse(localStorage.getItem('jdl_fdc_seen')||'{}')}catch(e){}
   if(seen[z.id])return
@@ -5487,12 +5517,13 @@ async function autoFdcTask(z){
   // scheduled: lands in TO DO at 09:00 on its day (see rollover)
   const col=(dl<todayISO()||(dl===todayISO()&&new Date().getHours()>=9))?'todo':'all'
   await saveTk('FDC · '+z.name.slice(0,44),col,who,{deadline:dl,ttype:'fdc',rk_id:z.id,rk_name:z.name,rk_region:z.region||CURRENT_REGION})
+  z.fdc_at=new Date().toISOString();db.from('zalivs').update({fdc_at:z.fdc_at}).eq('id',z.id).then(()=>{},()=>{})
 }
 
 // ── clear done ──
 async function clearDone(){
   const doneTasks=TASKS.filter(t=>t.col==='done');if(!doneTasks.length)return
-  for(const t of doneTasks)await db.from('tasks').update({col:'archived'}).eq('id',t.id).eq('col','done')
+  for(const t of doneTasks)await tUpdGuard(t.id,{col:'archived'},'done')
   TASKS.forEach(t=>{if(t.col==='done')t.col='archived'});rtasks();moneyRain();toast('Готовые задачи убраны в архив (статистика сохранена)','ok')
 }
 
@@ -5503,9 +5534,13 @@ function moneyRain(){const box=document.createElement('div');box.style.cssText='
     s.animate([{transform:'translate(0,0) rotate(0deg)',opacity:0},{opacity:.95,offset:.08},{transform:`translate(${sway}vw,55vh) rotate(${rot/2}deg)`,opacity:.95,offset:.55},{transform:`translate(${sway*1.6}vw,112vh) rotate(${rot}deg)`,opacity:.6}],{duration:dur,delay,easing:'linear',fill:'forwards'});box.appendChild(s)}
   setTimeout(()=>{box.style.transition='opacity .6s';box.style.opacity='0';setTimeout(()=>box.remove(),700)},T)}
 async function doneTask(id){const t=TASKS.find(x=>x.id===id);if(!t)return;await moveTask(t,'done');rtasks()}
+// Перенос колонки с отметкой и только если в базе таска всё ещё в ожидаемой колонке
+async function tUpdGuard(id,upd,fromCol){const u={...upd,col_set_at:new Date().toISOString()}
+  let{error}=await db.from('tasks').update(u).eq('id',id).eq('col',fromCol)
+  if(error&&/col_set_at/.test(error.message||'')){delete u.col_set_at;await db.from('tasks').update(u).eq('id',id).eq('col',fromCol)}}
 function rolloverTodayTasks(){
   const td=todayISO(),h=new Date().getHours();let n=0
-  TASKS.forEach(t=>{if(t.col!=='all'||!t.deadline||t.deadline>td)return;if(t.ttype==='fdc'&&t.deadline===td&&h<9)return;t.col='todo';db.from('tasks').update({col:'todo',updated_at:new Date().toISOString()}).eq('id',t.id).eq('col','all');n++})
+  TASKS.forEach(t=>{if(t.col!=='all'||!t.deadline||t.deadline>td)return;if(t.ttype==='fdc'&&t.deadline===td&&h<9)return;t.col='todo';tUpdGuard(t.id,{col:'todo',updated_at:new Date().toISOString()},'all');n++})
   if(n){rtasks();if(typeof rdash==='function')rdash();toast('В TO DO: '+n+' задач на сегодня','ok')}return n
 }
 function scheduleRollover(){const now=new Date();const t0=new Date(now);t0.setHours(24,0,5,0);const t9=new Date(now);t9.setHours(9,0,5,0);if(t9<=now)t9.setDate(t9.getDate()+1);const next=Math.min(t0-now,t9-now);setTimeout(()=>{rolloverTodayTasks();scheduleRollover()},next)}
