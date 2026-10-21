@@ -2071,7 +2071,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-19 18:54'
+const BUILD='2026-10-21 12:14'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -2683,6 +2683,8 @@ async function liveChart(from,to,seq){
   if(!from||!to)return
   const key=CURRENT_REGION+'|'+from+'|'+to
   let cc=_dailyCache[key]
+  const _days=Math.round((new Date(to)-new Date(from))/864e5)+1
+  if(_days>7)cc={at:Date.now(),byDay:{}}   // длинный период: по дням из синхронизации (ниже), без похода в Meta
   if(!cc||Date.now()-cc.at>5*60000){
     try{
       const r=await metaPost({action:'reconcile',region:CURRENT_REGION,since:from,until:to,daily:true})
@@ -2691,13 +2693,15 @@ async function liveChart(from,to,seq){
     }catch(e){return}
   }
   if(seq!==undefined&&seq!==_dashSeq)return  // период уже сменили — не трогаем график
+  const _bySum=Object.values(cc.byDay||{}).reduce((s,b)=>s+(+b.spend||0),0),_mByDay=METRICS.filter(x=>x.day>=from&&x.day<=to).reduce((s,x)=>s+(+x.spend_pl||0)+(+x.spend_plua||0),0)
+  const _usePartial=_days>7||(_mByDay>20&&_bySum<_mByDay*0.5)
   // строим непрерывный ряд по всем дням периода, а не только по тем, что есть в metrics_daily
   const mByDay={};METRICS.forEach(m=>{mByDay[m.day]=m})
   const rows=[]
   for(let t=new Date(from+'T00:00:00');t<=new Date(to+'T00:00:00');t=new Date(+t+864e5)){
     const day=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'),m=mByDay[day]||{}
     const b=cc.byDay[day]||{spend:0,imp:0,clicks:0}
-    const sp=b.spend||0
+    const sp=_usePartial?((+m.spend_pl||0)+(+m.spend_plua||0)):(b.spend||0)
     // CTR тоже живой: из metrics_daily дни без строки давали 0 и линия ложилась на дно
     const ctr=b.imp>0?b.clicks/b.imp*100:(parseFloat(m.ctr)||0)
     const leads=(m.leads_pl||0)+(m.leads_plua||0),quals=m.quals||0
@@ -8248,7 +8252,7 @@ function sumIns(map,ids){let spend=0,clicks=0,imp=0,reach=0;ids.forEach(id=>{con
 // Спенд региона целиком — по кабинету, как в Ads Manager. Тот же запрос, что у графика
 // (одинаковое тело → один поход в Meta на оба), поэтому лишней нагрузки нет.
 function spendBody(from,to){const days=Math.round((new Date(to)-new Date(from))/864e5)+1
-  return days<=31?{action:'reconcile',region:CURRENT_REGION,since:from,until:to,daily:true}:{action:'reconcile',region:CURRENT_REGION,since:from,until:to}}
+  return {action:'reconcile',region:CURRENT_REGION,since:from,until:to}}
 async function regionSpend(from,to){
   try{const r=await metaPost(spendBody(from,to));const d=await r.json()
     if(d.ok&&!d.byDay)return{spend:Math.round((+d.total||0)*100)/100,clicks:(d.campaigns||[]).reduce((a,c)=>a+(+c.clicks||0),0),imp:(d.campaigns||[]).reduce((a,c)=>a+(+c.imp||0),0),ctr:0}
@@ -8261,6 +8265,14 @@ async function heroAllMeta(from,to,seq){const $=id=>document.getElementById(id);
   const key='ALL|'+from+'|'+to+'|'+CURRENT_REGION+'|'+idsSig(ids);let cc=_buyerCache[key]
   if(!cc||Date.now()-cc.at>5*60000){const[cur,prev]=await Promise.all([regionSpend(from,to),document.getElementById('cmp-tgl')?.classList.contains('on')?regionSpend(pFrom,pTo):Promise.resolve({spend:0})]);cc=_buyerCache[key]={at:Date.now(),cur,prev};if(CURRENT_BUYER){window._liveSeq=(seq===undefined?_dashSeq:seq);return}}
   if(!fresh())return
+  // Подстраховка: Meta отдала заметно меньше, чем записала синхронизация за тот же период, —
+  // значит ответ неполный (лимит, обрыв, недоступные кампании). Показываем цифру синхронизации,
+  // а не почти ноль, и пишем об этом в подсказке.
+  const _mSum=(a,b)=>METRICS.filter(x=>x.day>=a&&x.day<=b).reduce((s,x)=>s+(+x.spend_pl||0)+(+x.spend_plua||0),0)
+  const _mCur=_mSum(from,to),_mPrev=_mSum(pFrom,pTo)
+  if(_mCur>20&&cc.cur.spend<_mCur*0.5){console.warn('Meta вернула $'+cc.cur.spend+' за период, синхронизация — $'+_mCur.toFixed(2)+'. Показываю синхронизацию.');cc.cur={...cc.cur,spend:Math.round(_mCur*100)/100,partial:true}}
+  if(_mPrev>20&&cc.prev&&cc.prev.spend<_mPrev*0.5)cc.prev={...cc.prev,spend:Math.round(_mPrev*100)/100,partial:true}
+  { const e=$('d-spend');if(e)e.title=cc.cur.partial?'Meta сейчас отдаёт неполные данные — цифра из синхронизации':'' }
   const S=cc.cur,P=cc.prev
   heroCountUp($('hero-tick'),S.spend,v=>v.toLocaleString('ru',{minimumFractionDigits:2,maximumFractionDigits:2}).replace(',','.'));heroDelta(S.spend,P.spend);heroCountUp($('hero-daily'),S.spend/days,v=>'$'+Math.round(v))
   const lbl=$('hero-per');if(lbl)lbl.textContent=days+' дн. · Meta live'
