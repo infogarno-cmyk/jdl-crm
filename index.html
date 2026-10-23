@@ -399,6 +399,10 @@
 @keyframes bjpop{from{opacity:0;transform:translate(-50%,-48%) scale(.98)}}
 .bj-cx{font-size:15px}
 @media(max-width:1000px){.bj-cx{display:none!important}}
+/* завершение теста */
+.bj-finish{border-color:rgba(240,58,85,.45)!important;color:#F03A55!important}
+.bj-finish:hover{background:rgba(240,58,85,.08)!important}
+.bj-done{font:600 12px var(--bjs);color:var(--bjgr)}.bj-done a{color:var(--bjt3);margin-left:8px;font-weight:500}.bj-done a:hover{color:var(--bjt)}
 /* связь с тасками и заливами */
 .ttype.bj{color:#F0D98A;border-color:rgba(212,175,55,.4);background:rgba(212,175,55,.1)}
 .tbj{display:inline-block;font:600 10.5px 'JetBrains Mono',monospace;color:#F0D98A;border:1px solid rgba(212,175,55,.3);background:rgba(212,175,55,.08);border-radius:6px;padding:2px 7px;cursor:pointer;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -2071,7 +2075,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-21 12:14'
+const BUILD='2026-10-23 16:50'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -8876,11 +8880,12 @@ function bjRenderPane(){const t=bjFind(bjSel),p=document.getElementById('bj-pane
       ${!isT?`<button class="bj-wbtn" id="bj-totest">▶ Превратить в тест</button>`:''}</div></div>
     ${isT?`<div class="bj-box"><div class="bj-bh"><b>A</b><span>действие</span><em>${t.started?'старт '+bjDD(t.started):'не запущен'}</em></div><div class="bj-bb">
       <textarea data-f="a" data-log="Обновлено действие" placeholder="Адсеты, бюджет, срок, что сравниваем">${bjEsc(t.a)}</textarea>
+      ${t.step!=='insight'?`<button class="bj-wbtn bj-finish" id="bj-finish">■ Завершить тест</button>`:`<div class="bj-done">✓ Тест завершён ${bjDD(t.ended)} <a href="#" id="bj-reopen">вернуть в работу</a></div>`}
       ${!t.started?`<button class="bj-wbtn gold" id="bj-launch">▶ Запустить тест</button>`:`<div class="bj-r2"><div class="bj-fl"><label>Старт</label><input type="date" data-f="started" value="${t.started}"></div><div class="bj-fl"><label>Финиш</label><input type="date" data-f="ended" value="${t.ended||''}"></div></div>`}</div></div>
-    <div class="bj-box ${i<2?'lock':''}"><div class="bj-bh"><b>D</b><span>данные</span></div><div class="bj-bb">
+    <div class="bj-box"><div class="bj-bh"><b>D</b><span>данные</span></div><div class="bj-bb">
       <textarea data-f="d" data-log="Обновлены данные" placeholder="Что показали цифры, устойчивость по дням, что мешало">${bjEsc(t.d)}</textarea>
-      ${i===2?`<button class="bj-wbtn" id="bj-toins">Завершить → инсайт</button>`:''}</div></div>
-    <div class="bj-box ${i<3?'lock':''}"><div class="bj-bh"><b>I</b><span>инсайт</span><em>${t.ended?bjDD(t.ended):''}</em></div><div class="bj-bb">
+</div></div>
+    <div class="bj-box"><div class="bj-bh"><b>I</b><span>инсайт</span><em>${t.ended?bjDD(t.ended):''}</em></div><div class="bj-bb">
       <textarea data-f="i" data-log="Записан инсайт" placeholder="Что мы теперь знаем — одним предложением">${bjEsc(t.i)}</textarea>
       ${t.i?`<button class="bj-wbtn" id="bj-next">↳ Следующая гипотеза из инсайта</button>`:''}</div></div>`:''}
     <div class="bj-box"><div class="bj-bh"><b>✓</b><span>таски</span><em>${tasks.filter(k=>k.col!=='done').length} открыто</em></div><div class="bj-bb">
@@ -8938,7 +8943,13 @@ function bjBindPane(t){const p=document.getElementById('bj-pane'),$=id=>document
   $('bj-pc').onclick=bjToggleCenter
   const tt=$('bj-totest');if(tt)tt.onclick=()=>{t.kind='test';bjLog(t,'Гипотеза стала тестом',1);bjRender()}
   const ln=$('bj-launch');if(ln)ln.onclick=()=>{if(!t.a){toast('Опиши действие','info');return}bjMove(t,'data')}
-  const ti=$('bj-toins');if(ti)ti.onclick=()=>bjMove(t,'insight')
+  // Завершить тест: шаг «Инсайт», дата финиша — сегодня (если не стоит), курсор в «Данные»
+  const fin=$('bj-finish');if(fin)fin.onclick=()=>{if(!t.h){toast('Сначала сформулируй гипотезу','info');return}
+    if(!t.started)t.started=t.date||todayISO()
+    if(!t.ended)t.ended=todayISO()
+    t.step='insight';bjLog(t,'Тест завершён '+bjDD(t.ended),1);bjRender()
+    setTimeout(()=>{const el=document.querySelector('#bj-pane [data-f='+(t.d?'i':'d')+']');if(el){el.scrollIntoView({block:'center',behavior:'smooth'});el.focus()}},80)}
+  const ro=$('bj-reopen');if(ro)ro.onclick=e=>{e.preventDefault();t.step='data';t.ended=null;bjLog(t,'Тест возвращён в работу',1);bjRender()}
   const nx=$('bj-next');if(nx)nx.onclick=async()=>{
     const ms=t.metrics.map(m=>Object.assign(bjNewMetric(m.name),{unit:m.unit,dir:m.dir,before:bjNow(m)??m.before}))
     const n=await bjCreate('hyp',{buyer:t.buyer,region:t.region,variable:t.variable,metrics:ms});if(!n)return
