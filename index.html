@@ -2075,7 +2075,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-23 16:50'
+const BUILD='2026-10-28 15:17'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -5394,12 +5394,26 @@ var _rkGeoMap={PL:'PL',PLUA:'PLUA',CZ:'CZ',CZUA:'CZUA'}
 
 function todayISO(){return new Date().toISOString().split('T')[0]}
 function fmtDur(ms){if(!ms||ms<0)return'0м';const m=Math.round(ms/60000);if(m<60)return m+'м';const h=Math.floor(m/60);return h+'ч '+(m%60)+'м'}
-function taskElapsed(t){let ms=(t.time_spent||0)*1000;if(t.col==='process'&&t.started_at)ms+=Date.now()-new Date(t.started_at).getTime();return ms}
+// ── Время в Process делится между тасками одного человека ──
+// Две таски в работе одновременно — каждая получает половину прошедшего времени, три — треть.
+// Сумма по всем таскам = реально прошедшее время, а не ×2.
+// Каждый раз, когда набор тасок в Process у человека меняется, фиксируем накопленное
+// («чекпоинт»): начисляем каждой её долю и перезапускаем отсчёт с текущего момента.
+const procPeers=who=>TASKS.filter(x=>x.col==='process'&&x.started_at&&(x.assignee||'')===(who||''))
+function taskElapsed(t){let ms=(t.time_spent||0)*1000
+  if(t.col==='process'&&t.started_at){const n=Math.max(1,procPeers(t.assignee).length);ms+=(Date.now()-new Date(t.started_at).getTime())/n}
+  return ms}
+async function procCheckpoint(who){const peers=procPeers(who);if(!peers.length)return
+  const now=Date.now(),iso=new Date(now).toISOString(),n=peers.length
+  await Promise.all(peers.map(p=>{const add=Math.round((now-new Date(p.started_at).getTime())/1000/n)
+    p.time_spent=(p.time_spent||0)+Math.max(0,add);p.started_at=iso
+    return db.from('tasks').update({time_spent:p.time_spent,started_at:iso}).eq('id',p.id)}))}
 
 // ── create ──
 async function saveTk(title,col,who,extra){
   if(!title||!title.trim())return
   const maxSo=TASKS.filter(t=>t.col===col).reduce((mx,t)=>Math.max(mx,t.sort_order||0),0)
+  if(col==='process')await procCheckpoint(who||'')
   const row={title:title.trim(),col,assignee:who||'',deadline:extra?.deadline||null,sort_order:maxSo+10,
     ttype:extra?.ttype||'other',rk_id:extra?.rk_id||null,rk_name:extra?.rk_name||null,rk_region:extra?.rk_region||null,
     ...(extra?.bj_id?{bj_id:extra.bj_id,bj_name:extra.bj_name||null}:{}),
@@ -5409,14 +5423,17 @@ async function saveTk(title,col,who,extra){
   if(error)toast('Ошибка: '+error.message,'err')
 }
 async function delTkConfirmed(id){const dt=TASKS.find(t=>t.id===id);if(dt&&dt.ttype==='fdc'&&dt.rk_id){try{const s=JSON.parse(localStorage.getItem('jdl_fdc_seen')||'{}');s[dt.rk_id]=1;localStorage.setItem('jdl_fdc_seen',JSON.stringify(s))}catch(e){}}
+  if(dt&&dt.col==='process')await procCheckpoint(dt.assignee||'')
   await db.from('tasks').delete().eq('id',id);TASKS=TASKS.filter(t=>t.id!==id);rtasks()}
 
 // ── column change with timer ──
 async function moveTask(t,newCol){
   if(t.col===newCol)return
+  // входит в Process или выходит из него — сначала раздаём накопленное время текущим таскам человека
+  if(newCol==='process'||t.col==='process')await procCheckpoint(t.assignee||'')
   const now=new Date().toISOString();const upd={col:newCol,updated_at:now,col_set_at:now}
   if(newCol==='process'){upd.started_at=now}
-  else if(t.col==='process'&&t.started_at){upd.time_spent=(t.time_spent||0)+Math.round((Date.now()-new Date(t.started_at).getTime())/1000);upd.started_at=null}
+  else if(t.col==='process'){upd.time_spent=t.time_spent||0;upd.started_at=null}
   if(newCol==='done'){upd.done_at=now}
   Object.assign(t,upd)
   let{error}=await db.from('tasks').update(upd).eq('id',t.id)
