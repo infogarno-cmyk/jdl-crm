@@ -2116,7 +2116,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-28 21:55'
+const BUILD='2026-10-28 22:05'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -8429,8 +8429,11 @@ async function rdashBuyer(buyer){
   // Кампании, не заведённые в CRM, и лиды, не дошедшие ни до одной РК, в расчёт не идут.
   let rkL=0,rkQ=0;rks.forEach(z=>{const x=srcStats(z.id,null,from,to);if(x){rkL+=x.leads;rkQ+=x.quals}})
   const rkS=S.rkSpend||0
-  const cpl=rkL?Math.round(rkS/rkL*100)/100:0,cql=rkQ?Math.round(rkS/rkQ*100)/100:0
-  const ttl='по РК: $'+rkS+' спенда · '+rkL+' лид. · '+rkQ+' квал.'
+  // если калек баера нет в адсетах его РК (источники вида iplisystem1-pl), РК-расчёт пустой —
+  // тогда считаем по букве: весь спенд его кампаний / его лиды и квалы по букве в источнике
+  const byRk=rkL>0,sp=byRk?rkS:(S.spend||0),dl=byRk?rkL:leads,dq=byRk?rkQ:quals
+  const cpl=dl&&sp?Math.round(sp/dl*100)/100:0,cql=dq&&sp?Math.round(sp/dq*100)/100:0
+  const ttl=(byRk?'по РК: $':'по букве баера в источнике (кальки не привязаны к адсетам): $')+Math.round(sp)+' спенда · '+dl+' лид. · '+dq+' квал.'
   ;['d-cpl','d-cql'].forEach(id=>{const e=$(id);if(e)e.title=ttl})
   setKpi('d-spend','$'+S.spend,'var(--yellow)')
   setKpi('d-cpl',cpl?'$'+cpl:'—',cpl?(cpl<12?'var(--green)':cpl<=15?'var(--yellow)':'var(--red)'):'var(--text3)')
