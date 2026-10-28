@@ -2116,7 +2116,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-28 23:30'
+const BUILD='2026-10-28 23:55'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -10318,41 +10318,67 @@ kbd{font:600 10.5px var(--m);color:var(--t);background:var(--b4);border:1px soli
 @media (max-width:1760px){.tools .lb{display:none}.tools button{padding:0 8px}}
 /*HOMECSS*/
 /* ── эффективность воронок ── */
-.ef{display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px;align-items:start}
-.eflist{border:1px solid var(--l);border-radius:14px;background:var(--b2);padding:10px;max-height:calc(100vh - 170px);overflow:auto;position:sticky;top:0}
-.eflist .gh{font:700 9.5px var(--s);letter-spacing:.12em;text-transform:uppercase;color:var(--t3);padding:8px 8px 4px}
+.ef{display:grid;grid-template-columns:250px minmax(0,1fr);gap:18px;align-items:start}
+.eflist{border:1px solid var(--l);border-radius:14px;background:var(--b2);padding:10px;max-height:calc(100vh - 150px);overflow:auto;position:sticky;top:0}
+.eflist .gh{font:700 9.5px var(--s);letter-spacing:.12em;text-transform:uppercase;color:var(--t3);padding:8px 8px 6px}
 .efi{display:block;width:100%;text-align:left;padding:10px 11px;border-radius:10px;border:1px solid transparent;margin-bottom:4px}
-.efi:hover{background:var(--b3)}.efi.on{border-color:rgba(212,175,55,.45);background:var(--gy)}
+.efi:hover{background:var(--b3)}.efi.on{border-color:rgba(212,175,55,.5);background:var(--gy)}
 .efi b{display:block;font:700 13px var(--s);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.efi.on b{color:var(--g2)}
-.efi small{display:flex;gap:10px;font:600 10.5px var(--m);color:var(--t3);margin-top:3px}
-.efi i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:1px}
-.efhd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px}
-.efhd h2{margin:0;font:400 22px var(--d);letter-spacing:.03em}
-.efsub{font:500 12px var(--s);color:var(--t3);margin:4px 0 16px}
-.chip2{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:6px;font:700 10px var(--s);letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--l2);color:var(--t2);background:var(--b2)}
-.chip2.g{color:var(--g2);border-color:rgba(212,175,55,.4);background:var(--gy)}
-.flow2{display:flex;align-items:stretch;overflow-x:auto;padding-bottom:6px;margin-bottom:14px}
-.st2{flex:1 0 140px;min-width:140px;border:1px solid var(--l);border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.045),transparent 40%),var(--b3);padding:12px 13px;cursor:default}
-.st2.bad{border-color:rgba(240,58,85,.6);box-shadow:0 0 0 1px rgba(240,58,85,.3)}.st2.ok{border-color:rgba(61,190,139,.35)}.st2.mid{border-color:rgba(212,175,55,.4)}
-.st2 .k{font:700 9.5px var(--s);letter-spacing:.12em;text-transform:uppercase;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.st2 .v{font:700 22px var(--m);margin:8px 0 2px;white-space:nowrap}.st2 .v small{font:600 11px var(--m);color:var(--t3);margin-left:4px}
-.st2 .m{font:500 11px var(--m);color:var(--t2)}
-.ar2{width:58px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
-.ar2 .p{font:700 12px var(--m)}.ar2 svg{width:42px;height:12px}.ar2 small{font:500 9px var(--s);color:var(--t3);text-align:center}
-.leak2{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;border:1px solid rgba(240,58,85,.35);background:var(--rb);margin-bottom:16px;flex-wrap:wrap}
-.leak2 b{color:var(--r);font:700 12.5px var(--s)}.leak2 span{color:var(--t2);font-size:12px}
+.efi small{display:block;font:600 10.5px var(--m);color:var(--t3);margin:3px 0 0 15px}
+.efi i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:8px;vertical-align:1px}
+.efi.tpl b{font-weight:600;color:var(--t2)}
+.efnew{display:block;width:100%;height:34px;border:1px dashed var(--l2);border-radius:9px;color:var(--t2);font:600 12px var(--s);margin:6px 0 4px}.efnew:hover{border-color:var(--g);color:var(--g2)}
+.efhd{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.efhd h2{margin:0 6px 0 0;font:400 23px var(--d);letter-spacing:.02em}
+.efsub{font:500 11.5px var(--m);color:var(--t3);margin:6px 0 16px}
+.chip2{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:6px;font:700 10px var(--m);letter-spacing:.04em;text-transform:uppercase;border:1px solid var(--l2);color:var(--t2);background:var(--b2)}
+.chip2.b{color:#9DB8FF;border-color:rgba(110,155,255,.45);background:rgba(110,155,255,.1)}
+.chip2.g{color:var(--g2);border-color:rgba(212,175,55,.45);background:var(--gy)}
+.efbtns{margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.efbtns .pb{height:30px;padding:0 12px;border-radius:8px;border:1px solid var(--l2);font:600 11.5px var(--s);color:var(--t2);background:var(--b2)}
+.efbtns .pb.on{color:var(--t);border-color:rgba(255,255,255,.35)}
+.efbtns .pb.gd2{color:var(--g2);border-color:rgba(212,175,55,.5);background:var(--gy)}
+.flow2{display:flex;align-items:stretch;overflow-x:auto;padding:2px 2px 8px;margin-bottom:12px}
+.st2{display:flex;flex-direction:column;justify-content:flex-start;flex:1 0 150px;min-width:150px;border:1px solid var(--l);border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.05),transparent 45%),var(--b3);padding:12px 13px;cursor:pointer;transition:border-color .15s,box-shadow .15s;text-align:left}
+.st2:hover{border-color:var(--l2)}
+.st2.bad{border-color:rgba(240,58,85,.55)}.st2.sel{border-color:var(--g);box-shadow:0 0 0 1px var(--g),0 10px 30px rgba(212,175,55,.12)}
+.st2 .k{display:flex;align-items:center;gap:7px;font:700 9.5px var(--s);letter-spacing:.12em;text-transform:uppercase;color:var(--t3);white-space:nowrap;overflow:hidden}
+.st2 .k em{font-style:normal;width:20px;height:20px;border-radius:6px;display:grid;place-items:center;font-size:11px;flex-shrink:0}
+.st2 .v{font:700 25px var(--m);margin:9px 0 3px;white-space:nowrap;letter-spacing:-.01em}.st2 .v small{font:600 10.5px var(--m);color:var(--t3);margin-left:5px;letter-spacing:0}
+.st2 .m{font:500 11px var(--m);color:var(--t2);line-height:1.45}.st2 .m b{color:var(--t)}
+.st2 .cps{display:flex;flex-wrap:wrap;gap:4px;margin-top:9px}
+.st2 .cps span{height:19px;padding:0 7px;border-radius:5px;border:1px solid var(--l2);background:var(--b2);font:600 9.5px var(--m);color:var(--t2);display:inline-flex;align-items:center;max-width:110px;overflow:hidden;white-space:nowrap}
+.ar2{width:60px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.ar2 .p{font:700 12.5px var(--m)}.ar2 svg{width:44px;height:12px}.ar2 small{font:500 9px var(--s);color:var(--t3);text-align:center;line-height:1.2}
+.leak2{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;border:1px solid rgba(240,58,85,.38);background:var(--rb);margin-bottom:14px;flex-wrap:wrap}
+.leak2 b{color:var(--r);font:700 12.5px var(--s)}.leak2 span{color:var(--t2);font-size:12px;flex:1;min-width:200px}
+.leak2 button{color:var(--r2);font:600 11.5px var(--s);text-decoration:underline;text-underline-offset:3px}
 .leak2.ok{border-color:rgba(61,190,139,.35);background:var(--grb)}.leak2.ok b{color:var(--gr)}
-.efgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:14px}
-.box2{border:1px solid var(--l);border-radius:14px;background:var(--b3);padding:12px 14px;overflow-x:auto}
-.box2 .bh{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}.box2 .bh b{font:400 14px var(--d);color:var(--g2)}.box2 .bh span{font:700 10px var(--s);letter-spacing:.12em;text-transform:uppercase;color:var(--t3)}
-.box2 table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
-.box2 th{text-align:left;font:700 9.5px var(--s);letter-spacing:.1em;text-transform:uppercase;color:var(--t3);padding:0 6px 7px;border-bottom:1px solid var(--l2);white-space:nowrap}
+.efgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) minmax(0,1fr);gap:12px;margin-bottom:12px}
+.box2{border:1px solid var(--l);border-radius:14px;background:var(--b3);padding:13px 15px;min-width:0;overflow-x:auto}
+.box2 .bh{display:flex;align-items:baseline;gap:8px;margin-bottom:12px}.box2 .bh b{font:400 14px var(--d);color:var(--g2)}.box2 .bh span{font:700 9.5px var(--s);letter-spacing:.12em;text-transform:uppercase;color:var(--t3)}.box2 .bh i{margin-left:auto;font:500 10.5px var(--m);color:var(--t3);font-style:normal}
+.box2 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.box2 th{text-align:left;font:700 9px var(--s);letter-spacing:.1em;text-transform:uppercase;color:var(--t3);padding:0 6px 7px;border-bottom:1px solid var(--l2);white-space:nowrap}
 .box2 td{padding:7px 6px;border-bottom:1px solid var(--l);font:600 11.5px var(--m);white-space:nowrap}
 .box2 tr.on td{background:var(--gy)}.box2 tr[data-f]{cursor:pointer}.box2 tr[data-f]:hover td{background:rgba(255,255,255,.03)}
-.box2 td.nm2{font:700 12px var(--s);max-width:200px;overflow:hidden;text-overflow:ellipsis}
+.box2 td.nm2{font:700 12px var(--s);max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.box2 .ft{font:500 11px var(--s);color:var(--t3);margin-top:9px;line-height:1.45}
 .gd{color:var(--gr)}.bdd{color:var(--r)}.mdd{color:var(--g2)}
+.pv{margin-bottom:12px}.pv .r{display:flex;justify-content:space-between;align-items:baseline;font:600 11.5px var(--s);color:var(--t2);margin-bottom:5px}
+.pv .r b{font:700 12px var(--m);color:var(--t)}.pv .r .pl{font:500 11px var(--m);color:var(--t3);cursor:pointer;border-bottom:1px dashed var(--l2)}.pv .r .pl:hover{color:var(--g2)}
+.pv .bar{height:6px;border-radius:4px;background:var(--b2);overflow:hidden}.pv .bar i{display:block;height:100%;border-radius:4px}
+.pv input{width:80px;height:22px;background:var(--b2);border:1px solid var(--g);border-radius:5px;color:var(--t);font:600 11px var(--m);padding:0 6px;text-align:right}
+.fc{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--l);padding-top:10px;margin-top:4px;font:600 12px var(--s);color:var(--t2)}.fc b{font:700 14px var(--m)}
+.stp{border:1px solid rgba(212,175,55,.35);border-radius:14px;background:linear-gradient(90deg,rgba(212,175,55,.06),transparent 60%),var(--b3);padding:12px 15px;display:grid;grid-template-columns:auto repeat(4,minmax(0,1fr));gap:18px;align-items:center}
+.stp>b{font:400 14px var(--d);color:var(--g2);white-space:nowrap}
+.stp .f small{display:block;font:700 9px var(--s);letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+.stp .f .vv{min-height:30px;border:1px solid var(--l2);border-radius:8px;background:var(--b2);padding:5px 10px;font:600 12px var(--s);color:var(--t);display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.stp .f .vv span{height:19px;padding:0 7px;border-radius:5px;background:rgba(212,175,55,.14);color:var(--g2);font:600 10px var(--m);display:inline-flex;align-items:center}
+.stp .f input{width:100%;height:30px;border:1px solid var(--l2);border-radius:8px;background:var(--b2);padding:0 10px;font:600 12px var(--m);color:var(--t)}.stp .f input:focus{border-color:var(--g);outline:none}
+.eftoast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--b3);border:1px solid var(--g);color:var(--t);padding:9px 16px;border-radius:10px;font:600 12.5px var(--s);z-index:99;box-shadow:0 12px 30px rgba(0,0,0,.5)}
 .efempty{border:1px dashed var(--l2);border-radius:16px;padding:40px 20px;text-align:center;color:var(--t3)}
-@media (max-width:900px){.ef{grid-template-columns:1fr}.eflist{position:static;max-height:none}.efgrid{grid-template-columns:1fr}}
+@media (max-width:1250px){.efgrid{grid-template-columns:1fr 1fr}.efgrid>.box2:last-child{grid-column:1/-1}.stp{grid-template-columns:1fr 1fr}}
+@media (max-width:900px){.ef{grid-template-columns:1fr}.eflist{position:static;max-height:none}.efgrid{grid-template-columns:1fr}.stp{grid-template-columns:1fr}}
 
 /* ── главный экран воронок: хранилище разборов ── */
 body.homeon header.top,body.homeon #vp{display:none!important}
@@ -10992,33 +11018,77 @@ function renderHome(){$('#hReg').textContent=API.region();if(!$('#hEff').hidden|
   requestAnimationFrame(()=>document.querySelectorAll('[data-th]').forEach(cv=>{const b=S.boards.find(x=>x.id===cv.dataset.th);if(b)thumb(cv,b)}));
   $('#hLib').innerHTML=S.lib.length?S.lib.map(l=>`<div class="libc"><span class="ic">${(l.node||{}).type==='intent'?'◇':'▽'}</span><span style="min-width:0"><b>${esc(l.name)}</b><small>${(l.node.stages||l.node.layers||[]).length} этапов</small></span></div>`).join(''):'<div class="sub" style="color:var(--t3);font-size:12px">Пусто. В воронке: «✎ Этапы» → «Сохранить воронку в библиотеку».</div>'}
 
-/* ── Эффективность воронок: все живые воронки из разборов и библиотеки ── */
-let EFSEL=LS('fb_effsel')||'';
+/* ── Эффективность воронок: все живые воронки из разборов + шаблоны из библиотеки ── */
+let EFSEL=LS('fb_effsel')||'',EFST={};
 function allFunnels(){const out=[];S.boards.filter(b=>((b.meta||{}).status||'work')!=='arch').forEach(b=>b.nodes.filter(n=>n.type==='funnel').forEach(n=>out.push({key:b.id+'|'+n.id,n,where:b.name,bid:b.id})));
-  S.lib.forEach(l=>{if(l.node&&l.node.type==='funnel'){if(!l._n)l._n=JSON.parse(JSON.stringify(l.node));out.push({key:'lib|'+l.id,n:l._n,where:'библиотека',lib:true})}});return out}
+  S.lib.forEach(l=>{if(l.node&&l.node.type==='funnel'){if(!l._n)l._n=JSON.parse(JSON.stringify(l.node));out.push({key:'lib|'+l.id,n:l._n,where:'шаблон',lib:l})}});return out}
 const COLS3=['#D4AF37','#6E9BFF','#A07CF5','#3DBE8B','#E8913A','#FF7A8A'];
-function fSum(n){const rs=funnelCalc(n),a=rs[0]?rs[0].a:{};const W=weakest(n);return{rs,a,cpl:a.sp/a.ld,cql:a.sp/a.q,w:W.r,gap:W.gap,loading:rs.some(r=>r.loading)}}
+const ICO={Meta:['📣','rgba(110,155,255,.18)'],'Калька':['🧮','rgba(212,175,55,.18)'],GarnoCRM:['📝','rgba(61,190,139,.18)']},ICOM={cql:['⭐','rgba(212,175,55,.2)'],qr:['⭐','rgba(212,175,55,.2)'],visit:['🏬','rgba(160,124,245,.2)'],sale:['💰','rgba(61,190,139,.2)'],cont:['📞','rgba(64,200,185,.18)']};
+// главная цифра этапа — сколько штук дошло до него
+const BIG={cpm:a=>['$'+num(a.sp),''],hook:a=>[num(a.v3),'досм.'],ctr:a=>[num(a.cl),'кликов'],cpc:a=>[num(a.cl),'кликов'],cvr:a=>[num(a.ld),'заявок'],cpl:a=>[num(a.ld),'лидов'],cont:a=>[num(a.ct),'контакт.'],qr:a=>[num(a.q),'квалов'],cql:a=>[num(a.q),'квалов'],visit:a=>[num(a.vi),'визитов'],sale:a=>[num(a.sa),'продаж']};
+function fNm(f){if(f.lib)return f.lib.name||f.n.title||'Шаблон';const b=S.boards.find(x=>x.id===f.bid),cnt=b?b.nodes.filter(n=>n.type==='funnel').length:1;return cnt>1?(f.where+' · '+(f.n.title||'воронка')):(f.where||f.n.title||'Воронка')}
+function fSum(n){const rs=funnelCalc(n),a=rs[0]?rs[0].a:{};const W=weakest(n);return{rs,a,cpl:a.sp/a.ld,cql:a.sp/a.q,cps:a.sp/a.sa,w:W.r,gap:W.gap,loading:rs.some(r=>r.loading)}}
+function effToast(t){document.querySelectorAll('.eftoast').forEach(x=>x.remove());const d=document.createElement('div');d.className='eftoast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2600)}
+function persistF(f){if(f.bid){const b=S.boards.find(x=>x.id===f.bid);if(b)saveBoard(b)}else if(f.lib){f.lib.node=JSON.parse(JSON.stringify(f.n));API.saveBoard({id:f.lib.id,kind:'lib',region:API.region(),name:f.lib.name,sort:0,data:{node:f.lib.node}})}}
+/* месяц к дате — для плана/факта */
+const MCACHE={};
+function monthData(n){const ids=srcZids(n).slice().sort((a,b)=>a-b),dom=new Date().getDate(),key=dom+'|'+ids.join(',');let c=MCACHE[key];
+  if(!c){c=MCACHE[key]={loading:true};API.funnelData(ids,dom).then(r=>Object.assign(c,r,{loading:false})).catch(()=>{c.loading=false}).finally(()=>{if(!$('#hEff').hidden&&!$('#home').hidden)renderEff()})}return c}
+function dd(d){return d.toISOString().slice(8,10)+'.'+d.toISOString().slice(5,7)}
 function renderEff(){const box=$('#hEff'),F=allFunnels();
-  if(!F.length){box.innerHTML=`<div class="efempty"><b style="display:block;font:400 18px var(--d);color:var(--t2);margin-bottom:6px">Живых воронок пока нет</b>Создай разбор и поставь в него блок «Воронка» — здесь появится эффективность по этапам, конверсии и сравнение воронок.<br><br><button class="btn red" data-gonew>＋ Новый разбор</button></div>`;return}
-  if(!F.some(f=>f.key===EFSEL))EFSEL=F[0].key;const cur=F.find(f=>f.key===EFSEL),SM=F.map(f=>Object.assign(f,fSum(f.n))),C=SM.find(f=>f.key===EFSEL);
-  const nm=f=>f.n.title?('Воронка '+f.n.title):'Воронка';
-  const list=`<aside class="eflist"><div class="gh">Воронки · ${API.region()}</div>${SM.map((f,i)=>`<button class="efi${f.key===EFSEL?' on':''}" data-f="${f.key}"><b><i style="background:${COLS3[i%6]}"></i>${esc(nm(f))}</b><small><span>CQL ${usd(f.cql,1)}</span><span>${esc(f.where)}</span></small></button>`).join('')}</aside>`;
-  const rs=C.rs,W=C.w;let flow='';rs.forEach((r,i)=>{if(i){const cv=r.conv,lo=W&&W.s===r.s,col=!isFinite(cv)?'var(--t3)':lo?'var(--r)':cv>=.5?'var(--gr)':'var(--g2)';flow+=`<div class="ar2"><div class="p" style="color:${col}">${isFinite(cv)?pct(cv,cv<.1?1:0):'—'}</div><svg viewBox="0 0 42 12"><path d="M2 6h34m-5-4 5 4-5 4" stroke="${lo?'#F03A55':'#3E4457'}" stroke-width="1.6" fill="none"/></svg><small>переход</small></div>`}
-    flow+=`<div class="st2 ${r.loading?'':r.st==='man'?'':r.st}" title="${esc(r.s.name)}"><div class="k">${esc(r.s.name||'Этап '+(i+1))}</div><div class="v">${r.loading?'…':r.L.show(r.v,r.a)}</div><div class="m">${r.s.m==='custom'?'вручную':r.L.label}${isFinite(r.n)&&r.s.m!=='custom'?' · норма '+r.L.nf(r.n):''}</div></div>`});
-  const a=C.a,leak=W?`<div class="leak2"><b>Главная утечка: ${esc(W.s.name)}</b><span>${W.L.show(W.v,W.a)} при норме ${W.L.nf(W.n)} · хуже нормы на ${Math.round(C.gap*100)}%. Всё, что ниже по воронке, тянется от этого этапа.</span></div>`:C.loading?'':`<div class="leak2 ok"><b>Все этапы в норме</b><span>За ${S.period} дн. ни один этап не ниже нормы.</span></div>`;
-  // кальки
-  const K=API.kalkStats?API.kalkStats(srcZids(C.n),S.period):[];
-  const kal=`<div class="box2"><div class="bh"><b>Кальки</b><span>воронки · ${S.period} дн.</span></div>${K.length?`<table><tr><th>Источник</th><th>Баер</th><th>Лиды</th><th>Квалы</th><th>Квал %</th></tr>${K.slice(0,14).map(k=>{const q=k.leads?k.quals/k.leads:0;return `<tr><td class="nm2" title="${esc(k.src)}">${esc(k.src)}</td><td>${k.b||'—'}</td><td>${k.leads}</td><td>${k.quals}</td><td class="${q>=.3?'gd':q>=.15?'mdd':'bdd'}">${pct(q)}</td></tr>`}).join('')}</table>`:'<div style="color:var(--t3);font:500 12px var(--s)">Лидов из этих РК за период нет.</div>'}</div>`;
-  const best=Math.min(...SM.map(f=>isFinite(f.cql)?f.cql:Infinity));
-  const cmp=`<div class="box2"><div class="bh"><b>Сравнение</b><span>всех воронок · ${S.period} дн.</span></div><table><tr><th>Воронка</th><th>Где</th><th>Спенд</th><th>Лиды</th><th>CPL</th><th>Квалы</th><th>CQL</th><th>Слабый этап</th></tr>${SM.map(f=>`<tr data-f="${f.key}" class="${f.key===EFSEL?'on':''}"><td class="nm2">${esc(nm(f))}</td><td style="font-family:var(--s);color:var(--t3)">${esc(f.where)}</td><td>${usd(f.a.sp,0)}</td><td>${num(f.a.ld)}</td><td>${usd(f.cpl)}</td><td>${num(f.a.q)}</td><td class="${isFinite(f.cql)&&f.cql===best?'gd':''}">${usd(f.cql,1)}</td><td style="font-family:var(--s)" class="${f.w?'bdd':'gd'}">${f.w?esc(f.w.s.name):'—'}</td></tr>`).join('')}</table></div>`;
-  box.innerHTML=`<div class="ef">${list}<div style="min-width:0"><div class="efhd"><h2>${esc(nm(C))}</h2><span class="chip2 g">${esc(srcName(C.n))}</span><span class="chip2">${srcZids(C.n).length} РК</span><span class="chip2">${esc(C.where)}</span>
-    <span style="margin-left:auto;display:flex;gap:6px;align-items:center"><div class="seg" id="efPer">${[7,14,30].map(p=>`<button data-p="${p}" class="${S.period===p?'on':''}">${p}д</button>`).join('')}</div>${C.bid?`<button class="btn" data-open="${C.bid}">Открыть разбор →</button>`:''}</span></div>
-    <div class="efsub">Спенд, показы и клики — Meta по РК источника. Лиды, квалы, контакты, визиты и продажи — GarnoCRM по калькам этих РК. Клик по этапу воронки на доске — норма и источник.</div>
-    <div class="flow2">${flow}</div>${leak}<div class="efgrid">${kal}${cmp}</div></div></div>`}
-$('#hEff').addEventListener('click',e=>{const f=e.target.closest('[data-f]');if(f){EFSEL=f.dataset.f;LS('fb_effsel',EFSEL);renderEff();return}
+  if(!F.length){box.innerHTML=`<div class="efempty"><b style="display:block;font:400 18px var(--d);color:var(--t2);margin-bottom:6px">Живых воронок пока нет</b>Создай разбор и поставь в него блок «Воронка» — здесь появится эффективность по этапам, конверсии, план/факт и сравнение воронок.<br><br><button class="btn red" data-gonew>＋ Новая воронка</button></div>`;return}
+  if(!F.some(f=>f.key===EFSEL))EFSEL=F[0].key;F.forEach(f=>Object.assign(f,fSum(f.n)));const C=F.find(f=>f.key===EFSEL),ci=F.indexOf(C);
+  const Z=API.zalivs(),zids=srcZids(C.n),act=zids.filter(id=>API.isActive(id)).length,K=API.kalkStats?API.kalkStats(zids,S.period):[];
+  const live=F.filter(f=>!f.lib),tpl=F.filter(f=>f.lib),item=(f,i)=>{const z=srcZids(f.n).filter(id=>API.isActive(id)).length;return `<button class="efi${f.key===EFSEL?' on':''}${f.lib?' tpl':''}" data-f="${f.key}"><b><i style="background:${f.lib?'var(--t3)':COLS3[i%6]}"></i>${esc(fNm(f))}</b><small>${z?'CQL '+usd(f.cql,1)+' · '+z+' РК':'пауза · 0 РК'}</small></button>`};
+  const list=`<aside class="eflist"><div class="gh">Воронки · ${API.region()}</div>${live.map((f,i)=>item(f,i)).join('')||'<div style="padding:4px 10px 8px;color:var(--t3);font-size:11.5px">Нет живых воронок</div>'}<button class="efnew" data-gonew>＋ Новая воронка</button>${tpl.length?`<div class="gh" style="margin-top:8px">Шаблоны</div>${tpl.map((f,i)=>item(f,i)).join('')}`:''}</aside>`;
+  const rs=C.rs,W=C.w,kKeys=K.slice(0,4).map(k=>k.src),si=Math.min(EFST[C.key]!=null?EFST[C.key]:(W?rs.indexOf(W):0),rs.length-1);
+  let flow='';rs.forEach((r,i)=>{
+    if(i){const cv=r.conv,lo=W&&W===r,col=!isFinite(cv)?'var(--t3)':lo?'var(--r)':cv>=.5?'var(--gr)':'var(--gr)';flow+=`<div class="ar2"><div class="p" style="color:${col}">${isFinite(cv)?pct(cv,cv<.1?1:0):'—'}</div><svg viewBox="0 0 44 12"><path d="M2 6h36m-5-4 5 4-5 4" stroke="${lo?'#F03A55':'#4A5165'}" stroke-width="1.6" fill="none"/></svg><small>${esc((r.L.cl||'').split(' ')[0]||'переход')}</small></div>`}
+    const cust=r.s.m==='custom'||!MET[r.s.m],[ic,bg]=cust?['✎','var(--b2)']:(ICOM[r.s.m]||ICO[r.L.g]||['•','var(--b2)']),a=r.a;
+    let big,unit,sub;if(cust){big=r.L.show(r.v);unit='';sub='вручную'+(r.n!=null?' · цель <b>'+r.L.nf(r.n)+'</b>':'')}
+    else{[big,unit]=r.loading?['…','']:BIG[r.s.m](a);sub=`${esc(r.L.show(r.v,a))}${r.n!=null&&isFinite(r.n)?' · цель <b>'+r.L.nf(r.n)+'</b>':''}`}
+    let chips='';if(!cust){if(r.L.g==='Meta')chips=`<span>${zids.length} РК</span>${act?`<span>${act} в работе</span>`:''}`;else if(r.s.m==='cvr'||r.s.m==='cpl')chips=kKeys.slice(0,3).map(k=>`<span title="${esc(k)}">${esc(k)}</span>`).join('');else if(r.s.m==='cql'||r.s.m==='qr')chips='<span>оценка 4+</span>'}
+    flow+=`<button class="st2 ${r.st==='bad'?'bad':''}${i===si?' sel':''}" data-si="${i}"><div class="k"><em style="background:${bg}">${ic}</em>${esc(r.s.name||'Этап '+(i+1))}</div><div class="v">${big}${unit?`<small>${unit}</small>`:''}</div><div class="m">${sub}</div>${chips?`<div class="cps">${chips}</div>`:''}</button>`});
+  const leakTxt=W?`${W.s.name}: ${W.L.show(W.v,W.a)} при норме ${W.L.nf(W.n)} — хуже на ${Math.round(C.gap*100)}%`:'';
+  const leak=W?`<div class="leak2"><b>Главная утечка: ${esc(W.s.name)}</b><span>${esc(W.L.show(W.v,W.a))} при норме ${esc(W.L.nf(W.n))} — хуже на ${Math.round(C.gap*100)}%. ${W.prevName?'Переход «'+esc(W.prevName)+'» → «'+esc(W.s.name)+'» '+(isFinite(W.conv)?pct(W.conv,1):'')+'.':''} Всё, что ниже, тянется от этого этапа.</span><button data-bj>→ создать гипотезу в Buyer's Journal</button></div>`:C.loading?'':`<div class="leak2 ok"><b>Все этапы в норме</b><span>За ${S.period} дн. ни один этап не ниже нормы.</span></div>`;
+  // план против факта — месяц к сегодняшнему дню
+  const now=new Date(),dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate(),dom=now.getDate(),M=monthData(C.n),ma=M.a||{},P=C.n.plan||{};
+  const mon=now.toLocaleString('ru',{month:'long'}),pr=(k,lab,fact,fmt,lower,col)=>{const pl=P[k],has=pl!=null&&pl!==''&&isFinite(pl),p=has?(lower?(fact?Math.min(1,pl/fact):0):Math.min(1,fact/pl)):0,ok=lower?fact<=pl:fact/pl>=dom/dim;
+    return `<div class="pv"><div class="r"><span>${lab}</span><span><b>${M.loading?'…':fmt(fact)}</b> <span class="pl" data-plan="${k}">/ ${has?fmt(+pl):'задать план'}</span></span></div><div class="bar"><i style="width:${has&&isFinite(p)?Math.round(p*100):0}%;background:${has?(ok?'var(--gr)':col):col}"></i></div></div>`};
+  const fq=ma.q/dom*dim,planQ=+P.q;
+  const pvBox=`<div class="box2"><div class="bh"><b>План</b><span>против факта</span><i>${mon}</i></div>
+    ${pr('sp','Спенд',ma.sp,v=>'$'+num(v),false,'#D4AF37')}${pr('ld','Лиды',ma.ld,num,false,'#6E9BFF')}${pr('q','Квалы',ma.q,num,false,'#F03A55')}${pr('cql','CQL',ma.sp/ma.q,v=>usd(v,1),true,'#3DBE8B')}
+    <div class="fc"><span>Прогноз квалов на конец месяца</span><b class="${isFinite(planQ)&&planQ?(fq>=planQ?'gd':'bdd'):''}">${M.loading?'…':'≈ '+num(fq)}</b></div></div>`;
+  const kal=`<div class="box2"><div class="bh"><b>Кальки</b><span>воронки</span><i>${S.period} дней</i></div>${K.length?`<table><tr><th>Калька</th><th>Баер</th><th>Лиды</th><th>Квалы</th><th>Квал %</th></tr>${K.slice(0,8).map(k=>{const q=k.leads?k.quals/k.leads:0,lo=k.leads>=5&&q<.15;return `<tr><td class="nm2${lo?' bdd':''}" title="${esc(k.src)}">${esc(k.src)}</td><td style="font-family:var(--s)">${k.b||'—'}</td><td>${k.leads}</td><td>${k.quals}</td><td class="${q>=.3?'gd':q>=.15?'mdd':'bdd'}">${pct(q)}</td></tr>`}).join('')}</table>${K.length>8?`<div class="ft">Ещё ${K.length-8}: ${K.slice(8,14).map(k=>esc(k.src)).join(', ')}${K.length>14?'…':''}</div>`:''}`:'<div class="ft">Лидов из РК этой воронки за период нет.</div>'}</div>`;
+  const srt=F.filter(f=>isFinite(f.cql)).sort((a,b)=>a.cql-b.cql),best=srt[0],sec=srt[1];
+  const cmp=`<div class="box2"><div class="bh"><b>Сравнение</b><span>воронок</span><i>${S.period} дн.</i></div><table><tr><th>Воронка</th><th>CPL</th><th>CQL</th><th>Продажа</th></tr>${F.map((f,i)=>`<tr data-f="${f.key}" class="${f.key===EFSEL?'on':''}"><td class="nm2" style="color:${f.lib?'var(--t3)':COLS3[F.filter(x=>!x.lib).indexOf(f)%6]}">${esc(fNm(f))}</td><td>${usd(f.cpl)}</td><td class="${f===best?'gd':f.w?'':''}">${usd(f.cql,1)}</td><td>${isFinite(f.cps)?'$'+num(f.cps):'—'}</td></tr>`).join('')}</table>${best&&sec&&best.cql<sec.cql*.99?`<div class="ft">${esc(fNm(best))} даёт квал на ${Math.round((1-best.cql/sec.cql)*100)}% дешевле, чем ${esc(fNm(sec))}.</div>`:''}</div>`;
+  // выбранный шаг
+  const R=rs[si];let stp='';if(R){const cust=R.s.m==='custom'||!MET[R.s.m];
+    stp=`<div class="stp"><b>Шаг «${esc(R.s.name||'Этап')}»</b>
+      <div class="f"><small>${R.L.g==='Meta'?'Источник цифр':'Кальки'}</small><div class="vv">${R.L.g==='Meta'?esc(srcName(C.n))+' · '+zids.length+' РК':(kKeys.length?kKeys.map(k=>`<span>${esc(k)}</span>`).join(''):'—')}</div></div>
+      <div class="f"><small>Метрика · откуда</small><div class="vv">${cust?'вручную':esc(R.L.label)+' · '+esc(R.L.g)}</div></div>
+      <div class="f"><small>Сейчас</small><div class="vv ${R.st==='bad'?'bdd':R.st==='ok'?'gd':''}">${R.loading?'…':esc(R.L.show(R.v,R.a))}</div></div>
+      <div class="f"><small>Цель шага (норма${cust?'':', '+(R.L.hi?'не ниже':'не выше')})</small><input data-norm="${si}" value="${R.n!=null&&isFinite(R.n)?(R.L.unit==='%'&&!cust?+(R.n*100).toFixed(2):R.n):''}" placeholder="${R.L.unit||''}"></div></div>`}
+  const from=new Date(Date.now()-(S.period-1)*864e5);
+  box.innerHTML=`<div class="ef">${list}<div style="min-width:0"><div class="efhd"><h2>${esc(fNm(C))}</h2><span class="chip2 b">${API.region()}</span><span class="chip2 g">${esc(srcName(C.n))}</span><span class="chip2">${K.length} кальки</span><span class="chip2">${act} РК в работе</span>
+    <span class="efbtns"><span class="seg" id="efPer">${[[7,'7 дней'],[14,'14 дней'],[30,'30 дней'],[90,'Квартал']].map(([p,t])=>`<button data-p="${p}" class="${S.period===p?'on':''}">${t}</button>`).join('')}</span><button class="pb" data-dup>Дублировать</button>${C.bid?`<button class="pb gd2" data-open="${C.bid}" data-node="${C.n.id}">✎ Редактировать схему</button>`:''}</span></div>
+    <div class="efsub">${dd(from)} — ${dd(new Date())} · спенд из Meta, лиды и квалы — из GarnoCRM по калькам воронки${C.lib?' · шаблон из библиотеки':''}</div>
+    <div class="flow2">${flow}</div>${leak}<div class="efgrid">${pvBox}${kal}${cmp}</div>${stp}</div></div>`;
+  box._leak=leakTxt;box._C=C}
+$('#hEff').addEventListener('click',e=>{const box=$('#hEff'),C=box._C;
+  const f=e.target.closest('[data-f]');if(f){EFSEL=f.dataset.f;LS('fb_effsel',EFSEL);renderEff();return}
+  const st=e.target.closest('[data-si]');if(st&&C){EFST[C.key]=+st.dataset.si;renderEff();return}
   const p=e.target.closest('#efPer [data-p]');if(p){S.period=+p.dataset.p;LS('fb_period',S.period);renderPeriod();renderEff();return}
-  const o=e.target.closest('[data-open]');if(o){openBoard(o.dataset.open);return}
+  const o=e.target.closest('[data-open]');if(o){const nid0=o.dataset.node;openBoard(o.dataset.open);const b=B(),n=b&&b.nodes.find(x=>x.id===nid0);if(n){const r=vp.getBoundingClientRect();b.view={x:r.width/2-(n.x+150)*.9,y:120-n.y*.9,k:.9};applyView();drawEdges()}return}
+  if(e.target.closest('[data-dup]')&&C){saveToLib(C.n);effToast('Копия воронки сохранена в шаблоны');setTimeout(renderEff,600);return}
+  if(e.target.closest('[data-bj]')&&C){API.createBJ('Гипотеза по воронке «'+fNm(C)+'»: '+box._leak).then(r=>effToast(r?'Гипотеза создана в Buyer\'s Journal':'Не получилось создать запись')).catch(()=>effToast('Не получилось создать запись'));return}
+  const pl=e.target.closest('[data-plan]');if(pl&&C){const k=pl.dataset.plan,cur=(C.n.plan||{})[k];const inp=document.createElement('input');inp.value=cur!=null?cur:'';inp.placeholder=k==='cql'?'$':'';pl.replaceWith(inp);inp.focus();inp.select();
+    const done=ok=>{if(inp._d)return;inp._d=1;if(ok){const v=inp.value.trim().replace(',','.');C.n.plan=C.n.plan||{};if(v===''||!isFinite(+v))delete C.n.plan[k];else C.n.plan[k]=+v;persistF(C)}renderEff()};
+    inp.onkeydown=ev=>{ev.stopPropagation();if(ev.key==='Enter')done(true);if(ev.key==='Escape')done(false)};inp.onblur=()=>done(true);return}
   if(e.target.closest('[data-gonew]'))fmenu(e.target.closest('[data-gonew]'),NEWITEMS,newBoard)});
+$('#hEff').addEventListener('change',e=>{const inp=e.target.closest('[data-norm]'),C=$('#hEff')._C;if(!inp||!C)return;const s=stagesOf(C.n)[+inp.dataset.norm];if(!s)return;
+  const v=inp.value.trim().replace(',','.'),cust=s.m==='custom'||!MET[s.m];if(v===''||!isFinite(+v))s.norm=null;else s.norm=!cust&&MET[s.m].unit==='%'?+v/100:+v;persistF(C);renderEff()});
+$('#hEff').addEventListener('keydown',e=>e.stopPropagation());
 let HTAB=LS('fb_htab')||'e';
 function setHTab(t){HTAB=t;LS('fb_htab',t);$$('#hTab button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));$('#hEff').hidden=t!=='e';$('#hBoards').hidden=t!=='b';$('#hH1').textContent=t==='e'?'Эффективность воронок':'Разборы воронок';if(t==='e')renderEff()}
 $('#hTab').onclick=e=>{const b=e.target.closest('[data-t]');if(b)setHTab(b.dataset.t)};
