@@ -2116,7 +2116,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-28 22:40'
+const BUILD='2026-10-28 23:30'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -2390,7 +2390,7 @@ function setupRT(){
     .on('postgres_changes',{event:'*',schema:'public',table:'zalivs'},rt('z',()=>loadZ().then(rzalivs)))
     .on('postgres_changes',{event:'*',schema:'public',table:'tasks'},()=>{
       // Block RT reload while saving or for 2s after save
-      if(_saveOrderTimer||_taskSaveBlock)return
+      if(_saveOrderTimer||_taskSaveBlock||_tkBusy)return
       loadT().then(rtasks)
     })
     .on('postgres_changes',{event:'*',schema:'public',table:'domains'},()=>loadD().then(rdomains))
@@ -5453,15 +5453,21 @@ function fmtDur(ms){if(!ms||ms<0)return'0м';const m=Math.round(ms/60000);if(m<6
 // Сумма по всем таскам = реально прошедшее время, а не ×2.
 // Каждый раз, когда набор тасок в Process у человека меняется, фиксируем накопленное
 // («чекпоинт»): начисляем каждой её долю и перезапускаем отсчёт с текущего момента.
-const procPeers=who=>TASKS.filter(x=>x.col==='process'&&x.started_at&&(x.assignee||'')===(who||''))
+const _pk=w=>String(w||'').trim().toLowerCase()
+const procPeers=who=>TASKS.filter(x=>x.col==='process'&&x.started_at&&_pk(x.assignee)===_pk(who))
 function taskElapsed(t){let ms=(t.time_spent||0)*1000
   if(t.col==='process'&&t.started_at){const n=Math.max(1,procPeers(t.assignee).length);ms+=(Date.now()-new Date(t.started_at).getTime())/n}
   return ms}
-async function procCheckpoint(who){const peers=procPeers(who);if(!peers.length)return
+// procCheckpointLocal меняет TASKS сразу (синхронно) и возвращает список записей в БД —
+// чтобы карточка переезжала в новую колонку мгновенно, а не после ответа сервера
+function procCheckpointLocal(who){const peers=procPeers(who);if(!peers.length)return[]
   const now=Date.now(),iso=new Date(now).toISOString(),n=peers.length
-  await Promise.all(peers.map(p=>{const add=Math.round((now-new Date(p.started_at).getTime())/1000/n)
+  return peers.map(p=>{const add=Math.round((now-new Date(p.started_at).getTime())/1000/n)
     p.time_spent=(p.time_spent||0)+Math.max(0,add);p.started_at=iso
-    return db.from('tasks').update({time_spent:p.time_spent,started_at:iso}).eq('id',p.id)}))}
+    return{id:p.id,upd:{time_spent:p.time_spent,started_at:iso}}})}
+async function procCheckpoint(who){const w=procCheckpointLocal(who);await Promise.all(w.map(x=>db.from('tasks').update(x.upd).eq('id',x.id)))}
+// пока пишем таски в БД — realtime не перезагружает список (иначе прилетает старая колонка)
+var _tkBusy=0
 
 // ── create ──
 async function saveTk(title,col,who,extra){
@@ -5482,14 +5488,19 @@ async function delTkConfirmed(id){const dt=TASKS.find(t=>t.id===id);if(dt&&dt.tt
 
 // ── column change with timer ──
 async function moveTask(t,newCol){
-  if(t.col===newCol)return
-  // входит в Process или выходит из него — сначала раздаём накопленное время текущим таскам человека
-  if(newCol==='process'||t.col==='process')await procCheckpoint(t.assignee||'')
+  if(!t||t.col===newCol)return
+  // входит в Process или выходит из него — сначала раздаём накопленное время текущим таскам человека (локально, сразу)
+  const cp=(newCol==='process'||t.col==='process')?procCheckpointLocal(t.assignee||''):[]
   const now=new Date().toISOString();const upd={col:newCol,updated_at:now,col_set_at:now}
   if(newCol==='process'){upd.started_at=now}
   else if(t.col==='process'){upd.time_spent=t.time_spent||0;upd.started_at=null}
   if(newCol==='done'){upd.done_at=now}
   Object.assign(t,upd)
+  _tkBusy++
+  try{await _moveTaskDb(t,newCol,upd,now,cp.filter(x=>x.id!==t.id))}finally{_tkBusy--;if(!_tkBusy)setTimeout(()=>{if(!_tkBusy&&!_saveOrderTimer&&!_taskSaveBlock)loadT().then(()=>{if(typeof rtasks==='function')rtasks()})},1500)}
+}
+async function _moveTaskDb(t,newCol,upd,now,cp){
+  await Promise.all(cp.map(x=>db.from('tasks').update(x.upd).eq('id',x.id)))
   let{error}=await db.from('tasks').update(upd).eq('id',t.id)
   // колонки col_set_at ещё нет (не выполнен tasks_guard.sql) — пишем без неё
   if(error&&/col_set_at/.test(error.message||'')){delete upd.col_set_at;({error}=await db.from('tasks').update(upd).eq('id',t.id))}
@@ -9164,6 +9175,10 @@ window.FB_API={
     let sp=0,impr=0,cl=0,v3=0,hasV3=false
     if(cids.length){const m=await bulkInsights(cids,from,to);cids.forEach(c=>{const v=m[c];if(!v||v.error)return;sp+=+v.spend||0;impr+=+v.impressions||0;cl+=+v.clicks||0;if(v.video_views!=null){hasV3=true;v3+=+v.video_views||0}})}
     return{a:{sp,impr,cl,v3:hasV3?v3:NaN,ld,q,ct:hasCt?ct:NaN,vi:hasVi?vi:NaN,sa:hasSa?sa:NaN},d:Object.values(dm),has:{v3:hasV3,ct:hasCt,vi:hasVi,sa:hasSa}}},
+  kalkStats(ids,days){const to=todayISO(),from=fbFrom(days),set=new Set(ids),m={}
+    SRC_DAILY.forEach(r=>{if(r.day<from||r.day>to)return;const p=srcParse(r.source),own=srcRowOwners(r,p);let hit=false;own.forEach(id=>{if(set.has(id))hit=true});if(!hit)return
+      const key=r.source||'—',x=m[key]||(m[key]={src:key,b:p.letter==='D'?'Danya':p.letter==='I'?'Illia':'',leads:0,quals:0});x.leads+=r.leads||0;x.quals+=r.quals||0})
+    return Object.values(m).sort((a,b)=>b.leads-a.leads)},
   taskCol:id=>{const t=TASKS.find(x=>x.id===id);return t?t.col:null},
   openTask:id=>openTaskEdit(id),
   newTask:(p,cb)=>openTaskNew({title:p.title,ttype:p.ttype||'other',onCreated:cb}),
@@ -10302,6 +10317,43 @@ kbd{font:600 10.5px var(--m);color:var(--t);background:var(--b4);border:1px soli
 .tools button.on .k{color:var(--g2);border-color:rgba(212,175,55,.4)}
 @media (max-width:1760px){.tools .lb{display:none}.tools button{padding:0 8px}}
 /*HOMECSS*/
+/* ── эффективность воронок ── */
+.ef{display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px;align-items:start}
+.eflist{border:1px solid var(--l);border-radius:14px;background:var(--b2);padding:10px;max-height:calc(100vh - 170px);overflow:auto;position:sticky;top:0}
+.eflist .gh{font:700 9.5px var(--s);letter-spacing:.12em;text-transform:uppercase;color:var(--t3);padding:8px 8px 4px}
+.efi{display:block;width:100%;text-align:left;padding:10px 11px;border-radius:10px;border:1px solid transparent;margin-bottom:4px}
+.efi:hover{background:var(--b3)}.efi.on{border-color:rgba(212,175,55,.45);background:var(--gy)}
+.efi b{display:block;font:700 13px var(--s);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.efi.on b{color:var(--g2)}
+.efi small{display:flex;gap:10px;font:600 10.5px var(--m);color:var(--t3);margin-top:3px}
+.efi i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:1px}
+.efhd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.efhd h2{margin:0;font:400 22px var(--d);letter-spacing:.03em}
+.efsub{font:500 12px var(--s);color:var(--t3);margin:4px 0 16px}
+.chip2{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:6px;font:700 10px var(--s);letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--l2);color:var(--t2);background:var(--b2)}
+.chip2.g{color:var(--g2);border-color:rgba(212,175,55,.4);background:var(--gy)}
+.flow2{display:flex;align-items:stretch;overflow-x:auto;padding-bottom:6px;margin-bottom:14px}
+.st2{flex:1 0 140px;min-width:140px;border:1px solid var(--l);border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.045),transparent 40%),var(--b3);padding:12px 13px;cursor:default}
+.st2.bad{border-color:rgba(240,58,85,.6);box-shadow:0 0 0 1px rgba(240,58,85,.3)}.st2.ok{border-color:rgba(61,190,139,.35)}.st2.mid{border-color:rgba(212,175,55,.4)}
+.st2 .k{font:700 9.5px var(--s);letter-spacing:.12em;text-transform:uppercase;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st2 .v{font:700 22px var(--m);margin:8px 0 2px;white-space:nowrap}.st2 .v small{font:600 11px var(--m);color:var(--t3);margin-left:4px}
+.st2 .m{font:500 11px var(--m);color:var(--t2)}
+.ar2{width:58px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.ar2 .p{font:700 12px var(--m)}.ar2 svg{width:42px;height:12px}.ar2 small{font:500 9px var(--s);color:var(--t3);text-align:center}
+.leak2{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;border:1px solid rgba(240,58,85,.35);background:var(--rb);margin-bottom:16px;flex-wrap:wrap}
+.leak2 b{color:var(--r);font:700 12.5px var(--s)}.leak2 span{color:var(--t2);font-size:12px}
+.leak2.ok{border-color:rgba(61,190,139,.35);background:var(--grb)}.leak2.ok b{color:var(--gr)}
+.efgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:14px}
+.box2{border:1px solid var(--l);border-radius:14px;background:var(--b3);padding:12px 14px;overflow-x:auto}
+.box2 .bh{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}.box2 .bh b{font:400 14px var(--d);color:var(--g2)}.box2 .bh span{font:700 10px var(--s);letter-spacing:.12em;text-transform:uppercase;color:var(--t3)}
+.box2 table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+.box2 th{text-align:left;font:700 9.5px var(--s);letter-spacing:.1em;text-transform:uppercase;color:var(--t3);padding:0 6px 7px;border-bottom:1px solid var(--l2);white-space:nowrap}
+.box2 td{padding:7px 6px;border-bottom:1px solid var(--l);font:600 11.5px var(--m);white-space:nowrap}
+.box2 tr.on td{background:var(--gy)}.box2 tr[data-f]{cursor:pointer}.box2 tr[data-f]:hover td{background:rgba(255,255,255,.03)}
+.box2 td.nm2{font:700 12px var(--s);max-width:200px;overflow:hidden;text-overflow:ellipsis}
+.gd{color:var(--gr)}.bdd{color:var(--r)}.mdd{color:var(--g2)}
+.efempty{border:1px dashed var(--l2);border-radius:16px;padding:40px 20px;text-align:center;color:var(--t3)}
+@media (max-width:900px){.ef{grid-template-columns:1fr}.eflist{position:static;max-height:none}.efgrid{grid-template-columns:1fr}}
+
 /* ── главный экран воронок: хранилище разборов ── */
 body.homeon header.top,body.homeon #vp{display:none!important}
 #home{position:relative;flex:1;overflow:auto;padding-block:20px 40px;padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}
@@ -10428,12 +10480,15 @@ select.btn{color:var(--t2);max-width:100%}
 </header>
 
 <section id="home" hidden aria-label="Разборы воронок">
-  <div class="hh"><div><span class="eb">Воронки · <span id="hReg"></span></span><h1>Разборы воронок</h1></div><button class="btn red" id="hNew">＋ Новый разбор</button></div>
+  <div class="hh"><div><span class="eb">Воронки · <span id="hReg"></span></span><h1 id="hH1">Воронки</h1></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="hseg" id="hTab"><button data-t="e" class="on">Эффективность</button><button data-t="b">Разборы</button></div><button class="btn red" id="hNew">＋ Новый разбор</button></div></div>
+  <div id="hEff"></div>
+  <div id="hBoards" hidden>
   <div class="hk" id="hKpi"></div>
   <div class="hbar"><input type="search" id="hSearch" placeholder="Поиск по разборам, воронкам и заметкам" aria-label="Поиск"><div class="hseg" id="hStat"><button data-s="all" class="on">Все</button><button data-s="work">В работе</button><button data-s="done">Завершены</button><button data-s="arch">Архив</button></div><div class="hseg" id="hWho"><button data-w="all" class="on">Все авторы</button><button data-w="Danya">Danya</button><button data-w="Illia">Illia</button></div></div>
   <div class="hgrid" id="hGrid"></div>
   <div class="hsec"><b>Библиотека воронок</b><span>сохранённые воронки — добавляются в любой разбор кнопкой «Существующая»</span></div>
   <div class="libg" id="hLib"></div>
+  </div>
 </section>
 <div id="vp">
   <canvas id="grid"></canvas>
@@ -10497,7 +10552,7 @@ function srcOptions(n){const s=srcOf(n),cats=API.cats(),o=(v,t)=>`<option value=
 const CACHE={};let _loadN=0;
 function dataFor(n){const ids=srcZids(n).slice().sort((a,b)=>a-b),key=S.period+'|'+ids.join(',');let c=CACHE[key];
   if(!c){c=CACHE[key]={loading:true,ids};_loadN++;updLbl();
-    API.funnelData(ids,S.period).then(r=>{Object.assign(c,r,{loading:false})}).catch(e=>{c.loading=false;c.err=String(e&&e.message||e)}).finally(()=>{_loadN--;updLbl();refreshLive()})}
+    API.funnelData(ids,S.period).then(r=>{Object.assign(c,r,{loading:false})}).catch(e=>{c.loading=false;c.err=String(e&&e.message||e)}).finally(()=>{_loadN--;updLbl();refreshLive();if(!$('#hEff').hidden&&!$('#home').hidden)renderEff()})}
   return c}
 function updLbl(){const el=$('#updLbl');if(el)el.textContent=_loadN?'загрузка…':'обновлено '+new Date().toTimeString().slice(0,5)}
 function agg(n){const c=dataFor(n);if(c.loading||!c.a)return{a:{sp:NaN,impr:NaN,v3:NaN,cl:NaN,ld:NaN,ct:NaN,q:NaN,vi:NaN,sa:NaN},d:[],loading:c.loading,ids:c.ids};return{a:c.a,d:c.d||[],ids:c.ids,has:c.has||{}}}
@@ -10925,7 +10980,7 @@ function thumb(cv,b){const d=Math.min(2,devicePixelRatio||1),W=cv.clientWidth||2
   x.lineWidth=1;(b.strokes||[]).forEach(s2=>{x.strokeStyle=s2.c;x.beginPath();s2.pts.forEach((p,i)=>{const X=ox+p[0]*k,Y=oy+p[1]*k;i?x.lineTo(X,Y):x.moveTo(X,Y)});x.stroke()})}
 const ago=iso=>{if(!iso)return'—';const m=(Date.now()-new Date(iso))/6e4;return m<1?'только что':m<60?Math.round(m)+' мин назад':m<1440?Math.round(m/60)+' ч назад':m<2880?'вчера':new Date(iso).toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})};
 function boardStats(b){const f=b.nodes.filter(n=>n.type==='funnel').length,pl=b.nodes.filter(n=>n.type==='plan').flatMap(n=>n.items||[]),tk=pl.filter(i=>i.task_id),dn=pl.filter(i=>i.d||(i.task_id&&/done|archived/.test(API.taskCol(i.task_id)||''))).length;return{f,steps:pl.length,tk:tk.length,dn}}
-function renderHome(){$('#hReg').textContent=API.region();const all=S.boards,q=HF.q.toLowerCase();
+function renderHome(){$('#hReg').textContent=API.region();if(!$('#hEff').hidden||HTAB==='e'){setHTab(HTAB);}const all=S.boards,q=HF.q.toLowerCase();
   const txt=b=>(b.name+' '+b.nodes.map(n=>[n.title,n.text,n.name,...(n.items||[]).map(i=>i.t),...(n.layers||[]),...(n.stages||[]).map(s=>s.name)].join(' ')).join(' ')).toLowerCase();
   const list=all.filter(b=>{const m=b.meta||{},st=m.status||'work',who=m.owner||b.upd_by||'';if(HF.st==='all'?st==='arch':st!==HF.st)return false;if(HF.who!=='all'&&who!==HF.who)return false;return !q||txt(b).includes(q)}).sort((a,b)=>String(b.upd_at||'').localeCompare(String(a.upd_at||'')));
   const S2=all.map(boardStats),open=S2.reduce((a,x)=>a+(x.tk-Math.min(x.tk,x.dn)),0);
@@ -10936,6 +10991,38 @@ function renderHome(){$('#hReg').textContent=API.region();const all=S.boards,q=H
       <div class="ft3"><span class="mt">${esc(m.owner||b.upd_by||'—')} · ${ago(b.upd_at)}</span><span class="bst ${st}">${STN2[st]}</span></div></div></div>`}).join('')||'')+(list.length?'':`<div class="hempty">${HF.st==='arch'?'Архив пуст.':q?'Ничего не найдено.':'Разборов пока нет — создай первый.'}</div>`);
   requestAnimationFrame(()=>document.querySelectorAll('[data-th]').forEach(cv=>{const b=S.boards.find(x=>x.id===cv.dataset.th);if(b)thumb(cv,b)}));
   $('#hLib').innerHTML=S.lib.length?S.lib.map(l=>`<div class="libc"><span class="ic">${(l.node||{}).type==='intent'?'◇':'▽'}</span><span style="min-width:0"><b>${esc(l.name)}</b><small>${(l.node.stages||l.node.layers||[]).length} этапов</small></span></div>`).join(''):'<div class="sub" style="color:var(--t3);font-size:12px">Пусто. В воронке: «✎ Этапы» → «Сохранить воронку в библиотеку».</div>'}
+
+/* ── Эффективность воронок: все живые воронки из разборов и библиотеки ── */
+let EFSEL=LS('fb_effsel')||'';
+function allFunnels(){const out=[];S.boards.filter(b=>((b.meta||{}).status||'work')!=='arch').forEach(b=>b.nodes.filter(n=>n.type==='funnel').forEach(n=>out.push({key:b.id+'|'+n.id,n,where:b.name,bid:b.id})));
+  S.lib.forEach(l=>{if(l.node&&l.node.type==='funnel'){if(!l._n)l._n=JSON.parse(JSON.stringify(l.node));out.push({key:'lib|'+l.id,n:l._n,where:'библиотека',lib:true})}});return out}
+const COLS3=['#D4AF37','#6E9BFF','#A07CF5','#3DBE8B','#E8913A','#FF7A8A'];
+function fSum(n){const rs=funnelCalc(n),a=rs[0]?rs[0].a:{};const W=weakest(n);return{rs,a,cpl:a.sp/a.ld,cql:a.sp/a.q,w:W.r,gap:W.gap,loading:rs.some(r=>r.loading)}}
+function renderEff(){const box=$('#hEff'),F=allFunnels();
+  if(!F.length){box.innerHTML=`<div class="efempty"><b style="display:block;font:400 18px var(--d);color:var(--t2);margin-bottom:6px">Живых воронок пока нет</b>Создай разбор и поставь в него блок «Воронка» — здесь появится эффективность по этапам, конверсии и сравнение воронок.<br><br><button class="btn red" data-gonew>＋ Новый разбор</button></div>`;return}
+  if(!F.some(f=>f.key===EFSEL))EFSEL=F[0].key;const cur=F.find(f=>f.key===EFSEL),SM=F.map(f=>Object.assign(f,fSum(f.n))),C=SM.find(f=>f.key===EFSEL);
+  const nm=f=>f.n.title?('Воронка '+f.n.title):'Воронка';
+  const list=`<aside class="eflist"><div class="gh">Воронки · ${API.region()}</div>${SM.map((f,i)=>`<button class="efi${f.key===EFSEL?' on':''}" data-f="${f.key}"><b><i style="background:${COLS3[i%6]}"></i>${esc(nm(f))}</b><small><span>CQL ${usd(f.cql,1)}</span><span>${esc(f.where)}</span></small></button>`).join('')}</aside>`;
+  const rs=C.rs,W=C.w;let flow='';rs.forEach((r,i)=>{if(i){const cv=r.conv,lo=W&&W.s===r.s,col=!isFinite(cv)?'var(--t3)':lo?'var(--r)':cv>=.5?'var(--gr)':'var(--g2)';flow+=`<div class="ar2"><div class="p" style="color:${col}">${isFinite(cv)?pct(cv,cv<.1?1:0):'—'}</div><svg viewBox="0 0 42 12"><path d="M2 6h34m-5-4 5 4-5 4" stroke="${lo?'#F03A55':'#3E4457'}" stroke-width="1.6" fill="none"/></svg><small>переход</small></div>`}
+    flow+=`<div class="st2 ${r.loading?'':r.st==='man'?'':r.st}" title="${esc(r.s.name)}"><div class="k">${esc(r.s.name||'Этап '+(i+1))}</div><div class="v">${r.loading?'…':r.L.show(r.v,r.a)}</div><div class="m">${r.s.m==='custom'?'вручную':r.L.label}${isFinite(r.n)&&r.s.m!=='custom'?' · норма '+r.L.nf(r.n):''}</div></div>`});
+  const a=C.a,leak=W?`<div class="leak2"><b>Главная утечка: ${esc(W.s.name)}</b><span>${W.L.show(W.v,W.a)} при норме ${W.L.nf(W.n)} · хуже нормы на ${Math.round(C.gap*100)}%. Всё, что ниже по воронке, тянется от этого этапа.</span></div>`:C.loading?'':`<div class="leak2 ok"><b>Все этапы в норме</b><span>За ${S.period} дн. ни один этап не ниже нормы.</span></div>`;
+  // кальки
+  const K=API.kalkStats?API.kalkStats(srcZids(C.n),S.period):[];
+  const kal=`<div class="box2"><div class="bh"><b>Кальки</b><span>воронки · ${S.period} дн.</span></div>${K.length?`<table><tr><th>Источник</th><th>Баер</th><th>Лиды</th><th>Квалы</th><th>Квал %</th></tr>${K.slice(0,14).map(k=>{const q=k.leads?k.quals/k.leads:0;return `<tr><td class="nm2" title="${esc(k.src)}">${esc(k.src)}</td><td>${k.b||'—'}</td><td>${k.leads}</td><td>${k.quals}</td><td class="${q>=.3?'gd':q>=.15?'mdd':'bdd'}">${pct(q)}</td></tr>`}).join('')}</table>`:'<div style="color:var(--t3);font:500 12px var(--s)">Лидов из этих РК за период нет.</div>'}</div>`;
+  const best=Math.min(...SM.map(f=>isFinite(f.cql)?f.cql:Infinity));
+  const cmp=`<div class="box2"><div class="bh"><b>Сравнение</b><span>всех воронок · ${S.period} дн.</span></div><table><tr><th>Воронка</th><th>Где</th><th>Спенд</th><th>Лиды</th><th>CPL</th><th>Квалы</th><th>CQL</th><th>Слабый этап</th></tr>${SM.map(f=>`<tr data-f="${f.key}" class="${f.key===EFSEL?'on':''}"><td class="nm2">${esc(nm(f))}</td><td style="font-family:var(--s);color:var(--t3)">${esc(f.where)}</td><td>${usd(f.a.sp,0)}</td><td>${num(f.a.ld)}</td><td>${usd(f.cpl)}</td><td>${num(f.a.q)}</td><td class="${isFinite(f.cql)&&f.cql===best?'gd':''}">${usd(f.cql,1)}</td><td style="font-family:var(--s)" class="${f.w?'bdd':'gd'}">${f.w?esc(f.w.s.name):'—'}</td></tr>`).join('')}</table></div>`;
+  box.innerHTML=`<div class="ef">${list}<div style="min-width:0"><div class="efhd"><h2>${esc(nm(C))}</h2><span class="chip2 g">${esc(srcName(C.n))}</span><span class="chip2">${srcZids(C.n).length} РК</span><span class="chip2">${esc(C.where)}</span>
+    <span style="margin-left:auto;display:flex;gap:6px;align-items:center"><div class="seg" id="efPer">${[7,14,30].map(p=>`<button data-p="${p}" class="${S.period===p?'on':''}">${p}д</button>`).join('')}</div>${C.bid?`<button class="btn" data-open="${C.bid}">Открыть разбор →</button>`:''}</span></div>
+    <div class="efsub">Спенд, показы и клики — Meta по РК источника. Лиды, квалы, контакты, визиты и продажи — GarnoCRM по калькам этих РК. Клик по этапу воронки на доске — норма и источник.</div>
+    <div class="flow2">${flow}</div>${leak}<div class="efgrid">${kal}${cmp}</div></div></div>`}
+$('#hEff').addEventListener('click',e=>{const f=e.target.closest('[data-f]');if(f){EFSEL=f.dataset.f;LS('fb_effsel',EFSEL);renderEff();return}
+  const p=e.target.closest('#efPer [data-p]');if(p){S.period=+p.dataset.p;LS('fb_period',S.period);renderPeriod();renderEff();return}
+  const o=e.target.closest('[data-open]');if(o){openBoard(o.dataset.open);return}
+  if(e.target.closest('[data-gonew]'))fmenu(e.target.closest('[data-gonew]'),NEWITEMS,newBoard)});
+let HTAB=LS('fb_htab')||'e';
+function setHTab(t){HTAB=t;LS('fb_htab',t);$$('#hTab button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));$('#hEff').hidden=t!=='e';$('#hBoards').hidden=t!=='b';$('#hH1').textContent=t==='e'?'Эффективность воронок':'Разборы воронок';if(t==='e')renderEff()}
+$('#hTab').onclick=e=>{const b=e.target.closest('[data-t]');if(b)setHTab(b.dataset.t)};
+
 $('#hSearch').oninput=e=>{HF.q=e.target.value.trim();renderHome()};
 $('#hStat').onclick=e=>{const b=e.target.closest('[data-s]');if(!b)return;HF.st=b.dataset.s;$$('#hStat button').forEach(x=>x.classList.toggle('on',x===b));renderHome()};
 $('#hWho').onclick=e=>{const b=e.target.closest('[data-w]');if(!b)return;HF.who=b.dataset.w;$$('#hWho button').forEach(x=>x.classList.toggle('on',x===b));renderHome()};
