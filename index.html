@@ -2116,7 +2116,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-28 22:05'
+const BUILD='2026-10-28 22:40'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -10301,6 +10301,56 @@ kbd{font:600 10.5px var(--m);color:var(--t);background:var(--b4);border:1px soli
 .tools .k{font:600 9px var(--m);color:var(--t3);border:1px solid var(--l2);border-radius:4px;padding:0 4px;line-height:14px}
 .tools button.on .k{color:var(--g2);border-color:rgba(212,175,55,.4)}
 @media (max-width:1760px){.tools .lb{display:none}.tools button{padding:0 8px}}
+/*HOMECSS*/
+/* ── главный экран воронок: хранилище разборов ── */
+body.homeon header.top,body.homeon #vp{display:none!important}
+#home{position:relative;flex:1;overflow:auto;padding-block:20px 40px;padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}
+#home .hh{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+#home h1{margin:4px 0 0;font:400 26px var(--d);letter-spacing:.03em}
+#home .eb{font:700 10px var(--s);letter-spacing:.16em;text-transform:uppercase;color:var(--t3)}
+.hk{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.hk div{border:1px solid var(--l);border-radius:12px;padding:12px 14px;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01))}
+.hk b{display:block;font:700 22px var(--m)}.hk small{font:600 11px var(--s);color:var(--t3)}
+.hbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.hbar input{height:34px;padding:0 12px;border-radius:9px;min-width:220px;flex:1;max-width:360px}
+.hseg{display:flex;gap:3px;padding:3px;border-radius:10px;border:1px solid var(--l);background:var(--b2)}
+.hseg button{height:28px;padding:0 11px;border-radius:7px;font:700 11.5px var(--s);color:var(--t2)}
+.hseg button.on{background:var(--gy);color:var(--g2);box-shadow:inset 0 0 0 1px rgba(212,175,55,.45)}
+.hgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.bc{position:relative;border:1px solid var(--l2);border-radius:16px;background:var(--b3);overflow:hidden;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;display:flex;flex-direction:column}
+.bc:hover{border-color:rgba(212,175,55,.5);transform:translateY(-2px);box-shadow:0 16px 40px -18px rgba(0,0,0,.8)}
+.bc canvas{display:block;width:100%;height:140px;background:radial-gradient(circle at 30% 30%,#11141f,#0a0b10);border-bottom:1px solid var(--l)}
+.bc .bd2{padding:12px 14px;display:flex;flex-direction:column;gap:6px;flex:1}
+.bc .nm2{font:700 14px var(--s);color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bc .mt{display:flex;gap:10px;flex-wrap:wrap;font:600 10.5px var(--m);color:var(--t3)}
+.bc .mt b{color:var(--t2)}
+.bc .ft3{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;padding-top:6px}
+.bst{font:700 9.5px var(--s);letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:6px}
+.bst.work{color:var(--g2);background:var(--gy)}.bst.done{color:var(--gr);background:var(--grb)}.bst.arch{color:var(--t3);background:var(--b5)}
+.bact{position:absolute;top:8px;right:8px;display:flex;gap:4px;opacity:0;transition:opacity .15s}
+.bc:hover .bact,.bc:focus-within .bact{opacity:1}
+.bact button{height:26px;padding:0 8px;border-radius:7px;background:rgba(12,14,20,.9);border:1px solid var(--l2);font:700 10.5px var(--s);color:var(--t2)}
+.bact button:hover{color:var(--t);border-color:var(--l3)}.bact button.arm{background:var(--r);border-color:var(--r);color:#fff}
+.bnew{border:1px dashed var(--l2);border-radius:16px;min-height:236px;display:grid;place-items:center;text-align:center;color:var(--t3);font:600 12.5px var(--s);cursor:pointer;background:transparent}
+.bnew:hover{border-color:var(--g);color:var(--g2)}
+.bnew b{display:block;font:400 30px var(--d);color:var(--g2);margin-bottom:4px}
+.hsec{margin:26px 0 10px;display:flex;align-items:baseline;gap:10px}.hsec b{font:400 16px var(--d)}.hsec span{font:600 11px var(--s);color:var(--t3)}
+.libg{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.libc{border:1px solid var(--l);border-radius:12px;padding:10px 12px;background:var(--b2);display:flex;gap:10px;align-items:center}
+.libc .ic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--b5);color:var(--g2);flex-shrink:0}
+.libc b{display:block;font:600 12.5px var(--s)}.libc small{font:500 10.5px var(--m);color:var(--t3)}
+.hempty{border:1px dashed var(--l2);border-radius:16px;padding:40px 20px;text-align:center;color:var(--t3)}
+.bnav{display:flex;align-items:center;gap:8px;min-width:0;flex:1 1 300px}
+.bnav .back{height:28px;padding:0 10px;border-radius:7px;border:1px solid var(--l2);background:var(--b3);font:700 12px var(--s);color:var(--t2);white-space:nowrap}
+.bnav .back:hover{border-color:var(--g);color:var(--g2)}
+.bnav .nm{font:700 13px var(--s);color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;padding:3px 6px;border-radius:6px;cursor:text;outline:none}
+.bnav .nm:hover{background:var(--b4)}
+.bnav .bst{cursor:pointer;border:0}
+.fmenu{position:fixed;z-index:60;background:var(--b2);border:1px solid var(--l2);border-radius:10px;padding:5px;min-width:230px;box-shadow:0 14px 34px rgba(0,0,0,.55)}
+.fmenu button{display:block;width:100%;text-align:left;padding:8px 10px;border-radius:7px;font:600 12px var(--s);color:var(--t2)}
+.fmenu button:hover{background:var(--b4);color:var(--t)}.fmenu button small{display:block;font:500 10.5px var(--s);color:var(--t3)}
+@media (max-width:700px){.hk{grid-template-columns:1fr 1fr}}
+
 @media (max-width:700px){.tools .k{display:none}}
 .edb{font:700 10px var(--s);letter-spacing:.03em;text-transform:none;padding:3px 8px;border-radius:6px;border:1px solid var(--l2);color:var(--t2);white-space:nowrap}
 .edb:hover{border-color:var(--g);color:var(--g2)}.edb.on{background:var(--g);border-color:var(--g);color:#07080C}
@@ -10368,7 +10418,7 @@ select.btn{color:var(--t2);max-width:100%}
 
 <header class="top">
   <div class="brand">Воронки <small id="regLbl"></small></div>
-  <div class="tabs" id="tabs"></div>
+  <div class="bnav" id="tabs"></div>
   <div class="right">
     <span class="upd" id="updLbl"></span><button class="btn" id="refreshBtn" title="Обновить цифры из Meta и GarnoCRM">⟳</button>
     <div class="seg" id="period"><button data-p="7">7д</button><button data-p="14">14д</button><button data-p="30">30д</button></div>
@@ -10377,6 +10427,14 @@ select.btn{color:var(--t2);max-width:100%}
   </div>
 </header>
 
+<section id="home" hidden aria-label="Разборы воронок">
+  <div class="hh"><div><span class="eb">Воронки · <span id="hReg"></span></span><h1>Разборы воронок</h1></div><button class="btn red" id="hNew">＋ Новый разбор</button></div>
+  <div class="hk" id="hKpi"></div>
+  <div class="hbar"><input type="search" id="hSearch" placeholder="Поиск по разборам, воронкам и заметкам" aria-label="Поиск"><div class="hseg" id="hStat"><button data-s="all" class="on">Все</button><button data-s="work">В работе</button><button data-s="done">Завершены</button><button data-s="arch">Архив</button></div><div class="hseg" id="hWho"><button data-w="all" class="on">Все авторы</button><button data-w="Danya">Danya</button><button data-w="Illia">Illia</button></div></div>
+  <div class="hgrid" id="hGrid"></div>
+  <div class="hsec"><b>Библиотека воронок</b><span>сохранённые воронки — добавляются в любой разбор кнопкой «Существующая»</span></div>
+  <div class="libg" id="hLib"></div>
+</section>
 <div id="vp">
   <canvas id="grid"></canvas>
   <div id="world"><svg id="edges"></svg><div id="nodes"></div><svg id="ink"></svg></div>
@@ -10473,14 +10531,14 @@ let S={boards:[],cur:null,period:+(LS('fb_period')||14),pen:{c:'#F2F3F7',w:4},li
 try{const pn=JSON.parse(LS('fb_pen')||'null');if(pn)S.pen=pn}catch(e){}
 const EMPTYB={id:'_',name:'',nodes:[],edges:[],strokes:[],view:{x:60,y:80,k:.8}};
 const B=()=>S.boards.find(b=>b.id===S.cur)||S.boards[0]||EMPTYB;
-const boardData=b=>({nodes:b.nodes.map(n=>{const c=Object.assign({},n);delete c.edit;return c}),edges:b.edges,strokes:b.strokes||[]});
+const boardData=b=>({nodes:b.nodes.map(n=>{const c=Object.assign({},n);delete c.edit;return c}),edges:b.edges,strokes:b.strokes||[],meta:b.meta||{}});
 function rowToBoard(r){const d=r.data||{};let view=null;try{view=JSON.parse(LS('fb_view_'+r.id)||'null')}catch(e){}
-  const b={id:r.id,name:r.name||'Доска',region:r.region,sort:r.sort||0,nodes:d.nodes||[],edges:d.edges||[],strokes:d.strokes||[],view:view||{x:60,y:80,k:.8}};b._sig2=JSON.stringify(boardData(b))+'|'+b.name+'|'+(b.sort||0);return b}
+  const b={id:r.id,name:r.name||'Доска',region:r.region,sort:r.sort||0,nodes:d.nodes||[],edges:d.edges||[],strokes:d.strokes||[],meta:Object.assign({status:'work',owner:r.updated_by||''},d.meta||{}),upd_at:r.updated_at,upd_by:r.updated_by,view:view||{x:60,y:80,k:.8}};b._sig2=JSON.stringify(boardData(b))+'|'+b.name+'|'+(b.sort||0);return b}
 const _saveT={},_ownAt={};
 function save(){const b=B();if(!b||b===EMPTYB)return;LS('fb_period',S.period);LS('fb_pen',JSON.stringify(S.pen));LS('fb_cur_'+API.region(),b.id);LS('fb_view_'+b.id,JSON.stringify(b.view));saveBoard(b)}
 function saveBoard(b,now){clearTimeout(_saveT[b.id]);_saveT[b.id]=setTimeout(async()=>{const data=boardData(b),sig=JSON.stringify(data)+'|'+b.name+'|'+(b.sort||0);if(sig===b._sig2)return;
   _ownAt[b.id]=Date.now();const{error}=await API.saveBoard({id:b.id,kind:'board',region:b.region||API.region(),name:b.name,sort:b.sort||0,data});
-  if(error){toast('Доска не сохранилась: '+error.message,'err');return}b._sig2=sig},now?0:700)}
+  if(error){toast('Доска не сохранилась: '+error.message,'err');return}b._sig2=sig;b.upd_at=new Date().toISOString();b.upd_by=API.me()},now?0:700)}
 
 
 /* undo */
@@ -10493,7 +10551,7 @@ function redo(){if(!redoS.length)return;hist.push(histOf());restore(redoS.pop())
 function updHist(){$('#undo').disabled=!hist.length;$('#redo').disabled=!redoS.length}
 
 /* ───────────── helpers ───────────── */
-const $=q=>document.querySelector(q);
+const $=q=>document.querySelector(q);const $$=q=>[...document.querySelectorAll(q)];
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const COL={r:'#F03A55',o:'#E8913A',g:'#3DBE8B',n:'#646A80',b:'#6E9BFF',y:'#F0D98A'};
 const TCOL={r:'#FF7A8A',g:'#F0D98A',w:'#F2F3F7',gr:'#3DBE8B',b:'#6E9BFF'};
@@ -10832,25 +10890,69 @@ $('#toTasks').onclick=async()=>{const todo=[];B().nodes.filter(n=>n.type==='plan
 function renderPeriod(){document.querySelectorAll('#period button').forEach(b=>b.classList.toggle('on',+b.dataset.p===S.period))}
 $('#period').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.period=+b.dataset.p;renderPeriod();refreshLive();closePop();LS('fb_period',S.period)};
 $('#refreshBtn').onclick=()=>{for(const k in CACHE)delete CACHE[k];API.dropCache&&API.dropCache();refreshLive()};
-let armDel=null;
-function renderTabs(){
-  $('#tabs').innerHTML=S.boards.map(b=>`<div class="tab${b.id===S.cur?' on':''}" data-b="${b.id}"><span class="nm" title="Двойной клик — переименовать">${esc(b.name)}</span>${S.boards.length>1?`<button class="tx${armDel===b.id?' arm':''}" data-del="${b.id}" title="Удалить доску">${armDel===b.id?'удалить?':'×'}</button>`:''}</div>`).join('')+`<div style="position:relative"><button class="addtab" id="addTab" title="Новая доска">＋</button></div>`;
-}
-$('#tabs').addEventListener('click',e=>{
-  const d=e.target.closest('[data-del]');if(d){if(armDel===d.dataset.del){const id=d.dataset.del;API.removeBoard(id);S.boards=S.boards.filter(b=>b.id!==id);if(S.cur===id)S.cur=(S.boards[0]||{}).id;armDel=null;hist=[];redoS=[];updHist();render();save()}else{armDel=d.dataset.del;renderTabs();setTimeout(()=>{if(armDel){armDel=null;renderTabs()}},2500)}return}
-  if(e.target.closest('#addTab')){const wrap=e.target.closest('#addTab').parentNode;if(wrap.querySelector('.menu')){wrap.querySelector('.menu').remove();return}const m=document.createElement('div');m.className='menu';m.innerHTML=`<button data-n="tpl">Разбор воронки<small>Шаблон: воронки, узкое место, причины, план</small></button><button data-n="empty">Пустая доска<small>Чистый холст</small></button>`;wrap.appendChild(m);
-    m.onclick=ev=>{const b=ev.target.closest('[data-n]');if(!b)return;const nb={id:nid('b'),name:'Новая доска',region:API.region(),sort:S.boards.length,nodes:[],edges:[],strokes:[],view:{x:60,y:80,k:.8}};if(b.dataset.n==='tpl'){const t=templateNodes(0,0);nb.nodes=t.nodes;nb.edges=t.edges;nb.name='Разбор воронки'}S.boards.push(nb);S.cur=nb.id;hist=[];redoS=[];updHist();sel=null;render();saveBoard(nb,true);save();requestAnimationFrame(()=>{const el=$(`.tab[data-b="${nb.id}"] .nm`);if(el)startRename(el,nb)})};return}
-  const t=e.target.closest('.tab');if(t&&t.dataset.b!==S.cur){S.cur=t.dataset.b;hist=[];redoS=[];updHist();sel=null;closePop();render();save()}
-});
-$('#tabs').addEventListener('dblclick',e=>{const nm=e.target.closest('.nm');if(!nm)return;startRename(nm,S.boards.find(x=>x.id===nm.closest('.tab').dataset.b))});
+const STN2={work:'в работе',done:'завершён',arch:'архив'};
+function renderTabs(){const b=B();if(b===EMPTYB){$('#tabs').innerHTML='<button class="back" data-home>← Разборы</button>';return}const st=(b.meta||{}).status||'work';
+  $('#tabs').innerHTML=`<button class="back" data-home title="Все разборы">← Разборы</button><span class="nm" title="Двойной клик — переименовать">${esc(b.name)}</span><button class="bst ${st}" data-st title="Сменить статус">${STN2[st]}</button>`}
+$('#tabs').addEventListener('click',e=>{if(e.target.closest('[data-home]')){showHome(true);return}
+  const s2=e.target.closest('[data-st]');if(s2){const b=B();b.meta=b.meta||{};const order=['work','done','arch'];b.meta.status=order[(order.indexOf(b.meta.status||'work')+1)%3];saveBoard(b,true);renderTabs();toast('Статус: '+STN2[b.meta.status]);return}});
+$('#tabs').addEventListener('dblclick',e=>{const nm=e.target.closest('.nm');if(nm)startRename(nm,B())});
 function startRename(el,b){el.contentEditable='plaintext-only';el.focus();const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);
-  const done=()=>{el.contentEditable='false';b.name=el.textContent.trim()||'Без названия';saveBoard(b,true);renderTabs()};el.addEventListener('blur',done,{once:true});el.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key==='Escape'){ev.preventDefault();el.blur()}})}
-document.addEventListener('pointerdown',e=>{if(!e.target.closest('.menu,#addTab'))document.querySelectorAll('.menu').forEach(m=>m.remove())});
+  const done=()=>{el.contentEditable='false';b.name=el.textContent.trim()||'Без названия';saveBoard(b,true);renderTabs();if(!$('#home').hidden)renderHome()};el.addEventListener('blur',done,{once:true});el.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key==='Escape'){ev.preventDefault();el.blur()}})}
+// меню — в body, чтобы его не обрезал контейнер
+function fmenu(anchor,items,onPick){document.querySelectorAll('.fmenu').forEach(m=>m.remove());const m=document.createElement('div');m.className='fmenu';m.innerHTML=items.map(([k,t,s])=>`<button data-k="${k}">${t}${s?`<small>${s}</small>`:''}</button>`).join('');document.body.appendChild(m);
+  const r=anchor.getBoundingClientRect(),w=m.offsetWidth;m.style.top=(r.bottom+6)+'px';m.style.left=Math.max(8,Math.min(r.right-w,innerWidth-w-8))+'px';m.onclick=ev=>{const b=ev.target.closest('[data-k]');if(!b)return;m.remove();onPick(b.dataset.k)}}
+document.addEventListener('pointerdown',e=>{if(!e.target.closest('.fmenu,#hNew,[data-new]'))document.querySelectorAll('.fmenu').forEach(m=>m.remove())});
+function newBoard(kind){const nb={id:nid('b'),name:kind==='tpl'?'Разбор воронки':'Новый разбор',region:API.region(),sort:S.boards.length,nodes:[],edges:[],strokes:[],meta:{status:'work',owner:API.me(),created:new Date().toISOString()},view:{x:60,y:80,k:.8}};
+  if(kind==='tpl'){const t=templateNodes(0,0);nb.nodes=t.nodes;nb.edges=t.edges}S.boards.push(nb);saveBoard(nb,true);openBoard(nb.id);requestAnimationFrame(()=>{const el=$('#tabs .nm');if(el)startRename(el,nb)})}
+const NEWITEMS=[['tpl','Разбор воронки','Шаблон: воронка, намерение, узкое место, причины, план'],['empty','Пустой разбор','Чистый холст']];
+$('#hNew').onclick=e=>fmenu(e.currentTarget,NEWITEMS,newBoard);
+
+/* ── главный экран: хранилище разборов ── */
+let HF={q:'',st:'all',who:'all'},armB=null;
+function showHome(on){document.body.classList.toggle('homeon',on);$('#home').hidden=!on;closePop();document.querySelectorAll('.fmenu').forEach(m=>m.remove());LS('fb_home',on?'1':'0');if(on){setTool(null);renderHome()}else{render();requestAnimationFrame(()=>{applyView();drawEdges()})}}
+function openBoard(id){S.cur=id;hist=[];redoS=[];updHist();sel=null;LS('fb_cur_'+API.region(),id);showHome(false)}
+const NH={funnel:n=>70+(n.stages||[]).length*38,intent:n=>80+(n.layers||[]).length*38,plan:n=>120+(n.items||[]).length*32,reasons:n=>70+(n.items||[]).length*32,neck:()=>150,answer:()=>110,note:()=>70,title:()=>40};
+const NC={funnel:'#2A4A3B',intent:'#4A3520',neck:'#5A1E2A',reasons:'#4A3520',answer:'#24294A',plan:'#1E4A36',note:'#4A4220',title:'#3A3426'};
+function thumb(cv,b){const d=Math.min(2,devicePixelRatio||1),W=cv.clientWidth||270,H=140;cv.width=W*d;cv.height=H*d;const x=cv.getContext('2d');x.scale(d,d);
+  const R=b.nodes.map(n=>({n,x:n.x,y:n.y,w:n.type==='title'?Math.max(120,String(n.text||'').length*15):(n.w||260),h:(NH[n.type]||(()=>120))(n)}));
+  if(!R.length&&!(b.strokes||[]).length){x.fillStyle='#646A80';x.font='600 11px Manrope,sans-serif';x.textAlign='center';x.fillText('пустой холст',W/2,H/2+4);return}
+  let x1=1e9,y1=1e9,x2=-1e9,y2=-1e9;R.forEach(r=>{x1=Math.min(x1,r.x);y1=Math.min(y1,r.y);x2=Math.max(x2,r.x+r.w);y2=Math.max(y2,r.y+r.h)});(b.strokes||[]).forEach(k=>k.pts.forEach(p=>{x1=Math.min(x1,p[0]);y1=Math.min(y1,p[1]);x2=Math.max(x2,p[0]);y2=Math.max(y2,p[1])}));
+  const k=Math.min((W-24)/(x2-x1||1),(H-24)/(y2-y1||1)),ox=12-x1*k+((W-24)-(x2-x1)*k)/2,oy=12-y1*k+((H-24)-(y2-y1)*k)/2,byId={};R.forEach(r=>byId[r.n.id]=r);
+  x.lineWidth=1.2;(b.edges||[]).forEach(e=>{const A=byId[e.a],B2=byId[e.b];if(!A||!B2)return;x.strokeStyle=COL[e.c]||'#646A80';x.globalAlpha=.7;x.beginPath();x.moveTo(ox+(A.x+A.w/2)*k,oy+(A.y+A.h/2)*k);x.lineTo(ox+(B2.x+B2.w/2)*k,oy+(B2.y+B2.h/2)*k);x.stroke()});x.globalAlpha=1;
+  R.forEach(r=>{const X=ox+r.x*k,Y=oy+r.y*k,w=Math.max(3,r.w*k),h=Math.max(3,r.h*k);if(r.n.type==='title'){x.fillStyle=TCOL[r.n.color]||'#F2F3F7';x.fillRect(X,Y+h*.3,w*.8,Math.max(2,h*.35));return}
+    x.fillStyle=NC[r.n.type]||'#24294A';x.strokeStyle='rgba(255,255,255,.15)';x.beginPath();x.roundRect?x.roundRect(X,Y,w,h,3):x.rect(X,Y,w,h);x.fill();x.stroke();
+    if(r.n.type==='funnel'||r.n.type==='intent'){const L=(r.n.stages||r.n.layers||[]).length||5;for(let i=0;i<L;i++){const ww=w*(.9-i*.5/L);x.fillStyle=r.n.type==='funnel'?'rgba(61,190,139,.55)':'rgba(232,145,58,.55)';x.fillRect(X+(w-ww)/2,Y+h*.18+i*(h*.75/L),ww,Math.max(1,h*.75/L-1.5))}}});
+  x.lineWidth=1;(b.strokes||[]).forEach(s2=>{x.strokeStyle=s2.c;x.beginPath();s2.pts.forEach((p,i)=>{const X=ox+p[0]*k,Y=oy+p[1]*k;i?x.lineTo(X,Y):x.moveTo(X,Y)});x.stroke()})}
+const ago=iso=>{if(!iso)return'—';const m=(Date.now()-new Date(iso))/6e4;return m<1?'только что':m<60?Math.round(m)+' мин назад':m<1440?Math.round(m/60)+' ч назад':m<2880?'вчера':new Date(iso).toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})};
+function boardStats(b){const f=b.nodes.filter(n=>n.type==='funnel').length,pl=b.nodes.filter(n=>n.type==='plan').flatMap(n=>n.items||[]),tk=pl.filter(i=>i.task_id),dn=pl.filter(i=>i.d||(i.task_id&&/done|archived/.test(API.taskCol(i.task_id)||''))).length;return{f,steps:pl.length,tk:tk.length,dn}}
+function renderHome(){$('#hReg').textContent=API.region();const all=S.boards,q=HF.q.toLowerCase();
+  const txt=b=>(b.name+' '+b.nodes.map(n=>[n.title,n.text,n.name,...(n.items||[]).map(i=>i.t),...(n.layers||[]),...(n.stages||[]).map(s=>s.name)].join(' ')).join(' ')).toLowerCase();
+  const list=all.filter(b=>{const m=b.meta||{},st=m.status||'work',who=m.owner||b.upd_by||'';if(HF.st==='all'?st==='arch':st!==HF.st)return false;if(HF.who!=='all'&&who!==HF.who)return false;return !q||txt(b).includes(q)}).sort((a,b)=>String(b.upd_at||'').localeCompare(String(a.upd_at||'')));
+  const S2=all.map(boardStats),open=S2.reduce((a,x)=>a+(x.tk-Math.min(x.tk,x.dn)),0);
+  $('#hKpi').innerHTML=[[all.filter(b=>(b.meta||{}).status!=='arch').length,'разборов'],[all.filter(b=>((b.meta||{}).status||'work')==='work').length,'в работе'],[S2.reduce((a,x)=>a+x.f,0),'живых воронок'],[open,'открытых задач из планов']].map(([b,s])=>`<div><b>${b}</b><small>${s}</small></div>`).join('');
+  $('#hGrid').innerHTML=`<button class="bnew" data-new><span><b>＋</b>Новый разбор</span></button>`+(list.map(b=>{const m=b.meta||{},st=m.status||'work',x=boardStats(b);
+    return `<div class="bc" data-b="${b.id}" role="button" tabindex="0" aria-label="Открыть ${esc(b.name)}"><canvas data-th="${b.id}" aria-hidden="true"></canvas><div class="bact"><button data-a="ren">Имя</button><button data-a="dup">Копия</button><button data-a="st">${st==='arch'?'Вернуть':st==='work'?'Завершить':'В работу'}</button>${st!=='arch'?'<button data-a="arch">В архив</button>':''}<button data-a="del" class="${armB===b.id?'arm':''}">${armB===b.id?'Удалить?':'×'}</button></div>
+      <div class="bd2"><div class="nm2">${esc(b.name)}</div><div class="mt"><span>воронок <b>${x.f}</b></span><span>блоков <b>${b.nodes.length}</b></span>${x.steps?`<span>план <b>${x.dn}/${x.steps}</b></span>`:''}${x.tk?`<span>задач <b>${x.tk}</b></span>`:''}</div>
+      <div class="ft3"><span class="mt">${esc(m.owner||b.upd_by||'—')} · ${ago(b.upd_at)}</span><span class="bst ${st}">${STN2[st]}</span></div></div></div>`}).join('')||'')+(list.length?'':`<div class="hempty">${HF.st==='arch'?'Архив пуст.':q?'Ничего не найдено.':'Разборов пока нет — создай первый.'}</div>`);
+  requestAnimationFrame(()=>document.querySelectorAll('[data-th]').forEach(cv=>{const b=S.boards.find(x=>x.id===cv.dataset.th);if(b)thumb(cv,b)}));
+  $('#hLib').innerHTML=S.lib.length?S.lib.map(l=>`<div class="libc"><span class="ic">${(l.node||{}).type==='intent'?'◇':'▽'}</span><span style="min-width:0"><b>${esc(l.name)}</b><small>${(l.node.stages||l.node.layers||[]).length} этапов</small></span></div>`).join(''):'<div class="sub" style="color:var(--t3);font-size:12px">Пусто. В воронке: «✎ Этапы» → «Сохранить воронку в библиотеку».</div>'}
+$('#hSearch').oninput=e=>{HF.q=e.target.value.trim();renderHome()};
+$('#hStat').onclick=e=>{const b=e.target.closest('[data-s]');if(!b)return;HF.st=b.dataset.s;$$('#hStat button').forEach(x=>x.classList.toggle('on',x===b));renderHome()};
+$('#hWho').onclick=e=>{const b=e.target.closest('[data-w]');if(!b)return;HF.who=b.dataset.w;$$('#hWho button').forEach(x=>x.classList.toggle('on',x===b));renderHome()};
+$('#hGrid').addEventListener('click',e=>{if(e.target.closest('[data-new]')){fmenu(e.target.closest('[data-new]'),NEWITEMS,newBoard);return}
+  const card=e.target.closest('.bc');if(!card)return;const b=S.boards.find(x=>x.id===card.dataset.b);if(!b)return;const a=e.target.closest('[data-a]');
+  if(!a){openBoard(b.id);return}const k=a.dataset.a;b.meta=b.meta||{};
+  if(k==='ren'){const el=card.querySelector('.nm2');startRename(el,b);return}
+  if(k==='dup'){const c=JSON.parse(JSON.stringify(boardData(b)));const nb={id:nid('b'),name:b.name+' (копия)',region:API.region(),sort:S.boards.length,nodes:c.nodes,edges:c.edges,strokes:c.strokes,meta:{status:'work',owner:API.me(),created:new Date().toISOString()},view:Object.assign({},b.view)};nb.nodes.forEach(n=>(n.items||[]).forEach(i=>{delete i.task_id;delete i.bj_id;i.lk=''}));S.boards.push(nb);saveBoard(nb,true);nb.upd_at=new Date().toISOString();renderHome();toast('Копия создана');return}
+  if(k==='st'){b.meta.status=b.meta.status==='arch'?'work':(b.meta.status||'work')==='work'?'done':'work';saveBoard(b,true);renderHome();return}
+  if(k==='arch'){b.meta.status='arch';saveBoard(b,true);renderHome();toast('Разбор в архиве');return}
+  if(k==='del'){if(armB!==b.id){armB=b.id;renderHome();setTimeout(()=>{if(armB===b.id){armB=null;renderHome()}},2500);return}armB=null;API.removeBoard(b.id);S.boards=S.boards.filter(x=>x.id!==b.id);if(S.cur===b.id)S.cur=(S.boards[0]||{}).id;renderHome();toast('Разбор удалён')}});
+$('#hGrid').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.classList.contains('bc'))openBoard(e.target.dataset.b)});
 
 let spaceDown=false;
 document.addEventListener('keyup',e=>{if(e.code==='Space'){spaceDown=false;vp.classList.remove('grab')}});
 addEventListener('blur',()=>{spaceDown=false;vp.classList.remove('grab')});
-document.addEventListener('keydown',e=>{
+document.addEventListener('keydown',e=>{if(document.body.classList.contains('homeon'))return;
   const typing=e.target.closest&&e.target.closest('[contenteditable="plaintext-only"],[contenteditable="true"],input,select,textarea');
   const mod=e.ctrlKey||e.metaKey,c=e.code;
   if(mod&&c==='KeyZ'&&!typing){e.preventDefault();e.shiftKey?redo():undo();return}
@@ -10882,25 +10984,24 @@ async function boot(){if(!API){document.body.innerHTML='<p style="padding:20px;c
   const r=await API.listBoards();if(r.error){setupErr(r.error.message);return}$('.setup')?.remove();
   S.boards=(r.data||[]).filter(x=>x.kind==='board').map(rowToBoard).sort((a,b)=>(a.sort||0)-(b.sort||0));
   S.lib=(r.lib||[]).map(x=>({id:x.id,name:x.name,node:(x.data||{}).node})).filter(x=>x.node);
-  if(!S.boards.length){const t=templateNodes(0,0),nb={id:nid('b'),name:'Разбор воронки',region:API.region(),sort:0,nodes:t.nodes,edges:t.edges,strokes:[],view:{x:60,y:80,k:.8}};S.boards.push(nb);saveBoard(nb,true)}
-  const last=LS('fb_cur_'+API.region());S.cur=S.boards.some(b=>b.id===last)?last:S.boards[0].id;
-  hist=[];redoS=[];updHist();sel=null;setTool(null);
+  const last=LS('fb_cur_'+API.region());S.cur=S.boards.some(b=>b.id===last)?last:(S.boards[0]||{}).id;
+  hist=[];redoS=[];updHist();sel=null;setTool(null);showHome(true);
 }
 const _pending={};
 function busy(){const a=document.activeElement;return !!drag||!!(a&&a.isContentEditable)}
 function applyRemote(row){if(row.kind==='lib'){const i=S.lib.findIndex(l=>l.id===row.id),o={id:row.id,name:row.name,node:(row.data||{}).node};if(i>=0)S.lib[i]=o;else if(o.node)S.lib.unshift(o);return}
   if(row.region&&row.region!==API.region())return;const i=S.boards.findIndex(b=>b.id===row.id),nb=rowToBoard(row);
   if(i>=0){nb.view=S.boards[i].view;nb._sig2=JSON.stringify(boardData(nb))+'|'+nb.name+'|'+(nb.sort||0);S.boards[i]=nb}else S.boards.push(nb);
-  if(row.id===S.cur){sel=null;closePop();render()}else renderTabs()}
+  if(!$('#home').hidden){renderHome();return}if(row.id===S.cur){sel=null;closePop();render()}else renderTabs()}
 window.fbRemote=p=>{const row=p.new&&p.new.id?p.new:null,old=p.old||{};
-  if(p.eventType==='DELETE'){const id=old.id;S.lib=S.lib.filter(l=>l.id!==id);if(S.boards.some(b=>b.id===id)){S.boards=S.boards.filter(b=>b.id!==id);if(S.cur===id)S.cur=(S.boards[0]||{}).id;render()}return}
+  if(p.eventType==='DELETE'){const id=old.id;S.lib=S.lib.filter(l=>l.id!==id);if(S.boards.some(b=>b.id===id)){S.boards=S.boards.filter(b=>b.id!==id);if(S.cur===id){S.cur=(S.boards[0]||{}).id;showHome(true)}else if(!$('#home').hidden)renderHome();else render()}return}
   if(!row)return;if(_ownAt[row.id]&&Date.now()-_ownAt[row.id]<4000)return;
   if(row.id===S.cur&&busy()){_pending[row.id]=row;return}applyRemote(row)};
 setInterval(()=>{for(const id in _pending){if(id===S.cur&&busy())continue;const r=_pending[id];delete _pending[id];applyRemote(r)}},1500);
 window.fbTasksChanged=()=>{B().nodes.filter(n=>n.type==='plan').forEach(n=>rerenderNode(n.id))};
 window.fbRegion=()=>{for(const k in CACHE)delete CACHE[k];boot()};
 window.fbDataChanged=()=>{for(const k in CACHE)delete CACHE[k];refreshLive()};
-window.fbShown=()=>{applyView();drawEdges();fbTasksChanged()};
+window.fbShown=()=>{if(!$('#home').hidden){renderHome();return}applyView();drawEdges();fbTasksChanged()};
 boot();
 </script>
 
