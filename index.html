@@ -2116,7 +2116,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-28 21:25'
+const BUILD='2026-10-28 21:55'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -2274,11 +2274,18 @@ let _rkKeySig='',_rkKeys=new Set()
 function srcKeySet(){const sig=DKEYS.length+':'+DOMAIN_META.length+':'+ZALIVS.length+':'+ZALIVS.reduce((a,z)=>a+zDomains(z).length,0)
   if(sig!==_rkKeySig){_rkKeys=new Set([...allDKeys().map(normKey),...ZALIVS.flatMap(z=>zDomains(z).map(d=>normKey(d.domain)))].filter(Boolean));_rkKeySig=sig}
   return _rkKeys}
-function srcParse(src){src=normKey(src);const keys=srcKeySet();if(keys.has(src))return{letter:'',key:src}
+// буква баера в источнике бывает кириллицей (і/д) и через разделитель (i-kalkulator13, kalkulator13_i) — приводим к одному виду
+function srcCanon(s){s=normKey(s);s=s.replace(/^[\u0456\u0438](?=\S)/,'i').replace(/^\u0434(?=\S)/,'d').replace(/(?<=\S)[\u0456\u0438]$/,'i').replace(/(?<=\S)\u0434$/,'d');return s.replace(/^([di])[\s_\-.:]+(?=\S)/,'$1').replace(/(?<=\S)[\s_\-.:]+([di])$/,'$1')}
+function srcParse(src){src=srcCanon(src);const keys=srcKeySet();if(keys.has(src))return{letter:'',key:src}
   const pre=src.match(/^([id])(.+)$/);if(pre&&keys.has(pre[2]))return{letter:pre[1].toUpperCase(),key:pre[2]}
   const suf=src.match(/^(.+)([id])$/);if(suf&&keys.has(suf[1]))return{letter:suf[2].toUpperCase(),key:suf[1]}
   const pk=src.match(/^([id])(kalkulator\d*)$/);if(pk)return{letter:pk[1].toUpperCase(),key:pk[2]}
-  const k=src.match(/^(kalkulator\d*)$/);if(k)return{letter:'',key:k[1]};return{letter:'',key:src}}
+  const k=src.match(/^(kalkulator\d*)$/);if(k)return{letter:'',key:k[1]}
+  // форматы GarnoCRM: буква спереди у ссылок сайтов (iplisystem1-pl, iczkonstruktor3-uk, igarnoland2cz, iladngarno),
+  // буква сзади у старых кальк (kalc5pli, kalkulator 4pli, 6plukri, garno4pli, cz2i). «instagram» — не баер.
+  const fam=src.match(/^([di])((?:pl|cz)?(?:isystem|isys|konstruktor|konstr|garnoland|garno|land|ladn|kalk|calc|kalc)\S*)$/);if(fam)return{letter:fam[1].toUpperCase(),key:fam[2]}
+  const tail=src.match(/^(.*(?:\d|pl|cz|ukr|ua|uk))([di])$/);if(tail)return{letter:tail[2].toUpperCase(),key:tail[1]}
+  return{letter:'',key:src}}
 function allSources(){const s=new Set([...SRC_DAILY.map(r=>r.source),...ADSET_SRC.map(m=>m.source)]);const arr=[...s].filter(x=>x&&x!=='(none)').sort();const dl=document.getElementById('srclist');if(dl)dl.innerHTML=arr.map(x=>`<option value="${x}">`).join('');return arr}
 // leads/quals from GarnoCRM for a zaliv (or one adset) over a period, via mapped sources
 // ── Чья РК получает лид ──
@@ -2319,9 +2326,11 @@ async function setAdsetSource(zid,adsetId,adsetName,source){allSources();const e
   else{const{data}=await db.from('adset_sources').insert({zaliv_id:zid,adset_id:adsetId,adset_name:adsetName,source,region:CURRENT_REGION}).select().single();if(data)ADSET_SRC.push(data)}
   toast(source?'Источник привязан: '+source:'Привязка снята','ok');selZaliv(zid);rzalivs()}
 // togo и ind нужны, чтобы понимать, какая РК в работе. Без них zWorking() пропускал всё подряд.
-async function loadAllZalivs(){if(!db)return;const{data}=await db.from('zalivs')
-  .select('id,name,geo,buyer,region,created_at,togo,ind,campaign_id')
-  .order('created_at',{ascending:false});window._ALL_ZALIVS=data||[]}
+async function loadAllZalivs(){if(!db)return;let{data,error}=await db.from('zalivs')
+  .select('id,name,geo,buyer,region,created_at,togo,ind,campaign_id,adset_domains,date')
+  .order('created_at',{ascending:false})
+  if(error)({data}=await db.from('zalivs').select('id,name,geo,buyer,region,created_at,togo,ind,campaign_id,adset_domains').order('created_at',{ascending:false}))
+  window._ALL_ZALIVS=data||[]}
 
 async function schemaCheck(){if(!db)return;const probes=[['tasks','rk_id,ttype,started_at,time_spent,done_at'],['grind','id'],['zalivs','cat,togo,adset_domains'],['source_daily','id'],['metrics_daily','region']];const miss=[]
   for(const[t,cols]of probes){const{error}=await db.from(t).select(cols).limit(1);if(error&&/does not exist|schema cache|not find/i.test(error.message))miss.push(t+' ('+cols+')')}
@@ -9188,7 +9197,10 @@ function glRange(m){const[y,mo]=m.split('-').map(Number);const days=new Date(Dat
 function glShift(m,k){const[y,mo]=m.split('-').map(Number);return new Date(Date.UTC(y,mo-1+k,1)).toISOString().slice(0,7)}
 const GL_MON=['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь']
 const glMonName=m=>GL_MON[+m.slice(5,7)-1]
-function glLetterOf(src){try{const p=srcParse(src);if(p.letter)return p.letter}catch(e){}const s=String(src||'').toLowerCase();const m=s.match(/^([di])(kalk|calc|3d|konstr|land|visit)/)||s.match(/(kalkulator\d*)([di])$/);return m?(m[1].length===1?m[1]:m[2]).toUpperCase():''}
+// чей лид: буква в источнике, иначе — баер РК, на которой стояла эта калька в тот день (обе страны)
+function glOwnIdx(D){if(D._own)return D._own;const idx={};(D.zs||[]).forEach(z=>{if(z.togo)return;const L=glZL(z);if(!L)return;const st=zStartISO(z),reg=z.region||'PL';(Array.isArray(z.adset_domains)?z.adset_domains:[]).forEach(d=>{const k=normKey(d.domain);if(!k)return;(idx[reg+'|'+k]||(idx[reg+'|'+k]=[])).push({st,L})})});Object.values(idx).forEach(a=>a.sort((x,y)=>x.st<y.st?-1:1));return D._own=idx}
+function glOwnerOf(D,r){let key;try{key=srcParse(r.source).key}catch(e){key=normKey(r.source)}const list=glOwnIdx(D)[(r.region||'PL')+'|'+key];if(!list)return'';const ok=list.filter(x=>x.st<=r.day);const top=(ok.length?ok:list)[ok.length?ok.length-1:0];const same=(ok.length?ok:list).filter(x=>x.st===top.st).map(x=>x.L);return new Set(same).size===1?same[0]:''}
+function glLetterOf(src,r,D){try{const p=srcParse(src);if(p.letter)return p.letter}catch(e){}if(r&&D){const o=glOwnerOf(D,r);if(o)return o}const s=String(src||'').toLowerCase();const m=s.match(/^([di])(kalk|calc|3d|konstr|land|visit)/)||s.match(/(kalkulator\d*)([di])$/);return m?(m[1].length===1?m[1]:m[2]).toUpperCase():''}
 const glZL=z=>{const b=z.buyer||parseBuyerFromName(z.name||'');return b==='Illia'?'I':b==='Danya'?'D':''}
 async function glPaged(q){const out=[];for(let off=0;off<40000;off+=1000){const{data,error}=await q().range(off,off+999);if(error){if(!out.length)throw error;break}if(!data)break;out.push(...data);if(data.length<1000)break}return out}
 async function loadGoals(m){m=m||glMonth();if(!db)return[];const{data,error}=await db.from('goals').select('*').eq('month',m).order('sort',{ascending:true}).order('id',{ascending:true})
@@ -9217,7 +9229,7 @@ async function glEval(g,mo){
   D.md.forEach(r=>{if(r.day<R.from||r.day>R.to||!inReg(r.region))return;const i=+r.day.slice(8,10)-1,sp=(+r.spend_pl||0)+(+r.spend_plua||0)
     T.sp[i]+=sp;T.ld[i]+=(r.leads_pl||0)+(r.leads_plua||0);T.q[i]+=r.quals||0;T.sa[i]+=r.sales_count||0;dcq[r.day+'|'+r.region]=r.quals?sp/r.quals:null;dcq[r.day+'|'+r.region+'|l']=((r.leads_pl||0)+(r.leads_plua||0))?sp/((r.leads_pl||0)+(r.leads_plua||0)):null})
   const hasSa=D.sd.length?'sales' in D.sd[0]:false,units={q:[],ld:[],sa:[]}
-  D.sd.forEach(r=>{if(!inReg(r.region))return;const i=+r.day.slice(8,10)-1,b=glLetterOf(r.source);if(b){B[b].ld[i]+=r.leads||0;B[b].q[i]+=r.quals||0;B[b].sa[i]+=r.sales||0}
+  D.sd.forEach(r=>{if(!inReg(r.region))return;const i=+r.day.slice(8,10)-1,b=glLetterOf(r.source,r,D);if(b){B[b].ld[i]+=r.leads||0;B[b].q[i]+=r.quals||0;B[b].sa[i]+=r.sales||0}
     const u={day:i+1,b,src:r.source,reg:r.region};for(let k=0;k<(r.quals||0);k++)units.q.push(Object.assign({cost:dcq[r.day+'|'+r.region]},u));for(let k=0;k<(r.leads||0);k++)units.ld.push(Object.assign({cost:dcq[r.day+'|'+r.region+'|l']},u));for(let k=0;k<(r.sales||0);k++)units.sa.push(u)})
   const needSp=['spend','cql','cpl'].includes(g.metric)&&(L||g.who==='team')
   if(needSp){try{const sb=await glBuyerSpend(D);['D','I'].forEach(b=>{const tot=(g.region==='all'?sb.PL[b]+sb.CZ[b]:sb[g.region][b]),tsp=T.sp.reduce((a,c)=>a+c,0);T.sp.forEach((v,i)=>{B[b].sp[i]=tot&&tsp?v*tot/tsp:NaN})})}catch(e){}}
