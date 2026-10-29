@@ -2137,7 +2137,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-29 08:20'
+const BUILD='2026-10-29 08:35'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -9454,6 +9454,11 @@ async function crUpdateBatch(id,patch){const{error}=await db.from('creo_batches'
 async function crDeleteCreo(id){const used=crUsedIn(id);if(used.length)return{error:'Крео стоит в заливе: '+used.slice(0,3).join(', ')+' — сначала убери его из адсета'}
   const c=CR.creos.find(x=>x.id===id);if(c&&c.file_url){const m=String(c.file_url).split('/object/public/creos/')[1];if(m)try{await db.storage.from('creos').remove([decodeURIComponent(m.split('?')[0])])}catch(e){}}
   const{error}=await db.from('creos').delete().eq('id',id);if(error)return{error:error.message};CR.creos=CR.creos.filter(x=>x.id!==id);return{ok:true}}
+async function crAttach(id,file,frames,fmt){const c=CR.creos.find(x=>x.id===id);if(!c)return{error:'нет крео'};if(!db.storage)return{error:'хранилище недоступно'}
+  const ext=(file.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,''),path=c.batch_id+'/'+id+'.'+ext
+  const up=await db.storage.from('creos').upload(path,file,{upsert:true,contentType:file.type||undefined});if(up.error)return{error:up.error.message}
+  const patch={file_url:db.storage.from('creos').getPublicUrl(path).data.publicUrl,file_name:file.name};if(frames&&frames.length)patch.frames=frames;if(fmt)patch.fmt=fmt
+  const ok=await crUpdate(id,patch);return ok?{ok:true}:{error:'не записалось в базу'}}
 async function crDeleteBatch(id){if(CR.creos.some(c=>c.batch_id===id))return{error:'В пачке ещё есть крео'};const{error}=await db.from('creo_batches').delete().eq('id',id);if(error)return{error:error.message};CR.batches=CR.batches.filter(b=>b.id!==id);return{ok:true}}
 function crNotify(){const f=document.getElementById('cr-frame');try{f&&f.contentWindow&&f.contentWindow.crRemote&&f.contentWindow.crRemote()}catch(e){}}
 let _crRt=null;function crRealtime(){clearTimeout(_crRt);_crRt=setTimeout(()=>crLoad(true).then(crNotify),800)}
@@ -9494,7 +9499,7 @@ window.CR_API={
   load:async force=>{await crLoad(force);return CR_API.data()},
   data:()=>({ok:CR.ok,err:CR.err,adsOk:CR.adsOk,dict:JSON.parse(JSON.stringify(CR.dict||CR_DICT0)),batches:CR.batches.map(b=>({id:b.id,buyer:b.buyer,geo:b.geo,date:crDD(b.date_iso),date_iso:b.date_iso,cat:b.cat||''})),creos:CR.creos.map(crView),
     me:crBuyerL(CURRENT_USER?.name)||'D',today:todayISO(),region:CURRENT_REGION}),
-  saveBatch:(o,p)=>crSaveBatch(o,p),updateBatch:(id,p)=>crUpdateBatch(id,p),deleteCreo:id=>crDeleteCreo(id),regeo:(id,g)=>crRegeo(id,g),deleteBatch:id=>crDeleteBatch(id),update:(id,patch)=>crUpdate(id,patch),saveDict:d=>crSaveDict(d),ai:(k,p,ms)=>crAi(k,p,ms),advice:s=>crAdvice(s),
+  saveBatch:(o,p)=>crSaveBatch(o,p),updateBatch:(id,p)=>crUpdateBatch(id,p),deleteCreo:id=>crDeleteCreo(id),regeo:(id,g)=>crRegeo(id,g),attach:(id,f,fr,fmt)=>crAttach(id,f,fr,fmt),deleteBatch:id=>crDeleteBatch(id),update:(id,patch)=>crUpdate(id,patch),saveDict:d=>crSaveDict(d),ai:(k,p,ms)=>crAi(k,p,ms),advice:s=>crAdvice(s),
   toast:(m,k)=>toast(m,k||'ok'),copy:t=>{try{navigator.clipboard.writeText(t)}catch(e){}},
   openZalivs:()=>{gp('zalivs',document.getElementById('nb-zalivs'))},
   legacy:()=>{const o=document.getElementById('creo-legacy'),f=document.getElementById('cr-frame');if(!o)return;const on=o.hidden;o.hidden=!on;f.style.display=on?'none':'block';document.getElementById('page-creo').style.overflow=on?'auto':'hidden';if(on){renderCreoPage();document.getElementById('creo-legacy-back').hidden=false}},
@@ -10582,7 +10587,7 @@ function card(c){const r=rateOf(c),a=agg(c,S.geo),b=B(c.batch);return `<article 
   <div class="chips" style="margin-top:9px">${tagBtns(c)}</div>
   <div class="m4"><div><small>HOOK</small><b class="${hrC(c.hr)}">${c.hr?c.hr+'%':'—'}</b></div><div><small>CPL</small><b>${usd(a.cpl,1)}</b></div><div><small>КВАЛЫ</small><b>${a.q}</b></div><div><small>CQL</small><b class="${r?cqlC(a.cql):'mut'}">${usd(a.cql)}</b></div></div>
   ${geoCells(c)}
-  <div class="cf"><span>${r?`жил ${a.d} дн. · ${a.ld} лидов`:'загружено, ждёт залива'}</span><span style="display:flex;gap:6px;align-items:center">${c.file_url?`<button class="btn sm" data-dl="${c.id}" title="Скачать ${c.id}" aria-label="Скачать ${c.id}" style="height:24px;padding:0 8px">⬇</button>`:''}<span class="chip bu-${b.buyer}">${BN[b.buyer]}</span></span></div></div></article>`}
+  <div class="cf"><span>${r?`жил ${a.d} дн. · ${a.ld} лидов`:'загружено, ждёт залива'}</span><span style="display:flex;gap:6px;align-items:center">${c.file_url?`<button class="btn sm" data-dl="${c.id}" title="Скачать ${c.id}" aria-label="Скачать ${c.id}" style="height:24px;padding:0 8px">⬇</button>`:`<button class="btn sm" data-creo="${c.id}" title="Видео не загружено — открой крео и прикрепи файл" style="height:24px;padding:0 8px;color:var(--r2)">нет видео</button>`}<span class="chip bu-${b.buyer}">${BN[b.buyer]}</span></span></div></div></article>`}
 function rateCtl(c){const r=rateOf(c),a=autoRate(c);if(!a)return '<span class="mut" style="font:600 11px var(--s)">новое</span>';return `<div class="rate" role="group" aria-label="Оценка ${c.id}">${[1,2,3].map(i=>`<button class="r${i}${r===i?' on':''}${a===i?' sug':''}" data-rate="${i}" data-id="${c.id}" title="${RATE[i][0]}: ${RATE[i][1]}">${i}</button>`).join('')}</div>`}
 function gcell(c,g){const v=c.g[g];if(!v)return `<div class="gcell h-0">—</div>`;const cq=v[3]?v[1]/v[3]:NaN;return `<div class="gcell ${heat(cq,true)}${bestGeo(c)===g?' best':''}" title="${g}: ${v[0]} дн., $${v[1]}, ${v[2]} лидов, ${v[3]} квалов">${v[3]?usd(cq):'0 кв'}<small>${v[3]} кв · ${v[0]}д</small></div>`}
 const daysBar=d=>`<span class="days" aria-hidden="true">${[1,2,3,4,5].map(i=>`<i class="${d>=i?'on':''}"></i>`).join('')}</span>`;
@@ -10629,7 +10634,7 @@ function vCreo(){if(!CREOS.length){S.view='lib';return vLib()}
   return `<div class="hd" style="margin-bottom:8px"><button class="btn sm" data-view="lib">← Библиотека</button>${tabs()}</div>${saveBar()}
   <div class="row" style="gap:10px;align-items:center;margin-bottom:6px"><span class="idx" style="font-size:14px;color:var(--g2)">${c.id}</span><button class="btn sm" data-copy="${c.id}">Копировать индекс</button></div>
   <div class="row" style="gap:10px;align-items:center;margin-bottom:18px"><label for="cname" class="lab" style="position:absolute;left:-9999px">Название крео</label><input id="cname" class="fld" value="${esc(c.name)}" style="height:40px;font:400 20px var(--d);min-width:min(420px,100%);flex:0 1 460px"><span style="position:relative;display:inline-flex">${rLabel(c).replace('class="rb','style="position:static" class="rb')}</span><span class="chip bu-${b.buyer}">${BN[b.buyer]}</span><button class="chip" style="background:var(--b5);font-family:var(--m)" data-batchgo="${b.id}">${bTitle(b)}</button>
-   <span style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">${c.file_url?`<button class="btn" data-dl="${c.id}">⬇ Скачать</button>`:''}<button class="btn" data-editbatch="${c.batch}">Пачка ${c.batch}</button><button class="btn red" data-act="zalivs">В залив →</button></span></div>
+   <span style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">${c.file_url?`<button class="btn" data-dl="${c.id}">⬇ Скачать видео</button>`:`<label class="btn" for="attach" style="cursor:pointer;border-color:rgba(212,175,55,.6);color:var(--g2)">⬆ Прикрепить видео<input type="file" id="attach" data-id="${c.id}" accept="video/*,image/*" style="position:absolute;width:1px;height:1px;opacity:0"></label>`}<button class="btn" data-editbatch="${c.batch}">Пачка ${c.batch}</button><button class="btn red" data-act="zalivs">В залив →</button></span></div>
   <div class="row">
    <section style="flex:1 1 260px;max-width:320px" aria-label="Видео"><div class="vid">${c.file_url?`<video src="${esc(c.file_url)}" controls preload="metadata" playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000"></video>`:slides(c)+`<span class="fmt" style="left:12px;right:auto;position:absolute">${c.fmt||''}</span>`}</div>
     ${c.file_url?`<div class="lab" style="margin:12px 0 6px">Кадры для списка в заливе</div><div style="display:flex;gap:5px">${(c.frames||[]).map(u=>`<span style="flex:1;aspect-ratio:9/16;border-radius:6px;background:url('${u}') center/cover"></span>`).join('')}</div>`:'<p class="p">Файла нет — показаны кадры-заглушки.</p>'}</section>
@@ -10655,7 +10660,7 @@ function batchEditList(U){const L=CREOS.filter(c=>c.batch===U.batch).sort((a,b)=
    <div class="list" style="gap:6px">${L.map(c=>`<div class="item" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 10px">${slides(c,true).replace('class="ss','style="width:36px;height:60px;border-radius:6px" class="ss')}
     <span style="min-width:0;flex:1 1 220px"><button class="idx" data-creo="${c.id}" style="color:var(--g2)">${c.id}</button><b style="display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.name)}</b><span class="mut" style="font-size:11px">${c.file_name?esc(c.file_name):'без файла'}${c.used?` · в заливах: ${c.used}`:''}</span></span>
     ${rLabel(c).replace('class="rb','style="position:static" class="rb')}
-    <span style="display:flex;gap:6px">${c.file_url?`<button class="btn sm" data-dl="${c.id}">⬇ Скачать</button>`:''}<button class="btn sm" data-creo="${c.id}">Открыть</button>${c.used?'':`<button class="btn sm" data-delcreo="${c.id}" style="color:var(--r2)">${S.arm==='c:'+c.id?'Точно удалить?':'Удалить'}</button>`}</span></div>`).join('')||'<div class="mut">Пачка пустая — дозалей крео ниже или удали её.</div>'}</div></section>`}
+    <span style="display:flex;gap:6px">${c.file_url?`<button class="btn sm" data-dl="${c.id}">⬇ Скачать</button>`:`<button class="btn sm" data-creo="${c.id}" style="color:var(--r2)">нет видео · прикрепить</button>`}<button class="btn sm" data-creo="${c.id}">Открыть</button>${c.used?'':`<button class="btn sm" data-delcreo="${c.id}" style="color:var(--r2)">${S.arm==='c:'+c.id?'Точно удалить?':'Удалить'}</button>`}</span></div>`).join('')||'<div class="mut">Пачка пустая — дозалей крео ниже или удали её.</div>'}</div></section>`}
 function vUpload(){const U=S.up,bid=upBatchId(),ro=v=>`<span class="fld" style="display:inline-flex;align-items:center;opacity:.75">${v}</span>`;
   return head(U.batch?'Крео · пачка':'Крео · загрузка',U.batch?'Пачка '+U.batch:'Загрузить пачку',U.batch?'<button class="btn" data-view="lib">← Готово</button>':'')+
   `<section class="fbar" aria-label="Параметры пачки">
@@ -10913,14 +10918,15 @@ document.addEventListener('input',e=>{const t=e.target;
   if((t.id==='scr'||t.id==='cname')&&S.draft){const was=dirty();if(t.id==='scr')S.draft.script=t.value;else S.draft.name=t.value;if(was!==dirty()){const bar=document.querySelector('[data-act=dsave]');if(bar){const pos=t.selectionStart;render();const el=document.getElementById(t.id);el.focus();try{el.setSelectionRange(pos,pos)}catch(_){}}}}
   if(t.dataset.g==='wish'){S.gen.wish=t.value}
   if(t.id==='gtext'){S.gen.text=t.value}});
-document.addEventListener('change',e=>{const t=e.target;
+document.addEventListener('change',async e=>{const t=e.target;
   
   if(t.id==='udate'&&t.value){S.up.date=t.value;render()}
   if(t.id==='ucat'){S.up.cat=t.value;if(S.up.batch)API.updateBatch(S.up.batch,{cat:t.value}).then(ok=>{if(ok){toast('Категория пачки сохранена');boot(true)}})}
   if(t.dataset.ur==='script'){const r=S.up.rows[+t.dataset.i];if(!r.gv){detect(r,900);render()}}
   if(t.dataset.ur&&t.tagName==='SELECT'){S.up.rows[+t.dataset.i][t.dataset.ur]=t.value;render()}
   if(t.dataset.g&&t.tagName==='SELECT'){S.gen[t.dataset.g]=t.value}
-  if(t.id==='files'){addRows([...t.files]);t.value=''}});
+  if(t.id==='files'){addRows([...t.files]);t.value=''}
+  if(t.id==='attach'&&t.files[0]){const f=t.files[0],id=t.dataset.id;toast('Загружаю видео…');let o=null;try{o=await grab(f)}catch(_){}const r=await API.attach(id,f,o&&o.frames,o&&o.fmt);if(r.error){toast('Видео не загрузилось: '+r.error);return}S.draft=null;await boot(true);S.creo=id;S.view='creo';render();toast('Видео прикреплено к '+id)}});
 document.addEventListener('dragover',e=>{const d=e.target.closest&&e.target.closest('#drop');if(d){e.preventDefault();d.classList.add('over')}});
 document.addEventListener('dragleave',e=>{const d=e.target.closest&&e.target.closest('#drop');if(d)d.classList.remove('over')});
 document.addEventListener('drop',e=>{const d=e.target.closest&&e.target.closest('#drop');if(d){e.preventDefault();addRows([...e.dataTransfer.files])}});
