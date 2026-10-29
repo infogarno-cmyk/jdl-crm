@@ -2137,7 +2137,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-29 07:50'
+const BUILD='2026-10-29 08:20'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -9459,19 +9459,28 @@ function crNotify(){const f=document.getElementById('cr-frame');try{f&&f.content
 let _crRt=null;function crRealtime(){clearTimeout(_crRt);_crRt=setTimeout(()=>crLoad(true).then(crNotify),800)}
 async function crNextBatchId(buyer,dd){const n=CR.batches.filter(b=>b.buyer===buyer).length+1;let id=buyer+dd+'-'+n,k=n;while(CR.batches.some(b=>b.id===id)){k++;id=buyer+dd+'-'+k}return id}
 async function crSaveBatch(o,progress){await crLoad();const dd=crDD(o.dateISO),bid=o.batchId||await crNextBatchId(o.buyer,dd),me=CURRENT_USER?.name||''
-  if(!o.batchId){const{error:be}=await db.from('creo_batches').insert({id:bid,region:crRegion(o.geo),buyer:o.buyer,geo:o.geo,date_iso:o.dateISO,cat:o.cat,created_by:me});if(be)return{error:be.message}}
+  const geos=[...new Set([...(o.batchId?String((CR.batches.find(b=>b.id===o.batchId)||{}).geo||'').split(',').filter(Boolean):[]),...o.rows.map(r=>r.geo||o.geo)])],warn=[]
+  if(!o.batchId){const{error:be}=await db.from('creo_batches').insert({id:bid,region:crRegion(geos[0]),buyer:o.buyer,geo:geos.join(','),date_iso:o.dateISO,cat:o.cat,created_by:me});if(be)return{error:be.message}}
+  else await db.from('creo_batches').update({geo:geos.join(',')}).eq('id',bid)
   const{data:same}=await db.from('creos').select('seq').eq('date_iso',o.dateISO).order('seq',{ascending:false}).limit(1)
   let seq=Math.max((same||[]).reduce((m,x)=>Math.max(m,x.seq||0),0),...CR.creos.filter(c=>c.date_iso===o.dateISO).map(c=>c.seq||0),0)+1;const ids=[]
   for(let i=0;i<o.rows.length;i++){const r=o.rows[i];progress&&progress(i,'файл');let file_url=null
-    let id=o.buyer+o.geo+dd+crCode(r.tags.style)+seq
-    if(r.file){try{const ext=(r.file.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,'');const path=bid+'/'+id+'.'+ext;const up=await db.storage.from('creos').upload(path,r.file,{upsert:true,contentType:r.file.type||undefined});if(!up.error)file_url=db.storage.from('creos').getPublicUrl(path).data.publicUrl;else console.log('Крео: файл не загрузился — '+up.error.message)}catch(e){console.log('Крео: файл не загрузился — '+e.message)}}
+    const g=r.geo||o.geo;let id=o.buyer+g+dd+crCode(r.tags.style)+seq
+    if(r.file){try{const ext=(r.file.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,'');const path=bid+'/'+id+'.'+ext;const up=await db.storage.from('creos').upload(path,r.file,{upsert:true,contentType:r.file.type||undefined});if(!up.error)file_url=db.storage.from('creos').getPublicUrl(path).data.publicUrl;else{warn.push(r.file.name+': '+up.error.message);console.log('Крео: файл не загрузился — '+up.error.message)}}catch(e){warn.push(r.file.name+': '+e.message);console.log('Крео: файл не загрузился — '+e.message)}}
     progress&&progress(i,'запись')
-    const row={id,batch_id:bid,region:crRegion(o.geo),buyer:o.buyer,geo:o.geo,date_iso:o.dateISO,seq,name:r.name,hook_line:r.hookLine||'',script:r.script||'',tags:r.tags,ai:r.ai||{},frames:r.frames||[],file_url,file_name:r.file?r.file.name:null,fmt:r.fmt||'',created_by:me,updated_by:me}
+    const row={id,batch_id:bid,region:crRegion(g),buyer:o.buyer,geo:g,date_iso:o.dateISO,seq,name:r.name,hook_line:r.hookLine||'',script:r.script||'',tags:r.tags,ai:r.ai||{},frames:r.frames||[],file_url,file_name:r.file?r.file.name:null,fmt:r.fmt||'',created_by:me,updated_by:me}
     let{error}=await db.from('creos').insert(row)
-    while(error&&/duplicate|unique/i.test(error.message||'')){seq++;row.seq=seq;row.id=id=o.buyer+o.geo+dd+crCode(r.tags.style)+seq;({error}=await db.from('creos').insert(row))}
-    if(error)return{error:error.message,batch:bid,ids}
+    while(error&&/duplicate|unique/i.test(error.message||'')){seq++;row.seq=seq;row.id=id=o.buyer+g+dd+crCode(r.tags.style)+seq;({error}=await db.from('creos').insert(row))}
+    if(error)return{error:error.message,batch:bid,ids,warn}
     ids.push(id);seq++}
-  await crLoad(true);return{batch:bid,ids}}
+  await crLoad(true);return{batch:bid,ids,warn}}
+// поменять гео крео (только пока крео не стоит в заливе): индекс пересобирается с тем же номером за день
+async function crRegeo(id,geo){if(crUsedIn(id).length)return{error:'Крео уже стоит в заливе — гео не меняется'};const c=CR.creos.find(x=>x.id===id);if(!c)return{error:'нет крео'};if(c.geo===geo)return{id}
+  const nid=c.buyer+geo+crDD(c.date_iso)+crCode((c.tags||{}).style)+c.seq;if(CR.creos.some(x=>x.id===nid))return{error:'Индекс '+nid+' уже занят'}
+  const row={...c,id:nid,geo,region:crRegion(geo),updated_at:new Date().toISOString(),updated_by:CURRENT_USER?.name||''};delete row.created_at
+  const{error}=await db.from('creos').insert(row);if(error)return{error:error.message};await db.from('creos').delete().eq('id',id)
+  const b=CR.batches.find(x=>x.id===c.batch_id);if(b){const gs=[...new Set(CR.creos.filter(x=>x.batch_id===b.id&&x.id!==id).map(x=>x.geo).concat(geo))];await db.from('creo_batches').update({geo:gs.join(',')}).eq('id',b.id)}
+  await crLoad(true);return{id:nid}}
 async function crUpdate(id,patch){const c=CR.creos.find(x=>x.id===id);if(!c)return false;const upd={...patch,updated_at:new Date().toISOString(),updated_by:CURRENT_USER?.name||''}
   const{error}=await db.from('creos').update(upd).eq('id',id);if(error){toast('Крео не сохранилось: '+error.message,'err');return false}Object.assign(c,upd);return true}
 async function crSaveDict(d){const url=JSON.stringify(d);CR.dict=d
@@ -9485,7 +9494,7 @@ window.CR_API={
   load:async force=>{await crLoad(force);return CR_API.data()},
   data:()=>({ok:CR.ok,err:CR.err,adsOk:CR.adsOk,dict:JSON.parse(JSON.stringify(CR.dict||CR_DICT0)),batches:CR.batches.map(b=>({id:b.id,buyer:b.buyer,geo:b.geo,date:crDD(b.date_iso),date_iso:b.date_iso,cat:b.cat||''})),creos:CR.creos.map(crView),
     me:crBuyerL(CURRENT_USER?.name)||'D',today:todayISO(),region:CURRENT_REGION}),
-  saveBatch:(o,p)=>crSaveBatch(o,p),updateBatch:(id,p)=>crUpdateBatch(id,p),deleteCreo:id=>crDeleteCreo(id),deleteBatch:id=>crDeleteBatch(id),update:(id,patch)=>crUpdate(id,patch),saveDict:d=>crSaveDict(d),ai:(k,p,ms)=>crAi(k,p,ms),advice:s=>crAdvice(s),
+  saveBatch:(o,p)=>crSaveBatch(o,p),updateBatch:(id,p)=>crUpdateBatch(id,p),deleteCreo:id=>crDeleteCreo(id),regeo:(id,g)=>crRegeo(id,g),deleteBatch:id=>crDeleteBatch(id),update:(id,patch)=>crUpdate(id,patch),saveDict:d=>crSaveDict(d),ai:(k,p,ms)=>crAi(k,p,ms),advice:s=>crAdvice(s),
   toast:(m,k)=>toast(m,k||'ok'),copy:t=>{try{navigator.clipboard.writeText(t)}catch(e){}},
   openZalivs:()=>{gp('zalivs',document.getElementById('nb-zalivs'))},
   legacy:()=>{const o=document.getElementById('creo-legacy'),f=document.getElementById('cr-frame');if(!o)return;const on=o.hidden;o.hidden=!on;f.style.display=on?'none':'block';document.getElementById('page-creo').style.overflow=on?'auto':'hidden';if(on){renderCreoPage();document.getElementById('creo-legacy-back').hidden=false}},
@@ -10540,7 +10549,7 @@ const hrC=v=>!v?'mut':v>=30?'good':v>=22?'mid':'bad';
 const dd=d=>d.slice(0,2)+'.'+d.slice(2,4)+'.'+d.slice(4,6);
 const bTitle=b=>'Пачка '+b.id;
 function filtered(){const q=S.q.toLowerCase();return CREOS.filter(c=>{const b=B(c.batch);
-  return (S.buyer==='all'||b.buyer===S.buyer)&&(S.cat==='Все'||b.cat===S.cat)&&(S.batch==='all'||c.batch===S.batch)&&(S.geo==='all'||c.g[S.geo]||B(c.batch).geo===S.geo)&&(S.rate==='all'||rateOf(c)===+S.rate)&&
+  return (S.buyer==='all'||b.buyer===S.buyer)&&(S.cat==='Все'||b.cat===S.cat)&&(S.batch==='all'||c.batch===S.batch)&&(S.geo==='all'||c.g[S.geo]||c.geo===S.geo)&&(S.rate==='all'||rateOf(c)===+S.rate)&&
    (!q||(c.id+' '+c.name+' '+c.hookLine+' '+Object.values(c.tags).flat().join(' ')).toLowerCase().includes(q))})}
 function tot(L,geo){let sp=0,ld=0,q=0;L.forEach(c=>{const a=agg(c,geo);sp+=isFinite(a.sp)?a.sp:0;ld+=a.ld;q+=a.q});return{sp,ld,q,cpl:ld?sp/ld:NaN,cql:q?sp/q:NaN}}
 function toast(t){const d=$('#toast');d.textContent=t;d.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>d.hidden=true,2400)}
@@ -10578,7 +10587,7 @@ function rateCtl(c){const r=rateOf(c),a=autoRate(c);if(!a)return '<span class="m
 function gcell(c,g){const v=c.g[g];if(!v)return `<div class="gcell h-0">—</div>`;const cq=v[3]?v[1]/v[3]:NaN;return `<div class="gcell ${heat(cq,true)}${bestGeo(c)===g?' best':''}" title="${g}: ${v[0]} дн., $${v[1]}, ${v[2]} лидов, ${v[3]} квалов">${v[3]?usd(cq):'0 кв'}<small>${v[3]} кв · ${v[0]}д</small></div>`}
 const daysBar=d=>`<span class="days" aria-hidden="true">${[1,2,3,4,5].map(i=>`<i class="${d>=i?'on':''}"></i>`).join('')}</span>`;
 function batchHead(b,G,cols){const bt=tot(G,S.geo),col=S.coll[b.id],live=G.filter(c=>rateOf(c)>=2).length,r3=G.filter(c=>rateOf(c)===3).length;
-  const inner=`<button class="tog${col?' c':''}" data-coll="${b.id}" aria-label="Свернуть пачку">${CHEV}</button><b>${bTitle(b)}</b><span class="chip bu-${b.buyer}">${BN[b.buyer]}</span><span class="chip" style="background:var(--b5);font-family:var(--m)">${b.geo}</span><span class="mut" style="font-size:11.5px">${b.cat} · ${dd(b.date)}</span>
+  const inner=`<button class="tog${col?' c':''}" data-coll="${b.id}" aria-label="Свернуть пачку">${CHEV}</button><b>${bTitle(b)}</b><span class="chip bu-${b.buyer}">${BN[b.buyer]}</span>${[...new Set(G.map(c=>c.geo))].map(g=>`<span class="chip" style="background:var(--b5);font-family:var(--m)">${g}</span>`).join('')}<span class="mut" style="font-size:11.5px">${b.cat} · ${dd(b.date)}</span>
      <span class="surv" title="оценки крео в пачке">${G.map(c=>`<i style="background:${RATE[rateOf(c)][2]}"></i>`).join('')}</span><span class="mut" style="font-size:11.5px">выжило ${live} из ${G.length}${r3?' · MWP '+r3:''}</span>
      <button class="btn sm" data-editbatch="${b.id}">✎ Изменить · дозалить</button>${G.some(c=>c.file_url)?`<button class="btn sm" data-dlbatch="${b.id}">⬇ Скачать</button>`:''}
      <span class="bst"><span>спенд <em>$${Math.round(bt.sp)}</em></span><span>CPL <em>${usd(bt.cpl,1)}</em></span><span>CQL <em class="${cqlC(bt.cql)}">${usd(bt.cql,1)}</em></span></span>`;
@@ -10599,7 +10608,7 @@ function vLib(){if(META.ok&&!CREOS.length)return head('Крео','Библиот
   return head('Крео · '+(S.geo==='all'?'все гео':S.geo)+' · 30 дней','Библиотека крео','<button class="btn" data-act="zalivs" title="Крео выбирается в форме залива: «＋ крео» в строке адсета">Выбрать крео в заливе →</button><button class="btn red" data-view="upload">＋ Загрузить пачку</button>')+notice()+fbar(true)+
   `<section class="kpis" aria-label="Сводка">${[['Крео',L.length,`в ${new Set(L.map(c=>c.batch)).size} пачках`,'var(--t)'],['Спенд','$'+Math.round(t.sp).toLocaleString('ru'),S.geo==='all'?'все гео':S.geo,'var(--t)'],['CPL',usd(t.cpl,1),t.ld+' лидов','var(--t)'],['CQL',usd(t.cql,1),t.q+' квалов',cqlC(t.cql)==='good'?'var(--gr2)':cqlC(t.cql)==='mid'?'var(--g2)':'var(--r2)'],['MWP · 3',rc[3],'5+ квалов, несколько циклов','var(--g2)'],['Рабочие · 2',rc[2],'~3 дня, ~3 квала','var(--bl2)'],['Однодневки · 1',rc[1],'офф на 2-й день','var(--r2)']].map(([l,v,s,c])=>`<div class="kpi"><div class="lab">${l}</div><b style="color:${c}">${v}</b><small>${s}</small></div>`).join('')}</section>
   <div class="row">
-   <aside class="side"><span class="lab">Пачки</span>${[{id:'all'},...BATCH].map(b=>`<button class="cat${S.batch===b.id?' on':''}" data-batch="${b.id}"><span>${b.id==='all'?'Все пачки':`<span class="mn">${b.id}</span><span class="sub">${BN[b.buyer]} · ${b.geo} · ${b.cat}</span>`}</span><small>${b.id==='all'?CREOS.length:CREOS.filter(c=>c.batch===b.id).length}</small></button>`).join('')}
+   <aside class="side"><span class="lab">Пачки</span>${[{id:'all'},...BATCH].map(b=>`<button class="cat${S.batch===b.id?' on':''}" data-batch="${b.id}"><span>${b.id==='all'?'Все пачки':`<span class="mn">${b.id}</span><span class="sub">${BN[b.buyer]} · ${String(b.geo||'').split(',').join(' · ')} · ${b.cat}</span>`}</span><small>${b.id==='all'?CREOS.length:CREOS.filter(c=>c.batch===b.id).length}</small></button>`).join('')}
     <span class="lab" style="padding-top:14px">Категории</span>${['Все',...CATS].map(n=>`<button class="cat${S.cat===n?' on':''}" data-cat="${n}"><span>${n}</span><small>${n==='Все'?CREOS.length:(cnt[n]||0)}</small></button>`).join('')}
     <span class="lab" style="padding-top:14px">Шкала оценки</span><div class="list" style="gap:6px;padding:0 6px 6px">${[3,2,1].map(i=>`<div style="font-size:11px;color:var(--t2);line-height:1.4"><b style="color:${RATE[i][2]};font-family:var(--m)">${i} · ${RATE[i][0]}</b><br>${RATE[i][1]}</div>`).join('')}</div></aside>
    <section style="flex:999 1 620px;min-width:0" aria-label="Крео">
@@ -10612,32 +10621,35 @@ function vLib(){if(META.ok&&!CREOS.length)return head('Крео','Библиот
    </section></div><div class="note">Индекс крео: баер + гео + дата + 3 буквы стиля + номер за день. Цифры: лиды и квалы — GarnoCRM по кальке адсета, спенд — Meta по адсету. <button class="btn sm" data-act="legacy" style="margin-left:8px">Старые отчёты по крео</button></div>`}
 
 /* ── 2. карточка крео ── */
+function draftOf(c0){if(!S.draft||S.draft.id!==c0.id)S.draft={id:c0.id,name:c0.name,script:c0.script||'',tags:JSON.parse(JSON.stringify(c0.tags)),rate:c0.rate||null,geo:c0.geo};return S.draft}
+function dirty(){const d=S.draft,c=d&&CREOS.find(x=>x.id===d.id);if(!c)return false;return d.name!==c.name||d.script!==(c.script||'')||JSON.stringify(d.tags)!==JSON.stringify(c.tags)||(d.rate||null)!==(c.rate||null)||d.geo!==c.geo}
+function saveBar(){const dt=dirty();return `<div class="item" style="position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;${dt?'border-color:rgba(212,175,55,.6);background:#1a170c':''}"><span style="font-size:12.5px;${dt?'color:var(--g2);font-weight:700':'color:var(--t3)'}">${dt?'Есть несохранённые изменения':'Изменения сохранены'}</span><span style="margin-left:auto;display:flex;gap:8px">${dt?'<button class="btn sm" data-act="dcancel">Отменить</button>':''}<button class="btn sm red" data-act="dsave"${dt&&!S.dsaving?'':' disabled'}>${S.dsaving?'Сохраняю…':'Сохранить'}</button></span></div>`}
 function vCreo(){if(!CREOS.length){S.view='lib';return vLib()}
-  const c=CREOS.find(x=>x.id===S.creo)||CREOS[0],b=B(c.batch),r=rateOf(c),ai=autoRate(c),a=agg(c),bg=bestGeo(c);
-  if(!c.script)c.script=`0–3 c: «${c.hookLine}»\n3–12 c: …\n12–25 c: …\nфинал: «Посчитайте в калькуляторе»`;
-  return `<div class="hd" style="margin-bottom:8px"><button class="btn sm" data-view="lib">← Библиотека</button>${tabs()}</div>
+  const c0=CREOS.find(x=>x.id===S.creo)||CREOS[0],D=draftOf(c0),c=Object.assign({},c0,{name:D.name,script:D.script,tags:D.tags,rate:D.rate,geo:D.geo}),b=B(c.batch),r=rateOf(c),ai=autoRate(c),a=agg(c),bg=bestGeo(c);
+  return `<div class="hd" style="margin-bottom:8px"><button class="btn sm" data-view="lib">← Библиотека</button>${tabs()}</div>${saveBar()}
   <div class="row" style="gap:10px;align-items:center;margin-bottom:6px"><span class="idx" style="font-size:14px;color:var(--g2)">${c.id}</span><button class="btn sm" data-copy="${c.id}">Копировать индекс</button></div>
-  <div class="row" style="gap:10px;align-items:center;margin-bottom:18px"><h1 style="margin:0">${esc(c.name)}</h1><span style="position:relative;display:inline-flex">${rLabel(c).replace('class="rb','style="position:static" class="rb')}</span><span class="chip bu-${b.buyer}">${BN[b.buyer]}</span><button class="chip" style="background:var(--b5);font-family:var(--m)" data-batchgo="${b.id}">${bTitle(b)}</button>
+  <div class="row" style="gap:10px;align-items:center;margin-bottom:18px"><label for="cname" class="lab" style="position:absolute;left:-9999px">Название крео</label><input id="cname" class="fld" value="${esc(c.name)}" style="height:40px;font:400 20px var(--d);min-width:min(420px,100%);flex:0 1 460px"><span style="position:relative;display:inline-flex">${rLabel(c).replace('class="rb','style="position:static" class="rb')}</span><span class="chip bu-${b.buyer}">${BN[b.buyer]}</span><button class="chip" style="background:var(--b5);font-family:var(--m)" data-batchgo="${b.id}">${bTitle(b)}</button>
    <span style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">${c.file_url?`<button class="btn" data-dl="${c.id}">⬇ Скачать</button>`:''}<button class="btn" data-editbatch="${c.batch}">Пачка ${c.batch}</button><button class="btn red" data-act="zalivs">В залив →</button></span></div>
   <div class="row">
    <section style="flex:1 1 260px;max-width:320px" aria-label="Видео"><div class="vid">${c.file_url?`<video src="${esc(c.file_url)}" controls preload="metadata" playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000"></video>`:slides(c)+`<span class="fmt" style="left:12px;right:auto;position:absolute">${c.fmt||''}</span>`}</div>
     ${c.file_url?`<div class="lab" style="margin:12px 0 6px">Кадры для списка в заливе</div><div style="display:flex;gap:5px">${(c.frames||[]).map(u=>`<span style="flex:1;aspect-ratio:9/16;border-radius:6px;background:url('${u}') center/cover"></span>`).join('')}</div>`:'<p class="p">Файла нет — показаны кадры-заглушки.</p>'}</section>
    <div style="flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:14px">
+    <section class="box" aria-label="Гео"><div class="bh"><h2>Гео залива</h2><span class="lab">${c0.used?'крео уже стоит в заливе — гео не меняется':'при смене гео индекс пересоберётся после «Сохранить»'}</span></div><div class="seg mono" role="group">${GEOS.map(g=>`<button data-dgeo="${g}" class="${c.geo===g?'on':''}"${c0.used?' disabled':''}>${g}</button>`).join('')}</div>${D.geo!==c0.geo?`<p class="p">Новый индекс: <b class="mid" style="font-family:var(--m)">${c0.buyer}${D.geo}${c0.date}${codeOf(c0.tags.style)}${String(c0.id).match(/\d+$/)[0]}</b></p>`:''}</section>
     ${ai?`<section class="box" aria-label="Оценка"><div class="bh"><h2>Оценка</h2><span class="lab">Геннадий предлагает ${ai} · ставишь ты</span></div>
      <div class="rbig">${[1,2,3].map(i=>`<button class="r${i}${r===i?' on':''}" data-rate="${i}" data-id="${c.id}">${ai===i?'<span class="ai">ГЕНА</span>':''}<b style="color:${RATE[i][2]}">${i}</b><small><strong style="color:var(--t)">${RATE[i][0]}</strong><br>${RATE[i][1]}</small></button>`).join('')}</div>
      <p class="p">Жил ${a.d} дн. · ${a.q} квалов · циклов ${a.cy}. ${c.rate&&c.rate!==ai?`Ты поставил ${c.rate} вручную — по данным вышло бы ${ai}.`:'Оценка считается сама по правилам; если не согласен — нажми другую.'}</p></section>`:`<section class="box"><div class="bh"><h2>Новое крео</h2></div><p class="p" style="margin:0">Загружено в ${bTitle(b)}, ещё не запускалось. Оценка появится после первого залива.</p></section>`}
-    <section class="kpis" style="margin:0;grid-template-columns:repeat(auto-fit,minmax(118px,1fr))" aria-label="Цифры">${[['Hook',c.hr?c.hr+'%':'—','досмотр 3 сек',hrC(c.hr)],['CTR',c.ctr?c.ctr.toFixed(1)+'%':'—','клики / показы',''],['CPL',usd(a.cpl,1),a.ld+' лидов',''],['CQL',usd(a.cql,1),a.q+' квалов',r?cqlC(a.cql):'mut'],['Квал %',a.ld?Math.round(a.q/a.ld*100)+'%':'—','из лидов',''],['Спенд','$'+a.sp,'все гео',''],['Жил',a.d+' дн.',a.cy+(a.cy===1?' цикл':' цикла'),''],['Лучшее гео',bg||'—',bg?'CQL '+usd(c.g[bg][1]/c.g[bg][3]):'нет квалов','good']].map(([l,v,s2,cl])=>`<div class="kpi" style="padding:10px 12px"><div class="lab">${l}</div><b class="${cl}" style="font-size:18px">${v}</b><small>${s2}</small></div>`).join('')}</section>
+    <section class="kpis" style="margin:0;grid-template-columns:repeat(auto-fit,minmax(118px,1fr))" aria-label="Цифры">${[['Hook',c.hr?c.hr+'%':'—','досмотр 3 сек',hrC(c.hr)],['CTR',c.ctr?c.ctr.toFixed(1)+'%':'—','клики / показы',''],['CPL',usd(a.cpl,1),a.ld+' лидов',''],['CQL',usd(a.cql,1),a.q+' квалов',r?cqlC(a.cql):'mut'],['Квал %',a.ld?Math.round(a.q/a.ld*100)+'%':'—','из лидов',''],['Спенд',isFinite(a.sp)&&Object.keys(c.g).length?'$'+Math.round(a.sp):'—','все гео',''],['Жил',a.d+' дн.',a.cy+(a.cy===1?' цикл':' цикла'),''],['Лучшее гео',bg||'—',bg?'CQL '+usd(c.g[bg][1]/c.g[bg][3]):'нет квалов','good']].map(([l,v,s2,cl])=>`<div class="kpi" style="padding:10px 12px"><div class="lab">${l}</div><b class="${cl}" style="font-size:18px">${v}</b><small>${s2}</small></div>`).join('')}</section>
     <section class="box tw" aria-label="По гео"><div class="bh"><h2>Где работает лучше</h2><span class="lab">по гео</span></div>
      <table><thead><tr><th>Гео</th><th class="n">Жил</th><th class="n">Спенд</th><th class="n">Лиды</th><th class="n">Квалы</th><th class="n">CPL</th><th class="n">CQL</th><th>Совет</th></tr></thead><tbody>${GEOS.map(g=>{const v=c.g[g];if(!v){const near=bg&&g.slice(0,2)===bg.slice(0,2)&&r>1;return `<tr><td class="nm">${g}</td><td colspan="6" class="mut" style="font-family:var(--s)">не запускали</td><td style="font:600 11.5px var(--s)" class="${near?'good':'mut'}">${near?'попробовать — рядом лучшее гео':'—'}</td></tr>`}const cq=v[3]?v[1]/v[3]:NaN;return `<tr><td class="nm">${g}${bg===g?' <span class="good">★</span>':''}</td><td class="n">${v[0]}д</td><td class="n">$${v[1]}</td><td class="n">${v[2]}</td><td class="n">${v[3]}</td><td class="n">${usd(v[1]/v[2],1)}</td><td class="n ${cqlC(cq)}">${usd(cq,1)}</td><td style="font:600 11.5px var(--s)" class="${bg===g?'good':v[3]?'mut':'bad'}">${bg===g?'гонять здесь':v[3]?'держать':'офф'}</td></tr>`}).join('')}</tbody></table></section>
     <section class="box" aria-label="Теги"><div class="bh"><h2>Теги</h2><span class="lab">поставил Геннадий · нажми любой, чтобы поменять, удалить или добавить свой</span></div>
      <div class="tgrid">${['hook','scen','style'].map(k=>`<span class="k">${TGN[k]}</span><div class="chips"><button class="tg ${TGC[k]}" data-tag="${k}" data-id="${c.id}">${esc(c.tags[k]||'+ выбрать')}</button>${k==='style'?`<span class="mut" style="font:600 11px var(--m)">код в индексе: ${codeOf(c.tags.style)}</span>`:''}</div>`).join('')}<span class="k">Ещё</span><div class="chips">${(c.tags.extra||[]).map((x,i)=>`<button class="tg x" data-tag="extra" data-i="${i}" data-id="${c.id}">${esc(x)}</button>`).join('')}<button class="tg add" data-tag="extra" data-i="new" data-id="${c.id}">＋ тег</button></div></div></section>
-    <section class="box" aria-label="Сценарий"><div class="bh"><h2>Сценарий</h2><span class="lab">загружен баером · можно править</span></div><label for="scr" class="lab" style="position:absolute;left:-9999px">Сценарий</label><textarea id="scr" rows="5" data-id="${c.id}">${esc(c.script)}</textarea></section>
+    <section class="box" aria-label="Сценарий"><div class="bh"><h2>Сценарий</h2><span class="lab">правки сохраняются кнопкой «Сохранить» сверху</span></div><label for="scr" class="lab" style="position:absolute;left:-9999px">Сценарий</label><textarea id="scr" rows="5" data-id="${c.id}">${esc(c.script)}</textarea></section>
    </div></div><div class="note"></div>`}
 
 /* ── 3. загрузка пачки ── */
 const isoToD=iso=>{const [y,m,d]=iso.split('-');return d+m+y.slice(2)};
 function upBatchId(){const U=S.up;if(U.batch)return U.batch;return U.buyer+isoToD(U.date)+'-'+(BATCH.filter(b=>b.buyer===U.buyer).length+1)}
-function upIdx(i){const U=S.up,dt=isoToD(U.date),r=U.rows[i];return r.ai==='done'?mkIdx(U.buyer,U.geo,dt,r.style,seqFor(dt)+i):U.buyer+U.geo+dt+'···'+(seqFor(dt)+i)}
+function upIdx(i){const U=S.up,dt=isoToD(U.date),r=U.rows[i],g=r.geo||U.geo;return r.ai==='done'?mkIdx(U.buyer,g,dt,r.style,seqFor(dt)+i):U.buyer+g+dt+'···'+(seqFor(dt)+i)}
 function batchEditList(U){const L=CREOS.filter(c=>c.batch===U.batch).sort((a,b)=>a.id.localeCompare(b.id,'ru',{numeric:true}));
   return `<section class="box" aria-label="Крео в пачке"><div class="bh"><h2>В пачке сейчас</h2><span class="lab">${L.length} крео · индексы уже присвоены</span><span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">${L.some(c=>c.file_url)?`<button class="btn sm" data-dlbatch="${U.batch}">⬇ Скачать пачку</button>`:''}${L.length?'':`<button class="btn sm" data-delbatch="${U.batch}" style="color:var(--r2);border-color:rgba(240,58,85,.5)">${S.arm==='b:'+U.batch?'Точно удалить пустую пачку?':'Удалить пачку'}</button>`}</span></div>
    <div class="list" style="gap:6px">${L.map(c=>`<div class="item" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 10px">${slides(c,true).replace('class="ss','style="width:36px;height:60px;border-radius:6px" class="ss')}
@@ -10648,11 +10660,11 @@ function vUpload(){const U=S.up,bid=upBatchId(),ro=v=>`<span class="fld" style="
   return head(U.batch?'Крео · пачка':'Крео · загрузка',U.batch?'Пачка '+U.batch:'Загрузить пачку',U.batch?'<button class="btn" data-view="lib">← Готово</button>':'')+
   `<section class="fbar" aria-label="Параметры пачки">
    <div class="fg"><span class="lab">Кто грузит</span>${U.batch?ro(BN[U.buyer]):seg('buyer',BUY,'',U)}</div>
-   <div class="fg"><span class="lab">Гео залива</span>${U.batch?ro(U.geo):seg('geo',GEOS.map(g=>[g,g]),'mono',U)}</div>
+   <div class="fg"><span class="lab">Гео для новых крео</span>${seg('geo',GEOS.map(g=>[g,g]),'mono',U)}</div>
    <div class="fg"><label class="lab" for="udate">Дата залива</label>${U.batch?ro(dd(isoToD(U.date))):`<input class="fld" type="date" id="udate" value="${U.date}">`}</div>
    <div class="fg"><label class="lab" for="ucat">Категория</label><select class="fld" id="ucat">${CATS.map(c=>`<option${U.cat===c?' selected':''}>${c}</option>`).join('')}</select></div>
    <div class="fg" style="margin-left:auto"><span class="lab">Название пачки</span><span class="bigidx">${bid}</span></div></section>
-  ${U.batch?`<div class="mut" style="font-size:11.5px;margin:-6px 0 12px">Баер, гео и дата пачки зашиты в индексы крео, поэтому не меняются. Категорию можно поменять — сохранится сразу.</div>`+batchEditList(U):''}
+  ${U.batch?`<div class="mut" style="font-size:11.5px;margin:-6px 0 12px">Баер и дата пачки зашиты в индексы крео, поэтому не меняются. Гео — у каждого крео своё. Категорию можно поменять — сохранится сразу.</div>`+batchEditList(U):''}
   <div class="row" style="gap:14px;${U.batch?'margin-top:14px':''}">
    <div style="flex:999 1 600px;min-width:0;display:flex;flex-direction:column;gap:10px">
     <label class="drop" id="drop" for="files"><input type="file" id="files" multiple accept="video/*,image/*">
@@ -10662,7 +10674,8 @@ function vUpload(){const U=S.up,bid=upBatchId(),ro=v=>`<span class="fld" style="
     ${U.rows.map((r,i)=>`<div class="urow">${slides({frames:r.frames,hookLine:r.hook||r.file,tone:r.tone,fmt:''})}
       <div style="min-width:0;display:flex;flex-direction:column;gap:10px">
        <div class="row" style="gap:10px;align-items:center"><span class="bigidx">${esc(upIdx(i))}</span>${r.ai==='done'?`<button class="btn sm" data-copy="${esc(upIdx(i))}">Копировать</button>`:''}<span class="mut" style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px">${esc(r.file)}</span><button class="btn sm" data-rm="${i}" style="margin-left:auto">Убрать</button></div>
-       <div class="mut" style="font:600 10.5px var(--m)">${U.buyer} · ${U.geo} · ${isoToD(U.date)} · <span class="mid">${r.ai==='done'?codeOf(r.style):'···'}</span> · №${seqFor(isoToD(U.date))+i} за день${r.ai==='done'?'':' · 3 буквы появятся, когда Геннадий определит стиль'}</div>
+       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="lab">Гео залива</span><div class="seg mono" role="group" aria-label="Гео крео">${GEOS.map(g=>`<button data-rgeo="${g}" data-i="${i}" class="${(r.geo||U.geo)===g?'on':''}">${g}</button>`).join('')}</div></div>
+       <div class="mut" style="font:600 10.5px var(--m)">${U.buyer} · ${r.geo||U.geo} · ${isoToD(U.date)} · <span class="mid">${r.ai==='done'?codeOf(r.style):'···'}</span> · №${seqFor(isoToD(U.date))+i} за день${r.ai==='done'?'':' · 3 буквы появятся, когда Геннадий определит стиль'}</div>
        <div class="ufl">
         <div style="display:flex;flex-direction:column;gap:5px"><span class="lab">${r.aiBy==='по названию'?'Геннадий недоступен — угадано по названию, поправь':'Определил Геннадий — можно поправить'}</span>${r.ai==='done'?`<div class="chips">${[['style','st',DICT.style],['hookT','h',DICT.hook],['scen','s',DICT.scen]].map(([k,cl,arr])=>`<select class="fld aisel ${cl}" data-ur="${k}" data-i="${i}" aria-label="${k}">${arr.map(o=>`<option value="${esc(o)}"${r[k]===o?' selected':''}>${esc(o)}${k==='style'?' · '+codeOf(o):''}</option>`).join('')}</select>`).join('')}</div>`:`<span class="mut" style="font-size:12px;display:flex;align-items:center;gap:8px;height:22px"><span class="spin" aria-hidden="true"></span>смотрит кадры и сценарий…</span>`}</div>
         <label><span class="lab">Название крео</span><input class="fld" data-ur="name" data-i="${i}" value="${esc(r.name)}"></label>
@@ -10680,7 +10693,7 @@ function vUpload(){const U=S.up,bid=upBatchId(),ro=v=>`<span class="fld" style="
     <button class="btn red" style="width:100%;margin-top:14px" data-act="saveup"${U.rows.length&&U.rows.every(r=>r.ai==='done')&&!U.saving?'':' disabled'}>${U.saving?(U.prog||'Сохраняю…'):U.rows.some(r=>r.ai!=='done')?'Геннадий разбирает крео…':(U.batch?'Дозалить в пачку':'Сохранить пачку')+(U.rows.length?' · '+U.rows.length+' крео':'')}</button>
    </aside></div>`}
 const TONES=['#22324A','#3A2E1E','#2B2238','#1E3A33','#2C2C30','#30263C'];
-function addRows(files){files.forEach(f=>{const r={fileObj:f instanceof File?f:null,fmt:'',file:f.name||f,name:(f.name||f).replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').slice(0,40),style:'',hookT:'',scen:'',ai:'wait',script:'',hook:'',tone:TONES[S.up.rows.length%TONES.length],frames:null};S.up.rows.push(r);
+function addRows(files){files.forEach(f=>{const r={geo:S.up.geo,fileObj:f instanceof File?f:null,fmt:'',file:f.name||f,name:(f.name||f).replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').slice(0,40),style:'',hookT:'',scen:'',ai:'wait',script:'',hook:'',tone:TONES[S.up.rows.length%TONES.length],frames:null};S.up.rows.push(r);
   r._fp=f instanceof File?grab(f).then(o=>{if(o){r.frames=o.frames;r.fmt=o.fmt||''}if(S.view==='upload')render()}).catch(()=>{}):Promise.resolve();detect(r,300)});render()}
 /* Геннадий определяет стиль, хук и сценарий (в макете — по названию файла и сценарию) */
 function heur(r){const t=(r.file+' '+r.name+' '+r.script).toLowerCase();
@@ -10710,9 +10723,9 @@ async function dlBatch(bid){const L=CREOS.filter(c=>c.batch===bid&&c.file_url);i
   catch(e){toast('Архив не собрался — качаю по одному');for(const c of L){await dlOne(c);await new Promise(r=>setTimeout(r,600))}}}
 function ratio(w,h){const r=w/h;return r<0.62?'9:16':r<0.9?'4:5':r<1.15?'1:1':'16:9'}
 async function saveUpload(){const U=S.up;if(U.saving)return;U.saving=true;render()
-  const rows=U.rows.map(r=>({file:r.fileObj,name:r.name||r.file,script:r.script||'',hookLine:r.hookLine||(r.script.split('\n')[0]||'').replace(/^[^«"]*[«"]?/,'').replace(/[»"].*$/,'').trim()||r.name,tags:{hook:r.hookT,scen:r.scen,style:r.style,extra:r.extra||[]},ai:{style:r.style,hook:r.hookT,scen:r.scen,by:r.aiBy||''},frames:r.frames||[],fmt:r.fmt||''}))
+  const rows=U.rows.map(r=>({geo:r.geo||U.geo,file:r.fileObj,name:r.name||r.file,script:r.script||'',hookLine:r.hookLine||(r.script.split('\n')[0]||'').replace(/^[^«"]*[«"]?/,'').replace(/[»"].*$/,'').trim()||r.name,tags:{hook:r.hookT,scen:r.scen,style:r.style,extra:r.extra||[]},ai:{style:r.style,hook:r.hookT,scen:r.scen,by:r.aiBy||''},frames:r.frames||[],fmt:r.fmt||''}))
   const res=await API.saveBatch({batchId:U.batch||null,buyer:U.buyer,geo:U.geo,dateISO:U.date,cat:U.cat,rows},(i,st)=>{U.prog=`Крео ${i+1} из ${rows.length}: ${st}…`;const b=document.querySelector('[data-act=saveup]');if(b)b.textContent=U.prog})
-  U.saving=false;U.prog='';if(res.error){toast('Не сохранилось: '+res.error);render();return}
+  U.saving=false;U.prog='';if(res.error){toast('Не сохранилось: '+res.error);render();return}if(res.warn&&res.warn.length)setTimeout(()=>toast('Видео не загрузилось ('+res.warn.length+'): '+res.warn[0]+' — крео сохранено без файла'),2600)
   const n=res.ids.length,wasEdit=!!U.batch;U.rows=[];await boot(true);if(wasEdit){render();toast(`Дозалито в ${res.batch}: ${n} крео`);return}S.view='lib';S.layout='batch';S.batch=res.batch;S.rate='all';S.geo='all';S.buyer='all';S.cat='Все';render();scrollTo(0,0);toast(`${res.batch} сохранена · ${n} крео получили индексы`)}
 
 /* ── 4. Заливы: твоя форма «+ Новый залив» как есть, в строку адсета добавлен выбор крео ── */
@@ -10820,15 +10833,15 @@ function advPayload(){return CREOS.filter(c=>Object.keys(c.g).length).slice(0,15
 
 /* поповер тегов */
 let POP=null;
-function openPop(btn){const id=btn.dataset.id,k=btn.dataset.tag,i=btn.dataset.i,c=CREOS.find(x=>x.id===id);POP={id,k,i};
+function openPop(btn){const id=btn.dataset.id,k=btn.dataset.tag,i=btn.dataset.i,c=(S.view==='creo'&&S.draft&&S.draft.id===id)?S.draft:CREOS.find(x=>x.id===id);POP={id,k,i};
   const cur=k==='extra'?(i==='new'?'':c.tags.extra[+i]):c.tags[k],p=$('#pop');
   p.innerHTML=`<div class="lab">${TGN[k]} · ${id}</div><div class="opts">${DICT[k].map(o=>`<button class="tg ${TGC[k]}" data-setv="${esc(o)}" style="${o===cur?'box-shadow:inset 0 0 0 1.5px currentColor':''}">${esc(o)}${k==='style'?' · '+codeOf(o):''}</button>`).join('')}</div>
    <form id="popf"><label for="popi" style="position:absolute;left:-9999px">Свой тег</label><input id="popi" placeholder="свой тег…" autocomplete="off"><button class="ok" type="submit">Добавить</button></form>${cur?'<button class="del" data-unset-tag>Убрать тег</button>':''}${k==='style'?'<div class="mut" style="font-size:10.5px;margin-top:8px">Индекс крео не меняется — он присвоен при загрузке.</div>':''}`;
   p.hidden=false;const r=btn.getBoundingClientRect(),w=p.offsetWidth,h=p.offsetHeight;
   p.style.left=Math.max(16,Math.min(innerWidth-w-16,r.left))+'px';p.style.top=(r.bottom+6+h>innerHeight?Math.max(10,r.top-h-6):r.bottom+6)+'px'}
-function setTag(val){const c=CREOS.find(x=>x.id===POP.id),k=POP.k;
+function setTag(val){const isD=S.view==='creo'&&S.draft&&S.draft.id===POP.id,c=isD?S.draft:CREOS.find(x=>x.id===POP.id),k=POP.k;
   if(k==='extra'){c.tags.extra=c.tags.extra||[];if(POP.i==='new'){if(val&&!c.tags.extra.includes(val))c.tags.extra.push(val)}else if(val)c.tags.extra[+POP.i]=val;else c.tags.extra.splice(+POP.i,1)}else c.tags[k]=val||'';
-  $('#pop').hidden=true;POP=null;persist(c);render();toast(val?'Тег сохранён':'Тег убран')}
+  $('#pop').hidden=true;POP=null;if(isD){render();return}persist(c);render();toast(val?'Тег сохранён':'Тег убран')}
 
 function render(){
   $('#app').innerHTML={lib:vLib,creo:vCreo,trend:vTrend,ai:vAI,upload:vUpload,rot:vRot}[S.view]();
@@ -10843,8 +10856,18 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button'),p
   if(d.setv!==undefined&&POP){setTag(d.setv);return}
   if('unsetTag' in d&&POP){setTag('');return}
   if(d.copy){copyTxt(d.copy);return}
+  if(d.rgeo){S.up.rows[+d.i].geo=d.rgeo;S.up.geo=d.rgeo;render();return}
+  if(d.dgeo&&S.draft){S.draft.geo=d.dgeo;render();return}
+  if(d.act==='dcancel'){S.draft=null;render();return}
+  if(d.act==='dsave'){const D=S.draft,c=CREOS.find(x=>x.id===D.id);if(!c||S.dsaving)return;S.dsaving=true;render()
+    const ok=await API.update(c.id,{name:D.name,script:D.script,tags:D.tags,rate:D.rate||null});let nid=c.id
+    if(ok&&D.geo!==c.geo){const r=await API.regeo(c.id,D.geo);if(r.error){toast(r.error)}else nid=r.id}
+    if(ok&&!DICT.style.includes(D.tags.style)&&D.tags.style){}
+    S.dsaving=false;S.draft=null;await boot(true);S.creo=nid;S.view='creo';render();toast(ok?'Крео сохранено'+(nid!==c.id?' · новый индекс '+nid:''):'Не сохранилось');return}
+  if(S.view==='creo'&&dirty()&&(d.view||d.creo||d.editbatch||d.act==='zalivs')&&!S.leaveArm){S.leaveArm=true;setTimeout(()=>S.leaveArm=false,4000);toast('Есть несохранённые изменения — нажми «Сохранить» или ещё раз, чтобы уйти без сохранения');return}
+  if(d.view||d.creo||d.editbatch)S.draft=null;
   if(d.view){if(d.view==='upload'&&t.closest('.tabs')&&S.up.batch){S.up.batch=null;S.up.rows=[];S.up.buyer=META.me||'D';S.up.date=META.today}if(d.view==='lib'&&S.up.batch&&!S.up.rows.length)S.up.batch=null;S.view=d.view;render();scrollTo(0,0);return}
-  if(d.editbatch){const b=B(d.editbatch);S.up=Object.assign(S.up,{batch:b.id,buyer:b.buyer,geo:b.geo,date:b.date_iso||META.today,cat:b.cat||'Кухни',rows:[]});S.view='upload';render();scrollTo(0,0);return}
+  if(d.editbatch){const b=B(d.editbatch);S.up=Object.assign(S.up,{batch:b.id,buyer:b.buyer,geo:String(b.geo||'PLPL').split(',')[0]||'PLPL',date:b.date_iso||META.today,cat:b.cat||'Кухни',rows:[]});S.view='upload';render();scrollTo(0,0);return}
   if(d.dl){dlOne(CREOS.find(c=>c.id===d.dl));return}
   if(d.dlbatch){dlBatch(d.dlbatch);return}
   if(d.delcreo){if(S.arm!=='c:'+d.delcreo){S.arm='c:'+d.delcreo;render();clearTimeout(S._armT);S._armT=setTimeout(()=>{S.arm=null;render()},4000);return}S.arm=null;const r=await API.deleteCreo(d.delcreo);if(r.error){toast(r.error);render();return}await boot(true);toast('Крео удалено');return}
@@ -10858,6 +10881,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button'),p
   if(d.sort){S.sort=d.sort;render();return}if(d.layout){S.layout=d.layout;render();return}
   if(d.coll){S.coll[d.coll]=!S.coll[d.coll];render();return}
   if(d.dim){S.dim=d.dim;render();return}if(d.met){S.met=d.met;render();return}
+  if(d.rate&&S.view==='creo'&&S.draft&&S.draft.id===d.id){const c0=CREOS.find(x=>x.id===d.id),ar=autoRate(Object.assign({},c0,{rate:null}));S.draft.rate=+d.rate===ar?null:+d.rate;render();return}
   if(d.rate){const c=CREOS.find(x=>x.id===d.id);c.rate=+d.rate===autoRate(c)?null:+d.rate;persist(c);render();toast(`${c.id}: оценка ${d.rate} · ${RATE[d.rate][0]}`);return}
   if(d.rm!==undefined){S.up.rows.splice(+d.rm,1);render();return}
   if(d.zopen){const n=+d.zopen;S.zl.open=S.zl.open===n?null:n;S.zl.q='';render();const i=$('#zq');if(i)i.focus();return}
@@ -10886,10 +10910,11 @@ document.addEventListener('input',e=>{const t=e.target;
   if(t.id==='zq'){S.zl.q=t.value;const pos=t.selectionStart;render();const i=$('#zq');i.focus();try{i.setSelectionRange(pos,pos)}catch(_){}}
   if(t.dataset.ur&&t.tagName!=='SELECT'){S.up.rows[+t.dataset.i][t.dataset.ur]=t.value}
   if(t.dataset.kal){S.zl.kal[t.dataset.kal]=t.value}
+  if((t.id==='scr'||t.id==='cname')&&S.draft){const was=dirty();if(t.id==='scr')S.draft.script=t.value;else S.draft.name=t.value;if(was!==dirty()){const bar=document.querySelector('[data-act=dsave]');if(bar){const pos=t.selectionStart;render();const el=document.getElementById(t.id);el.focus();try{el.setSelectionRange(pos,pos)}catch(_){}}}}
   if(t.dataset.g==='wish'){S.gen.wish=t.value}
   if(t.id==='gtext'){S.gen.text=t.value}});
 document.addEventListener('change',e=>{const t=e.target;
-  if(t.id==='scr'){const c=CREOS.find(x=>x.id===t.dataset.id);c.script=t.value;persist(c);toast('Сценарий сохранён')}
+  
   if(t.id==='udate'&&t.value){S.up.date=t.value;render()}
   if(t.id==='ucat'){S.up.cat=t.value;if(S.up.batch)API.updateBatch(S.up.batch,{cat:t.value}).then(ok=>{if(ok){toast('Категория пачки сохранена');boot(true)}})}
   if(t.dataset.ur==='script'){const r=S.up.rows[+t.dataset.i];if(!r.gv){detect(r,900);render()}}
