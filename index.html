@@ -2137,7 +2137,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-29 08:35'
+const BUILD='2026-10-29 08:50'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -9455,7 +9455,7 @@ async function crDeleteCreo(id){const used=crUsedIn(id);if(used.length)return{er
   const c=CR.creos.find(x=>x.id===id);if(c&&c.file_url){const m=String(c.file_url).split('/object/public/creos/')[1];if(m)try{await db.storage.from('creos').remove([decodeURIComponent(m.split('?')[0])])}catch(e){}}
   const{error}=await db.from('creos').delete().eq('id',id);if(error)return{error:error.message};CR.creos=CR.creos.filter(x=>x.id!==id);return{ok:true}}
 async function crAttach(id,file,frames,fmt){const c=CR.creos.find(x=>x.id===id);if(!c)return{error:'нет крео'};if(!db.storage)return{error:'хранилище недоступно'}
-  const ext=(file.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,''),path=c.batch_id+'/'+id+'.'+ext
+  const ext=(file.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,''),path=crKey(c.batch_id+'/'+id+'.'+ext)
   const up=await db.storage.from('creos').upload(path,file,{upsert:true,contentType:file.type||undefined});if(up.error)return{error:up.error.message}
   const patch={file_url:db.storage.from('creos').getPublicUrl(path).data.publicUrl,file_name:file.name};if(frames&&frames.length)patch.frames=frames;if(fmt)patch.fmt=fmt
   const ok=await crUpdate(id,patch);return ok?{ok:true}:{error:'не записалось в базу'}}
@@ -9463,6 +9463,9 @@ async function crDeleteBatch(id){if(CR.creos.some(c=>c.batch_id===id))return{err
 function crNotify(){const f=document.getElementById('cr-frame');try{f&&f.contentWindow&&f.contentWindow.crRemote&&f.contentWindow.crRemote()}catch(e){}}
 let _crRt=null;function crRealtime(){clearTimeout(_crRt);_crRt=setTimeout(()=>crLoad(true).then(crNotify),800)}
 async function crNextBatchId(buyer,dd){const n=CR.batches.filter(b=>b.buyer===buyer).length+1;let id=buyer+dd+'-'+n,k=n;while(CR.batches.some(b=>b.id===id)){k++;id=buyer+dd+'-'+k}return id}
+// Supabase Storage не принимает кириллицу в пути файла («ХУМ» в индексе) — путь пишем латиницей, индекс крео не меняется
+const CR_TR={А:'A',Б:'B',В:'V',Г:'G',Д:'D',Е:'E',Ё:'E',Ж:'ZH',З:'Z',И:'I',Й:'Y',К:'K',Л:'L',М:'M',Н:'N',О:'O',П:'P',Р:'R',С:'S',Т:'T',У:'U',Ф:'F',Х:'H',Ц:'C',Ч:'CH',Ш:'SH',Щ:'SCH',Ъ:'',Ы:'Y',Ь:'',Э:'E',Ю:'YU',Я:'YA'}
+const crKey=v=>String(v).split('').map(ch=>{const u=ch.toUpperCase();return CR_TR[u]!==undefined?CR_TR[u]:ch}).join('').replace(/[^A-Za-z0-9._\/-]/g,'_')
 async function crSaveBatch(o,progress){await crLoad();const dd=crDD(o.dateISO),bid=o.batchId||await crNextBatchId(o.buyer,dd),me=CURRENT_USER?.name||''
   const geos=[...new Set([...(o.batchId?String((CR.batches.find(b=>b.id===o.batchId)||{}).geo||'').split(',').filter(Boolean):[]),...o.rows.map(r=>r.geo||o.geo)])],warn=[]
   if(!o.batchId){const{error:be}=await db.from('creo_batches').insert({id:bid,region:crRegion(geos[0]),buyer:o.buyer,geo:geos.join(','),date_iso:o.dateISO,cat:o.cat,created_by:me});if(be)return{error:be.message}}
@@ -9471,7 +9474,7 @@ async function crSaveBatch(o,progress){await crLoad();const dd=crDD(o.dateISO),b
   let seq=Math.max((same||[]).reduce((m,x)=>Math.max(m,x.seq||0),0),...CR.creos.filter(c=>c.date_iso===o.dateISO).map(c=>c.seq||0),0)+1;const ids=[]
   for(let i=0;i<o.rows.length;i++){const r=o.rows[i];progress&&progress(i,'файл');let file_url=null
     const g=r.geo||o.geo;let id=o.buyer+g+dd+crCode(r.tags.style)+seq
-    if(r.file){try{const ext=(r.file.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,'');const path=bid+'/'+id+'.'+ext;const up=await db.storage.from('creos').upload(path,r.file,{upsert:true,contentType:r.file.type||undefined});if(!up.error)file_url=db.storage.from('creos').getPublicUrl(path).data.publicUrl;else{warn.push(r.file.name+': '+up.error.message);console.log('Крео: файл не загрузился — '+up.error.message)}}catch(e){warn.push(r.file.name+': '+e.message);console.log('Крео: файл не загрузился — '+e.message)}}
+    if(r.file){try{const ext=(r.file.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,'');const path=crKey(bid+'/'+id+'.'+ext);const up=await db.storage.from('creos').upload(path,r.file,{upsert:true,contentType:r.file.type||undefined});if(!up.error)file_url=db.storage.from('creos').getPublicUrl(path).data.publicUrl;else{warn.push(r.file.name+': '+up.error.message);console.log('Крео: файл не загрузился — '+up.error.message)}}catch(e){warn.push(r.file.name+': '+e.message);console.log('Крео: файл не загрузился — '+e.message)}}
     progress&&progress(i,'запись')
     const row={id,batch_id:bid,region:crRegion(g),buyer:o.buyer,geo:g,date_iso:o.dateISO,seq,name:r.name,hook_line:r.hookLine||'',script:r.script||'',tags:r.tags,ai:r.ai||{},frames:r.frames||[],file_url,file_name:r.file?r.file.name:null,fmt:r.fmt||'',created_by:me,updated_by:me}
     let{error}=await db.from('creos').insert(row)
