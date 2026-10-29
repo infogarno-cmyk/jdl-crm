@@ -2137,7 +2137,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-29 09:05'
+const BUILD='2026-10-29 09:15'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -9467,11 +9467,18 @@ async function crNextBatchId(buyer,dd){const n=CR.batches.filter(b=>b.buyer===bu
 const CR_TR={А:'A',Б:'B',В:'V',Г:'G',Д:'D',Е:'E',Ё:'E',Ж:'ZH',З:'Z',И:'I',Й:'Y',К:'K',Л:'L',М:'M',Н:'N',О:'O',П:'P',Р:'R',С:'S',Т:'T',У:'U',Ф:'F',Х:'H',Ц:'C',Ч:'CH',Ш:'SH',Щ:'SCH',Ъ:'',Ы:'Y',Ь:'',Э:'E',Ю:'YU',Я:'YA'}
 const crKey=v=>String(v).split('').map(ch=>{const u=ch.toUpperCase();return CR_TR[u]!==undefined?CR_TR[u]:ch}).join('').replace(/[^A-Za-z0-9._\/-]/g,'_')
 // загрузка видео в Storage с процентами (supabase-js процентов не отдаёт)
+function crUpErr(m,code,file){const mb=(file.size/1048576).toFixed(1)
+  if(/row-level security|Unauthorized|403/i.test(m+code))return 'нет прав на загрузку в хранилище creos — выполни creo_storage_fix.sql ('+m+')'
+  if(/bucket not found|404/i.test(m+code))return 'в Supabase нет хранилища creos — выполни creo_storage_fix.sql ('+m+')'
+  if(/maximum allowed size|too large|413|payload/i.test(m+code))return 'файл '+mb+' МБ больше лимита Supabase — Storage → Settings → Global file size limit (на Free максимум 50 МБ) ('+m+')'
+  if(/jwt|token|exp/i.test(m))return 'сессия истекла — перезайди в CRM ('+m+')'
+  if(/mime|type/i.test(m))return 'тип файла не разрешён в хранилище ('+m+')'
+  return m}
 async function crUploadFile(path,file,onp){let token=SB_ANON;try{const{data}=await db.auth.getSession();token=data?.session?.access_token||SB_ANON}catch(e){}
   const url=SB_URL+'/storage/v1/object/creos/'+path.split('/').map(encodeURIComponent).join('/'),pub=SB_URL+'/storage/v1/object/public/creos/'+path.split('/').map(encodeURIComponent).join('/')
   const viaXhr=()=>new Promise(res=>{const x=new XMLHttpRequest();x.open('POST',url);x.setRequestHeader('Authorization','Bearer '+token);x.setRequestHeader('apikey',SB_ANON);x.setRequestHeader('x-upsert','true');if(file.type)x.setRequestHeader('Content-Type',file.type)
     x.upload.onprogress=e=>{if(e.lengthComputable&&onp)onp(e.loaded,e.total)}
-    x.onload=()=>{if(x.status>=200&&x.status<300)res({url:pub});else{let m='HTTP '+x.status;try{const j=JSON.parse(x.responseText);m=j.message||j.error||m}catch(e){}res({error:m,http:x.status})}}
+    x.onload=()=>{if(x.status>=200&&x.status<300)res({url:pub});else{let m='HTTP '+x.status,code='';try{const j=JSON.parse(x.responseText);m=j.message||j.error||m;code=String(j.statusCode||'')}catch(e){}console.log('Крео: Storage ответил',x.status,x.responseText);res({error:crUpErr(m,code,file),http:x.status})}}
     x.onerror=()=>res({net:true,error:'нет связи с хранилищем'});onp&&onp(0,file.size);x.send(file)})
   const r=await viaXhr();if(!r.net)return r
   // запасной путь — обычная загрузка без процентов
@@ -10741,6 +10748,8 @@ async function dlBatch(bid){const L=CREOS.filter(c=>c.batch===bid&&c.file_url);i
     toast('Упаковываю…');const blob=await zip.generateAsync({type:'blob'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=bid+'.zip';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);toast(`${bid}.zip — ${L.length} крео`)}
   catch(e){toast('Архив не собрался — качаю по одному');for(const c of L){await dlOne(c);await new Promise(r=>setTimeout(r,600))}}}
 const MB=b=>(b/1048576).toFixed(1);
+function upErr(t){let el=document.getElementById('uperr');if(!el){el=document.createElement('div');el.id='uperr';el.setAttribute('role','alert');el.style.cssText='position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:61;width:min(560px,calc(100vw - 32px));background:#2A1018;border:1px solid var(--r);border-radius:14px;padding:14px 16px;box-shadow:0 20px 60px rgba(0,0,0,.6)';document.body.appendChild(el)}
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><b style="color:var(--r2);font-size:13px">Видео не загрузилось</b><button class="btn sm" data-act="errclose">Закрыть</button></div><div style="margin-top:8px;font-size:12.5px;line-height:1.5;white-space:pre-wrap;color:#F2D5DA">${esc(t)}</div>`}
 function prog(o){let el=document.getElementById('upbox');if(!o){if(el)el.remove();return}if(!el){el=document.createElement('div');el.id='upbox';el.setAttribute('role','status');el.style.cssText='position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;width:min(520px,calc(100vw - 32px));background:var(--b4);border:1px solid var(--g);border-radius:14px;padding:14px 16px;box-shadow:0 20px 60px rgba(0,0,0,.6)';document.body.appendChild(el)}
   const pct=o.total?Math.min(100,Math.round(o.loaded/o.total*100)):null;
   el.innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;font-weight:700;font-size:13px"><span>${esc(o.title||'Загрузка')}</span><span style="font-family:var(--m);color:var(--g2)">${pct!=null?pct+'%':'…'}</span></div>
@@ -10752,7 +10761,7 @@ async function saveUpload(){const U=S.up;if(U.saving)return;U.saving=true;render
   const rows=U.rows.map(r=>({geo:r.geo||U.geo,file:r.fileObj,name:r.name||r.file,script:r.script||'',hookLine:r.hookLine||(r.script.split('\n')[0]||'').replace(/^[^«"]*[«"]?/,'').replace(/[»"].*$/,'').trim()||r.name,tags:{hook:r.hookT,scen:r.scen,style:r.style,extra:r.extra||[]},ai:{style:r.style,hook:r.hookT,scen:r.scen,by:r.aiBy||''},frames:r.frames||[],fmt:r.fmt||''}))
   let st0=Date.now(),cur=-1;const res=await API.saveBatch({batchId:U.batch||null,buyer:U.buyer,geo:U.geo,dateISO:U.date,cat:U.cat,rows},(i,stage,l,t)=>{if(i!==cur){cur=i;st0=Date.now()}const nm=rows[i].file?rows[i].file.name:rows[i].name;U.prog=`Крео ${i+1} из ${rows.length}`;const b=document.querySelector('[data-act=saveup]');if(b)b.textContent=U.prog+'…';prog({title:`Крео ${i+1} из ${rows.length}: ${stage==='видео'?'загружаю видео':stage==='файл'?'готовлю':'записываю в базу'}`,sub:nm,loaded:stage==='видео'?l:0,total:stage==='видео'?t:0,eta:stage==='видео'?etaOf(st0,l,t):''})})
   prog(null)
-  U.saving=false;U.prog='';if(res.error){toast('Не сохранилось: '+res.error);render();return}if(res.warn&&res.warn.length)setTimeout(()=>toast('Видео не загрузилось ('+res.warn.length+'): '+res.warn[0]+' — крео сохранено без файла'),2600)
+  U.saving=false;U.prog='';if(res.error){toast('Не сохранилось: '+res.error);render();return}if(res.warn&&res.warn.length)setTimeout(()=>upErr(res.warn.join('\n')+'\n\nКрео сохранены без видео — потом открой крео и нажми «⬆ Прикрепить видео».'),300)
   const n=res.ids.length,wasEdit=!!U.batch;U.rows=[];await boot(true);if(wasEdit){render();toast(`Дозалито в ${res.batch}: ${n} крео`);return}S.view='lib';S.layout='batch';S.batch=res.batch;S.rate='all';S.geo='all';S.buyer='all';S.cat='Все';render();scrollTo(0,0);toast(`${res.batch} сохранена · ${n} крео получили индексы`)}
 
 /* ── 4. Заливы: твоя форма «+ Новый залив» как есть, в строку адсета добавлен выбор крео ── */
@@ -10925,6 +10934,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button'),p
   if(d.act==='htask'){if(API)await API.createTask('Снять крео: '+d.text.slice(0,80));toast('Задача на съёмку создана');return}
   if(d.act==='bj'){const txt=d.text||S.gen.text;if(API&&txt){const r=await API.createBJ(txt);toast(r?'Гипотеза записана в Buyer\'s Journal':'Buyer\'s Journal недоступен')}return}
   if(d.act==='refresh'){if(!API||S.advBusy)return;S.advBusy=true;render();const r=await API.ai('advice',{creos:advPayload()},90000);S.advBusy=false;if(r&&r.main){const a={main:r.main,strong:r.strong||[],hooks:r.hooks||[],visual:r.visual||[],avoid:r.avoid||[],by:'Геннадий'};await API.advice(a);S.adv=Object.assign({at:new Date().toISOString()},a);toast('Геннадий обновил советы')}else toast('Геннадий недоступен — показан расчёт CRM');render();return}
+  if(d.act==='errclose'){const el=document.getElementById('uperr');if(el)el.remove();return}
   if(d.act==='legacy'){if(API)API.legacy();return}
   if(d.act==='zalivs'){if(API)API.openZalivs();toast('В форме залива нажми «＋ крео» в строке адсета');return}
   if(d.act==='gcopy'){copyTxt(S.gen.text);return}
@@ -10948,7 +10958,7 @@ document.addEventListener('change',async e=>{const t=e.target;
   if(t.dataset.ur&&t.tagName==='SELECT'){S.up.rows[+t.dataset.i][t.dataset.ur]=t.value;render()}
   if(t.dataset.g&&t.tagName==='SELECT'){S.gen[t.dataset.g]=t.value}
   if(t.id==='files'){addRows([...t.files]);t.value=''}
-  if(t.id==='attach'&&t.files[0]){const f=t.files[0],id=t.dataset.id;prog({title:'Готовлю кадры для слайдшоу',sub:f.name});let o=null;try{o=await grab(f)}catch(_){}const st=Date.now();prog({title:'Загружаю видео к '+id,sub:f.name,loaded:0,total:f.size});const r=await API.attach(id,f,o&&o.frames,o&&o.fmt,(l,tt)=>prog({title:'Загружаю видео к '+id,sub:f.name,loaded:l,total:tt,eta:etaOf(st,l,tt)}));prog(null);if(r.error){toast('Видео не загрузилось: '+r.error);return}S.draft=null;await boot(true);S.creo=id;S.view='creo';render();toast('Видео прикреплено к '+id)}});
+  if(t.id==='attach'&&t.files[0]){const f=t.files[0],id=t.dataset.id;prog({title:'Готовлю кадры для слайдшоу',sub:f.name});let o=null;try{o=await grab(f)}catch(_){}const st=Date.now();prog({title:'Загружаю видео к '+id,sub:f.name,loaded:0,total:f.size});const r=await API.attach(id,f,o&&o.frames,o&&o.fmt,(l,tt)=>prog({title:'Загружаю видео к '+id,sub:f.name,loaded:l,total:tt,eta:etaOf(st,l,tt)}));prog(null);if(r.error){upErr(r.error);return}S.draft=null;await boot(true);S.creo=id;S.view='creo';render();toast('Видео прикреплено к '+id)}});
 document.addEventListener('dragover',e=>{const d=e.target.closest&&e.target.closest('#drop');if(d){e.preventDefault();d.classList.add('over')}});
 document.addEventListener('dragleave',e=>{const d=e.target.closest&&e.target.closest('#drop');if(d)d.classList.remove('over')});
 document.addEventListener('drop',e=>{const d=e.target.closest&&e.target.closest('#drop');if(d){e.preventDefault();addRows([...e.dataTransfer.files])}});
