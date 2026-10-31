@@ -935,6 +935,35 @@ html,body{height:100%;overflow:hidden;max-width:100vw;font-family:var(--sans);ba
 /* ── v9: Tasks — тумблеры «Фокус» и «По часам» ── */
 .tkg{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 12px;border-radius:9px;border:1px solid var(--border2);background:var(--bg3);font:600 12.5px var(--sans);color:var(--text2);transition:all .2s;cursor:pointer}.tkg i{width:8px;height:8px;border-radius:50%;background:var(--text3);font-style:normal}.tkg.on{color:var(--gold2);border-color:rgba(212,175,55,.5);background:var(--yellow-bg)}.tkg.on i{background:var(--gold);box-shadow:0 0 8px var(--gold)}
 .tgsep{width:1px;height:22px;background:var(--border);margin:0 2px;display:inline-block}
+
+/* ── v9: Фокус — на весь экран, голограмма ── */
+.tkfov{position:fixed;inset:0;z-index:600;background:radial-gradient(900px 500px at 15% 0%,rgba(212,175,55,.14),transparent 60%),radial-gradient(800px 500px at 100% 100%,rgba(240,58,85,.10),transparent 55%),#07080C;opacity:0;pointer-events:none;transition:opacity .35s;overflow:auto;color:var(--text)}
+.tkfov.on{opacity:1;pointer-events:auto}
+body.tk-focus-open{overflow:hidden}
+.tkf-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none}.tkf-bg i{position:absolute;border-radius:50%;filter:blur(60px);opacity:.35;animation:tkfdrift 14s ease-in-out infinite alternate}
+.tkf-bg i:nth-child(1){width:520px;height:520px;left:-120px;top:-160px;background:rgba(212,175,55,.35)}.tkf-bg i:nth-child(2){width:420px;height:420px;right:-100px;top:30%;background:rgba(110,155,255,.25);animation-delay:-5s}.tkf-bg i:nth-child(3){width:380px;height:380px;left:40%;bottom:-180px;background:rgba(240,58,85,.22);animation-delay:-9s}
+@keyframes tkfdrift{to{transform:translate(40px,30px) scale(1.08)}}
+.tkf-in{position:relative;max-width:1240px;margin:0 auto;padding:22px max(22px,env(safe-area-inset-right,0px)) 40px max(22px,env(safe-area-inset-left,0px));min-height:100%;display:flex;flex-direction:column;gap:18px}
+.tkf-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.tkf-lbl{display:inline-flex;align-items:center;gap:8px;font:700 11px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--gold2)}.tkf-lbl .live{width:7px;height:7px;border-radius:50%;background:var(--green);animation:hpulse 2.4s infinite}
+.tkf-cnt{font:600 11.5px var(--mono);color:var(--text3)}.tkf-cnt b{color:var(--text)}
+.tkf-x{margin-left:auto;height:34px;padding:0 12px;border-radius:9px;border:1px solid var(--border2);background:rgba(255,255,255,.04);color:var(--text2);font:700 12px var(--sans);cursor:pointer}.tkf-x kbd{font:600 10px var(--mono);padding:1px 5px;border-radius:4px;border:1px solid var(--border2);margin-left:4px}
+.tkf-grid{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start;flex:1}
+.tkf-card{padding:34px 38px;border-radius:22px;background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.015) 45%),rgba(12,14,20,.85);border:1px solid rgba(212,175,55,.35);box-shadow:0 1px 0 var(--hi) inset,0 40px 80px -40px rgba(0,0,0,.9),0 0 0 1px rgba(212,175,55,.08);backdrop-filter:blur(12px);position:relative;overflow:hidden}
+.tkf-card::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.015) 0 1px,transparent 1px 3px);pointer-events:none}
+.tkf-card .eb{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;position:relative}.tkf-card .eb .trk{cursor:pointer}.tkf-dl{font:600 11px var(--mono);color:var(--text3)}
+.tkf-card h1{margin:0 0 22px;font:400 clamp(26px,3.4vw,44px)/1.2 var(--display);letter-spacing:.01em;position:relative;transform:none}
+.tkf-card h1 .holo-t{color:transparent;-webkit-background-clip:text;background-clip:text;background-image:linear-gradient(var(--ha,105deg),#fff 0%,#fff calc(var(--hp,30%) - 22%),rgba(255,211,110,.95) calc(var(--hp,30%) - 6%),rgba(120,255,214,.98) calc(var(--hp,30%) + 2%),rgba(200,110,255,.95) calc(var(--hp,30%) + 10%),#fff calc(var(--hp,30%) + 22%),#fff 100%);filter:drop-shadow(0 0 18px rgba(212,175,55,.25))}
+.tkf-times{display:grid;grid-template-columns:1fr auto;gap:22px;align-items:center;position:relative}
+.tkf-times small{display:block;font:700 10px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.tkf-el{display:block;font:400 clamp(56px,8vw,104px)/1 'Russo One',sans-serif;letter-spacing:.02em;font-variant-numeric:tabular-nums;background:linear-gradient(180deg,#fff 20%,#D8DCE8);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 22px rgba(212,175,55,.35))}
+.tkf-tm{text-align:center}.tkf-ring{position:relative;width:150px;height:150px;margin:0 auto}.tkf-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.tkf-ring .bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:7}.tkf-ring .fg{fill:none;stroke:url(#tkfg);stroke:#D4AF37;stroke-width:7;stroke-linecap:round;stroke-dasharray:var(--p) 100;transition:stroke-dasharray 1s linear;filter:drop-shadow(0 0 8px rgba(212,175,55,.6))}
+.tkf-ring b{position:absolute;inset:0;display:grid;place-items:center;font:400 30px 'Russo One',sans-serif;color:var(--gold2);letter-spacing:.03em}
+.tkf-tctl{display:flex;gap:6px;justify-content:center;align-items:center;margin-top:10px;flex-wrap:wrap}.tkf-tctl button{height:30px;padding:0 10px;border-radius:8px;border:1px solid var(--border2);background:rgba(255,255,255,.04);color:var(--text);font:700 11.5px var(--sans);cursor:pointer}.tkf-pre{display:inline-flex;gap:3px;margin-left:4px}.tkf-pre button{padding:0 8px;font-family:var(--mono);color:var(--text3)}.tkf-pre button.on{color:#0B0C12;background:var(--gold);border-color:var(--gold)}
+.tkf-acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px;position:relative}.tkf-acts button{height:44px;padding:0 18px;border-radius:12px;font:700 13.5px var(--sans);background:rgba(255,255,255,.05);border:1px solid var(--border2);color:var(--text);cursor:pointer;transition:all .2s}.tkf-acts button:hover{border-color:rgba(212,175,55,.5)}.tkf-acts button.p{background:linear-gradient(135deg,#F0D98A,#D4AF37);color:#0B0C12;border:0;box-shadow:0 10px 30px -12px rgba(212,175,55,.9)}.tkf-acts kbd{font:600 10px var(--mono);padding:1px 5px;border-radius:4px;border:1px solid rgba(0,0,0,.3);margin-left:4px}
+.tkf-q{border-radius:18px;background:rgba(12,14,20,.8);border:1px solid var(--border);backdrop-filter:blur(12px);overflow:hidden}.tkf-q .qh{padding:14px 16px;font:700 13px var(--sans);border-bottom:1px solid var(--border)}.tkf-q .qh small{font:500 10.5px var(--mono);color:var(--text3);margin-left:6px}
+.tkf-q .qi{display:grid;grid-template-columns:22px auto minmax(0,1fr);gap:10px;align-items:center;padding:11px 16px;border-top:1px solid var(--border);cursor:pointer;transition:background .2s}.tkf-q .qi:first-of-type{border-top:0}.tkf-q .qi:hover{background:rgba(255,255,255,.04)}.tkf-q .qi .n{font:400 14px var(--display);color:var(--text3);text-align:center}.tkf-q .qi .nm{font:600 13px var(--sans)}.tkf-q .qi .nm small{display:block;font:500 10.5px var(--mono);color:var(--text3);margin-top:2px}
+@media(max-width:980px){.tkf-grid{grid-template-columns:1fr}.tkf-times{grid-template-columns:1fr}.tkf-card{padding:22px}}
 .tkfw{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:12px;margin-bottom:12px;align-items:start}
 .tkfocus{padding:20px 22px;border-radius:14px;background:radial-gradient(500px 200px at 10% 0%,rgba(212,175,55,.14),transparent 70%),var(--bg2);border:1px solid rgba(212,175,55,.35)}
 .tkfocus .eb{font:700 10px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--gold2)}
@@ -2387,7 +2416,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-31 16:55'
+const BUILD='2026-10-31 17:15'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -2749,7 +2778,7 @@ async function loadTemplates(){
 
 // ── NAV ──
 function gp(id,el){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'))
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));try{const fo=document.getElementById('tk-focus-ov');if(fo&&fo.classList.contains('on')){fo.classList.remove('on');document.body.classList.remove('tk-focus-open');clearInterval(_tkFocTick)}}catch(e){}
   document.getElementById('page-'+id).classList.add('active');el.classList.add('active')
   if(id==='zalivs')rzalivs();if(id==='domains')rdomains();if(id==='tasks'){
     // Auto-set filter to current user
@@ -6056,17 +6085,39 @@ var TKM={focus:localStorage.getItem('tk_focus')==='1',hours:localStorage.getItem
   hs:Object.assign({from:9,to:19,step:1,done:true},JSON.parse(localStorage.getItem('tk_hs')||'{}'))}
 function tkOpen(){const uf=document.getElementById('tf-u')?.value||'';return TASKS.filter(t=>t.col!=='done'&&(!uf||t.assignee===uf)).sort((a,b)=>(a.col==='process'?0:1)-(b.col==='process'?0:1)||String(a.deadline||'9').localeCompare(String(b.deadline||'9'))||String(a.due_time||'99').localeCompare(String(b.due_time||'99')))}
 function tkDl(t){return t.deadline?'📌 '+t.deadline.slice(8,10)+'.'+t.deadline.slice(5,7):''}
-function tkRenderFocus(){const box=document.getElementById('tk-focus');if(!box)return;if(!TKM.focus){box.style.display='none';box.innerHTML='';return}box.style.display=''
-  const open=tkOpen();let cur=open.find(t=>t.id===TKM.focId)||open[0]
-  if(!cur){box.innerHTML='<div class="tkfw"><div class="tkfocus"><div class="eb">Всё закрыто</div><h2>Открытых задач нет</h2></div></div>';return}
+function tkOpenTodo(){const uf=document.getElementById('tf-u')?.value||'';return TASKS.filter(t=>t.col==='todo'&&(!uf||t.assignee===uf)).sort((a,b)=>String(a.deadline||'9').localeCompare(String(b.deadline||'9'))||(a.sort_order||0)-(b.sort_order||0))}
+var _tkFocTick=0,TKT={len:25*60,left:25*60,run:false,at:0}
+function tkFmtClock(sec){sec=Math.max(0,Math.round(sec));const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;return(h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
+function tkTimerLeft(){return TKT.run?Math.max(0,TKT.left-(Date.now()-TKT.at)/1000):TKT.left}
+function tkRenderFocus(){let ov=document.getElementById('tk-focus-ov');const box=document.getElementById('tk-focus');if(box)box.style.display='none'
+  if(!TKM.focus){if(ov){ov.classList.remove('on');setTimeout(()=>{if(!TKM.focus)ov.innerHTML=''},300)}clearInterval(_tkFocTick);_tkFocTick=0;document.body.classList.remove('tk-focus-open');return}
+  if(!ov){ov=document.createElement('div');ov.id='tk-focus-ov';ov.className='tkfov';document.body.appendChild(ov)}
+  const open=tkOpen();let cur=open.find(t=>t.id===TKM.focId)||TASKS.find(t=>t.id===TKM.focId&&t.col!=='done')||open[0]
+  const uf=document.getElementById('tf-u')?.value||'';const todo=tkOpenTodo().filter(t=>!cur||t.id!==cur.id)
+  const doneToday=TASKS.filter(t=>t.col==='done'&&(!uf||t.assignee===uf)&&t.done_at&&String(t.done_at).slice(0,10)===todayISO()).length
+  if(!cur){ov.innerHTML=`<div class="tkf-in"><button class="tkf-x" data-tkf="exit">✕ <kbd>Esc</kbd></button><div class="tkf-card"><div class="eb">Фокус</div><h1>Открытых задач нет</h1><p>Сегодня закрыто: ${doneToday}</p></div></div>`;ov.classList.add('on');document.body.classList.add('tk-focus-open');return}
   TKM.focId=cur.id;localStorage.setItem('tk_focid',cur.id);const peers=cur.col==='process'?procPeers(cur.assignee).length:0
-  const rest=open.filter(t=>t.id!==cur.id).slice(0,4)
-  box.innerHTML=`<div class="tkfw"><div class="tkfocus"><div class="eb">Сейчас · ${TTYPES[cur.ttype||'other']||''}${cur.rk_name?' · ⚡ '+cur.rk_name:''}</div><h2>${cur.title}</h2><p>${tkDl(cur)}${cur.due_time?' · '+cur.due_time:''}${cur.col==='process'?' · в процессе':' · '+(cur.col==='todo'?'в TO DO':cur.col)}</p>
-    <div class="timer">${cur.col==='process'?fmtDur(taskElapsed(cur)):(cur.time_spent?fmtDur(cur.time_spent*1000):'—')}<small>${cur.col==='process'?(peers>1?'в работе · ×'+peers+' параллельно, факт делится':'в работе'):'не начата'}</small></div>
-    <div class="facts"><button class="p" data-tkf="done">✓ Done <kbd>Enter</kbd></button>${cur.col!=='process'?'<button data-tkf="start">▶ В PROCESS</button>':''}<button data-tkf="later">Позже</button>${cur.rk_id?'<button data-tkf="rk">⚡ Открыть РК</button>':''}<button data-tkf="edit">✎</button></div></div>
-   <aside class="tkq"><div class="qh">Дальше<small>${open.length-1}</small></div>${rest.map((t,i)=>`<div class="qi" data-tkfoc="${t.id}"><span class="n">${i+1}</span><span class="ttype ${t.ttype||'other'}">${TTYPES[t.ttype||'other']||''}</span><span class="nm">${t.title}<small>${tkDl(t)}${t.due_time?' · '+t.due_time:''}${t.col==='process'?' · в процессе':''}</small></span></div>`).join('')}<div class="dn">Сегодня закрыто: <b>${TASKS.filter(t=>t.col==='done'&&t.done_at&&String(t.done_at).slice(0,10)===todayISO()).length}</b> · осталось <b style="color:var(--gold2)">${open.length}</b></div></aside></div>`
-  document.querySelectorAll('#kanban .tcard').forEach(c=>c.classList.toggle('infocus',+c.dataset.id===cur.id))
-  document.querySelectorAll('#kanban .tcard').forEach(c=>{const t=TASKS.find(x=>x.id===+c.dataset.id);if(!t||t.col==='done'||c.querySelector('.tfoc'))return;const b=document.createElement('span');b.className='tfoc'+(t.id===cur.id?' on':'');b.dataset.tkfoc=t.id;b.textContent=t.id===cur.id?'◎ фокус':'◎';const ft=c.querySelector('.tft');if(ft)ft.insertBefore(b,ft.querySelector('.tdone')||null)})}
+  ov.innerHTML=`<div class="tkf-bg"><i></i><i></i><i></i></div><div class="tkf-in">
+   <div class="tkf-top"><span class="tkf-lbl"><i class="live"></i> Фокус · ${(cur.assignee||'')}</span><span class="tkf-cnt">закрыто сегодня <b>${doneToday}</b> · в очереди <b>${todo.length}</b></span><button class="tkf-x" data-tkf="exit">✕ <kbd>Esc</kbd></button></div>
+   <div class="tkf-grid">
+    <section class="tkf-card">
+     <div class="eb"><span class="ttype ${cur.ttype||'other'}">${TTYPES[cur.ttype||'other']||''}</span>${cur.rk_name?`<span class="trk" data-tkf="rk">${cur.rk_region||''} · ${escHtml(cur.rk_name)} →</span>`:''}<span class="tkf-dl">${tkDl(cur)}${cur.due_time?' · '+cur.due_time:''}</span></div>
+     <h1 class="holo-wrap"><span class="holo-t">${escHtml(cur.title)}</span></h1>
+     <div class="tkf-times"><div><small>${cur.col==='process'?'в работе'+(peers>1?' · ×'+peers+' параллельно':''):cur.col==='todo'?'в TO DO · не начата':cur.col}</small><b class="tkf-el" id="tkf-el">${cur.col==='process'?tkFmtClock(taskElapsed(cur)/1000):(cur.time_spent?tkFmtClock(cur.time_spent):'00:00')}</b></div>
+      <div class="tkf-tm"><small>таймер</small><div class="tkf-ring"><svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="52"/><circle class="fg" id="tkf-ring" cx="60" cy="60" r="52" pathLength="100" style="--p:${100*tkTimerLeft()/TKT.len}"/></svg><b id="tkf-tmr">${tkFmtClock(tkTimerLeft())}</b></div>
+       <div class="tkf-tctl"><button data-tkt="toggle" id="tkf-tbtn">${TKT.run?'❚❚ Пауза':'▶ Старт'}</button><button data-tkt="reset">↺</button><span class="tkf-pre">${[15,25,45,60].map(m=>`<button data-tkt="set" data-min="${m}" class="${TKT.len===m*60?'on':''}">${m}</button>`).join('')}</span></div></div></div>
+     <div class="tkf-acts"><button class="p" data-tkf="done">✓ Done <kbd>Enter</kbd></button>${cur.col!=='process'?'<button data-tkf="start">▶ В PROCESS</button>':''}<button data-tkf="later">Позже</button>${cur.rk_id?'<button data-tkf="rk">⚡ Открыть РК</button>':''}<button data-tkf="edit">✎ Править</button></div>
+    </section>
+    <aside class="tkf-q"><div class="qh">Дальше из TO DO<small>${todo.length}</small></div>${todo.slice(0,8).map((t,i)=>`<div class="qi" data-tkfoc="${t.id}"><span class="n">${i+1}</span><span class="ttype ${t.ttype||'other'}">${TTYPES[t.ttype||'other']||''}</span><span class="nm">${escHtml(t.title)}<small>${tkDl(t)}${t.due_time?' · '+t.due_time:''}${t.rk_name?' · ⚡ '+escHtml(t.rk_name):''}</small></span></div>`).join('')||'<div class="qi"><span class="nm" style="color:var(--text3)">TO DO пуст</span></div>'}</aside>
+   </div></div>`
+  requestAnimationFrame(()=>ov.classList.add('on'));document.body.classList.add('tk-focus-open')
+  clearInterval(_tkFocTick);_tkFocTick=setInterval(()=>{const t=TASKS.find(x=>x.id===TKM.focId);const el=document.getElementById('tkf-el');if(el&&t)el.textContent=t.col==='process'?tkFmtClock(taskElapsed(t)/1000):(t.time_spent?tkFmtClock(t.time_spent):'00:00')
+    const left=tkTimerLeft(),tm=document.getElementById('tkf-tmr'),rg=document.getElementById('tkf-ring');if(tm)tm.textContent=tkFmtClock(left);if(rg)rg.style.setProperty('--p',100*left/TKT.len)
+    if(TKT.run&&left<=0){TKT.run=false;TKT.left=0;const b=document.getElementById('tkf-tbtn');if(b)b.textContent='▶ Старт';toast('Таймер вышел — '+(t?t.title:''),'ok');try{navigator.vibrate&&navigator.vibrate(200)}catch(e){}}},1000)
+  const ov2=ov;if(!ov2._bound){ov2._bound=true;ov2.addEventListener('mousemove',e=>{const h=ov2.querySelector('h1.holo-wrap');if(!h)return;const r=h.getBoundingClientRect();h.style.setProperty('--hp',(((e.clientX-r.left)/Math.max(1,r.width))*140-20).toFixed(1)+'%')});ov2.addEventListener('click',e=>{const b=e.target.closest('[data-tkt]');if(!b)return;const a=b.dataset.tkt
+    if(a==='toggle'){if(TKT.run){TKT.left=tkTimerLeft();TKT.run=false}else{if(TKT.left<=0)TKT.left=TKT.len;TKT.at=Date.now();TKT.run=true}b.textContent=TKT.run?'❚❚ Пауза':'▶ Старт'}
+    else if(a==='reset'){TKT.run=false;TKT.left=TKT.len;const bt=document.getElementById('tkf-tbtn');if(bt)bt.textContent='▶ Старт'}
+    else if(a==='set'){TKT.len=+b.dataset.min*60;TKT.left=TKT.len;TKT.run=false;ov2.querySelectorAll('.tkf-pre button').forEach(x=>x.classList.toggle('on',x===b));const bt=document.getElementById('tkf-tbtn');if(bt)bt.textContent='▶ Старт'}})}}
 function tkRenderHours(){const box=document.getElementById('tk-hours'),kb=document.getElementById('kanban');if(!box)return;if(!TKM.hours){box.style.display='none';box.innerHTML='';if(kb)kb.style.display='';return}box.style.display='';if(kb)kb.style.display='none'
   const H=TKM.hs,uf=document.getElementById('tf-u')?.value||'',td=TKM.day||todayISO(),opt=(a,v)=>a.map(x=>`<option ${x===v?'selected':''}>${x}</option>`).join('')
   const all=TASKS.filter(t=>!uf||t.assignee===uf),day=all.filter(t=>t.deadline===td),un=all.filter(t=>t.deadline!==td&&t.col!=='done')
@@ -6090,8 +6141,8 @@ document.addEventListener('click',async e=>{const t=e.target
   const dd=t.closest('[data-tkday]');if(dd){const k=+dd.dataset.tkday;TKM.day=k===0?todayISO():new Date(new Date((TKM.day||todayISO())+'T12:00:00').getTime()+k*864e5).toISOString().slice(0,10);tkRenderHours();return}
   const fo=t.closest('[data-tkfoc]');if(fo){e.stopPropagation();TKM.focId=+fo.dataset.tkfoc;TKM.focus=true;localStorage.setItem('tk_focus','1');rtasks();return}
   const fa=t.closest('[data-tkf]');if(fa){const cur=TASKS.find(x=>x.id===TKM.focId);if(!cur)return;const a=fa.dataset.tkf
-    if(a==='done'){await doneTask(cur.id)}else if(a==='start'){await moveTask(cur,'process');rtasks()}else if(a==='later'){const d=new Date((cur.deadline||todayISO())+'T12:00:00');d.setDate(d.getDate()+1);const nd=d.toISOString().slice(0,10);cur.deadline=nd;rtasks();await db.from('tasks').update({deadline:nd}).eq('id',cur.id);toast('Перенесено на '+nd.slice(8,10)+'.'+nd.slice(5,7))}else if(a==='rk'){openRk(cur.rk_id,cur.rk_region||null)}else if(a==='edit'){openTaskEdit(cur.id)}return}})
-document.addEventListener('keydown',e=>{if(!TKM.focus||!document.getElementById('page-tasks')?.classList.contains('active'))return;if(e.key==='Enter'&&!e.target.closest('input,textarea,select,[contenteditable]')&&!document.querySelector('.modal.on,.mo.on')){const b=document.querySelector('[data-tkf="done"]');if(b)b.click()}})
+    if(a==='exit'){TKM.focus=false;localStorage.setItem('tk_focus','0');rtasks();return}if(a==='done'){await doneTask(cur.id)}else if(a==='start'){await moveTask(cur,'process');rtasks()}else if(a==='later'){const d=new Date((cur.deadline||todayISO())+'T12:00:00');d.setDate(d.getDate()+1);const nd=d.toISOString().slice(0,10);cur.deadline=nd;rtasks();await db.from('tasks').update({deadline:nd}).eq('id',cur.id);toast('Перенесено на '+nd.slice(8,10)+'.'+nd.slice(5,7))}else if(a==='rk'){openRk(cur.rk_id,cur.rk_region||null)}else if(a==='edit'){openTaskEdit(cur.id)}return}})
+document.addEventListener('keydown',e=>{if(!TKM.focus||!document.getElementById('page-tasks')?.classList.contains('active'))return;if(e.key==='Escape'){TKM.focus=false;localStorage.setItem('tk_focus','0');rtasks();return}if(e.key==='Enter'&&!e.target.closest('input,textarea,select,[contenteditable]')&&!document.querySelector('.modal.on,.mo.on')){const b=document.querySelector('[data-tkf="done"]');if(b)b.click()}})
 document.addEventListener('dragover',e=>{const c=e.target.closest('#tk-hours .hr .c, #tk-hours .tkun[data-unsch]');if(!c||!dragId)return;e.preventDefault();document.querySelectorAll('#tk-hours .over').forEach(x=>x.classList.remove('over'));c.classList.add('over')})
 document.addEventListener('drop',e=>{const c=e.target.closest('#tk-hours .hr .c, #tk-hours .tkun[data-unsch]');if(!c||!dragId)return;e.preventDefault();e.stopPropagation();const id=dragId;document.querySelectorAll('#tk-hours .over').forEach(x=>x.classList.remove('over'))
   if(c.dataset.h!==undefined)tkSetTime(id,String(c.dataset.h).padStart(2,'0')+':00',TKM.day||todayISO());else tkSetTime(id,null,TKM.day||todayISO())},true)
