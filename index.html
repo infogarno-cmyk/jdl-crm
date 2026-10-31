@@ -1181,6 +1181,54 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opac
 .kpi{transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s,background .25s;cursor:default}
 .kpi:hover,.kpi.foc{background:var(--hi);transform:translateY(-2px)}
 .kpi::after{content:"график →";position:absolute;right:12px;top:12px;font:600 10px var(--mono);color:var(--gold2);opacity:0;transition:opacity .2s}.kpi[data-cmet]:hover::after{opacity:.8}
+
+/* ── v9: дашборд — визуал из прототипа ── */
+#page-dash .pbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 0 14px}
+#page-dash .pdw{height:32px;border-radius:9px;border:1px solid var(--border);background:var(--bg3)}
+.segw{position:relative}
+.seg-th{position:absolute;top:3px;bottom:3px;left:0;width:0;border-radius:7px;background:var(--bg5);box-shadow:inset 0 0 0 1px var(--border2),0 2px 8px rgba(0,0,0,.4);transition:left .3s cubic-bezier(.2,.8,.2,1),width .3s cubic-bezier(.2,.8,.2,1);pointer-events:none;z-index:0}
+.region-tog{position:relative;padding:3px;border-radius:10px;background:var(--bg3);border:1px solid var(--border)}
+.region-tog .rt-btn{position:relative;z-index:1;height:28px;padding:0 11px;border-radius:7px;font:700 11.5px var(--mono);color:var(--text3);background:none!important;box-shadow:none!important;transition:color .25s}
+.region-tog .rt-btn.active{color:#0B0C12!important}
+#region-tog .seg-th{background:linear-gradient(135deg,#F0D98A,#D4AF37);box-shadow:0 4px 14px -4px rgba(212,175,55,.8)}
+#byseg .rt-btn{font:700 12.5px var(--sans)}#byseg .rt-btn.active{color:#fff!important}#byseg .seg-th{background:var(--blue);box-shadow:0 4px 14px -4px rgba(110,155,255,.8)}
+#page-dash .pbtns{position:relative;padding:3px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);gap:0}
+#page-dash .pb{position:relative;z-index:1;height:28px;padding:0 11px;border-radius:7px;border:0;background:none!important;color:var(--text3);font:700 12.5px var(--sans);transition:color .25s}
+#page-dash .pb.active{color:#fff!important}#page-dash .pbtns .seg-th{background:var(--bord3);box-shadow:0 4px 14px -4px rgba(240,58,85,.8)}
+#page-dash .hero{padding:22px 26px;border-radius:18px;background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.015) 45%),var(--bg2);border:1px solid var(--border);box-shadow:0 1px 0 var(--hi) inset,0 30px 60px -40px rgba(0,0,0,.9);position:relative;overflow:hidden;align-items:center;gap:18px;margin-bottom:0}
+#page-dash .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(600px 220px at 10% 100%,rgba(212,175,55,.14),transparent 70%);pointer-events:none}
+#page-dash .hero>*{position:relative;z-index:1}
+#page-dash .hero .side{border-radius:14px;background:rgba(0,0,0,.25)}
+#page-dash .hero .side .v{font:400 24px var(--display);letter-spacing:.01em}
+#page-dash .hero .big .cur{color:var(--text3)}
+#page-dash .hero .dl.big{padding:6px 10px;border-radius:8px;font:700 12px var(--mono);transform:translateY(-8px)}
+#page-dash .tape{margin:10px 0 14px;border:0;background:transparent;padding:6px 0;mask:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
+#page-dash .tape .tr{font:600 12px var(--mono);color:var(--text2);padding-left:0;gap:26px}
+#page-dash .tape .tr span i{box-shadow:0 0 8px currentColor}
+#page-dash .card{border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.035),transparent 30%),var(--bg2);border:1px solid var(--border);box-shadow:0 1px 0 var(--hi) inset;animation:dcrise .6s cubic-bezier(.2,.8,.2,1) both}
+#page-dash .dgrid .card:nth-child(2){animation-delay:.06s}
+@keyframes dcrise{from{opacity:0;transform:translateY(12px)}}
+#page-dash .card>.chdr{padding:14px 18px}
+#page-dash .ctit{font:700 14px var(--sans)}
+#page-dash .chleg{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 9px;border-radius:7px;font:700 11px var(--sans);color:var(--text2);border:1px solid transparent}
+#page-dash .chleg.active{color:var(--text);background:var(--bg4);border-color:var(--border)}
+#page-dash .chleg::before{content:"";width:16px;height:3px;border-radius:2px;background:var(--cc)}#page-dash .chleg:not(.active)::before{opacity:.3}
+#page-dash .clnk{height:28px;display:inline-flex;align-items:center;padding:0 10px;border-radius:8px;border:1px solid var(--border);font-weight:600;font-size:12px;color:var(--text2);transition:all .2s}#page-dash .clnk:hover{border-color:rgba(212,175,55,.5);color:var(--gold2)}
+#page-dash .krow{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin:14px 0;background:none;border:0;box-shadow:none;border-radius:0}
+#page-dash .kpi{position:relative;padding:14px 16px 12px;border-radius:14px;background:var(--bg2);border:1px solid var(--border);overflow:hidden;transition:transform .35s cubic-bezier(.2,.8,.2,1),border-color .25s,box-shadow .35s;cursor:pointer}
+#page-dash .kpi::before{content:"";display:block;position:absolute;left:0;right:0;top:0;height:2px;background:var(--cc,var(--text3));opacity:.9;box-shadow:0 0 12px var(--cc,transparent)}
+#page-dash .kpi:hover,#page-dash .kpi.foc{transform:translateY(-3px);border-color:var(--border2);box-shadow:0 20px 40px -24px rgba(0,0,0,.9);background:var(--bg2)}
+#page-dash .kpi:nth-child(1){--cc:#D4AF37}#page-dash .kpi:nth-child(2){--cc:#D4AF37}#page-dash .kpi:nth-child(3){--cc:#6E9BFF}#page-dash .kpi:nth-child(4){--cc:#D4AF37}#page-dash .kpi:nth-child(5){--cc:#3DBE8B}#page-dash .kpi:nth-child(6){--cc:#F2F3F7}
+#page-dash .klab{font:700 10.5px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:0}
+#page-dash .kval{font:400 26px/1.1 var(--display);margin:8px 0 6px;letter-spacing:0;font-variant-numeric:tabular-nums;color:var(--cc,var(--text))!important}
+#page-dash .kpi-compare{font:600 11px var(--mono);color:var(--text3);margin-top:0}
+#page-dash .karr{animation:none;padding:2px 7px;border-radius:6px;font-weight:700}
+#page-dash .ksp{position:absolute;right:10px;bottom:8px;width:72px;height:24px;opacity:.75;pointer-events:none}
+#page-dash .ksp svg{width:100%;height:100%}
+@keyframes kspd{from{stroke-dashoffset:1}}
+#page-dash .kpi::after{right:12px;top:12px}
+@media(max-width:980px){#page-dash .krow{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:640px){#page-dash .krow{grid-template-columns:1fr 1fr}#page-dash .ksp{display:none}}
 .kpi:last-child{border-right:0}.kpi::before{display:none}
 .klab{font-size:11.5px;color:var(--text3);text-transform:none;letter-spacing:0;font-weight:500;margin-bottom:6px}
 .kval{font-size:30px;font-weight:500;letter-spacing:-.03em}
@@ -1235,7 +1283,31 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opac
 .zii .n{text-align:right;font:600 11.5px var(--mono)}.zii .n span{display:block;color:var(--gold2)}.zii .n em{font-style:normal;color:var(--green)}
 .zii .bd{display:inline-grid;place-items:center;min-width:15px;height:15px;border-radius:8px;padding:0 4px;font:700 9.5px var(--mono);background:var(--red);color:#fff}
 .zii .cp{color:var(--gold2)}
-.zsplit.inbox .zdp{position:static;max-height:none;overflow:visible}
+.zsplit.inbox .zdp{display:none}
+.zinbm{display:none}.zsplit.inbox .zinbm{display:flex;flex-direction:column;gap:12px;min-width:0}
+.zih{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 18px;border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.035),transparent 30%),var(--bg2);border:1px solid var(--border);box-shadow:0 1px 0 var(--hi) inset}
+.zih h2{margin:0;font:400 17px var(--display);letter-spacing:.02em;flex:1 1 100%;word-break:break-all}
+.zih .mono{font:600 12px var(--mono)}.zih .mono small{color:var(--text3);font-weight:500}
+.zih .tlw{flex:1 1 100%;margin-top:6px}.zih .tlw .lc{height:26px}
+.zih .ind-t .itb{height:24px}
+.ziad{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.zic{position:relative;padding:12px;border-radius:14px;background:var(--bg2);border:1px solid var(--border);border-top:2px solid var(--cc);display:flex;flex-direction:column;gap:8px;transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s;animation:dcrise .5s cubic-bezier(.2,.8,.2,1) both}
+.zic:hover{transform:translateY(-3px);box-shadow:0 20px 40px -24px rgba(0,0,0,.9)}
+.zic .st{position:absolute;right:10px;top:10px;height:20px;display:inline-flex;align-items:center;padding:0 7px;border-radius:6px;font:700 10px var(--sans);background:color-mix(in srgb,var(--cc) 16%,transparent);color:var(--cc)}
+.zic .tp{display:flex;gap:10px;align-items:center;padding-right:70px}.zic .th{width:52px;height:52px;border-radius:10px;flex-shrink:0;position:relative;overflow:hidden;background:var(--bg4);background-size:cover;background-position:center;display:grid;place-items:center;color:#3E4457;font-size:20px}
+.zic .tp b{display:block;font:600 12.5px var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.zic .tp small{display:block;font:600 10.5px var(--mono);color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zic .nums{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}.zic .nums div{padding:6px 7px;border-radius:8px;background:var(--bg3)}.zic .nums small{display:block;font-size:9.5px;color:var(--text3);font-weight:600}.zic .nums b{font:600 12.5px var(--mono)}
+.zic .ft{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.zic .ft .sw{flex-shrink:0}.zic .ft .crz{margin-left:auto}.zic .ft .srcsel{flex:1;min-width:0;height:26px;font-size:11px;padding:0 6px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);color:var(--text2)}
+.zic .ab{height:28px;border-radius:8px;border:1px solid var(--border2);font:700 11.5px var(--sans);color:var(--text);background:none;cursor:pointer;transition:all .2s}.zic .ab:hover{border-color:rgba(212,175,55,.5);color:var(--gold2)}.zic .ab.red{color:var(--red);border-color:rgba(240,58,85,.4)}.zic .ab.p{background:linear-gradient(135deg,#F0D98A,#D4AF37);color:#0B0C12;border:0}
+.zicps{display:flex;gap:6px;flex-wrap:wrap}.zicps span{height:30px;display:inline-flex;align-items:center;gap:6px;padding:0 10px;border-radius:9px;border:1px solid var(--border);font:600 11px var(--mono);color:#3E4457;background:var(--bg2);cursor:pointer}.zicps span.d{color:var(--green);border-color:rgba(61,190,139,.35)}.zicps span.cur{color:var(--gold2);border-color:rgba(212,175,55,.5);animation:hpulse 2.4s infinite}
+.zitwo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.zitwo .card2{padding:12px 14px;border-radius:14px;background:var(--bg2);border:1px solid var(--border);min-width:0}
+.zitwo .card2 h4{margin:0 0 8px;font:700 12px var(--sans);color:var(--text2);display:flex;align-items:center}.zitwo .card2 h4 span{margin-left:auto;font:600 10.5px var(--mono);color:var(--text3)}
+.zitwo .gen{padding:10px 12px;border-radius:10px;background:rgba(110,155,255,.08);border:1px solid rgba(110,155,255,.3);font-size:12.5px;line-height:1.5}.zitwo .gen b{color:#A9C1FF}
+.zitwo textarea.note{width:100%;min-height:70px}
+.zitwo .zbj{border:0!important;padding:0!important;margin:0!important}.zitwo .zbj h4{display:none}
+.zinbm .act{padding:0}.zinbm .act button{height:36px;padding:0 14px;border-radius:10px;font:700 12.5px var(--sans);background:var(--bg4);border:1px solid var(--border2);color:var(--text);cursor:pointer}.zinbm .act button.p{background:linear-gradient(135deg,#F0D98A,#D4AF37);color:#0B0C12;border:0}
+@media(max-width:1180px){.zitwo{grid-template-columns:1fr}}
 .zsplit.inbox .zdp .sc{overflow:visible;display:grid;grid-template-columns:1fr 1fr;gap:0 14px;padding:0 4px}
 .zsplit.inbox .zdp .sc>.blk{min-width:0}
 .zsplit.inbox .zdp .sc>.blk:first-child{grid-column:1/-1}
@@ -1711,6 +1783,7 @@ document.getElementById('root').innerHTML=`
     <div class="zsplit" id="zsplit">
       <aside class="zinb" id="zinb-list"></aside>
       <div class="ztwrap"><table class="zt zt2"><thead><tr><th style="width:26px"><input type="checkbox" class="zcheck" id="zcheck-all"></th><th style="width:14px"></th><th style="width:80px">Вкл · статус</th><th style="width:40px">GEO</th><th>РК · воронка · баер</th><th style="width:108px">Цикл</th><th style="width:64px;text-align:right">AD/RK $</th><th style="width:56px;text-align:right">Л·кв</th><th style="width:52px;text-align:right">CTR</th><th style="width:48px;text-align:right">Score</th><th style="width:76px;text-align:right">Крео</th></tr></thead><tbody id="zt-body"></tbody></table></div>
+      <section class="zinbm" id="zinb-main"></section>
       <div class="zdp" id="zdp"><div class="empty">Выбери РК<br><span style="font-size:11px;color:#3E4457">клик по строке · ↑↓ листать</span></div></div>
       <aside class="zctx" id="zinb-ctx"></aside>
     </div>
@@ -2314,7 +2387,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-10-31 02:10'
+const BUILD='2026-10-31 16:40'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -2788,7 +2861,7 @@ function heroOdoSet(el,str){[...el.children].forEach((c,i)=>{if(c.classList.cont
 function heroCountUp(el,to,fmt,dur=800){if(el&&el.id==='hero-tick')return heroOdo(el,to);const from=parseFloat(el.dataset.v||'0'),t0=performance.now();el.dataset.v=to;const st=t=>{const p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,3);el.textContent=fmt(from+(to-from)*e);if(p<1)requestAnimationFrame(st)};requestAnimationFrame(st)}
 function heroRender(spend,leads,quals,daily,from,to){
   const $=id=>document.getElementById(id);if(!$('hero-tick'))return
-  try{heroDays(from,to)}catch(e){}
+  try{heroDays(from,to);kpiSparks(from,to);segThumbs()}catch(e){}
   $('hero-reg').textContent=regionCfg().main==='CZ'?'Чехия':'Польша'
   const days=Math.max(1,Math.round((new Date(to)-new Date(from))/864e5)+1);$('hero-per').textContent=days+' дн.'
   // hero-tick пишет только heroAllMeta() живыми данными Meta, иначе цифры прыгают между источниками
@@ -2812,6 +2885,17 @@ function heroRender(spend,leads,quals,daily,from,to){
 function heroDelta(cur,prev){const el=document.getElementById('hero-dl');if(!el)return;if(!prev||!document.getElementById('cmp-tgl')?.classList.contains('on')){el.className='dl big n';el.innerHTML='';return}const d=(cur-prev)/prev*100;const cls=Math.abs(d)<.5?'n':d>0?'g':'r';el.className='dl big '+cls;el.innerHTML=`<span class="ar">${d>0?'↑':d<0?'↓':'→'}</span>${Math.abs(d).toFixed(0)}% к прошлому периоду`}
 
 
+
+// ── v9: скользящая «таблетка» сегментов и спарклайны в KPI ──
+function segThumbs(){document.querySelectorAll('#region-tog,#byseg,#page-dash .pbtns').forEach(seg=>{let th=seg.querySelector('.seg-th');if(!th){th=document.createElement('span');th.className='seg-th';seg.prepend(th)}
+  const on=seg.querySelector('.rt-btn.active,.pb.active');if(!on){th.style.width='0';return}th.style.left=on.offsetLeft+'px';th.style.width=on.offsetWidth+'px'})}
+function kpiSparks(from,to){const rows=METRICS.filter(r=>r.day>=from&&r.day<=to).sort((a,b)=>a.day<b.day?-1:1);if(rows.length<2){document.querySelectorAll('#page-dash .ksp').forEach(e=>e.remove());return}
+  const byDay={};rows.forEach(r=>{const d=byDay[r.day]||(byDay[r.day]={sp:0,l:0,q:0,cl:0,im:0});d.sp+=(+r.spend_pl||0)+(+r.spend_plua||0);d.l+=(r.leads_pl||0)+(r.leads_plua||0);d.q+=r.quals||0;d.cl+=+r.clicks||0;d.im+=+r.impressions||+r.imp||0})
+  const D=Object.keys(byDay).sort().map(k=>byDay[k]);const S={'d-spend':D.map(d=>d.sp),'d-daily':D.map(d=>d.sp),'d-cpl':D.map(d=>d.l?d.sp/d.l:null),'d-cql':D.map(d=>d.q?d.sp/d.q:null),'d-roi':null,'d-ctr':D.map(d=>d.im?d.cl/d.im*100:null)}
+  Object.entries(S).forEach(([id,arr])=>{const v=document.getElementById(id);if(!v)return;const k=v.closest('.kpi');if(!k)return;let box=k.querySelector('.ksp');if(!arr||arr.filter(x=>x!=null).length<2){if(box)box.remove();return}if(!box){box=document.createElement('div');box.className='ksp';k.appendChild(box)}
+    const vals=arr.map(x=>x==null?null:x),fin=vals.filter(x=>x!=null),mx=Math.max(...fin),mn=Math.min(...fin),w=72,h=24,n=vals.length;let pts=[];vals.forEach((x,i)=>{if(x==null)return;pts.push((i/(n-1)*w).toFixed(1)+','+(h-2-(x-mn)/(mx-mn||1)*(h-4)).toFixed(1))})
+    const good=id==='d-cpl'||id==='d-cql'?fin[fin.length-1]<=fin[0]:fin[fin.length-1]>=fin[0];box.innerHTML=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="${pts.join(' ')}" fill="none" stroke="${good?'#7FE0B4':'#FF8A9B'}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" pathLength="1" style="stroke-dasharray:1;animation:kspd 1.1s ease-out both"/></svg>`})}
+document.addEventListener('click',e=>{if(e.target.closest('#region-tog,#byseg,#page-dash .pbtns'))setTimeout(segThumbs,0)});window.addEventListener('resize',()=>setTimeout(segThumbs,50));window.addEventListener('load',()=>setTimeout(segThumbs,300))
 // ── v9: столбики спенда по дням и разбивка по гео под большой цифрой ──
 function heroDays(from,to){const box=document.getElementById('hero-days');if(!box)return
   const rows=METRICS.filter(r=>r.day>=from&&r.day<=to).sort((a,b)=>a.day<b.day?-1:1)
@@ -5075,7 +5159,7 @@ function indMenu(e,zid){let m=document.getElementById('indmenu');if(!m){m=docume
 // ── ZALIV DETAIL PANEL (split view) ──
 var _zLiveCache={},_zAdsCache={},_zBulk={},_zBulkAt=0,_zAdsLoading={},_zLiveLoading={}
 async function selZaliv(zid){
-  _zSel=zid;document.querySelectorAll('#zt-body tr[data-zid]').forEach(tr=>tr.classList.toggle('zsel',+tr.dataset.zid===zid));document.querySelectorAll('#zinb-list .zii[data-zid]').forEach(x=>x.classList.toggle('sel',+x.dataset.zid===zid));try{zCtx(zid)}catch(e){}
+  _zSel=zid;document.querySelectorAll('#zt-body tr[data-zid]').forEach(tr=>tr.classList.toggle('zsel',+tr.dataset.zid===zid));document.querySelectorAll('#zinb-list .zii[data-zid]').forEach(x=>x.classList.toggle('sel',+x.dataset.zid===zid));try{zCtx(zid);zInboxCenter(zid)}catch(e){console.warn('inbox center',e)}
   const z=ZALIVS.find(x=>x.id===zid);const dp=document.getElementById('zdp');if(!z||!dp)return
   const an=RK_ANALYSES.filter(a=>a.zaliv_id===zid).sort((p,q)=>(q.created_at||'').localeCompare(p.created_at||''))
   const last=an[0]||{};const d=zDays(z),keys=zAnKeys(z)
@@ -5164,6 +5248,37 @@ function zInbox(list){const box=document.getElementById('zinb-list');if(!box||_z
   box.innerHTML=`<div class="fl">${[['all','Все'],['at','Внимание'],['profit','Profit'],['drop','Drop'],['new','Новые'],['off','Выкл']].map(([k,n])=>`<button class="fc ${_zInbF===k?'on':''} ${k==='at'?'at':''}" data-zinbf="${k}">${n}<b>${list.filter(F[k]).length}</b></button>`).join('')}</div>
    <div class="ls">${rows.map(z=>{const a=zAttn(z),s=zSrcStats(z),lv=_zBulk[z.campaign_id];return`<div class="zii ${_zSel===z.id?'sel':''}" data-zid="${z.id}" style="--cc:${GC[z.ind]||'#6E9BFF'}"><i></i><span><b>${z.name}</b><small>${a?`<span class="bd">${a}</span>`:''}${gchip(z.geo)} ${(z.buyer||'?')[0]} · д.${zDays(z)} · <span class="${a?'cp':''}">${zNextCp(z)}${a?' · '+zAttnTxt(z):''}</span></small></span><span class="n"><span>$${Math.round(lv?lv.spend||0:(z.ad_budget||0))}</span><em>${s?s.quals+' кв':'—'}</em></span></div>`}).join('')||'<div class="empty">Пусто по этому фильтру</div>'}</div>`
   if(!rows.some(z=>z.id===_zSel)&&rows.length)selZaliv(rows[0].id);else zCtx(_zSel)}
+
+// ── v9: Инбокс — центр: шапка РК, адсеты карточками (1 адсет = 1 калька = 1 крео), чекпоинты, Геннадий, BJ ──
+function zInboxCenter(zid){const box=document.getElementById('zinb-main');if(!box||_zMode!=='inbox')return;const z=ZALIVS.find(x=>x.id===zid);if(!z){box.innerHTML='<div class="empty">Выбери РК слева</div>';return}
+  const d=zDays(z),st=z.date||parseDateFromCampName(z.name)||'—',lv=_zLiveCache[zid],bulk=_zBulk[z.campaign_id],S=zSrcStats(z),ads=_zAdsCache[zid]||[],doms=zDomains(z),keys=zAnKeys(z)
+  const spend=lv?+lv.spend||0:bulk?+bulk.spend||0:0,cpl=lv?lv.cpl:bulk?bulk.cpl:null,ctr=lv?lv.ctr:bulk?bulk.ctr:null
+  const CPL=v=>v?(v<12?'var(--green)':v<15?'var(--yellow)':'var(--red)'):'var(--text3)'
+  // адсеты: из Meta (если загружены) + привязки из adset_domains
+  const rows=ads.length?ads.map((a,i)=>({a,i:i+1,e:doms.find(x=>x.adset_id===a.id)||doms[i]||{}})):doms.map(e=>({a:null,i:e.ad,e}))
+  const cardAd=r=>{const a=r.a,e=r.e,stt=a?srcStats(zid,a.id):srcStats(zid,null);const l=stt?stt.leads:0,q=stt?stt.quals:0,sp=a&&a.spend!=null?+a.spend:null,budget=a&&a.daily_budget?'$'+(a.daily_budget/100).toFixed(0)+'/д':''
+    const cr=e.creo?(typeof CR!=='undefined'&&CR.creos?CR.creos.find(c=>c.id===e.creo):null):null,frame=cr&&cr.frames&&cr.frames[0]
+    const S=q>=2?['работает','var(--green)']:q===1?['слабо','var(--yellow)']:e.creo&&d>=2?['без квалов','var(--red)']:e.creo?['новый','var(--blue)']:['нет крео','var(--blue)']
+    const act=S[0]==='без квалов'&&a?`<button class="ab red" onclick="toggleAdset(${zid},'${a.id}',this.closest('.zic').querySelector('.sw'))">Выключить адсет</button>`:S[0]==='нет крео'?`<button class="ab p" onclick="this.closest('.zic').querySelector('.crpk')?.click()">＋ выбрать крео</button>`:S[0]==='слабо'?`<button class="ab" onclick="this.closest('.zic').querySelector('.crpk')?.click()">Заменить крео</button>`:S[0]==='работает'?`<button class="ab" onclick="addRkTask(${zid},'prep')">+20% бюджета · таск</button>`:''
+    return`<div class="zic" style="--cc:${S[1]}"><span class="st">${S[0]}</span><div class="tp"><div class="th" style="${frame?'background-image:url('+frame+')':''}">${frame?'':'＋'}</div><div style="min-width:0"><b>AD${r.i}${a?' · '+escHtml(a.name):''}</b><small>${e.domain?(z.buyer==='Illia'?'I':'D')+e.domain:'калька не привязана'}${e.creo?' → '+e.creo:''}</small></div></div>
+      <div class="nums"><div><small>спенд</small><b>${sp!=null?'$'+Math.round(sp):budget||'—'}</b></div><div><small>лиды</small><b>${l}</b></div><div><small>квалы</small><b style="color:var(--green)">${q}</b></div><div><small>CQL</small><b style="color:${q&&sp!=null?CPL(sp/q/3):'inherit'}">${q&&sp!=null?'$'+Math.round(sp/q):'—'}</b></div></div>
+      <div class="ft">${a?`<div class="sw ${a.status==='ACTIVE'?'on':''}" onclick="toggleAdset(${zid},'${a.id}',this)" title="${a.status==='ACTIVE'?'Выключить':'Включить'}"></div>`:''}<select class="srcsel" onchange="setAdsetDomain(${zid},${r.i},'${a?a.id:''}','${a?escHtml(a.name).replace(/'/g,''):''}',this.value)"><option value="">— калька —</option>${domainOptions(siteForGeo(z.geo),e.domain,zid)}</select>${crZBtn(z,r.i,a?a.id:null,a?a.name:null)}</div>${act}</div>`}
+  const cps=zLCM(z).map(m=>{const done=keys.has(m[2]),due=!done&&z.ind!=='off'&&d>=Math.ceil(m[0]);return`<span class="${done?'d':due?'cur':''}" onclick="gp('analysis',document.getElementById('nb-analysis'));setTimeout(()=>{${done?`selectAnZaliv(${zid})`:`showNewAnalysisPanelFor(${zid});setTimeout(()=>document.querySelector('[data-apreset=\\'${m[2]}\\']')?.click(),150)`}},300)">${done?'✓ ':''}${m[1]}${due?' · пора':''}</span>`}).join('')
+  const gena=(()=>{if(z.ind==='drop')return 'CPL выше нормы. Посмотри адсеты: у кого квалов нет при спенде — выключай, остальные держи.';if(zNeedsAn(z))return 'Пора сделать анализ '+zNextCp(z)+' — Meta-метрики подтянутся сами, впиши лиды и квалы.';const bad=rows.filter(r=>r.e.creo&&(srcStats(zid,r.a?r.a.id:null)||{quals:0}).quals===0).length;if(bad&&d>=2)return bad+' адсет'+(bad>1?'а':'')+' без квалов при '+d+' дн. — кандидат'+(bad>1?'ы':'')+' на замену крео.';if(z.ind==='profit'&&d>=4)return 'Держит темп. Можно +20% бюджета на лучший адсет.';return 'Данных пока мало — проверю после следующего чекпоинта.'})()
+  box.innerHTML=`<div class="zih"><h2>${z.name}</h2>
+     <span class="ind-t" style="display:inline-flex"><button class="itb${z.ind==='profit'?' ap':''}" onclick="setInd(${zid},'profit')">P</button><button class="itb${z.ind==='drop'?' ad':''}" onclick="setInd(${zid},'drop')">D</button><button class="itb${z.ind==='off'?' ao':''}" onclick="setInd(${zid},'off')">O</button></span>
+     ${gchip(z.geo)}<span class="gchip" style="color:var(--text2);border-color:var(--border)">${z.buyer||'—'}</span><span class="zcat ${z.cat||''}" onclick="cycleZcat(${zid}).then(()=>selZaliv(${zid}))">${({mwp:'MWP',test:'TEST',trash:'TRASH'})[z.cat]||'категория'}</span>
+     ${z.togo?'':`<div class="sw ${z.ind!=='off'?'on':''}" onclick="setInd(${zid},'${z.ind==='off'?'profit':'off'}')"></div>`}
+     <span class="mono" style="color:var(--gold)">$${Math.round(spend)}<small> · ${d?'$'+Math.round(spend/Math.max(1,Math.min(d,30)))+'/д':''}</small></span><span class="mono">${S?S.leads:'—'}<small>·</small><span style="color:var(--green)">${S?S.quals:'—'}</span>${S&&S.quals&&spend?`<small> CQL $${Math.round(spend/S.quals)}</small>`:''}</span><span class="mono" style="color:${ctr>2?'var(--green)':ctr&&ctr<1.3?'var(--red)':'inherit'}">${ctr?(+ctr).toFixed(2)+'%':'—'}</span>
+     <span style="margin-left:auto;font:600 10.5px var(--mono);color:var(--text3)">старт ${st} · день ${d}${lv?' · Meta '+lv.at:''}</span>
+     <div class="tlw">${zLifecycle(z)}</div></div>
+    <div class="ziad">${rows.map(cardAd).join('')||`<div class="zic" style="--cc:var(--blue)"><span class="st">нет адсетов</span><div class="tp"><div class="th">＋</div><div><b>Адсеты не загружены</b><small>${z.campaign_id?'подтяну из Meta':'нет campaign_id — добавь адсет руками'}</small></div></div>${z.campaign_id?`<button class="ab" onclick="loadZalivAdsets(${zid})">⚡ Загрузить из Meta</button>`:''}</div>`}</div>
+    <div class="zicps">${cps}</div>
+    <div class="zitwo"><div class="card2"><h4>Геннадий</h4><div class="gen"><b>Геннадий:</b> ${gena}</div><h4 style="margin-top:12px">Инсайты</h4><textarea class="note" onchange="db.from('zalivs').update({insights:this.value}).eq('id',${zid});const zz=ZALIVS.find(x=>x.id===${zid});if(zz)zz.insights=this.value;toast('Сохранено','ok')" placeholder="Что видишь по этой РК…">${(z.insights||'').replace(/</g,'&lt;')}</textarea></div>
+     <div class="card2" id="zinb-bj"><h4>Buyer's Journal</h4><div id="zinb-bjbox"></div></div></div>
+    <div class="act" style="display:flex;gap:8px;flex-wrap:wrap"><button class="p" onclick="gp('analysis',document.getElementById('nb-analysis'));setTimeout(()=>showNewAnalysisPanelFor(${zid}),300)">Анализ</button><button onclick="addRkTask(${zid},'an')">+ таск</button><button onclick="zSetMode('table');setTimeout(()=>{togZ(${zid});document.getElementById('tc-'+${zid})?.scrollIntoView?.()},50)">Развернуть в таблице</button></div>`
+  // блок BJ переносим из панели
+  setTimeout(()=>{const src=document.querySelector('#zdp .zbj'),dst=document.getElementById('zinb-bjbox');if(src&&dst){dst.innerHTML='';dst.appendChild(src)}},250)}
 function zCtx(zid){const box=document.getElementById('zinb-ctx');if(!box||_zMode!=='inbox')return;const z=ZALIVS.find(x=>x.id===zid);if(!z){box.innerHTML='<div class="empty">Выбери РК слева</div>';return}
   const acts=[];const an=zAnKeys(z),d=zDays(z)
   zLCM(z).filter(m=>!an.has(m[2])&&z.ind!=='off'&&d>=Math.ceil(m[0])).slice(0,1).forEach(m=>acts.push(['!','var(--gold)','Анализ '+m[1],'чекпоинт пора',`gp('analysis',document.getElementById('nb-analysis'));setTimeout(()=>{showNewAnalysisPanelFor(${z.id});setTimeout(()=>document.querySelector('[data-apreset=\\'${m[2]}\\']')?.click(),150)},300)`]))
