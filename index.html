@@ -598,7 +598,7 @@ var DKEYS=['kalkulator',...Array.from({length:20},(_,i)=>'kalkulator'+(i+1))],DO
 // Пиксель сайт выбирает сам по номеру: 1–10 → 482683177664193 (PL Calkulator), 11–20 → 1583027080197169 (Illia soc).
 // Ещё сайт принимает ?src=… (iGARNOLAND2PL, UAiGARNOLAND4, iGARNOLAND2CZ, iGARNOLAND4UACZ → пиксель 4826…), без метки — iladnGARNO.
 var SITE2={base:'https://garnofurniture.com/#',label:'garnofurniture.com · калькулятор / конструктор / визит',px:{A:'482683177664193',B:'1583027080197169'}}
-var SITE2_KINDS=[['isystem','Калькулятор'],['konstruktor','3D-конструктор'],['visyt','Визит в шоурум']]
+var SITE2_KINDS=[['isystem','Kalkulator'],['konstruktor','3D-конструктор'],['visyt','Визит в шоурум']]
 var SITE2_LANGS={pl:['pl','uk'],cz:['cz','uk']}
 var DKEYS2=[];['pl','cz'].forEach(g=>SITE2_KINDS.forEach(([k])=>{for(let n=1;n<=20;n++)SITE2_LANGS[g].forEach(l=>DKEYS2.push(g+k+n+'-'+l))}))
 var SITE2_RE=/^(pl|cz)(isystem|konstruktor|visyt)(\d{1,2})-(pl|uk|cz)$/
@@ -1351,7 +1351,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opac
 .zitwo .card2{padding:12px 14px;border-radius:14px;background:var(--bg2);border:1px solid var(--border);min-width:0}
 .zitwo .card2 h4{margin:0 0 8px;font:700 12px var(--sans);color:var(--text2);display:flex;align-items:center}.zitwo .card2 h4 span{margin-left:auto;font:600 10.5px var(--mono);color:var(--text3)}
 .zitwo .gen{padding:10px 12px;border-radius:10px;background:rgba(110,155,255,.08);border:1px solid rgba(110,155,255,.3);font-size:12.5px;line-height:1.5}.zitwo .gen b{color:#A9C1FF}
-.zitwo textarea.note{width:100%;min-height:70px}
+.zitwo textarea.note{width:100%;min-height:70px;background:var(--bg2);border:1px solid var(--border);border-radius:9px;color:var(--text);font:12.5px var(--sans);padding:9px 11px;resize:none;outline:0}.zitwo textarea.note:focus{border-color:rgba(212,175,55,.5)}
 .zitwo .zbj{border:0!important;padding:0!important;margin:0!important}.zitwo .zbj h4{display:none}
 .zic .lnk{display:flex;align-items:center;gap:4px;min-width:0}.zic .lnk a{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 10.5px var(--mono);color:var(--blue2,#A9C1FF);text-decoration:none;padding:4px 7px;border-radius:7px;background:var(--bg3);border:1px solid var(--border)}.zic .lnk a:hover{border-color:rgba(110,155,255,.5)}
 .zic .lnk button{height:24px;padding:0 7px;border-radius:7px;border:1px solid var(--border2);background:none;color:var(--text2);font:700 10.5px var(--sans);cursor:pointer;white-space:nowrap}.zic .lnk button:hover{color:var(--gold2);border-color:rgba(212,175,55,.5)}
@@ -1887,7 +1887,7 @@ document.getElementById('root').innerHTML=`
           <div class="fbar" style="margin-bottom:12px">
             <select class="fsel" id="clf-geo"><option value="">🌐 GEO</option><option value="PL">🇵🇱 PL</option><option value="UAPL">🇵🇱🇺🇦 UAPL</option></select>
             <select class="fsel" id="clf-status"><option value="">🏷 Статус</option><option value="ready">✨ Clean</option><option value="used">⚡ Use</option><option value="hall">🏆 MWP</option></select>
-            <select class="fsel" id="clf-funnel"><option value="">🎯 Воронка</option><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select>
+            <select class="fsel" id="clf-funnel"><option value="">🎯 Воронка</option><option value="Kalkulator">Kalkulator</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select>
             <select class="fsel" id="clf-buyer"><option value="">👤 Все</option><option value="Illia">Illia</option><option value="Danya">Danya</option></select>
             <input class="fsrch" id="clf-q" placeholder="🔍 Поиск...">
             <button onclick="openAddCreoLib()" style="margin-left:auto;padding:8px 20px;border-radius:8px;border:1px solid var(--bord2);background:linear-gradient(135deg,var(--bord),var(--bord2));color:#fff;font-size:12px;font-weight:800;cursor:pointer;font-family:var(--sans);letter-spacing:.5px;box-shadow:0 0 14px rgba(181,34,64,.35);transition:all .2s" onmouseover="this.style.boxShadow='0 0 22px rgba(181,34,64,.6)'" onmouseout="this.style.boxShadow='0 0 14px rgba(181,34,64,.35)'">+ Добавить крео</button>
@@ -1926,7 +1926,7 @@ document.getElementById('root').innerHTML=`
       </div>
     </div></div>
     <div class="page" id="page-analysis" style="padding:0;overflow:hidden;height:calc(100vh - 42px)">
-  <div id="an-aud" class="on"></div><button class="aud-sw" id="aud-sw" style="display:none" onclick="audMode('aud')">◐ Давление на аудиторию</button>
+  <div id="an-aud"></div><button class="aud-sw" id="aud-sw" onclick="audMode('aud')">◐ Давление на аудиторию</button>
   <div style="display:grid;grid-template-columns:240px 1fr;height:100%;overflow:hidden">
 
     <!-- LEFT: tree sidebar -->
@@ -1999,9 +1999,9 @@ document.getElementById('root').innerHTML=`
   <div class="motit">+ Новый залив <button class="mox" data-close="mo-zaliv">×</button></div>
   <div class="fl"><label>GEO</label><div class="gowrap" id="mo-geos"></div></div>
   <div class="fl2"><div class="fl" style="margin-bottom:0"><label>Дата запуска</label><input class="fi" id="mdate" type="date"></div><div class="fl" style="margin-bottom:0"><label>Пиксель <span style="color:var(--text3);font-weight:400">· по доменам</span></label><div class="mo-px" id="mo-px">—</div></div></div>
-  <div class="fl"><label>Название РК <span class="mo-auto" id="mn-auto">собирается само</span></label><input class="fi" id="mn" placeholder="43D{15.10}PLPL/ABO/MWP/Калькулятор/PIXEL OLD /30$"></div>
+  <div class="fl"><label>Название РК <span class="mo-auto" id="mn-auto">собирается само</span></label><input class="fi" id="mn" placeholder="43D{15.10}PLPL/ABO/MWP/Kalkulator/PIXEL OLD /30$"></div>
   <div class="fl2"><div class="fl" style="margin-bottom:0"><label>AD Budget $</label><input class="fi" id="ma" type="number" placeholder="15"></div><div class="fl" style="margin-bottom:0"><label>RK Budget $</label><input class="fi" id="mr" type="number" placeholder="30"></div></div>
-  <div class="fl2"><div class="fl" style="margin-bottom:0"><label>Баер</label><select class="fi" id="mb"><option value="Illia">Illia</option><option value="Danya">Danya</option></select></div><div class="fl" style="margin-bottom:0"><label>&nbsp;</label><select class="fi" id="mf" style="display:none"><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div></div>
+  <div class="fl2"><div class="fl" style="margin-bottom:0"><label>Баер</label><select class="fi" id="mb"><option value="Illia">Illia</option><option value="Danya">Danya</option></select></div><div class="fl" style="margin-bottom:0"><label>&nbsp;</label><select class="fi" id="mf" style="display:none"><option value="Kalkulator">Kalkulator</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div></div>
   <div class="fl"><label>Воронка <button type="button" class="mo-gear" data-edit="funnels" title="Добавить или удалить воронки">⚙</button></label><div class="gowrap" id="mo-funnels"></div></div>
   <div class="fl"><label>Score (0–6)</label><div style="display:flex;gap:4px" id="mo-score"><button class="spb s0" data-score="0">0</button><button class="spb" data-score="1">1</button><button class="spb" data-score="2">2</button><button class="spb" data-score="3">3</button><button class="spb" data-score="4">4</button><button class="spb" data-score="5">5</button><button class="spb" data-score="6">6</button></div></div>
   <div class="fl" style="display:none"><select class="fi" id="md"><option value="">— выбрать —</option></select><div id="mcreo-list"></div><button class="addg" id="btn-add-creo" style="display:none">+ Крео</button></div>
@@ -2028,7 +2028,7 @@ document.getElementById('root').innerHTML=`
   <div class="fl"><label>URL</label><input class="fi" id="de-url"></div>
   <div class="fl"><label>Описание</label><input class="fi" id="de-desc"></div>
   <div class="fl"><label>GEO</label><div class="gowrap" id="de-geos"></div></div>
-  <div class="fl"><label>Воронка</label><select class="fi" id="de-funnel"><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div>
+  <div class="fl"><label>Воронка</label><select class="fi" id="de-funnel"><option value="Kalkulator">Kalkulator</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div>
   <div class="fl"><label>Статус</label><div style="display:flex;gap:16px;margin-top:4px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)"><input type="radio" name="de-active" value="true" id="de-active-y"> Активный</label><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)"><input type="radio" name="de-active" value="false" id="de-active-n"> Неактивный</label></div></div>
   <div class="mofoot"><button class="sbdl" onclick="if(deEditId)delDomain(deEditId)">🗑 Удалить</button><button class="bcn" data-close="mo-domain-edit">Отмена</button><button class="bsv" onclick="saveDomainEdit()">Сохранить</button></div>
 </div></div>
@@ -2067,7 +2067,7 @@ document.getElementById('root').innerHTML=`
   <div class="fl"><label>URL домена</label><input class="fi" id="dm-url" placeholder="garnofurniture.com/kalkulator"></div>
   <div class="fl"><label>Описание</label><input class="fi" id="dm-desc" placeholder="PL калькулятор кухни"></div>
   <div class="fl"><label>GEO</label><div class="gowrap" id="dm-geos"></div></div>
-  <div class="fl"><label>Воронка</label><select class="fi" id="dm-funnel"><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div>
+  <div class="fl"><label>Воронка</label><select class="fi" id="dm-funnel"><option value="Kalkulator">Kalkulator</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select></div>
   <div class="mofoot"><button class="bcn" data-close="mo-domain">Отмена</button><button class="bsv" id="btn-create-domain">Добавить</button></div>
 </div></div>
 
@@ -2107,7 +2107,7 @@ document.getElementById('root').innerHTML=`
           <select class="fi" id="cl-geo"><option value="PL">🇵🇱 PL</option><option value="UAPL">🇵🇱🇺🇦 UAPL</option><option value="UACZ">UACZ</option><option value="CZ">🇨🇿 CZ</option></select>
         </div>
         <div class="fl" style="margin-bottom:0"><label>Воронка</label>
-          <select class="fi" id="cl-funnel"><option value="Калькулятор">Калькулятор</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select>
+          <select class="fi" id="cl-funnel"><option value="Kalkulator">Kalkulator</option><option value="Визита">Визита</option><option value="Проект">Проект</option><option value="Лид-магнит">Лид-магнит</option></select>
         </div>
       </div>
       <div class="fl2">
@@ -2441,7 +2441,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-11-05 02:40'
+const BUILD='2026-11-05 03:50'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -2512,13 +2512,15 @@ async function init(){
 // пополняется из любой выпадашки. Хранится в domain_meta под служебным ключом,
 // чтобы не заводить отдельную таблицу и не трогать политики доступа;
 // custom там не ставим, поэтому в списке калек эта строка не появляется.
-const FUNNELS_DEFAULT=['Калькулятор','Визита','Проект','Лид-магнит']
+const FUNNELS_DEFAULT=['Kalkulator','Визита','Проект','Лид-магнит']
+// старое имя воронки «Калькулятор» (кириллица) → Kalkulator; данные в базе переносит funnels_v10.sql, здесь — страховка для старых строк
+const funNorm=f=>{const v=String(f||'').trim();return v.toLowerCase()==='калькулятор'?'Kalkulator':v}
 const FUNNELS_KEY='__funnels'
 var FUNNELS=FUNNELS_DEFAULT.slice()
 function funnelRow(){return (DOMAIN_META||[]).find(m=>m.key===FUNNELS_KEY)}
 function loadFunnels(){
   const r=funnelRow()
-  if(r&&r.url){try{const a=JSON.parse(r.url);if(Array.isArray(a)&&a.length)FUNNELS=a}catch(e){}}
+  if(r&&r.url){try{const a=JSON.parse(r.url);if(Array.isArray(a)&&a.length)FUNNELS=[...new Set(a.map(funNorm))]}catch(e){}}
   else FUNNELS=FUNNELS_DEFAULT.slice()
   fillFunnelSelects()
 }
@@ -2557,7 +2559,7 @@ document.addEventListener('change',async e=>{
 // Управление списком из консоли
 function funnels(list){
   if(!list){console.log('Воронки: '+FUNNELS.join(', ')
-    +'\n  добавить/заменить: funnels(["Калькулятор","Визита","Своя"])');return FUNNELS}
+    +'\n  добавить/заменить: funnels(["Kalkulator","Визита","Своя"])');return FUNNELS}
   return saveFunnels(list).then(()=>{console.log('Сохранено: '+FUNNELS.join(', '));return FUNNELS})
 }
 
@@ -5226,7 +5228,7 @@ function indMenu(e,zid){let m=document.getElementById('indmenu');if(!m){m=docume
 // ── ZALIV DETAIL PANEL (split view) ──
 var _zLiveCache={},_zAdsCache={},_zBulk={},_zBulkAt=0,_zAdsLoading={},_zLiveLoading={}
 async function selZaliv(zid){
-  _zSel=zid;document.querySelectorAll('#zt-body tr[data-zid]').forEach(tr=>tr.classList.toggle('zsel',+tr.dataset.zid===zid));document.querySelectorAll('#zinb-list .zii[data-zid]').forEach(x=>x.classList.toggle('sel',+x.dataset.zid===zid));try{zCtx(zid);zInboxCenter(zid)}catch(e){console.warn('inbox center',e)}
+  _zSel=zid;document.querySelectorAll('#zt-body tr[data-zid]').forEach(tr=>tr.classList.toggle('zsel',+tr.dataset.zid===zid));document.querySelectorAll('#zinb-list .zii[data-zid],#zinb-list .zcr[data-zid]').forEach(x=>x.classList.toggle('sel',+x.dataset.zid===zid));try{zCtx(zid);zInboxCenter(zid)}catch(e){console.warn('inbox center',e)}
   const z=ZALIVS.find(x=>x.id===zid);const dp=document.getElementById('zdp');if(!z||!dp)return
   const an=RK_ANALYSES.filter(a=>a.zaliv_id===zid).sort((p,q)=>(q.created_at||'').localeCompare(p.created_at||''))
   const last=an[0]||{};const d=zDays(z),keys=zAnKeys(z)
@@ -5310,11 +5312,27 @@ function zNextCp(z){const an=zAnKeys(z),d=zDays(z);const m=zLCM(z).find(m=>!an.h
 function zSetMode(m){_zMode=m;localStorage.setItem('z_mode',m);document.getElementById('zsplit')?.classList.toggle('inbox',m==='inbox');document.querySelectorAll('#zmode button').forEach(b=>b.classList.toggle('on',b.dataset.zm===m));rzalivs()}
 function zInbox(list){const box=document.getElementById('zinb-list');if(!box||_zMode!=='inbox')return
   const F={all:z=>true,at:z=>zAttn(z)>0,profit:z=>z.ind==='profit',drop:z=>z.ind==='drop',new:z=>zDays(z)<=2&&z.ind!=='off',off:z=>z.ind==='off'}
-  const zNum=z=>{const m=String(z.name||'').match(/^(\d+)/);return m?+m[1]:-1};const rows=list.filter(F[_zInbF]||F.all).sort((a,b)=>zNum(b)-zNum(a)||zDays(a)-zDays(b))
-  const GC={profit:'var(--green)',drop:'var(--yellow)',off:'#3E4457'}
-  box.innerHTML=`<div class="fl">${[['all','Все'],['at','Внимание'],['profit','Profit'],['drop','Drop'],['new','Новые'],['off','Выкл']].map(([k,n])=>`<button class="fc ${_zInbF===k?'on':''} ${k==='at'?'at':''}" data-zinbf="${k}">${n}<b>${list.filter(F[k]).length}</b></button>`).join('')}</div>
-   <div class="ls">${rows.map(z=>{const a=zAttn(z),s=zSrcStats(z),lv=_zBulk[z.campaign_id];return`<div class="zii ${_zSel===z.id?'sel':''}" data-zid="${z.id}" style="--cc:${GC[z.ind]||'#6E9BFF'}"><i></i><span><b>${z.name}</b><small>${a?`<span class="bd">${a}</span>`:''}${gchip(z.geo)} ${(z.buyer||'?')[0]} · д.${zDays(z)} · <span class="${a?'cp':''}">${zNextCp(z)}${a?' · '+zAttnTxt(z):''}</span></small></span><span class="n"><span>$${Math.round(lv?lv.spend||0:(z.ad_budget||0))}</span><em>${s?s.quals+' кв':'—'}</em></span></div>`}).join('')||'<div class="empty">Пусто по этому фильтру</div>'}</div>`
+  const zNum=z=>{const m=String(z.name||'').match(/^(\d+)/);return m?+m[1]:-1}
+  const SRT={num:(a,b)=>zNum(b)-zNum(a)||zDays(a)-zDays(b),spend:(a,b)=>((_zBulk[b.campaign_id]||{}).spend||0)-((_zBulk[a.campaign_id]||{}).spend||0),quals:(a,b)=>((zSrcStats(b)||{}).quals||0)-((zSrcStats(a)||{}).quals||0),old:(a,b)=>zDays(b)-zDays(a)}
+  const rows=list.filter(F[_zInbF]||F.all).sort(SRT[_zInbS]||SRT.num)
+  const GC={PL:'#D4AF37',PLPL:'#D4AF37',PLUA:'#6E9BFF',CZ:'#F03A55',CZCZ:'#F03A55',CZUA:'#B48CFF'}
+  const chips=z=>{const ads=_zAdsCache[z.id]||[],doms=zDomains(z);const rr=ads.length?ads.map((a,i)=>({a,i:i+1,e:doms.find(x=>x.adset_id===a.id)||doms[i]||{}})):doms.map(e=>({a:null,i:e.ad,e}))
+    return rr.map(r=>{const a=r.a,e=r.e,on=a?a.status==='ACTIVE':adsetLive(e.adset_status);const st=srcStats(z.id,a?a.id:null)||{leads:0,quals:0};const cr=e.creo&&typeof CR!=='undefined'&&CR.creos?CR.creos.find(c=>c.id===e.creo):null;const fr=cr&&cr.frames&&cr.frames[0]
+      return`<span class="achip ${on?'':'off'}" title="${escHtml(a?a.name:'AD'+r.i)}">${a?`<span class="sw ${on?'on':''}" onclick="event.stopPropagation();toggleAdset(${z.id},'${a.id}',this)"></span>`:''}<span class="cth ${fr?'':'e'}" style="${fr?'background-image:url('+fr+')':''}" ${e.creo?`onmouseenter="crPrev(event,'${e.creo}')" onmouseleave="crPrevHide()"`:''}>${fr?'':'—'}</span><b>AD${r.i}</b>${e.domain?`<em>${escHtml(e.domain)}</em>`:'<em>без кальки</em>'}<em>${st.leads}л/${st.quals}кв</em></span>`}).join('')+(z.campaign_id&&!ads.length?`<span class="achip add" onclick="event.stopPropagation();loadZalivAdsets(${z.id})">⚡ адсеты из Meta</span>`:'')}
+  box.innerHTML=`<div class="fl">${[['all','Все'],['at','Внимание'],['profit','Profit'],['drop','Drop'],['new','Новые'],['off','Выкл']].map(([k,n])=>`<button class="fc ${_zInbF===k?'on':''} ${k==='at'?'at':''}" data-zinbf="${k}">${n}<b>${list.filter(F[k]).length}</b></button>`).join('')}<span class="srt">сорт.${[['num','№ РК ↓'],['spend','Спенд'],['quals','Квалы'],['old','Старые']].map(([k,n])=>`<button class="fc ${_zInbS===k?'on':''}" data-zinbs="${k}">${n}</button>`).join('')}</span></div>
+   <div class="ls">${rows.map(z=>{const a=zAttn(z),s=zSrcStats(z),lv=_zBulk[z.campaign_id],d=zDays(z),sp=lv?+lv.spend||0:0,cp=zNextCp(z),due=zNeedsAn(z);return`<div class="zcr ${_zSel===z.id?'sel':''}" data-zid="${z.id}" style="--gc:${GC[z.geo]||'#6E9BFF'}"><span class="gs"></span>
+     <div class="nm"><b>${z.name}</b><small>${z.geo||'—'} · ${z.buyer||'?'} · день ${d} · старт ${z.date||parseDateFromCampName(z.name)||'—'}</small><div class="zcr-st"><span class="ind-dot" style="display:inline-grid;place-items:center;width:18px;height:18px;border-radius:5px;font:700 10px var(--mono);background:${z.ind==='profit'?'var(--green)':z.ind==='drop'?'var(--red)':'#2A2F3E'};color:${z.ind==='off'?'#9A9EAE':'#06100B'}">${z.ind==='profit'?'P':z.ind==='drop'?'D':'O'}</span><span class="zcr-cp ${due?'due':''}">${cp}${due?' · пора':''}</span>${a?`<span class="bd" title="${zAttnTxt(z)}">${a}</span>`:''}</div></div>
+     <div class="achips">${chips(z)}</div>
+     <div class="r"><div>спенд<b>$${Math.round(sp)}</b></div><div>$/день<b>${d?Math.round(sp/Math.max(1,Math.min(d,30))):0}</b></div><div>л / кв<b>${s?s.leads:0}/<span class="q">${s?s.quals:0}</span></b></div></div></div>`}).join('')||'<div class="empty">Пусто по этому фильтру</div>'}</div>`
   if(!rows.some(z=>z.id===_zSel)&&rows.length)selZaliv(rows[0].id);else zCtx(_zSel)}
+let _zInbS=localStorage.getItem('z_inbs')||'num'
+document.addEventListener('click',e=>{const b=e.target.closest('[data-zinbs]');if(b){_zInbS=b.dataset.zinbs;localStorage.setItem('z_inbs',_zInbS);rzalivs();return}const t=e.target.closest('.ztabs button');if(t){const host=t.closest('.zinbm');host.querySelectorAll('.ztabs button').forEach(x=>x.classList.toggle('on',x===t));host.querySelectorAll('.ztab-pane').forEach(p=>p.classList.toggle('on',p.dataset.tab===t.dataset.ztab));_zTab=t.dataset.ztab}})
+let _zTab='ads'
+// предпросмотр крео при наведении на миниатюру
+function crPrev(ev,id){const c=(typeof CR!=='undefined'&&CR.creos||[]).find(x=>x.id===id);if(!c)return;let el=document.getElementById('crprev');if(!el){el=document.createElement('div');el.id='crprev';document.body.appendChild(el)}
+  const fr=(c.frames||[]).slice(0,4);el.innerHTML=`<div class="fr">${fr.map(f=>`<i style="background-image:url(${f})"></i>`).join('')||'<i></i>'}</div><b>${escHtml(c.name||c.id)}</b>${c.hookLine||c.hook_line?`<small>${escHtml(c.hookLine||c.hook_line)}</small>`:''}<div class="tg">${c.geo?`<span>${c.geo}</span>`:''}${c.cat?`<span>${escHtml(c.cat)}</span>`:''}${c.fmt?`<span>${c.fmt}</span>`:''}${(c.tags||[]).slice(0,4).map(t=>`<span>${escHtml(t)}</span>`).join('')}</div>`
+  const r=ev.currentTarget.getBoundingClientRect();let x=r.right+10,y=r.top-10;if(x+310>innerWidth)x=r.left-310;if(y+360>innerHeight)y=Math.max(8,innerHeight-370);el.style.left=x+'px';el.style.top=y+'px';el.classList.add('on')}
+function crPrevHide(){const el=document.getElementById('crprev');if(el)el.classList.remove('on')}
 
 
 // ── v9: Инбокс — ссылка на кальку, скачать крео, текст объявления от Геннадия на языке гео ──
@@ -5360,13 +5378,15 @@ function zInboxCenter(zid){const box=document.getElementById('zinb-main');if(!bo
      <span class="mono" style="color:var(--gold)">$${Math.round(spend)}<small> · ${d?'$'+Math.round(spend/Math.max(1,Math.min(d,30)))+'/д':''}</small></span><span class="mono">${S?S.leads:'—'}<small>·</small><span style="color:var(--green)">${S?S.quals:'—'}</span>${S&&S.quals&&spend?`<small> CQL $${Math.round(spend/S.quals)}</small>`:''}</span><span class="mono" style="color:${ctr>2?'var(--green)':ctr&&ctr<1.3?'var(--red)':'inherit'}">${ctr?(+ctr).toFixed(2)+'%':'—'}</span>
      <span style="margin-left:auto;font:600 10.5px var(--mono);color:var(--text3)">старт ${st} · день ${d}${lv?' · Meta '+lv.at:''}</span>
      <div class="tlw">${zLifecycle(z)}</div></div>
-    <div class="ziad">${rows.map(cardAd).join('')||`<div class="zic" style="--cc:var(--blue)"><span class="st">нет адсетов</span><div class="tp"><div class="th">＋</div><div><b>Адсеты не загружены</b><small>${z.campaign_id?'подтяну из Meta':'нет campaign_id — добавь адсет руками'}</small></div></div>${z.campaign_id?`<button class="ab" onclick="loadZalivAdsets(${zid})">⚡ Загрузить из Meta</button>`:''}</div>`}</div>
-    <div class="zicps">${cps}</div>
-    <div class="zitwo"><div class="card2"><h4>Геннадий</h4><div class="gen"><b>Геннадий:</b> ${gena}</div><h4 style="margin-top:12px">Инсайты</h4><textarea class="note" onchange="db.from('zalivs').update({insights:this.value}).eq('id',${zid});const zz=ZALIVS.find(x=>x.id===${zid});if(zz)zz.insights=this.value;toast('Сохранено','ok')" placeholder="Что видишь по этой РК…">${(z.insights||'').replace(/</g,'&lt;')}</textarea></div>
-     <div class="card2" id="zinb-bj"><h4>Buyer's Journal</h4><div id="zinb-bjbox"></div></div></div>
+    <div class="ztabs"><button class="${_zTab==='ads'?'on':''}" data-ztab="ads">Адсеты</button><button class="${_zTab==='gena'?'on':''}" data-ztab="gena">Геннадий · инсайты</button><button class="${_zTab==='ctx'?'on':''}" data-ztab="ctx">Что сделать</button></div>
+    <div class="ztab-pane ${_zTab==='ads'?'on':''}" data-tab="ads"><div class="ziad">${rows.map(cardAd).join('')||`<div class="zic" style="--cc:var(--blue)"><span class="st">нет адсетов</span><div class="tp"><div class="th">＋</div><div><b>Адсеты не загружены</b><small>${z.campaign_id?'подтяну из Meta':'нет campaign_id — добавь адсет руками'}</small></div></div>${z.campaign_id?`<button class="ab" onclick="loadZalivAdsets(${zid})">⚡ Загрузить из Meta</button>`:''}</div>`}</div>
+    <div class="zicps">${cps}</div></div>
+    <div class="ztab-pane ${_zTab==='gena'?'on':''}" data-tab="gena"><div class="zitwo"><div class="card2"><h4>Геннадий</h4><div class="gen"><b>Геннадий:</b> ${gena}</div><h4 style="margin-top:12px">Инсайты</h4><textarea class="note" onchange="db.from('zalivs').update({insights:this.value}).eq('id',${zid});const zz=ZALIVS.find(x=>x.id===${zid});if(zz)zz.insights=this.value;toast('Сохранено','ok')" placeholder="Что видишь по этой РК…">${(z.insights||'').replace(/</g,'&lt;')}</textarea></div>
+     <div class="card2" id="zinb-bj"><h4>Buyer's Journal</h4><div id="zinb-bjbox"></div></div></div></div>
+    <div class="ztab-pane ${_zTab==='ctx'?'on':''}" data-tab="ctx" id="zinb-ctxhost"></div>
     <div class="act" style="display:flex;gap:8px;flex-wrap:wrap"><button class="p" onclick="gp('analysis',document.getElementById('nb-analysis'));setTimeout(()=>showNewAnalysisPanelFor(${zid}),300)">Анализ</button><button onclick="addRkTask(${zid},'an')">+ таск</button><button onclick="zSetMode('table');setTimeout(()=>{togZ(${zid});document.getElementById('tc-'+${zid})?.scrollIntoView?.()},50)">Развернуть в таблице</button></div>`
   // блок BJ переносим из панели
-  setTimeout(()=>{const src=document.querySelector('#zdp .zbj'),dst=document.getElementById('zinb-bjbox');if(src&&dst){dst.innerHTML='';dst.appendChild(src)}},250)}
+  setTimeout(()=>{const src=document.querySelector('#zdp .zbj'),dst=document.getElementById('zinb-bjbox');if(src&&dst){dst.innerHTML='';dst.appendChild(src)}const cx=document.getElementById('zinb-ctx'),host=document.getElementById('zinb-ctxhost');if(cx&&host&&cx.parentElement!==host)host.appendChild(cx)},250)}
 function zCtx(zid){const box=document.getElementById('zinb-ctx');if(!box||_zMode!=='inbox')return;const z=ZALIVS.find(x=>x.id===zid);if(!z){box.innerHTML='<div class="empty">Выбери РК слева</div>';return}
   const acts=[];const an=zAnKeys(z),d=zDays(z)
   zLCM(z).filter(m=>!an.has(m[2])&&z.ind!=='off'&&d>=Math.ceil(m[0])).slice(0,1).forEach(m=>acts.push(['!','var(--gold)','Анализ '+m[1],'чекпоинт пора',`gp('analysis',document.getElementById('nb-analysis'));setTimeout(()=>{showNewAnalysisPanelFor(${z.id});setTimeout(()=>document.querySelector('[data-apreset=\\'${m[2]}\\']')?.click(),150)},300)`]))
@@ -5384,7 +5404,7 @@ function zCtx(zid){const box=document.getElementById('zinb-ctx');if(!box||_zMode
    <div class="h">Ротация · ${z.geo}<small>отдохнули</small></div><div class="sec">${rot}</div>
    <div class="h">Гео ${z.geo}<small>месяц</small></div><div class="sec" style="--cc:${cql!=null&&cql<=35?'var(--green)':'var(--gold)'}"><div class="pk"><div><small>Спенд</small><b>$${Math.round(sp).toLocaleString('ru')}</b></div><div><small>Квалы</small><b style="color:var(--green)">${quals}</b></div><div><small>CQL</small><b style="color:${cql!=null&&cql<=35?'var(--green)':'var(--red)'}">${cql!=null?'$'+Math.round(cql):'—'}</b></div><div><small>Лиды</small><b>${leads}</b></div></div><p>${same.length} РК на гео · по привязкам калек</p></div>`}
 document.getElementById('zmode')?.addEventListener('click',e=>{const b=e.target.closest('button[data-zm]');if(b)zSetMode(b.dataset.zm)})
-document.getElementById('zinb-list')?.addEventListener('click',e=>{const f=e.target.closest('[data-zinbf]');if(f){_zInbF=f.dataset.zinbf;rzalivs();return}const it=e.target.closest('.zii[data-zid]');if(it)selZaliv(+it.dataset.zid)})
+document.getElementById('zinb-list')?.addEventListener('click',e=>{const f=e.target.closest('[data-zinbf]');if(f){_zInbF=f.dataset.zinbf;rzalivs();return}if(e.target.closest('.sw,.achip.add,[data-zinbs]'))return;const it=e.target.closest('.zii[data-zid],.zcr[data-zid]');if(it)selZaliv(+it.dataset.zid)})
 function rzalivs(){
   const geo=document.getElementById('zf-geo').value,st=document.getElementById('zf-status').value,q=document.getElementById('zf-q').value.toLowerCase()
   const sort=document.getElementById('zf-sort')?.value||'new'
@@ -5838,7 +5858,7 @@ function openDomainEdit(id){
   deEditId=id;deGeoSel=[...(d.geos||[])]
   document.getElementById('de-url').value=d.url
   document.getElementById('de-desc').value=d.description||''
-  document.getElementById('de-funnel').value=d.funnel||'Калькулятор'
+  document.getElementById('de-funnel').value=d.funnel||'Kalkulator'
   document.getElementById('de-active-y').checked=d.active!==false
   document.getElementById('de-active-n').checked=d.active===false
   document.querySelectorAll('[data-degeo]').forEach(b=>b.classList.toggle('sel',deGeoSel.includes(b.dataset.degeo)))
@@ -6754,11 +6774,11 @@ function parseGeoFromName(name){
 
 function parseFunnelFromName(name){
   const n=name.toLowerCase()
-  if(n.includes('kalk')||n.includes('калькул'))return'Калькулятор'
+  if(n.includes('kalk')||n.includes('калькул'))return'Kalkulator'
   if(n.includes('vizit')||n.includes('визит'))return'Визита'
   if(n.includes('proj')||n.includes('проект'))return'Проект'
   if(n.includes('lead')||n.includes('лид'))return'Лид-магнит'
-  return'Калькулятор'
+  return'Kalkulator'
 }
 
 // ВАЖНО: правило должно быть идентично nameRegion() в get-campaigns и sync Edge Functions.
@@ -7238,7 +7258,7 @@ function openAddCreoLib(){
     clEditId=null;_pastedImageFile=null
     document.getElementById('cl-name').value=''
     document.getElementById('cl-geo').value=regionCfg().creoMain
-    document.getElementById('cl-funnel').value='Калькулятор'
+    document.getElementById('cl-funnel').value='Kalkulator'
     document.getElementById('cl-buyer').value=CURRENT_USER?.name||'Illia'
     document.getElementById('cl-status').value='ready'
     document.getElementById('cl-notes').value=''
@@ -7309,7 +7329,7 @@ async function openEditCreoLib(id){
   clEditId=id;_pastedImageFile=null
   document.getElementById('cl-name').value=cr.name||''
   document.getElementById('cl-geo').value=cr.geo||regionCfg().creoMain
-  document.getElementById('cl-funnel').value=cr.funnel||'Калькулятор'
+  document.getElementById('cl-funnel').value=cr.funnel||'Kalkulator'
   document.getElementById('cl-buyer').value=cr.buyer||'Illia'
   document.getElementById('cl-status').value=cr.status||'ready'
   document.getElementById('cl-notes').value=cr.notes||''
@@ -7783,7 +7803,7 @@ async function loadRkAnalyses(){
 }
 
 function initAnalysisPage(){
-  try{AUD.mode=localStorage.getItem('aud_mode')||'aud'}catch(e){}audMode(AUD.mode)
+  audMode(AUD.mode==='aud'?'aud':'old');AUD.mode='old'   // спидометры — вторая страница: открываются только с дашборда или кнопкой
   renderAnTree()
   const s=document.getElementById('an-search')
   if(s&&!s._anbound){s._anbound=true;s.addEventListener('input',renderAnTree)}
@@ -12758,6 +12778,39 @@ boot();
 </template>
 <style>
 /* ═══ ДАВЛЕНИЕ НА АУДИТОРИЮ (v10) ═══ */
+/* ═══ Инбокс v10 — карточный список + панель, предпросмотр крео ═══ */
+.zsplit.inbox{grid-template-columns:minmax(0,1fr) 380px!important}
+.zsplit.inbox .zctx{display:none!important}
+.zsplit.inbox .zinb{position:static;max-height:none;background:transparent;border:0;box-shadow:none;overflow:visible}
+.zinb .fl{padding:0 0 10px;border:0;align-items:center}.zinb .fl .fc{background:var(--bg3);border-color:var(--border)}.zinb .fl .srt{margin-left:auto;display:flex;gap:4px;align-items:center;font:700 10px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--text3)}.zinb .fl .srt .fc{letter-spacing:0;text-transform:none}
+.zinb .ls{overflow:visible;display:grid;gap:6px}
+.zcr{display:grid;grid-template-columns:4px minmax(190px,1.1fr) minmax(0,1.8fr) 170px;gap:14px;align-items:center;padding:10px 14px 10px 10px;border-radius:12px;background:var(--bg2);border:1px solid var(--border);cursor:pointer;transition:border-color .2s,background .2s}
+.zcr:hover{background:var(--bg3)}.zcr.sel{border-color:rgba(212,175,55,.5);background:rgba(212,175,55,.04)}
+.zcr .gs{align-self:stretch;border-radius:2px;background:var(--gc)}
+.zcr .nm b{display:block;font:700 13px var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.zcr .nm small{display:block;font:600 10px var(--mono);color:var(--text3);margin-top:2px}.zcr .nm .zcr-st{display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap}
+.zcr .nm .bd{display:inline-grid;place-items:center;min-width:16px;height:16px;border-radius:8px;padding:0 5px;font:700 9.5px var(--mono);background:var(--red);color:#fff}
+.zcr .zcr-cp{height:20px;display:inline-flex;align-items:center;padding:0 7px;border-radius:6px;border:1px solid var(--border);font:700 10px var(--mono);color:var(--text3)}.zcr .zcr-cp.due{color:var(--gold2);border-color:rgba(212,175,55,.5)}
+.zcr .achips{display:flex;gap:5px;flex-wrap:wrap}
+.achip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 8px 0 5px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);font:600 10.5px var(--mono);color:var(--text2);max-width:100%}.achip.off{opacity:.45}.achip b{color:var(--text)}.achip em{font-style:normal;color:var(--text3);font-size:10px}.achip .sw{width:26px;height:14px;flex-shrink:0}.achip .sw::after{width:10px;height:10px}.achip .sw.on::after{left:14px}
+.achip .cth{width:22px;height:22px;border-radius:5px;background:var(--bg5) center/cover no-repeat;flex-shrink:0;border:1px solid var(--border2)}.achip .cth.e{display:grid;place-items:center;font:700 9px var(--mono);color:var(--text4)}
+.achip.add{border-style:dashed;color:var(--text3)}
+.zcr .r{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:right}.zcr .r div{font:600 9.5px var(--mono);color:var(--text3)}.zcr .r b{display:block;font:400 14px var(--display);color:var(--text)}.zcr .r b.q{color:var(--green)}
+/* панель */
+.zsplit.inbox .zinbm{position:sticky;top:12px;max-height:calc(100vh - 90px);overflow:auto;gap:10px;padding:12px;border-radius:16px;background:var(--bg2);border:1px solid var(--border)}
+.zsplit.inbox .zih{padding:0 0 10px;border:0;background:none;box-shadow:none;border-bottom:1px solid var(--border);border-radius:0}
+.ztabs{display:flex;gap:3px;padding:3px;border-radius:9px;background:var(--bg3);border:1px solid var(--border)}.ztabs button{flex:1;height:26px;border-radius:7px;font:700 11px var(--sans);color:var(--text3);background:none;border:0;cursor:pointer}.ztabs button.on{background:var(--bg5);color:var(--text)}
+.zsplit.inbox .ziad{grid-template-columns:1fr;gap:8px}
+.zsplit.inbox .zitwo{grid-template-columns:1fr;gap:10px}
+.zsplit.inbox .zinbm .act{display:flex;gap:6px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border)}.zsplit.inbox .zinbm .act button{height:30px;padding:0 10px;font-size:11.5px;border-radius:8px}
+.zsplit.inbox .zinbm .zicps{display:flex;gap:6px;flex-wrap:wrap}
+.ztab-pane{display:none;flex-direction:column;gap:10px}.ztab-pane.on{display:flex}
+#zinb-ctxhost .zctx{display:block!important;position:static;max-height:none;width:auto}
+/* предпросмотр крео */
+#crprev{position:fixed;z-index:500;width:300px;padding:10px;border-radius:14px;background:var(--bg2);border:1px solid var(--border2);box-shadow:0 30px 60px -20px #000;display:none;pointer-events:none}
+#crprev.on{display:block}#crprev .fr{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}#crprev .fr i{display:block;aspect-ratio:9/16;border-radius:6px;background:var(--bg5) center/cover no-repeat}#crprev .fr i:first-child{grid-column:1/-1;aspect-ratio:16/10}
+#crprev b{display:block;font:700 12px var(--sans);margin-top:8px}#crprev small{display:block;font:500 11px var(--sans);color:var(--text3);margin-top:2px;line-height:1.35}#crprev .tg{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}#crprev .tg span{height:18px;padding:0 6px;border-radius:5px;background:var(--bg3);border:1px solid var(--border);font:600 9.5px var(--mono);color:var(--text3)}
+@media(max-width:1180px){.zsplit.inbox{grid-template-columns:1fr!important}.zsplit.inbox .zinbm{position:static;max-height:none}.zcr{grid-template-columns:4px 1fr}.zcr .achips,.zcr .r{grid-column:2}}
+
 #an-aud{position:absolute;inset:0;z-index:5;background:var(--bg);overflow-y:auto;padding:14px 18px 30px;display:none}
 #an-aud.on{display:block}
 #page-analysis{position:relative}
@@ -12793,7 +12846,7 @@ boot();
 .aud-card{align-self:start}.aud-mini{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 10px 10px}
 .aud-mi{display:grid;grid-template-columns:92px 1fr;gap:6px;align-items:center;padding:4px 6px;border-radius:12px;background:rgba(255,255,255,.025);cursor:pointer}
 .aud-mi .aud-dl{width:92px;height:92px}.aud-mi .aud-dl .num{font-size:26px}.aud-mi .aud-dl text.lab{font-size:5px}.aud-mi .aud-dl .subt{display:none}
-.aud-mi .r{display:grid;gap:5px;min-width:0}.aud-mi .r b{font:400 13px var(--d);color:var(--text);letter-spacing:.06em}
+.aud-mi .r{display:grid;gap:5px;min-width:0;overflow:hidden}.aud-mi .aud-dl .lab,.aud-mi .aud-dl .subt{display:none}.aud-mi .r b{font:400 13px var(--d);color:var(--text);letter-spacing:.06em}
 .aud-mi .aud-feel{width:auto;padding:5px 8px 4px;grid-template-columns:1fr 26px;gap:4px;font-size:8.5px;box-shadow:none}.aud-mi .aud-feel>span{display:none}.aud-mi .aud-feel b{font-size:13px}.aud-mi .aud-feel .aud-range{height:16px}.aud-mi .aud-feel .aud-range::-webkit-slider-thumb{width:13px;height:13px;margin-top:-4.5px}.aud-mi .aud-feel .aud-range::-webkit-slider-runnable-track{height:4px}
 /* цели компактнее, чтобы рядом поместилось давление */
 .dgrid{grid-template-columns:.85fr 1.55fr .8fr!important}.glw-card{grid-column:auto!important}.glw2{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)!important;gap:12px!important}.glw2-main{grid-template-columns:130px minmax(0,1fr)!important;gap:10px!important}.glw2-stage{width:130px!important;height:130px!important}.glw2-pct{font-size:34px!important}.glw2-eb{font-size:8.5px!important}.glw-row{padding:6px 0!important;gap:10px!important;grid-template-columns:minmax(90px,120px) minmax(0,1fr) auto!important}.glw-n b{font-size:12px!important}.glw-st{display:none!important}
@@ -12803,16 +12856,17 @@ boot();
 // Три сигнала на пару гео×воронка: A — старт новых крео (CTR первых 3 дней против стартов воронки за 90 дн.),
 // B — цена квала (14 дн. против 60 дн., при <5 квалов — CPL), C — темп частоты (прирост на $1000 против первых 14 дней РК).
 // Данные: aud_daily / aud_win / aud_ads (заполняет get-campaigns action aud_sync), квалы — source_daily через srcStats.
-const AUD={daily:[],win:[],ads:[],cfg:{my:{},myF:{},capM:{}},loaded:false,syncing:false,fun:null,sel:null,mode:'aud',prog:'',_rev:true,_at:0}
+const AUD={daily:[],win:[],ads:[],cfg:{my:{},myF:{},capM:{}},loaded:false,syncing:false,fun:null,sel:null,mode:'old',prog:'',_rev:true,_at:0,N:+(localStorage.getItem('aud_N')||14)}
+const AUD_PERIODS=[[7,'7 дней'],[14,'2 недели'],[30,'Месяц']]
 const AUD_GEOS={PL:['PLPL','PLUA'],CZ:['CZCZ','CZUA']}
 const audISO=k=>{const d=new Date();d.setUTCDate(d.getUTCDate()+k);return d.toISOString().slice(0,10)}
 const audAdd=(d,k)=>new Date(new Date(d+'T12:00:00Z').getTime()+k*864e5).toISOString().slice(0,10)
 const audClamp=(v,a,b)=>Math.max(a,Math.min(b,v))
 function audGeoOf(z){const g=String(z.geo||'').toUpperCase();if(g==='PLUA'||g==='CZUA')return g;if(g==='CZ'||g==='CZCZ')return'CZCZ';return'PLPL'}
-const AUD_KIND={isystem:'Калькулятор',konstruktor:'3D',visyt:'Визит'}
-function audFunOf(z){if(z.funnel)return z.funnel;const ks=zDomains(z).map(d=>d.domain).filter(Boolean);for(const k of ks){const p=typeof site2Parse==='function'&&site2Parse(k);if(p)return AUD_KIND[p.kind]||p.kind;if(/kalkulator/i.test(k))return'Калькулятор'}return'Другое'}
+const AUD_KIND={isystem:'Kalkulator',konstruktor:'3D',visyt:'Визит'}
+function audFunOf(z){if(z.funnel)return funNorm(z.funnel);const ks=zDomains(z).map(d=>d.domain).filter(Boolean);for(const k of ks){const p=typeof site2Parse==='function'&&site2Parse(k);if(p)return AUD_KIND[p.kind]||p.kind;if(/kalkulator/i.test(k))return'Kalkulator'}return'Другое'}
 function audZalivs(){return ZALIVS.filter(z=>z.campaign_id&&!z.togo)}
-function audFunnels(){const s=new Set((typeof FUNNELS!=='undefined'?FUNNELS:[]));audZalivs().forEach(z=>s.add(audFunOf(z)));return[...s]}
+function audFunnels(){const s=new Set((typeof FUNNELS!=='undefined'?FUNNELS:[]).map(funNorm));audZalivs().forEach(z=>s.add(audFunOf(z)));return[...s]}
 const AUD_ST=i=>i==null?['мало данных','#3A4258']:i<35?['Запас','#3DBE8B']:i<60?['Норма','#D4AF37']:i<78?['Насыщение','#E8913A']:['Выгорает','#F03A55']
 function audVerdict(S){if(S.data==null)return['Мало данных','#6B7A99','Данные ещё собираются: нужны дни с открутом, старты крео и квалы. Обычно через 3–5 дней после первого открытия.']
   const hi=v=>v!=null&&v>=50,a=hi(S.A),b=hi(S.B),c=hi(S.C)
@@ -12837,7 +12891,7 @@ function audSaveCfg(){clearTimeout(_audSaveT);_audSaveT=setTimeout(async()=>{if(
 // ── что просить у Meta ──
 function audNeeds(){const today=audISO(0);const have=new Set(AUD.daily.filter(r=>r.campaign_id==='_day').map(r=>String(r.day).slice(0,10)));const fresh=Date.now()-(AUD._at||0)<2*3600e3
   const days=[];for(let i=0;i<60;i++){const d=audISO(-i);if(!have.has(d)||(i<2&&!fresh))days.push(d)}
-  const windows=[];const w14s=audISO(-13);audZalivs().forEach(z=>{const cid=String(z.campaign_id);const w=AUD.win.find(r=>r.campaign_id===cid&&r.win==='14d');if(!w||String(w.since).slice(0,10)!==w14s||Date.now()-new Date(w.updated_at).getTime()>6*3600e3)windows.push({campaign_id:cid,win:'14d',since:w14s,until:today})
+  const windows=[];const N=AUD.N||14,wn=N+'d',w14s=audISO(-(N-1));audZalivs().forEach(z=>{const cid=String(z.campaign_id);const w=AUD.win.find(r=>r.campaign_id===cid&&r.win===wn);if(!w||String(w.since).slice(0,10)!==w14s||Date.now()-new Date(w.updated_at).getTime()>6*3600e3)windows.push({campaign_id:cid,win:wn,since:w14s,until:today})
     const st=typeof zStartISO==='function'?zStartISO(z):null;if(st&&st!=='0000-00-00'&&audAdd(st,13)<today&&!AUD.win.find(r=>r.campaign_id===cid&&r.win==='first14'))windows.push({campaign_id:cid,win:'first14',since:st,until:audAdd(st,13)})})
   const ads_done=AUD.ads.filter(a=>a.done).map(a=>a.ad_id)
   return{days,windows,ads_since:audISO(-90),ads_done}}
@@ -12855,14 +12909,14 @@ function audStatus(){document.querySelectorAll('.aud-sync').forEach(el=>{el.clas
 // ── расчёт ──
 let _audMemo={};function audCalc(geo,fun){const mk=geo+'|'+(fun||'');if(_audMemo[mk])return _audMemo[mk];const r=audCalc0(geo,fun);_audMemo[mk]=r;return r}
 function audCalc0(geo,fun){const zs=audZalivs().filter(z=>audGeoOf(z)===geo&&(!fun||audFunOf(z)===fun));const ids=new Set(zs.map(z=>String(z.campaign_id)))
-  const today=audISO(0),d14=audISO(-13),d60=audISO(-59),m0=today.slice(0,8)+'01'
+  const N=AUD.N||14,today=audISO(0),d14=audISO(-(N-1)),d60=audISO(-Math.max(59,N*4-1)),m0=today.slice(0,8)+'01'
   const dd=AUD.daily.filter(r=>ids.has(String(r.campaign_id)));const sum=(a,b,f)=>dd.filter(r=>r.day>=a&&r.day<=b).reduce((s,r)=>s+(+r[f]||0),0)
   const spend14=sum(d14,today,'spend'),spend60=sum(d60,today,'spend'),spendM=sum(m0,today,'spend'),clicks14=sum(d14,today,'clicks'),days14=new Set(dd.filter(r=>r.day>=d14&&+r.spend>0).map(r=>r.day)).size
   let q14=0,l14=0,q60=0,l60=0;zs.forEach(z=>{const a=srcStats(z.id,null,d14,today)||{};q14+=a.quals||0;l14+=a.leads||0;const b=srcStats(z.id,null,d60,today)||{};q60+=b.quals||0;l60+=b.leads||0})
-  const lowQ=q14<5;const cq=lowQ?(l14?spend14/l14:null):spend14/q14;const cn=lowQ?(l60>5?spend60/l60:null):(q60>5?spend60/q60:null)
+  const lowQ=q14<Math.max(3,Math.round(5*N/14));const cq=lowQ?(l14?spend14/l14:null):spend14/q14;const cn=lowQ?(l60>5?spend60/l60:null):(q60>5?spend60/q60:null)
   const B=cq!=null&&cn?Math.round(audClamp(cq/cn-1,0,1)*100):null
   const fr=rows=>{const imp=rows.reduce((s,r)=>s+(+r.imp||0),0),reach=rows.reduce((s,r)=>s+(+r.reach||0),0),sp=rows.reduce((s,r)=>s+(+r.spend||0),0);return reach>0&&sp>20?{freq:imp/reach,sp}:null}
-  const a=fr(AUD.win.filter(r=>ids.has(String(r.campaign_id))&&r.win==='14d')),b=fr(AUD.win.filter(r=>ids.has(String(r.campaign_id))&&r.win==='first14'))
+  const a=fr(AUD.win.filter(r=>ids.has(String(r.campaign_id))&&r.win===N+'d')),b=fr(AUD.win.filter(r=>ids.has(String(r.campaign_id))&&r.win==='first14'))
   const pace=a?Math.max(0,a.freq-1)/a.sp*1000:null,paceB=b?Math.max(0,b.freq-1)/b.sp*1000:null;const pr=pace!=null&&paceB>0?pace/paceB:null;const C=pr!=null?Math.round(audClamp((pr-1)/1.5,0,1)*100):null
   const ads=AUD.ads.filter(x=>ids.has(String(x.campaign_id))&&+x.imp3>=300);const nw=ads.filter(x=>String(x.created)>=d14),base=ads.filter(x=>String(x.created)<d14)
   let ns=null,A=null;if(nw.length&&base.length>=3){const ctr=x=>x.clicks3/x.imp3;const nv=nw.reduce((s,x)=>s+ctr(x),0)/nw.length;const bs=base.map(ctr).sort((p,q)=>p-q),bv=bs[Math.floor(bs.length/2)];if(bv>0){ns=Math.round((nv/bv-1)*100);A=Math.round(audClamp(-ns/50,0,1)*100)}}
@@ -12889,26 +12943,26 @@ function audBudget(geo,fun,S){const key=geo+'|'+fun;const cm=+(AUD.cfg.capM[key]
 function audTable(geos){const F=AUD.fun;const rows=[]
   geos.forEach(geo=>{const funs=audFunnels().filter(f=>audZalivs().some(z=>audGeoOf(z)===geo&&audFunOf(z)===f));const S=F?audCalc(geo,F):audCalc(geo,null);if(F&&!S.zs.length){rows.push(`<tr class="geo"><td><b>${geo}</b><small>${F}</small></td><td colspan="7"><span class="aud-mut">${F} не крутится в ${geo}</span></td></tr>`);return}
     const[,c]=AUD_ST(S.idx),V=audVerdict(S)
-    rows.push(`<tr class="geo ${AUD.sel===geo?'on':''}" data-audg="${geo}"><td><b>${geo}</b>${F?`<small>${F}</small>`:`<small>${S.zs.length} РК · ${S.days14} дн. с открутом</small>`}</td><td><span class="aud-ix" style="--cc:${c}">${S.idx==null?'—':S.idx}</span></td><td>${audVdc(V)}</td><td>${audCell(S.A,false,S.ns!=null?(S.ns>0?'+':'')+S.ns+'% · '+S.newAds+' новых':S.newAds?'нет базы стартов':'нет новых крео')}</td><td>${audCell(S.B,false,S.cq!=null?(S.lowQ?'CPL ':'CQL ')+'$'+Math.round(S.cq)+(S.cn?' / $'+Math.round(S.cn):''):'нет квалов')}</td><td>${audCell(S.C,false,S.pr!=null?'×'+S.pr.toFixed(1)+' к старту':S.freq14?'част. '+S.freq14.toFixed(2)+' · нет базы':'нет окна')}</td><td>${F?`<div class="aud-myc"><input type="range" class="aud-range" min="0" max="100" value="${S.my??(S.idx??50)}" data-audmy="${geo}|${F}"><b>${S.my??'—'}</b></div>`:(S.my!=null?`<span class="aud-feelchip">ощущение ${S.my}</span>`:'<span class="aud-mut">не задано</span>')}</td><td>${F?audBudget(geo,F,S):'<span class="aud-mut">по воронкам ↓</span>'}</td></tr>`)
+    rows.push(`<tr class="geo ${AUD.sel===geo?'on':''}" data-audg="${geo}"><td><b>${geo}</b>${F?`<small>${F}</small>`:`<small>${S.zs.length} РК · ${S.days14} дн. с открутом за ${AUD.N}</small>`}</td><td><span class="aud-ix" style="--cc:${c}">${S.idx==null?'—':S.idx}</span></td><td>${audVdc(V)}</td><td>${audCell(S.A,false,S.ns!=null?(S.ns>0?'+':'')+S.ns+'% · '+S.newAds+' новых':S.newAds?'нет базы стартов':'нет новых крео')}</td><td>${audCell(S.B,false,S.cq!=null?(S.lowQ?'CPL ':'CQL ')+'$'+Math.round(S.cq)+(S.cn?' / $'+Math.round(S.cn):''):'нет квалов')}</td><td>${audCell(S.C,false,S.pr!=null?'×'+S.pr.toFixed(1)+' к старту':S.freq14?'част. '+S.freq14.toFixed(2)+' · нет базы':'нет окна')}</td><td>${F?`<div class="aud-myc"><input type="range" class="aud-range" min="0" max="100" value="${S.my??(S.idx??50)}" data-audmy="${geo}|${F}"><b>${S.my??'—'}</b></div>`:(S.my!=null?`<span class="aud-feelchip">ощущение ${S.my}</span>`:'<span class="aud-mut">не задано</span>')}</td><td>${F?audBudget(geo,F,S):'<span class="aud-mut">по воронкам ↓</span>'}</td></tr>`)
     if(!F)funs.forEach(f=>{const Sf=audCalc(geo,f);const[,cf]=AUD_ST(Sf.idx),Vf=audVerdict(Sf)
       rows.push(`<tr class="frow"><td><span class="ind">└</span>${f}<span class="aud-mut" style="margin-left:6px">${Sf.zs.length} РК</span></td><td><span class="aud-ix sm" style="--cc:${cf}">${Sf.idx==null?'—':Sf.idx}</span></td><td>${audVdc(Vf)}</td><td>${audCell(Sf.A,true)}</td><td>${audCell(Sf.B,true)}</td><td>${audCell(Sf.C,true)}</td><td><div class="aud-myc sm"><input type="range" class="aud-range sm" min="0" max="100" value="${Sf.my??(Sf.idx??50)}" data-audmy="${geo}|${f}"><b>${Sf.my??'—'}</b></div></td><td>${audBudget(geo,f,Sf)}</td></tr>`)})})
   return`<table class="aud-tb"><thead><tr><th>Гео / воронка</th><th>Индекс</th><th>Вердикт</th><th>Новое крео</th><th>Квалы</th><th>Частота</th><th>Ощущение</th><th>Бюджет / мес</th></tr></thead><tbody>${rows.join('')}</tbody></table>`}
 function audDials(geos,small){return`<div class="aud-drow">${geos.map(geo=>{const S=AUD.fun?audCalc(geo,AUD.fun):audCalc(geo,null);const[,c]=AUD_ST(S.idx);return`<div class="aud-dcol ${AUD.sel===geo?'on':''}" data-audg="${geo}" style="--cc:${c}"><div class="aud-dl ${small?'sm':''}">${audSvg(geo+(AUD.fun||'')+(small?'s':''),S)}</div><div class="aud-feel"><span>Ощущение · ${geo}${AUD.fun?' · '+AUD.fun:''}</span><input type="range" class="aud-range" min="0" max="100" value="${S.my??(S.idx??50)}" data-audmy="${geo}${AUD.fun?'|'+AUD.fun:''}"><b>${S.my??'—'}</b></div></div>`}).join('')}</div>`}
 function audGena(geos){const R=geos.map(g=>({g,S:audCalc(g,AUD.fun)})).filter(x=>x.S.idx!=null);if(!R.length)return'';R.sort((a,b)=>b.S.idx-a.S.idx);const hot=R[0],cold=R[R.length-1];const Vh=audVerdict(hot.S);let t=`${hot.g}${AUD.fun?' · '+AUD.fun:''} — ${Vh[0].toLowerCase()}, индекс ${hot.S.idx}. ${Vh[2]}`;if(R.length>1&&cold.S.idx<35&&hot.S.idx>=60)t+=` ${cold.g} в запасе (${cold.S.idx}) — часть бюджета туда.`;return`<div class="aud-gen"><b>Геннадий:</b> ${t}</div>`}
 function audRenderAn(){const el=document.getElementById('an-aud');if(!el||!el.classList.contains('on'))return;_audMemo={};const geos=AUD_GEOS[CURRENT_REGION]||AUD_GEOS.PL;if(!AUD.sel)AUD.sel=geos[0];const funs=audFunnels().filter(f=>audZalivs().some(z=>audFunOf(z)===f))
-  el.innerHTML=`<div class="aud-top"><h2>Давление на аудиторию</h2><span class="sub">${CURRENT_REGION} · усталость гео от воронки · 0–100</span><div class="aud-seg" id="aud-funsel"><button class="${!AUD.fun?'on':''}" data-audf="">Все воронки</button>${funs.map(f=>`<button class="${AUD.fun===f?'on':''}" data-audf="${f}">${f}</button>`).join('')}</div><div class="aud-sync ${AUD.syncing?'on':''}"><i></i><span></span><button onclick="audSync(true)">⟳ обновить</button><button onclick="audMode('old')">Анализ РК →</button></div></div>
-  <p class="aud-note">Три сигнала: <b>новые крео стартуют хуже нормы воронки</b> · <b>квалы дорожают</b> (при &lt;5 квалов — CPL) · <b>частота набирается быстрее, чем в первые 2 недели РК</b>. Твоё ощущение (0–100) смешивается с данными пополам. Воронка берётся из карточки залива (поле «Воронка»), гео — из залива.</p>
+  el.innerHTML=`<div class="aud-top"><h2>Давление на аудиторию</h2><span class="sub">${CURRENT_REGION} · усталость гео от воронки · 0–100</span><div class="aud-seg" id="aud-funsel"><button class="${!AUD.fun?'on':''}" data-audf="">Все воронки</button>${funs.map(f=>`<button class="${AUD.fun===f?'on':''}" data-audf="${f}">${f}</button>`).join('')}</div><div class="aud-seg" id="aud-per">${AUD_PERIODS.map(([n,l])=>`<button class="${AUD.N===n?'on':''}" data-audn="${n}">${l}</button>`).join('')}</div><div class="aud-sync ${AUD.syncing?'on':''}"><i></i><span></span><button onclick="audSync(true)">⟳ обновить</button><button onclick="audMode('old')">Анализ РК →</button></div></div>
+  <p class="aud-note">Три сигнала: <b>новые крео стартуют хуже нормы воронки</b> · <b>квалы дорожают</b> (мало квалов — CPL) · <b>частота набирается быстрее, чем в первые 2 недели РК</b>. Период сигналов — переключатель справа. Твоё ощущение (0–100) смешивается с данными пополам. Воронка берётся из карточки залива (поле «Воронка»), гео — из залива.</p>
   ${!AUD.loaded?'<div class="aud-empty">Загрузка…</div>':!AUD.daily.length&&!AUD.syncing?`<div class="aud-empty">Данных Meta ещё нет${AUD.loadErr?' · '+AUD.loadErr+' — выполни aud_v10.sql':''}.<br>Нажми «обновить» — соберу последние 60 дней (несколько минут).</div>`:''}
   <div class="aud-wrap">${audDials(geos)}${audTable(geos)}${audGena(geos)}</div>`
   audStatus();audRev(el)}
 function audRenderDash(){const el=document.getElementById('d-aud');if(!el)return;_audMemo={};const geos=AUD_GEOS[CURRENT_REGION]||AUD_GEOS.PL;if(!AUD.loaded){el.innerHTML='<div class="empty">Загрузка…</div>';return}
   const f=AUD.fun;AUD.fun=null
-  el.innerHTML=`<div class="aud-mini">${geos.map(geo=>{const S=audCalc(geo,null);const[,c]=AUD_ST(S.idx),V=audVerdict(S);return`<div class="aud-mi" data-audg="${geo}" style="--cc:${c}" onclick="if(!event.target.closest('input')){AUD.mode='aud';gp('analysis',document.getElementById('nb-analysis'))}"><div class="aud-dl">${audSvg(geo+'d',S,true)}</div><div class="r"><b>${geo}</b>${audVdc(V)}<div class="aud-feel" title="Ощущение ${geo}"><input type="range" class="aud-range" min="0" max="100" value="${S.my??(S.idx??50)}" data-audmy="${geo}"><b>${S.my??'—'}</b></div></div></div>`}).join('')}</div>`
+  el.innerHTML=`<div class="aud-mini">${geos.map(geo=>{const S=audCalc(geo,null);const[,c]=AUD_ST(S.idx);return`<div class="aud-mi" data-audg="${geo}" style="--cc:${c}" onclick="if(!event.target.closest('input')){AUD.mode='aud';gp('analysis',document.getElementById('nb-analysis'))}"><div class="aud-dl">${audSvg(geo+'d',S,true)}</div><div class="r"><b>${geo}</b><div class="aud-feel" title="Ощущение ${geo}"><input type="range" class="aud-range" min="0" max="100" value="${S.my??(S.idx??50)}" data-audmy="${geo}"><b>${S.my??'—'}</b></div></div></div>`}).join('')}</div>`
   AUD.fun=f;audRev(el)}
 function audRenderAll(){_audMemo={};audRenderAn();audRenderDash()}
-function audMode(m){AUD.mode=m;try{localStorage.setItem('aud_mode',m)}catch(e){}const el=document.getElementById('an-aud'),sw=document.getElementById('aud-sw');if(!el)return;el.classList.toggle('on',m==='aud');if(sw)sw.style.display=m==='aud'?'none':'';if(m==='aud'){AUD._rev=true;audOpen()}}
+function audMode(m){const el=document.getElementById('an-aud'),sw=document.getElementById('aud-sw');if(!el)return;el.classList.toggle('on',m==='aud');if(sw)sw.style.display=m==='aud'?'none':'';if(m==='aud'){AUD._rev=true;audOpen()}}
 async function audOpen(){if(!AUD.loaded){try{AUD._at=+localStorage.getItem('aud_at_'+CURRENT_REGION)||0}catch(e){}await audLoad()}audRenderAll();audSync(false)}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-audf]');if(b){AUD.fun=b.dataset.audf||null;AUD._rev=true;audRenderAn();return}
+document.addEventListener('click',e=>{const pn=e.target.closest('[data-audn]');if(pn){AUD.N=+pn.dataset.audn;try{localStorage.setItem('aud_N',String(AUD.N))}catch(x){}AUD._rev=true;audRenderAll();audSync(true);return}const b=e.target.closest('[data-audf]');if(b){AUD.fun=b.dataset.audf||null;AUD._rev=true;audRenderAn();return}
   if(e.target.closest('input,button'))return;const g=e.target.closest('#an-aud [data-audg]');if(g&&AUD.sel!==g.dataset.audg){AUD.sel=g.dataset.audg;audRenderAn()}})
 document.addEventListener('input',e=>{const t=e.target;if(t.dataset.audmy!=null){const[g,f]=t.dataset.audmy.split('|');if(f)AUD.cfg.myF[g+'|'+f]=+t.value;else AUD.cfg.my[g]=+t.value;const nb=t.nextElementSibling;if(nb)nb.textContent=t.value;audSaveCfg();return}
   if(t.dataset.audcap!=null){AUD.cfg.capM[t.dataset.audcap]=+t.value||0;audSaveCfg()}})
