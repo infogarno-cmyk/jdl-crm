@@ -2441,7 +2441,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-11-05 04:55'
+const BUILD='2026-11-05 05:15'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -9777,6 +9777,10 @@ window.FB_API={
   me:()=>CURRENT_USER?.name||CURRENT_BUYER||'',
   zalivs:()=>ZALIVS||[],
   cats:()=>typeof CATS!=='undefined'?CATS:[],
+  // воронки из реестра: РК, у которых есть адсет этой воронки, и ключи калек этой воронки
+  funnels:()=>(typeof FUNNELS_CFG!=='undefined'?FUNNELS_CFG:[]).map(f=>({name:f.name,color:f.color})),
+  funnelZids:name=>(ZALIVS||[]).filter(z=>!z.togo&&typeof audAdsets==='function'&&audAdsets(z).some(x=>x.fun===name)).map(z=>z.id),
+  funnelKeys:name=>{const k=new Set();(ZALIVS||[]).forEach(z=>{if(z.togo||typeof audAdsets!=='function')return;audAdsets(z).forEach(x=>{if(x.fun===name&&x.e.domain)k.add(normKey(x.e.domain))})});return[...k]},
   buyerOf:z=>z.buyer||(typeof parseBuyerFromName==='function'?parseBuyerFromName(z.name||''):'')||'',
   isActive:id=>{const z=(ZALIVS||[]).find(x=>x.id===id);return !!z&&!z.togo&&z.ind!=='off'},
   async listBoards(){if(!db)return{error:{message:'нет подключения к базе.'}}
@@ -9786,18 +9790,18 @@ window.FB_API={
   async removeBoard(id){await db.from('funnel_boards').delete().eq('id',id)},
   // цифры воронки: спенд/показы/клики/досмотры — Meta по кампаниям выбранных РК,
   // лиды/квалы/контакты/визиты/продажи — GarnoCRM через ту же привязку кальк к РК, что и в заливах
-  async funnelData(ids,days){const to=todayISO(),from=fbFrom(days),set=new Set(ids),dm={}
+  async funnelData(ids,days,keys){const to=todayISO(),from=fbFrom(days),set=new Set(ids),dm={},kset=keys&&keys.length?new Set(keys):null
     for(let i=0;i<days;i++){const d=new Date(from+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+i);const k=d.toISOString().slice(0,10);dm[k]={day:k,ld:0,q:0,ct:0,vi:0,sa:0}}
     const s0=SRC_DAILY[0]||{},hasCt='contacts' in s0,hasVi='visits' in s0,hasSa='sales' in s0
     let ld=0,q=0,ct=0,vi=0,sa=0
-    SRC_DAILY.forEach(r=>{if(r.day<from||r.day>to)return;const x=dm[r.day];if(!x)return;const own=srcRowOwners(r,srcParse(r.source));let hit=false;own.forEach(id=>{if(set.has(id))hit=true});if(!hit)return
+    SRC_DAILY.forEach(r=>{if(r.day<from||r.day>to)return;const x=dm[r.day];if(!x)return;const pp=srcParse(r.source);if(kset&&!kset.has(pp.key))return;const own=srcRowOwners(r,pp);let hit=false;own.forEach(id=>{if(set.has(id))hit=true});if(!hit)return
       x.ld+=r.leads||0;x.q+=r.quals||0;x.ct+=r.contacts||0;x.vi+=r.visits||0;x.sa+=r.sales||0;ld+=r.leads||0;q+=r.quals||0;ct+=r.contacts||0;vi+=r.visits||0;sa+=r.sales||0})
     const cids=[...new Set(ids.map(id=>(ZALIVS||[]).find(z=>z.id===id)?.campaign_id).filter(Boolean))]
     let sp=0,impr=0,cl=0,v3=0,hasV3=false
     if(cids.length){const m=await bulkInsights(cids,from,to);cids.forEach(c=>{const v=m[c];if(!v||v.error)return;sp+=+v.spend||0;impr+=+v.impressions||0;cl+=+v.clicks||0;if(v.video_views!=null){hasV3=true;v3+=+v.video_views||0}})}
     return{a:{sp,impr,cl,v3:hasV3?v3:NaN,ld,q,ct:hasCt?ct:NaN,vi:hasVi?vi:NaN,sa:hasSa?sa:NaN},d:Object.values(dm),has:{v3:hasV3,ct:hasCt,vi:hasVi,sa:hasSa}}},
-  kalkStats(ids,days){const to=todayISO(),from=fbFrom(days),set=new Set(ids),m={}
-    SRC_DAILY.forEach(r=>{if(r.day<from||r.day>to)return;const p=srcParse(r.source),own=srcRowOwners(r,p);let hit=false;own.forEach(id=>{if(set.has(id))hit=true});if(!hit)return
+  kalkStats(ids,days,keys){const to=todayISO(),from=fbFrom(days),set=new Set(ids),m={},kset=keys&&keys.length?new Set(keys):null
+    SRC_DAILY.forEach(r=>{if(r.day<from||r.day>to)return;const p=srcParse(r.source);if(kset&&!kset.has(p.key))return;const own=srcRowOwners(r,p);let hit=false;own.forEach(id=>{if(set.has(id))hit=true});if(!hit)return
       const key=r.source||'—',x=m[key]||(m[key]={src:key,b:p.letter==='D'?'Danya':p.letter==='I'?'Illia':'',leads:0,quals:0});x.leads+=r.leads||0;x.quals+=r.quals||0})
     return Object.values(m).sort((a,b)=>b.leads-a.leads)},
   taskCol:id=>{const t=TASKS.find(x=>x.id===id);return t?t.col:null},
@@ -12220,14 +12224,17 @@ function widths(len){return Array.from({length:len},(_,i)=>len<2?100:Math.round(
 function srcOf(n){return n.src&&typeof n.src==='string'&&(n.src==='all'||n.src.includes(':')||n.src==='rk')?n.src:'all'}
 function srcZids(n){const Z=API.zalivs(),s=srcOf(n);
   if(s==='rk')return(n.rk||[]).filter(id=>Z.some(z=>z.id===id));
+  if(s.startsWith('fun:'))return API.funnelZids?API.funnelZids(s.slice(4)):[];
   return Z.filter(z=>s==='all'||(s.startsWith('buyer:')&&API.buyerOf(z)===s.slice(6))||(s.startsWith('cat:')&&(z.cat||'')===s.slice(4))).map(z=>z.id)}
-function srcName(n){const s=srcOf(n);if(s==='all')return 'Все РК '+API.region();if(s==='rk')return (n.rk||[]).length+' выбр. РК';if(s.startsWith('buyer:'))return 'РК '+s.slice(6);return 'Категория '+s.slice(4)}
+function srcKeys(n){const s=srcOf(n);return s.startsWith('fun:')&&API.funnelKeys?API.funnelKeys(s.slice(4)):null}
+function srcName(n){const s=srcOf(n);if(s==='all')return 'Все РК '+API.region();if(s==='rk')return (n.rk||[]).length+' выбр. РК';if(s.startsWith('buyer:'))return 'РК '+s.slice(6);if(s.startsWith('fun:'))return 'Воронка '+s.slice(4);return 'Категория '+s.slice(4)}
 function srcOptions(n){const s=srcOf(n),cats=API.cats(),o=(v,t)=>`<option value="${esc(v)}"${v===s?' selected':''}>${esc(t)}</option>`;
-  return o('all','Все РК '+API.region())+'<optgroup label="Баер">'+o('buyer:Danya','РК Danya')+o('buyer:Illia','РК Illia')+'</optgroup>'+(cats.length?'<optgroup label="Категория">'+cats.map(c=>o('cat:'+c,c)).join('')+'</optgroup>':'')+'<optgroup label="Вручную">'+o('rk',s==='rk'?`Выбранные РК (${(n.rk||[]).length})…`:'Выбрать РК…')+'</optgroup>'}
+  const funs=API.funnels?API.funnels():[];
+  return o('all','Все РК '+API.region())+(funs.length?'<optgroup label="Воронка из реестра — по ключам калек">'+funs.map(f=>o('fun:'+f.name,f.name)).join('')+'</optgroup>':'')+'<optgroup label="Баер">'+o('buyer:Danya','РК Danya')+o('buyer:Illia','РК Illia')+'</optgroup>'+(cats.length?'<optgroup label="Категория">'+cats.map(c=>o('cat:'+c,c)).join('')+'</optgroup>':'')+'<optgroup label="Вручную">'+o('rk',s==='rk'?`Выбранные РК (${(n.rk||[]).length})…`:'Выбрать РК…')+'</optgroup>'}
 const CACHE={};let _loadN=0;
-function dataFor(n){const ids=srcZids(n).slice().sort((a,b)=>a-b),key=S.period+'|'+ids.join(',');let c=CACHE[key];
+function dataFor(n){const ids=srcZids(n).slice().sort((a,b)=>a-b),ks=srcKeys(n),key=S.period+'|'+ids.join(',')+'|'+(ks?ks.join(','):'');let c=CACHE[key];
   if(!c){c=CACHE[key]={loading:true,ids};_loadN++;updLbl();
-    API.funnelData(ids,S.period).then(r=>{Object.assign(c,r,{loading:false})}).catch(e=>{c.loading=false;c.err=String(e&&e.message||e)}).finally(()=>{_loadN--;updLbl();refreshLive();if(!$('#hEff').hidden&&!$('#home').hidden)renderEff()})}
+    API.funnelData(ids,S.period,ks).then(r=>{Object.assign(c,r,{loading:false})}).catch(e=>{c.loading=false;c.err=String(e&&e.message||e)}).finally(()=>{_loadN--;updLbl();refreshLive();if(!$('#hEff').hidden&&!$('#home').hidden)renderEff()})}
   return c}
 function updLbl(){const el=$('#updLbl');if(el)el.textContent=_loadN?'загрузка…':'обновлено '+new Date().toTimeString().slice(0,5)}
 function agg(n){const c=dataFor(n);if(c.loading||!c.a)return{a:{sp:NaN,impr:NaN,v3:NaN,cl:NaN,ld:NaN,ct:NaN,q:NaN,vi:NaN,sa:NaN},d:[],loading:c.loading,ids:c.ids};return{a:c.a,d:c.d||[],ids:c.ids,has:c.has||{}}}
@@ -12681,13 +12688,13 @@ function effToast(t){document.querySelectorAll('.eftoast').forEach(x=>x.remove()
 function persistF(f){if(f.bid){const b=S.boards.find(x=>x.id===f.bid);if(b)saveBoard(b)}else if(f.lib){f.lib.node=JSON.parse(JSON.stringify(f.n));API.saveBoard({id:f.lib.id,kind:'lib',region:API.region(),name:f.lib.name,sort:0,data:{node:f.lib.node}})}}
 /* месяц к дате — для плана/факта */
 const MCACHE={};
-function monthData(n){const ids=srcZids(n).slice().sort((a,b)=>a-b),dom=new Date().getDate(),key=dom+'|'+ids.join(',');let c=MCACHE[key];
-  if(!c){c=MCACHE[key]={loading:true};API.funnelData(ids,dom).then(r=>Object.assign(c,r,{loading:false})).catch(()=>{c.loading=false}).finally(()=>{if(!$('#hEff').hidden&&!$('#home').hidden)renderEff()})}return c}
+function monthData(n){const ids=srcZids(n).slice().sort((a,b)=>a-b),ks=srcKeys(n),dom=new Date().getDate(),key=dom+'|'+ids.join(',')+'|'+(ks?ks.join(','):'');let c=MCACHE[key];
+  if(!c){c=MCACHE[key]={loading:true};API.funnelData(ids,dom,ks).then(r=>Object.assign(c,r,{loading:false})).catch(()=>{c.loading=false}).finally(()=>{if(!$('#hEff').hidden&&!$('#home').hidden)renderEff()})}return c}
 function dd(d){return d.toISOString().slice(8,10)+'.'+d.toISOString().slice(5,7)}
 function renderEff(){const box=$('#hEff'),F=allFunnels();
   if(!F.length){box.innerHTML=`<div class="efempty"><b style="display:block;font:400 18px var(--d);color:var(--t2);margin-bottom:6px">Живых воронок пока нет</b>Создай разбор и поставь в него блок «Воронка» — здесь появится эффективность по этапам, конверсии, план/факт и сравнение воронок.<br><br><button class="btn red" data-gonew>＋ Новая воронка</button></div>`;return}
   if(!F.some(f=>f.key===EFSEL))EFSEL=F[0].key;F.forEach(f=>Object.assign(f,fSum(f.n)));const C=F.find(f=>f.key===EFSEL),ci=F.indexOf(C);
-  const Z=API.zalivs(),zids=srcZids(C.n),act=zids.filter(id=>API.isActive(id)).length,K=API.kalkStats?API.kalkStats(zids,S.period):[];
+  const Z=API.zalivs(),zids=srcZids(C.n),act=zids.filter(id=>API.isActive(id)).length,K=API.kalkStats?API.kalkStats(zids,S.period,srcKeys(C.n)):[];
   const live=F.filter(f=>!f.lib),tpl=F.filter(f=>f.lib),item=(f,i)=>{const z=srcZids(f.n).filter(id=>API.isActive(id)).length;return `<button class="efi${f.key===EFSEL?' on':''}${f.lib?' tpl':''}" data-f="${f.key}"><b><i style="background:${f.lib?'var(--t3)':COLS3[i%6]}"></i>${esc(fNm(f))}</b><small>${z?'CQL '+usd(f.cql,1)+' · '+z+' РК':'пауза · 0 РК'}</small></button>`};
   const list=`<aside class="eflist"><div class="gh">Воронки · ${API.region()}</div>${live.map((f,i)=>item(f,i)).join('')||'<div style="padding:4px 10px 8px;color:var(--t3);font-size:11.5px">Нет живых воронок</div>'}<button class="efnew" data-gonew>＋ Новая воронка</button>${tpl.length?`<div class="gh" style="margin-top:8px">Шаблоны</div>${tpl.map((f,i)=>item(f,i)).join('')}`:''}</aside>`;
   const rs=C.rs,W=C.w,kKeys=K.slice(0,4).map(k=>k.src),si=Math.min(EFST[C.key]!=null?EFST[C.key]:(W?rs.indexOf(W):0),rs.length-1);
@@ -12912,11 +12919,11 @@ function audRules(buyer){const L=buyer==='Illia'?'I':buyer==='Danya'?'D':'';retu
 async function audRulesSave(){const url=JSON.stringify(AUD_RULES||AUD_RULES0);const m=(DOMAIN_META||[]).find(x=>x.key==='aud_funrules');if(m){await db.from('domain_meta').update({url,updated_at:new Date().toISOString()}).eq('id',m.id);m.url=url}else{const{data}=await db.from('domain_meta').insert({region:'ALL',key:'aud_funrules',custom:false,url,updated_at:new Date().toISOString()}).select().single();if(data)DOMAIN_META.push(data)}_audMemo={}}
 function audFunOfKey(k,buyer){k=String(k||'').toLowerCase();if(!k)return null;for(const r of audRules(buyer)){try{if(new RegExp(r.pat,'i').test(k))return r.fun}catch(e){}}return null}
 // адсеты залива с воронкой каждого: [{e, fun}]
-function audAdsets(z){return zDomains(z).map(e=>({e,fun:audFunOfKey(e.domain,z.buyer)||(z.funnel?funNorm(z.funnel):null)||'Другое'}))}
-function audFunOf(z){const fs=audAdsets(z).map(x=>x.fun);if(!fs.length)return z.funnel?funNorm(z.funnel):'Другое';const c={};fs.forEach(f=>c[f]=(c[f]||0)+1);return Object.keys(c).sort((a,b)=>c[b]-c[a])[0]}
+function audAdsets(z){return zDomains(z).map(e=>({e,fun:audFunOfKey(e.domain,z.buyer)||'Другое'}))}
+function audFunOf(z){const fs=audAdsets(z).map(x=>x.fun);if(!fs.length)return'Другое';const c={};fs.forEach(f=>c[f]=(c[f]||0)+1);return Object.keys(c).sort((a,b)=>c[b]-c[a])[0]}
 function audFunOf_old(z){if(z.funnel)return funNorm(z.funnel);const ks=zDomains(z).map(d=>d.domain).filter(Boolean);for(const k of ks){const p=typeof site2Parse==='function'&&site2Parse(k);if(p)return AUD_KIND[p.kind]||p.kind;if(/kalkulator/i.test(k))return'Kalkulator'}return'Другое'}
 function audZalivs(){return ZALIVS.filter(z=>z.campaign_id&&!z.togo)}
-function audFunnels(){const s=new Set((typeof FUNNELS!=='undefined'?FUNNELS:[]).map(funNorm));audZalivs().forEach(z=>s.add(audFunOf(z)));return[...s]}
+function audFunnels(){const s=new Set((typeof FUNNELS_CFG!=='undefined'?FUNNELS_CFG.map(f=>f.name):[]));if(audZalivs().some(z=>audAdsets(z).some(x=>x.fun==='Другое')))s.add('Другое');return[...s]}
 const AUD_ST=i=>i==null?['мало данных','#3A4258']:i<35?['Запас','#3DBE8B']:i<60?['Норма','#D4AF37']:i<78?['Насыщение','#E8913A']:['Выгорает','#F03A55']
 function audVerdict(S){if(S.data==null)return['Мало данных','#6B7A99','Данные ещё собираются: нужны дни с открутом, старты крео и квалы. Обычно через 3–5 дней после первого открытия.']
   const hi=v=>v!=null&&v>=50,a=hi(S.A),b=hi(S.B),c=hi(S.C)
