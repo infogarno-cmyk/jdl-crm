@@ -2441,7 +2441,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-11-05 04:45'
+const BUILD='2026-11-05 04:55'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -2520,19 +2520,20 @@ var FUNNELS=FUNNELS_DEFAULT.slice()
 function funnelRow(){return (DOMAIN_META||[]).find(m=>m.key===FUNNELS_KEY)}
 // ── Реестр воронок (единый): имя, правило по ключу кальки (regex), цвет. Хранится в domain_meta __funnels.
 // Им пользуются: заливы (воронка адсета по ключу), давление на аудиторию, библиотека крео (воронка крео и фильтр в пикере).
-const FUNNELS_CFG0=[{name:'Kalkulator',pat:'kalkulator|isystem',color:'#D4AF37'},{name:'3D',pat:'konstruktor',color:'#6E9BFF'},{name:'Визит',pat:'visyt|visit',color:'#B48CFF'},{name:'Столешки',pat:'stol|blat',color:'#3DBE8B'}]
+// правила по ключу — отдельно для Дани (patD: kalkulatorN) и Ильи (patI: plisystem/plkonstruktor/plvisyt); pat — общее для обоих
+const FUNNELS_CFG0=[{name:'Kalkulator',patD:'kalkulator',patI:'isystem',pat:'',color:'#D4AF37'},{name:'3D',patD:'',patI:'konstruktor',pat:'',color:'#6E9BFF'},{name:'Визит',patD:'',patI:'visyt|visit',pat:'',color:'#B48CFF'},{name:'Столешки',patD:'stol|blat',patI:'',pat:'',color:'#3DBE8B'}]
 var FUNNELS_CFG=FUNNELS_CFG0.map(x=>({...x}))
 function funCfg(name){return FUNNELS_CFG.find(f=>f.name===funNorm(name))||null}
 function funColor(name){const f=funCfg(name);return f&&f.color||'#7C8297'}
 function loadFunnels(){
   const r=funnelRow()
-  if(r&&r.url){try{const a=JSON.parse(r.url);if(Array.isArray(a)&&a.length){FUNNELS_CFG=a.map(x=>typeof x==='string'?{name:funNorm(x),pat:(FUNNELS_CFG0.find(d=>d.name===funNorm(x))||{}).pat||'',color:(FUNNELS_CFG0.find(d=>d.name===funNorm(x))||{}).color||'#7C8297'}:{name:funNorm(x.name),pat:x.pat||'',color:x.color||'#7C8297'}).filter(x=>x.name)}}catch(e){}}
+  if(r&&r.url){try{const a=JSON.parse(r.url);if(Array.isArray(a)&&a.length){FUNNELS_CFG=a.map(x=>{if(typeof x==='string'){const d=FUNNELS_CFG0.find(d=>d.name===funNorm(x))||{};return{name:funNorm(x),pat:'',patD:d.patD||'',patI:d.patI||'',color:d.color||'#7C8297'}}return{name:funNorm(x.name),pat:x.pat||'',patD:x.patD||'',patI:x.patI||'',color:x.color||'#7C8297'}}).filter(x=>x.name)}}catch(e){}}
   else FUNNELS_CFG=FUNNELS_CFG0.map(x=>({...x}))
   FUNNELS=[...new Set(FUNNELS_CFG.map(f=>f.name))];if(typeof AUD_RULES!=='undefined')AUD_RULES=null
   fillFunnelSelects()
 }
 async function saveFunnels(list){
-  if(Array.isArray(list)&&list.length&&typeof list[0]==='string')FUNNELS_CFG=list.filter(Boolean).map(n=>funCfg(n)||{name:funNorm(n),pat:'',color:'#7C8297'})
+  if(Array.isArray(list)&&list.length&&typeof list[0]==='string')FUNNELS_CFG=list.filter(Boolean).map(n=>funCfg(n)||{name:funNorm(n),pat:'',patD:'',patI:'',color:'#7C8297'})
   else if(Array.isArray(list))FUNNELS_CFG=list.filter(x=>x&&x.name)
   FUNNELS=[...new Set(FUNNELS_CFG.map(f=>f.name))];if(typeof AUD_RULES!=='undefined')AUD_RULES=null;if(typeof _audMemo!=='undefined')_audMemo={}
   fillFunnelSelects()
@@ -2568,11 +2569,11 @@ document.addEventListener('change',async e=>{
 // Управление списком из консоли
 // модалка настройки воронок — открывается из раздела «Воронки» и из «Доменов»
 function funnelsCfgOpen(){let m=document.getElementById('funcfg');if(!m){m=document.createElement('div');m.id='funcfg';m.className='mo';m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')});document.body.appendChild(m)}
-  const rows=FUNNELS_CFG.map((f,i)=>`<div class="fcr"><span class="fcc" style="background:${f.color}"></span><input class="fi" value="${(f.name||'').replace(/"/g,'&quot;')}" placeholder="Название" data-fc="${i}|name"><input class="fi mono" value="${(f.pat||'').replace(/"/g,'&quot;')}" placeholder="кусок ключа кальки, regex: kalkulator|isystem" data-fc="${i}|pat"><input type="color" value="${f.color||'#7C8297'}" data-fc="${i}|color" title="Цвет"><span class="fcn">${(typeof ZALIVS!=='undefined'?ZALIVS.filter(z=>!z.togo&&typeof audFunOf==='function'&&audFunOf(z)===f.name).length:0)} РК</span><button class="rmbtn" data-fcdel="${i}" title="Удалить">×</button></div>`).join('')
+  const rows=FUNNELS_CFG.map((f,i)=>`<div class="fcr"><span class="fcc" style="background:${f.color}"></span><input class="fi" value="${(f.name||'').replace(/"/g,'&quot;')}" placeholder="Название" data-fc="${i}|name"><input class="fi mono" value="${(f.patD||'').replace(/"/g,'&quot;')}" placeholder="kalkulator" data-fc="${i}|patD"><input class="fi mono" value="${(f.patI||'').replace(/"/g,'&quot;')}" placeholder="isystem" data-fc="${i}|patI"><input type="color" value="${f.color||'#7C8297'}" data-fc="${i}|color" title="Цвет"><span class="fcn">${(typeof ZALIVS!=='undefined'?ZALIVS.filter(z=>!z.togo&&typeof audFunOf==='function'&&audFunOf(z)===f.name).length:0)} РК</span><button class="rmbtn" data-fcdel="${i}" title="Удалить">×</button></div>`).join('')
   m.innerHTML=`<div class="mob" style="width:min(760px,94vw)"><div class="motit"><span>Воронки <span style="font:600 11px var(--mono);color:var(--text3);margin-left:10px">одно место для всех: заливы · давление · крео</span></span><button class="mox" onclick="document.getElementById('funcfg').classList.remove('open')">×</button></div>
-   <div style="display:grid;gap:8px"><div style="font:500 12px var(--sans);color:var(--text2)">Воронка адсета определяется по ключу кальки: первое правило, которое совпало. Крео при загрузке получает воронку, в заливе под адсет <b>Kalkulator · PLPL</b> подсвечиваются крео только этой воронки и гео.</div>
-   <div class="fch"><span></span><span>Название</span><span>Правило по ключу</span><span>Цвет</span><span></span><span></span></div>${rows}
-   <div style="display:flex;gap:8px;margin-top:6px"><button class="clnk" onclick="funnelsCfgRead();FUNNELS_CFG.push({name:'',pat:'',color:'#7C8297'});funnelsCfgOpen()">+ воронка</button><button class="bsv" style="margin-left:auto;padding:8px 16px" onclick="funnelsCfgSave()">Сохранить</button></div></div></div>`
+   <div style="display:grid;gap:8px"><div style="font:500 12px var(--sans);color:var(--text2)">Воронка адсета определяется по ключу кальки с учётом баера залива: у Дани свои ключи (kalkulatorN), у Ильи свои (plisystem / plkonstruktor / plvisyt). Первое совпавшее правило. Крео при загрузке получает воронку, в заливе под адсет <b>Kalkulator · PLPL</b> подсвечиваются крео только этой воронки и гео.</div>
+   <div class="fch"><span></span><span>Название</span><span>Ключи Дани</span><span>Ключи Ильи</span><span>Цвет</span><span></span><span></span></div>${rows}
+   <div style="display:flex;gap:8px;margin-top:6px"><button class="clnk" onclick="funnelsCfgRead();FUNNELS_CFG.push({name:'',pat:'',patD:'',patI:'',color:'#7C8297'});funnelsCfgOpen()">+ воронка</button><button class="bsv" style="margin-left:auto;padding:8px 16px" onclick="funnelsCfgSave()">Сохранить</button></div></div></div>`
   m.classList.add('open')}
 function funnelsCfgRead(){const m=document.getElementById('funcfg');if(!m)return;m.querySelectorAll('[data-fc]').forEach(i=>{const[idx,k]=i.dataset.fc.split('|');if(FUNNELS_CFG[+idx])FUNNELS_CFG[+idx][k]=k==='name'?funNorm(i.value):i.value.trim()})}
 async function funnelsCfgSave(){const m=document.getElementById('funcfg');if(!m)return;funnelsCfgRead();await saveFunnels(FUNNELS_CFG.filter(f=>f.name));m.classList.remove('open');toast('Воронки сохранены','ok');if(typeof rzalivs==='function')rzalivs();if(typeof rdomRegistry==='function')rdomRegistry();if(typeof funnelsBar==='function')funnelsBar();if(typeof audRenderAll==='function')audRenderAll()}
@@ -2628,7 +2629,7 @@ function domainOptions(site,curKey,selfZid,buyer){const lk=lockedDomains();const
 // source → {letter, key}
 const normKey=k=>String(k||'').toLowerCase().trim().replace(/\s+/g,' ')
 let _rkKeySig='',_rkKeys=new Set()
-function audRulesHtml(){return`<div class="dsite" style="margin-bottom:12px"><div class="dsh"><b>Воронки</b><span style="font-size:11px;color:var(--text3)">${FUNNELS_CFG.map(f=>`<span class="funchip" style="--c:${f.color};height:22px;font-size:10.5px"><i></i>${f.name}<small>${f.pat||'без правила'}</small></span>`).join(' ')}</span><button class="clnk" onclick="funnelsCfgOpen()" style="margin-left:auto">⚙ Настроить</button></div></div>`}
+function audRulesHtml(){return`<div class="dsite" style="margin-bottom:12px"><div class="dsh"><b>Воронки</b><span style="font-size:11px;color:var(--text3)">${FUNNELS_CFG.map(f=>`<span class="funchip" style="--c:${f.color};height:22px;font-size:10.5px"><i></i>${f.name}<small>D: ${f.patD||'—'} · I: ${f.patI||'—'}</small></span>`).join(' ')}</span><button class="clnk" onclick="funnelsCfgOpen()" style="margin-left:auto">⚙ Настроить</button></div></div>`}
 function audRulesHtml_old(){const R=audRules();return`<div class="dsite" style="margin-bottom:12px"><div class="dsh"><b>Воронки по ключу кальки</b><span style="font-size:11px;color:var(--text3)">правило = кусок ключа (regex) → воронка; первое совпавшее. По ним считаются давление на аудиторию и воронка залива</span><button class="clnk" onclick="audRuleAdd()" style="margin-left:auto">+ правило</button></div><div class="dgrid">${R.map((r,i)=>`<div class="dtile"><div class="dk" style="gap:6px"><input class="fi" value="${(r.pat||'').replace(/"/g,'&quot;')}" placeholder="kalkulator|isystem" style="flex:1;height:26px;font:600 11px var(--mono)" onchange="audRuleSet(${i},'pat',this.value)"><span style="color:var(--text3)">→</span><input class="fi" value="${(r.fun||'').replace(/"/g,'&quot;')}" placeholder="Kalkulator" style="width:110px;height:26px;font:600 11px var(--sans)" onchange="audRuleSet(${i},'fun',this.value)"><span class="dnote" onclick="audRuleDel(${i})" title="Удалить">✕</span></div></div>`).join('')}</div></div>`}
 function audRuleSet(i,k,v){audRules()[i][k]=v.trim();audRulesSave();if(typeof rzalivs==='function')rzalivs()}
 function audRuleAdd(){audRules().push({pat:'',fun:''});audRulesSave();rdomRegistry()}
@@ -10170,7 +10171,7 @@ async function crPickOpen(anchor,geo,used,onPick,funnel){crPickClose();let funOn
 function crModalBtn(i){const a=moAds[i]||{};return `<button type="button" class="crpk" data-crpk="${i}" title="Крео этого адсета">${a.creo?crChip(a.creo):'<span class="crpk-t" style="color:var(--bord2)">＋ крео</span>'}</button>${a.creo?`<button type="button" class="rmbtn" data-crclr="${i}" title="Убрать крео">×</button>`:''}`}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-crpk]');if(b){e.preventDefault();const i=+b.dataset.crpk;crPickOpen(b,crGeo(moGeo||''),moAds.map(a=>a.creo).filter(Boolean),id=>{moAds[i].creo=id;moAdsRender()});return}
   const c=e.target.closest('[data-crclr]');if(c){e.preventDefault();moAds[+c.dataset.crclr].creo=null;moAdsRender();return}
-  const z=e.target.closest('[data-crz]');if(z){e.preventDefault();const zid=+z.dataset.crz,zz=ZALIVS.find(x=>x.id===zid);if(!zz)return;const ee=zDomains(zz).find(d=>z.dataset.adset?d.adset_id===z.dataset.adset:d.ad===+z.dataset.ad)||{};crPickOpen(z,crGeo(zz.geo),zDomains(zz).map(d=>d.creo).filter(Boolean),id=>setAdsetCreo(zid,+z.dataset.ad,z.dataset.adset||null,z.dataset.adname||null,id),typeof audFunOfKey==='function'?audFunOfKey(ee.domain):null);return}
+  const z=e.target.closest('[data-crz]');if(z){e.preventDefault();const zid=+z.dataset.crz,zz=ZALIVS.find(x=>x.id===zid);if(!zz)return;const ee=zDomains(zz).find(d=>z.dataset.adset?d.adset_id===z.dataset.adset:d.ad===+z.dataset.ad)||{};crPickOpen(z,crGeo(zz.geo),zDomains(zz).map(d=>d.creo).filter(Boolean),id=>setAdsetCreo(zid,+z.dataset.ad,z.dataset.adset||null,z.dataset.adname||null,id),typeof audFunOfKey==='function'?audFunOfKey(ee.domain,zz.buyer):null);return}
   const zc=e.target.closest('[data-crzclr]');if(zc){e.preventDefault();setAdsetCreo(+zc.dataset.crzclr,+zc.dataset.ad,zc.dataset.adset||null,null,null)}})
 // строка адсета в карточке залива
 function crZBtn(z,adIdx,adsetId,adsetName){const e=zDomains(z).find(d=>adsetId?d.adset_id===adsetId:d.ad===adIdx)||(adsetId?zDomains(z)[adIdx-1]:null)||{};const id=e.creo
@@ -12833,7 +12834,7 @@ boot();
 /* панель */
 .zsplit.inbox .zinbm{position:sticky;top:12px;max-height:calc(100vh - 90px);overflow:auto;gap:10px;padding:12px;border-radius:16px;background:var(--bg2);border:1px solid var(--border)}
 .zsplit.inbox .zih{padding:0 0 10px;border:0;background:none;box-shadow:none;border-bottom:1px solid var(--border);border-radius:0}
-.fch,.fcr{display:grid;grid-template-columns:14px 150px 1fr 40px 60px 24px;gap:8px;align-items:center}.fch{font:700 9.5px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--text3)}.fcr .fcc{width:12px;height:12px;border-radius:4px}.fcr .fcn{font:600 10.5px var(--mono);color:var(--text3)}.fcr input[type=color]{width:34px;height:28px;border:1px solid var(--border);border-radius:7px;background:var(--bg3);padding:2px;cursor:pointer}.fcr .fi{height:30px;padding:4px 8px}.fcr .fi.mono{font:600 11.5px var(--mono)}
+.fch,.fcr{display:grid;grid-template-columns:14px 140px 1fr 1fr 40px 54px 24px;gap:8px;align-items:center}.fch{font:700 9.5px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--text3)}.fcr .fcc{width:12px;height:12px;border-radius:4px}.fcr .fcn{font:600 10.5px var(--mono);color:var(--text3)}.fcr input[type=color]{width:34px;height:28px;border:1px solid var(--border);border-radius:7px;background:var(--bg3);padding:2px;cursor:pointer}.fcr .fi{height:30px;padding:4px 8px}.fcr .fi.mono{font:600 11.5px var(--mono)}
 #fun-bar{display:flex;gap:8px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--bg2);flex-wrap:wrap}.funchip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:7px;border:1px solid color-mix(in srgb,var(--c) 45%,transparent);background:color-mix(in srgb,var(--c) 10%,transparent);font:700 11px var(--sans);color:var(--text)}.funchip i{width:7px;height:7px;border-radius:50%;background:var(--c);box-shadow:0 0 6px var(--c)}.funchip small{font:600 10px var(--mono);color:var(--text3)}
 .crdd-fun{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 9px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);font:700 11px var(--sans);color:var(--text3);cursor:pointer;margin-right:6px}.crdd-fun i{width:7px;height:7px;border-radius:50%;background:var(--c)}.crdd-fun.on{color:var(--text);border-color:color-mix(in srgb,var(--c) 50%,transparent);background:color-mix(in srgb,var(--c) 12%,transparent)}.crdd-fun.on i{box-shadow:0 0 6px var(--c)}
 .zbtns{display:grid;grid-template-columns:1fr 1fr 40px;gap:6px}.zbtns button{height:38px;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);font:700 12.5px var(--sans);color:var(--text);cursor:pointer}.zbtns button.p{color:#0B0C12;background:linear-gradient(135deg,#F0D98A,#D4AF37);border-color:transparent;box-shadow:0 8px 20px -10px rgba(212,175,55,.9)}.zbtns button.gh{color:var(--text3)}
@@ -12907,11 +12908,11 @@ const AUD_KIND={isystem:'Kalkulator',konstruktor:'3D',visyt:'Визит'}
 // ── Воронка определяется по ключу кальки адсета (правила редактируются в «Доменах»), а не руками в карточке ──
 const AUD_RULES0=[{pat:'kalkulator|isystem',fun:'Kalkulator'},{pat:'konstruktor',fun:'3D'},{pat:'visyt|visit',fun:'Визит'},{pat:'stol|blat',fun:'Столешки'}]
 let AUD_RULES=null
-function audRules(){if(AUD_RULES)return AUD_RULES;AUD_RULES=(typeof FUNNELS_CFG!=='undefined'?FUNNELS_CFG:[]).filter(f=>f.pat).map(f=>({pat:f.pat,fun:f.name}));if(!AUD_RULES.length)AUD_RULES=AUD_RULES0.slice();return AUD_RULES}
+function audRules(buyer){const L=buyer==='Illia'?'I':buyer==='Danya'?'D':'';return(typeof FUNNELS_CFG!=='undefined'?FUNNELS_CFG:[]).flatMap(f=>[L==='D'&&f.patD?{pat:f.patD,fun:f.name}:null,L==='I'&&f.patI?{pat:f.patI,fun:f.name}:null,!L&&f.patD?{pat:f.patD,fun:f.name}:null,!L&&f.patI?{pat:f.patI,fun:f.name}:null,f.pat?{pat:f.pat,fun:f.name}:null].filter(Boolean))}
 async function audRulesSave(){const url=JSON.stringify(AUD_RULES||AUD_RULES0);const m=(DOMAIN_META||[]).find(x=>x.key==='aud_funrules');if(m){await db.from('domain_meta').update({url,updated_at:new Date().toISOString()}).eq('id',m.id);m.url=url}else{const{data}=await db.from('domain_meta').insert({region:'ALL',key:'aud_funrules',custom:false,url,updated_at:new Date().toISOString()}).select().single();if(data)DOMAIN_META.push(data)}_audMemo={}}
-function audFunOfKey(k){k=String(k||'').toLowerCase();if(!k)return null;for(const r of audRules()){try{if(new RegExp(r.pat,'i').test(k))return r.fun}catch(e){}}return null}
+function audFunOfKey(k,buyer){k=String(k||'').toLowerCase();if(!k)return null;for(const r of audRules(buyer)){try{if(new RegExp(r.pat,'i').test(k))return r.fun}catch(e){}}return null}
 // адсеты залива с воронкой каждого: [{e, fun}]
-function audAdsets(z){return zDomains(z).map(e=>({e,fun:audFunOfKey(e.domain)||(z.funnel?funNorm(z.funnel):null)||'Другое'}))}
+function audAdsets(z){return zDomains(z).map(e=>({e,fun:audFunOfKey(e.domain,z.buyer)||(z.funnel?funNorm(z.funnel):null)||'Другое'}))}
 function audFunOf(z){const fs=audAdsets(z).map(x=>x.fun);if(!fs.length)return z.funnel?funNorm(z.funnel):'Другое';const c={};fs.forEach(f=>c[f]=(c[f]||0)+1);return Object.keys(c).sort((a,b)=>c[b]-c[a])[0]}
 function audFunOf_old(z){if(z.funnel)return funNorm(z.funnel);const ks=zDomains(z).map(d=>d.domain).filter(Boolean);for(const k of ks){const p=typeof site2Parse==='function'&&site2Parse(k);if(p)return AUD_KIND[p.kind]||p.kind;if(/kalkulator/i.test(k))return'Kalkulator'}return'Другое'}
 function audZalivs(){return ZALIVS.filter(z=>z.campaign_id&&!z.togo)}
