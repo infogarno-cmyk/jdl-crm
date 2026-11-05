@@ -2441,7 +2441,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-11-05 05:15'
+const BUILD='2026-11-05 05:30'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -9785,7 +9785,7 @@ window.FB_API={
   isActive:id=>{const z=(ZALIVS||[]).find(x=>x.id===id);return !!z&&!z.togo&&z.ind!=='off'},
   async listBoards(){if(!db)return{error:{message:'нет подключения к базе.'}}
     const{data,error}=await db.from('funnel_boards').select('*').or('region.eq.'+CURRENT_REGION+',kind.eq.lib').order('sort',{ascending:true})
-    if(error)return{error};return{data:(data||[]).filter(r=>r.kind==='board'&&r.region===CURRENT_REGION),lib:(data||[]).filter(r=>r.kind==='lib')}},
+    if(error)return{error};return{data:(data||[]).filter(r=>r.kind==='board'&&r.region===CURRENT_REGION),lib:(data||[]).filter(r=>r.kind==='lib'),reg:(data||[]).filter(r=>r.kind==='reg'&&r.region===CURRENT_REGION)}},
   async saveBoard(row){row.updated_at=new Date().toISOString();row.updated_by=CURRENT_USER?.name||'';const{error}=await db.from('funnel_boards').upsert(row);return{error}},
   async removeBoard(id){await db.from('funnel_boards').delete().eq('id',id)},
   // цифры воронки: спенд/показы/клики/досмотры — Meta по кампаниям выбранных РК,
@@ -12676,27 +12676,30 @@ function renderHome(){$('#hReg').textContent=API.region();if(!$('#hEff').hidden|
 
 /* ── Эффективность воронок: все живые воронки из разборов + шаблоны из библиотеки ── */
 let EFSEL=LS('fb_effsel')||'',EFST={};
-function allFunnels(){const out=[];S.boards.filter(b=>((b.meta||{}).status||'work')!=='arch').forEach(b=>b.nodes.filter(n=>n.type==='funnel').forEach(n=>out.push({key:b.id+'|'+n.id,n,where:b.name,bid:b.id})));
+const REGN={}
+// воронки из реестра CRM (настройки → Воронки): всегда в списке, источник — РК и кальки по правилам ключей
+function regFunnels(){return (API.funnels?API.funnels():[]).map(f=>{const n=REGN[f.name]||(REGN[f.name]={id:'reg-'+f.name,type:'funnel',title:f.name,src:'fun:'+f.name,reg:true,color:f.color});n.title=f.name;n.src='fun:'+f.name;n.color=f.color;return{key:'reg|'+f.name,n,where:'реестр',reg:true,color:f.color}})}
+function allFunnels(){const out=regFunnels();S.boards.filter(b=>((b.meta||{}).status||'work')!=='arch').forEach(b=>b.nodes.filter(n=>n.type==='funnel').forEach(n=>out.push({key:b.id+'|'+n.id,n,where:b.name,bid:b.id})));
   S.lib.forEach(l=>{if(l.node&&l.node.type==='funnel'){if(!l._n)l._n=JSON.parse(JSON.stringify(l.node));out.push({key:'lib|'+l.id,n:l._n,where:'шаблон',lib:l})}});return out}
 const COLS3=['#D4AF37','#6E9BFF','#A07CF5','#3DBE8B','#E8913A','#FF7A8A'];
 const ICO={Meta:['📣','rgba(110,155,255,.18)'],'Калька':['🧮','rgba(212,175,55,.18)'],GarnoCRM:['📝','rgba(61,190,139,.18)']},ICOM={cql:['⭐','rgba(212,175,55,.2)'],qr:['⭐','rgba(212,175,55,.2)'],visit:['🏬','rgba(160,124,245,.2)'],sale:['💰','rgba(61,190,139,.2)'],cont:['📞','rgba(64,200,185,.18)']};
 // главная цифра этапа — сколько штук дошло до него
 const BIG={cpm:a=>['$'+num(a.sp),''],hook:a=>[num(a.v3),'досм.'],ctr:a=>[num(a.cl),'кликов'],cpc:a=>[num(a.cl),'кликов'],cvr:a=>[num(a.ld),'заявок'],cpl:a=>[num(a.ld),'лидов'],cont:a=>[num(a.ct),'контакт.'],qr:a=>[num(a.q),'квалов'],cql:a=>[num(a.q),'квалов'],visit:a=>[num(a.vi),'визитов'],sale:a=>[num(a.sa),'продаж']};
-function fNm(f){if(f.lib)return f.lib.name||f.n.title||'Шаблон';const b=S.boards.find(x=>x.id===f.bid),cnt=b?b.nodes.filter(n=>n.type==='funnel').length:1;return cnt>1?(f.where+' · '+(f.n.title||'воронка')):(f.where||f.n.title||'Воронка')}
+function fNm(f){if(f.reg)return f.n.title;if(f.lib)return f.lib.name||f.n.title||'Шаблон';const b=S.boards.find(x=>x.id===f.bid),cnt=b?b.nodes.filter(n=>n.type==='funnel').length:1;return cnt>1?(f.where+' · '+(f.n.title||'воронка')):(f.where||f.n.title||'Воронка')}
 function fSum(n){const rs=funnelCalc(n),a=rs[0]?rs[0].a:{};const W=weakest(n);return{rs,a,cpl:a.sp/a.ld,cql:a.sp/a.q,cps:a.sp/a.sa,w:W.r,gap:W.gap,loading:rs.some(r=>r.loading)}}
 function effToast(t){document.querySelectorAll('.eftoast').forEach(x=>x.remove());const d=document.createElement('div');d.className='eftoast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2600)}
-function persistF(f){if(f.bid){const b=S.boards.find(x=>x.id===f.bid);if(b)saveBoard(b)}else if(f.lib){f.lib.node=JSON.parse(JSON.stringify(f.n));API.saveBoard({id:f.lib.id,kind:'lib',region:API.region(),name:f.lib.name,sort:0,data:{node:f.lib.node}})}}
+function persistF(f){if(f.reg){const id='reg-'+API.region()+'-'+f.n.title;API.saveBoard({id,kind:'reg',region:API.region(),name:f.n.title,sort:0,data:{node:JSON.parse(JSON.stringify(f.n))}});return}if(f.bid){const b=S.boards.find(x=>x.id===f.bid);if(b)saveBoard(b)}else if(f.lib){f.lib.node=JSON.parse(JSON.stringify(f.n));API.saveBoard({id:f.lib.id,kind:'lib',region:API.region(),name:f.lib.name,sort:0,data:{node:f.lib.node}})}}
 /* месяц к дате — для плана/факта */
 const MCACHE={};
 function monthData(n){const ids=srcZids(n).slice().sort((a,b)=>a-b),ks=srcKeys(n),dom=new Date().getDate(),key=dom+'|'+ids.join(',')+'|'+(ks?ks.join(','):'');let c=MCACHE[key];
   if(!c){c=MCACHE[key]={loading:true};API.funnelData(ids,dom,ks).then(r=>Object.assign(c,r,{loading:false})).catch(()=>{c.loading=false}).finally(()=>{if(!$('#hEff').hidden&&!$('#home').hidden)renderEff()})}return c}
 function dd(d){return d.toISOString().slice(8,10)+'.'+d.toISOString().slice(5,7)}
 function renderEff(){const box=$('#hEff'),F=allFunnels();
-  if(!F.length){box.innerHTML=`<div class="efempty"><b style="display:block;font:400 18px var(--d);color:var(--t2);margin-bottom:6px">Живых воронок пока нет</b>Создай разбор и поставь в него блок «Воронка» — здесь появится эффективность по этапам, конверсии, план/факт и сравнение воронок.<br><br><button class="btn red" data-gonew>＋ Новая воронка</button></div>`;return}
+  if(!F.length){box.innerHTML=`<div class="efempty"><b style="display:block;font:400 18px var(--d);color:var(--t2);margin-bottom:6px">Воронки не настроены</b>Открой «⚙ Настроить воронки» сверху — заведи воронки и правила по ключам калек, и здесь появится эффективность каждой.<br><br><button class="btn red" data-gonew>＋ Новый разбор</button></div>`;return}
   if(!F.some(f=>f.key===EFSEL))EFSEL=F[0].key;F.forEach(f=>Object.assign(f,fSum(f.n)));const C=F.find(f=>f.key===EFSEL),ci=F.indexOf(C);
   const Z=API.zalivs(),zids=srcZids(C.n),act=zids.filter(id=>API.isActive(id)).length,K=API.kalkStats?API.kalkStats(zids,S.period,srcKeys(C.n)):[];
-  const live=F.filter(f=>!f.lib),tpl=F.filter(f=>f.lib),item=(f,i)=>{const z=srcZids(f.n).filter(id=>API.isActive(id)).length;return `<button class="efi${f.key===EFSEL?' on':''}${f.lib?' tpl':''}" data-f="${f.key}"><b><i style="background:${f.lib?'var(--t3)':COLS3[i%6]}"></i>${esc(fNm(f))}</b><small>${z?'CQL '+usd(f.cql,1)+' · '+z+' РК':'пауза · 0 РК'}</small></button>`};
-  const list=`<aside class="eflist"><div class="gh">Воронки · ${API.region()}</div>${live.map((f,i)=>item(f,i)).join('')||'<div style="padding:4px 10px 8px;color:var(--t3);font-size:11.5px">Нет живых воронок</div>'}<button class="efnew" data-gonew>＋ Новая воронка</button>${tpl.length?`<div class="gh" style="margin-top:8px">Шаблоны</div>${tpl.map((f,i)=>item(f,i)).join('')}`:''}</aside>`;
+  const reg=F.filter(f=>f.reg),live=F.filter(f=>!f.lib&&!f.reg),tpl=F.filter(f=>f.lib),item=(f,i)=>{const z=srcZids(f.n).filter(id=>API.isActive(id)).length;return `<button class="efi${f.key===EFSEL?' on':''}${f.lib?' tpl':''}" data-f="${f.key}"><b><i style="background:${f.reg?f.color:f.lib?'var(--t3)':COLS3[i%6]}"></i>${esc(fNm(f))}</b><small>${z?'CQL '+usd(f.cql,1)+' · '+z+' РК':'пауза · 0 РК'}</small></button>`};
+  const list=`<aside class="eflist"><div class="gh">Воронки · ${API.region()} <span style="font-weight:500;color:var(--t3)">из настроек</span></div>${reg.map((f,i)=>item(f,i)).join('')||'<div style="padding:4px 10px 8px;color:var(--t3);font-size:11.5px">Воронки не настроены — ⚙ Настроить воронки</div>'}${live.length?`<div class="gh" style="margin-top:8px">Разборы</div>${live.map((f,i)=>item(f,i)).join('')}`:''}<button class="efnew" data-gonew>＋ Новый разбор</button>${tpl.length?`<div class="gh" style="margin-top:8px">Шаблоны</div>${tpl.map((f,i)=>item(f,i)).join('')}`:''}</aside>`;
   const rs=C.rs,W=C.w,kKeys=K.slice(0,4).map(k=>k.src),si=Math.min(EFST[C.key]!=null?EFST[C.key]:(W?rs.indexOf(W):0),rs.length-1);
   let flow='';rs.forEach((r,i)=>{
     if(i){const cv=r.conv,lo=W&&W===r,col=!isFinite(cv)?'var(--t3)':lo?'var(--r)':cv>=.5?'var(--gr)':'var(--gr)';flow+=`<div class="ar2"><div class="p" style="color:${col}">${isFinite(cv)?pct(cv,cv<.1?1:0):'—'}</div><svg viewBox="0 0 44 12"><path d="M2 6h36m-5-4 5 4-5 4" stroke="${lo?'#F03A55':'#4A5165'}" stroke-width="1.6" fill="none"/></svg><small>${esc((r.L.cl||'').split(' ')[0]||'переход')}</small></div>`}
@@ -12796,7 +12799,7 @@ async function boot(){if(!API){document.body.innerHTML='<p style="padding:20px;c
   $('#regLbl').textContent=API.region();renderPeriod();updHist();
   const r=await API.listBoards();if(r.error){setupErr(r.error.message);return}$('.setup')?.remove();
   S.boards=(r.data||[]).filter(x=>x.kind==='board').map(rowToBoard).sort((a,b)=>(a.sort||0)-(b.sort||0));
-  S.lib=(r.lib||[]).map(x=>({id:x.id,name:x.name,node:(x.data||{}).node})).filter(x=>x.node);
+  S.lib=(r.lib||[]).map(x=>({id:x.id,name:x.name,node:(x.data||{}).node})).filter(x=>x.node);(r.reg||[]).forEach(x=>{const n=(x.data||{}).node;if(n&&n.title)REGN[n.title]=Object.assign(n,{reg:true,src:'fun:'+n.title})});
   const last=LS('fb_cur_'+API.region());S.cur=S.boards.some(b=>b.id===last)?last:(S.boards[0]||{}).id;
   hist=[];redoS=[];updHist();sel=null;setTool(null);showHome(true);
 }
