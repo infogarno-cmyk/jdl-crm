@@ -538,6 +538,12 @@
 .glw2-stage{position:relative;width:200px;height:200px}
 .glw2-stage canvas{width:100%;height:100%;display:block}
 .glw2-info{display:flex;flex-direction:column;gap:3px;min-width:0}
+.glw-ch{display:block;width:100%;max-width:220px;height:44px;margin:4px 0 2px;overflow:visible}.glw2-t .glw-ch{max-width:160px;height:22px;margin:3px 0 0}
+.glw-act{stroke-dasharray:600;stroke-dashoffset:600;animation:glwDraw 1.4s .35s cubic-bezier(.2,.8,.2,1) forwards}@keyframes glwDraw{to{stroke-dashoffset:0}}
+.glw-td{opacity:0;animation:glwFade .4s 1.5s forwards}@keyframes glwFade{to{opacity:.7}}
+.glw2-mr{opacity:0;transform:scale(.6) rotate(-20deg);animation:glwPop .55s cubic-bezier(.2,1.4,.3,1) forwards}.glw2-it:nth-child(1) .glw2-mr{animation-delay:.15s}.glw2-it:nth-child(2) .glw2-mr{animation-delay:.3s}.glw2-it:nth-child(3) .glw2-mr{animation-delay:.45s}@keyframes glwPop{to{opacity:1;transform:none}}
+.glw2-mr svg circle:last-child{animation:glwRing 1.2s .4s cubic-bezier(.2,.8,.2,1) both}@keyframes glwRing{from{stroke-dashoffset:var(--C,330)}}
+.glw2-stage{opacity:0;transform:scale(.85);animation:glwPop .7s .05s cubic-bezier(.2,1.2,.3,1) forwards}
 .glw2-eb{font:700 9.5px Manrope,system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--text3)}
 .glw2-nm{font:600 15px Manrope,system-ui,sans-serif;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .glw2-sub{font:500 10.5px var(--mono);color:var(--text3)}
@@ -2435,7 +2441,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-11-05 02:25'
+const BUILD='2026-11-05 02:40'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -9861,6 +9867,12 @@ async function glRemove(id){await db.from('goals').delete().eq('id',id);GOALS=GO
 // ── виджет на дашборде: вместо «Последних заливов» и «Что случилось» ──
 let _glWTimer=null
 function renderGoalWidget(){clearTimeout(_glWTimer);_glWTimer=setTimeout(_renderGoalWidget,150)}
+// мини-график цели: план (прямая к цели), факт (накопительно до сегодня), прогноз пунктиром, метка «сегодня»
+function glwChart(e,w,h,big){if(!e||!e.cum||!e.t||e.kind==='ms')return'';const N=e.days||30,el=Math.max(0,Math.min(N,e.elapsed||0)),T=e.t;const mx=Math.max(T,e.cum[Math.max(0,el-1)]||0,(e.forecast||0))*1.05||1
+  const X=i=>(i/N*w).toFixed(1),Y=v=>(h-2-Math.min(1,v/mx)*(h-6)).toFixed(1);const c=glPcol(Math.min(1,(e.v||0)/T))
+  const act=[`0,${Y(0)}`];for(let i=0;i<el;i++)act.push(`${X(i+1)},${Y(e.cum[i]||0)}`)
+  const fc=el&&el<N?`<line x1="${X(el)}" y1="${Y(e.cum[el-1]||0)}" x2="${X(N)}" y2="${Y(e.forecast||0)}" stroke="${c}" stroke-width="1" stroke-dasharray="3 3" opacity=".6"/>`:''
+  return`<svg class="glw-ch ${big?'big':''}" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" preserveAspectRatio="none" aria-hidden="true"><line x1="0" y1="${Y(0)}" x2="${w}" y2="${Y(T)}" stroke="rgba(255,255,255,.28)" stroke-width="1"/><line x1="0" y1="${Y(T)}" x2="${w}" y2="${Y(T)}" stroke="rgba(255,255,255,.1)" stroke-width="1" stroke-dasharray="2 3"/>${fc}<polyline class="glw-act" points="${act.join(' ')}" fill="none" stroke="${c}" stroke-width="${big?2:1.5}" stroke-linejoin="round" stroke-linecap="round" style="filter:drop-shadow(0 0 3px ${c})"/><line class="glw-td" x1="${X(el)}" y1="2" x2="${X(el)}" y2="${h}" stroke="#fff" stroke-width="1" opacity=".7"/></svg>`}
 async function _renderGoalWidget(){const box=document.getElementById('d-goals');if(!box||!db)return;const m=glMonth(),R=glRange(m),el=+todayISO().slice(8,10)
   const hd=document.getElementById('d-goals-day');if(hd)hd.textContent=`день ${el} из ${R.days}`;const tt=document.getElementById('d-goals-tit');if(tt)tt.textContent='Цели · '+glMonName(m)
   const list=await loadGoals(m)
@@ -9874,7 +9886,7 @@ async function _renderGoalWidget(){const box=document.getElementById('d-goals');
     else if(M.kind==='lim'){p=isFinite(e.v)&&e.v>0?Math.min(1,e.t/e.v):0;val=`${glFmt(e.v,'$')} <small>/ ≤ ${glFmt(e.t,'$')}</small>`;sub=(g.who==='team'?'команда':g.who)+' · '+(g.region==='all'?'PL+CZ':g.region);const d=isFinite(e.v)?(e.v/e.t-1)*100:0;pill=[e.status,e.status==='ok'?'в цели':(d>0?'+':'')+d.toFixed(0)+'% к цели',e.buyers&&isFinite(e.buyers.D.v)?`D ${glFmt(e.buyers.D.v,'$')} · I ${glFmt(e.buyers.I.v,'$')}`:'']}
     else{p=Math.min(1,e.v/e.t);val=`${glFmt(e.v,e.u)} <small>/ ${glFmt(e.t,e.u)}</small>`;sub=(g.who==='team'?'команда':g.who)+' · '+(g.region==='all'?'PL+CZ':g.region);pill=e.v>=e.t?['ok','взято ✓','+'+glFmt(e.v-e.t,e.u)+' сверху']:[e.status,e.status==='ok'?'в темпе':e.status==='mid'?'прогноз '+glFmt(e.forecast,e.u):'отстаём '+glFmt(e.v-e.plan,e.u),'нужно '+glFmtD(e.need,e.u)+' / день']}
     return{p,val,sub,pill,name:(g.name||M.label||'').replace(/[<>&]/g,'')}}
-  const mr=(p,sz)=>{const r=sz/2-5,C=2*Math.PI*r,c=glPcol(p);return `<svg viewBox="0 0 ${sz} ${sz}" width="${sz}" height="${sz}" aria-hidden="true"><circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="1.6"/><circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="${c}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-Math.min(1,p))}" transform="rotate(-90 ${sz/2} ${sz/2})" style="filter:drop-shadow(0 0 4px ${c})"/></svg>`}
+  const mr=(p,sz)=>{const r=sz/2-5,C=2*Math.PI*r,c=glPcol(p);return `<svg viewBox="0 0 ${sz} ${sz}" width="${sz}" height="${sz}" aria-hidden="true"><circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="1.6"/><circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="${c}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-Math.min(1,p))}" transform="rotate(-90 ${sz/2} ${sz/2})" style="filter:drop-shadow(0 0 4px ${c});--C:${C}"/></svg>`}
   const g0=ds[0],e0=evs[0],I0=info(g0,e0),c0=glPcol(I0.p)
   const ms=list.filter(g=>g.kind==='ms'),msD=ms.reduce((a,g)=>a+(g.steps||[]).filter(s=>s.d).length,0),msT=ms.reduce((a,g)=>a+(g.steps||[]).length,0)
   const qg=list.find(g=>g.metric==='quals'&&g.who==='team')
@@ -9882,11 +9894,11 @@ async function _renderGoalWidget(){const box=document.getElementById('d-goals');
   box.innerHTML=`<div class="glw2" style="--pc:${c0}">
     <div class="glw2-main" onclick="glOpen('a',${g0.id})" role="button" tabindex="0" aria-label="Открыть цель ${I0.name}">
       <div class="glw2-stage"><canvas id="glw-cv" aria-label="Голограмма воронки: прогресс главной цели"></canvas></div>
-      <div class="glw2-info"><span class="glw2-eb">Главная цель</span><b class="glw2-nm">${I0.name}</b><small class="glw2-sub">${I0.sub}</small>
+      <div class="glw2-info"><span class="glw2-eb">Главная цель</span><b class="glw2-nm">${I0.name}</b><small class="glw2-sub">${I0.sub}</small>${glwChart(e0,220,44,true)}
         <div class="glw2-pct">${Math.round(I0.p*100)}<i>%</i></div><div class="glw2-val">${I0.val}</div>
         <span class="glw-st ${I0.pill[0]}">${I0.pill[1].toUpperCase()}<small>${I0.pill[2]}</small></span></div>
     </div>
-    <div class="glw2-list">${ds.slice(1).map((g,i)=>{const I=info(g,evs[i+1]);return `<div class="glw2-it" onclick="glOpen('a',${g.id})" role="button" tabindex="0"><div class="glw2-mr">${mr(I.p,52)}<b style="color:${glPcol(I.p)}">${Math.round(I.p*100)}</b></div><div class="glw2-t"><b>${I.name}</b><small>${I.sub}</small></div><div class="glw2-r"><span class="glw-v">${I.val}</span><span class="glw-st ${I.pill[0]}">${I.pill[1].toUpperCase()}</span></div></div>`}).join('')||'<div class="glw-empty"><span>Отметь ещё цели звездой в регуляторе — они встанут сюда.</span></div>'}
+    <div class="glw2-list">${ds.slice(1).map((g,i)=>{const I=info(g,evs[i+1]);return `<div class="glw2-it" onclick="glOpen('a',${g.id})" role="button" tabindex="0"><div class="glw2-mr">${mr(I.p,52)}<b style="color:${glPcol(I.p)}">${Math.round(I.p*100)}</b></div><div class="glw2-t"><b>${I.name}</b><small>${I.sub}</small>${glwChart(evs[i+1],160,22)}</div><div class="glw2-r"><span class="glw-v">${I.val}</span><span class="glw-st ${I.pill[0]}">${I.pill[1].toUpperCase()}</span></div></div>`}).join('')||'<div class="glw-empty"><span>Отметь ещё цели звездой в регуляторе — они встанут сюда.</span></div>'}
       <div class="glw-foot">${msT?`<span>Вехи: <b>${msD}/${msT}</b></span>`:''}<span>Целей: <b>${list.length}</b></span>${best?`<span style="margin-left:auto">Лучший темп: <b style="color:var(--green)">${best}</b></span>`:''}</div>
     </div></div>`
   glwStart(g0,e0,I0.p,tp)
@@ -12784,7 +12796,7 @@ boot();
 .aud-mi .r{display:grid;gap:5px;min-width:0}.aud-mi .r b{font:400 13px var(--d);color:var(--text);letter-spacing:.06em}
 .aud-mi .aud-feel{width:auto;padding:5px 8px 4px;grid-template-columns:1fr 26px;gap:4px;font-size:8.5px;box-shadow:none}.aud-mi .aud-feel>span{display:none}.aud-mi .aud-feel b{font-size:13px}.aud-mi .aud-feel .aud-range{height:16px}.aud-mi .aud-feel .aud-range::-webkit-slider-thumb{width:13px;height:13px;margin-top:-4.5px}.aud-mi .aud-feel .aud-range::-webkit-slider-runnable-track{height:4px}
 /* цели компактнее, чтобы рядом поместилось давление */
-.glw-card{grid-column:auto!important}.glw-row{padding:6px 0!important;gap:10px!important;grid-template-columns:minmax(90px,120px) minmax(0,1fr) auto!important}.glw-n b{font-size:12px!important}.glw-st{display:none!important}
+.dgrid{grid-template-columns:.85fr 1.55fr .8fr!important}.glw-card{grid-column:auto!important}.glw2{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)!important;gap:12px!important}.glw2-main{grid-template-columns:130px minmax(0,1fr)!important;gap:10px!important}.glw2-stage{width:130px!important;height:130px!important}.glw2-pct{font-size:34px!important}.glw2-eb{font-size:8.5px!important}.glw-row{padding:6px 0!important;gap:10px!important;grid-template-columns:minmax(90px,120px) minmax(0,1fr) auto!important}.glw-n b{font-size:12px!important}.glw-st{display:none!important}
 </style>
 <script>
 // ═══ ДАВЛЕНИЕ НА АУДИТОРИЮ — усталость гео от воронки (v10) ═══
