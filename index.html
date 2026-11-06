@@ -2453,7 +2453,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-11-06 19:10'
+const BUILD='2026-11-06 22:30'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -2631,16 +2631,17 @@ const ADSET_LIVE=new Set(['ACTIVE','IN_PROCESS','WITH_ISSUES','PENDING_REVIEW','
 const adsetLive=st=>!st||ADSET_LIVE.has(String(st).toUpperCase())
 function lockedDomains(){const m={};ZALIVS.forEach(z=>{if(z.togo||z.ind==='off')return;zDomains(z).forEach(d=>{if(!adsetLive(d.adset_status))return;if(d.domain&&!m[d.domain])m[d.domain]={z,ad:d.ad}})});return m}
 function domainOptions(site,curKey,selfZid,buyer,funnel){const lk=lockedDomains();const me=buyer||document.getElementById('mb')?.value||CURRENT_BUYER||'';const g2=site==='CZ'?'cz':'pl';const FN=funnel?funNorm(funnel):'';const fOf=k=>typeof audFunOfKey==='function'?audFunOfKey(k):null;const inF=k=>!FN||fOf(k)===FN
+  const meB=(me==='Illia'||me==='Danya')?me:'';const vis=k=>!meB||k===curKey||keyOwner(k)===meB
   const opt=k=>{const L=lk[k];const busy=L&&L.z.id!==selfZid;const m=dMeta(k);const own=m.buyer?(m.buyer===me?' · мой':' · '+m.buyer):'';const px=m.custom?'':({NEW:' · new px',OLD:' · old px',CALK:' · px Calk',SOC:' · px Soc'}[dPixel(k)]||'');return`<option value="${k}"${k===curKey?' selected':''}${busy?' disabled':''}>${k}${px}${own}${busy?' — занят: '+L.z.name.slice(0,24):''}</option>`}
   const byOwner=(a,b)=>{const ma=dMeta(a).buyer,mb=dMeta(b).buyer;const sa=ma===me?0:ma?2:1,sb=mb===me?0:mb?2:1;return sa-sb}
-  const old=[...DKEYS,...DOMAIN_META.filter(m=>m.custom&&!DKEYS.includes(m.key)&&!DKEYS2.includes(m.key)&&!DKEYS2_SRC.includes(m.key)).map(m=>m.key)].sort(byOwner)
-  let html=`<optgroup label="${SITES[site].base.replace('https://','').replace('/#','')} · kalkulator (сайт Дани)">${old.map(opt).join('')}</optgroup>`
-  SITE2_KINDS.forEach(([kind,lab])=>SITE2_LANGS[g2].forEach(l=>{const ks=DKEYS2.filter(k=>{const p=site2Parse(k);return p.geo===g2&&p.kind===kind&&p.lang===l});if(ks.length)html+=`<optgroup label="${site2Host()} · ${lab} · ${l.toUpperCase()}">${ks.map(opt).join('')}</optgroup>`}))
-  const src2=DKEYS2_SRC.filter(k=>g2==='cz'?/cz/.test(k):!/cz/.test(k));if(src2.length)html+=`<optgroup label="${site2Host()} · ?src= метки">${src2.map(opt).join('')}</optgroup>`
+  const old=[...DKEYS,...DOMAIN_META.filter(m=>m.custom&&!DKEYS.includes(m.key)&&!DKEYS2.includes(m.key)&&!DKEYS2_SRC.includes(m.key)).map(m=>m.key)].filter(vis).sort(byOwner)
+  let html=old.length?`<optgroup label="${SITES[site].base.replace('https://','').replace('/#','')} · kalkulator (сайт Дани)">${old.map(opt).join('')}</optgroup>`:''
+  SITE2_KINDS.forEach(([kind,lab])=>SITE2_LANGS[g2].forEach(l=>{const ks=DKEYS2.filter(k=>{const p=site2Parse(k);return vis(k)&&p.geo===g2&&p.kind===kind&&p.lang===l});if(ks.length)html+=`<optgroup label="${site2Host()} · ${lab} · ${l.toUpperCase()}">${ks.map(opt).join('')}</optgroup>`}))
+  const src2=DKEYS2_SRC.filter(vis).filter(k=>g2==='cz'?/cz/.test(k):!/cz/.test(k));if(src2.length)html+=`<optgroup label="${site2Host()} · ?src= метки">${src2.map(opt).join('')}</optgroup>`
   if(curKey&&!allDKeys().includes(curKey))html+=`<option value="${curKey}" selected>${curKey}</option>`
   if(FN){// воронка задана: сверху только её ключи этого баера, остальное — свёрнутой группой
-    const all=allDKeys().filter(k=>{const p=site2Parse(k);return!p||p.geo===g2});const mine=all.filter(k=>inF(k)&&(!me||keyOwner(k)===me)).sort(byOwner);const rest=all.filter(k=>!mine.includes(k))
-    html=`<optgroup label="${FN} · ${me||'мои'} · ${mine.length}">${mine.map(opt).join('')||'<option disabled>нет ключей под правило воронки</option>'}</optgroup><optgroup label="Другие воронки / чужие · ${rest.length}">${rest.map(opt).join('')}</optgroup>`+(curKey&&!all.includes(curKey)?`<option value="${curKey}" selected>${curKey}</option>`:'')}
+    const all=allDKeys().filter(vis).filter(k=>{const p=site2Parse(k);return!p||p.geo===g2});const mine=all.filter(k=>inF(k)&&(!me||keyOwner(k)===me)).sort(byOwner);const rest=all.filter(k=>!mine.includes(k))
+    html=`<optgroup label="${FN} · ${me||'мои'} · ${mine.length}">${mine.map(opt).join('')||'<option disabled>нет ключей под правило воронки</option>'}</optgroup><optgroup label="Другие воронки · ${rest.length}">${rest.map(opt).join('')}</optgroup>`+(curKey&&!all.includes(curKey)?`<option value="${curKey}" selected>${curKey}</option>`:'')}
   return html}
 // source → {letter, key}
 const normKey=k=>String(k||'').toLowerCase().trim().replace(/\s+/g,' ')
@@ -9247,7 +9248,7 @@ document.addEventListener('input',e=>{const id=e.target.id
   if(id==='mr'){const ma=document.getElementById('ma');if(ma&&!_moMaTouched)ma.value=e.target.value?Math.round(+e.target.value/2*100)/100:'';moBuild(false)}
   if(id==='ma'&&e.isTrusted)_moMaTouched=true
   if(id==='mdate')moBuild(false)})
-document.addEventListener('change',e=>{if(e.target.id==='mb')moBuild(false)})
+document.addEventListener('change',e=>{if(e.target.id==='mb'){moBuild(false);if(typeof moAdsRender==='function')moAdsRender()}if(e.target.id==='mf'){_moFunnel=e.target.value;if(typeof moAdsRender==='function')moAdsRender()}})
 
 /* ══════════ Ручная правка адсетов и целей в карточке залива ══════════ */
 function zManualBlk(z){const ads=zDomains(z),site=siteForGeo(z.geo),goals=Array.isArray(z.goals)?z.goals:[]
@@ -10181,7 +10182,7 @@ async function crPickOpen(anchor,geo,used,onPick,funnel){crPickClose();let funOn
   place();const out=e=>{if(!el.contains(e.target)&&e.target!==anchor&&!anchor.contains(e.target))crPickClose()};document.addEventListener('mousedown',out,true);_crPick={el,out}
   await crLoad();if(!_crPick||_crPick.el!==el)return
   if(CR.ok===false){el.innerHTML=`<div class="crdd-gh" style="color:var(--red)">${escHtml(CR.err)}</div>`;return}
-  let q='';const draw=()=>{const L=CR.creos.filter(c=>(!q||(c.id+' '+(c.name||'')+' '+(c.hook_line||'')).toLowerCase().includes(q))&&(!funOn||funNorm(c.funnel||(CR.batches.find(b=>b.id===c.batch_id)||{}).funnel||'')===funnel)&&(!geoOn||crGeo(c.geo)===crGeo(geo))),st=c=>(CR.stats[c.id]||{}),has=c=>Object.keys(st(c)).length>0
+  let q='';const draw=()=>{const L=CR.creos.filter(c=>(!q||(c.id+' '+(c.name||'')+' '+(c.hook_line||'')).toLowerCase().includes(q))&&(!funOn||funNorm(c.funnel||(CR.batches.find(b=>b.id===c.batch_id)||{}).funnel||'').toLowerCase()===funNorm(funnel).toLowerCase())&&(!geoOn||crGeo(c.geo)===crGeo(geo))),st=c=>(CR.stats[c.id]||{}),has=c=>Object.keys(st(c)).length>0
     const cql=c=>{const v=st(c)[geo];return v&&v[3]&&v[1]?v[1]/v[3]:999},rot=L.filter(c=>st(c)[geo]&&crRate(c)>=2&&(crRest(c.id,geo)||0)>=45).sort((a,b)=>crRate(b)-crRate(a)||cql(a)-cql(b))
     const work=L.filter(c=>st(c)[geo]&&crRate(c)>=2&&!rot.includes(c)).sort((a,b)=>crRate(b)-crRate(a)||cql(a)-cql(b))
     const fresh=L.filter(c=>!has(c)).sort((a,b)=>(b.geo===geo)-(a.geo===geo)||String(b.date_iso).localeCompare(String(a.date_iso))||a.seq-b.seq)
@@ -10196,7 +10197,7 @@ async function crPickOpen(anchor,geo,used,onPick,funnel){crPickClose();let funOn
   el.addEventListener('click',e=>{const b=e.target.closest('[data-crid]');if(!b||b.disabled)return;onPick(b.dataset.crid);crPickClose()})}
 // строка адсета в форме нового залива
 function crModalBtn(i){const a=moAds[i]||{};return `<button type="button" class="crpk" data-crpk="${i}" title="Крео этого адсета">${a.creo?crChip(a.creo):'<span class="crpk-t" style="color:var(--bord2)">＋ крео</span>'}</button>${a.creo?`<button type="button" class="rmbtn" data-crclr="${i}" title="Убрать крео">×</button>`:''}`}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-crpk]');if(b){e.preventDefault();const i=+b.dataset.crpk;crPickOpen(b,crGeo(moGeo||''),moAds.map(a=>a.creo).filter(Boolean),id=>{moAds[i].creo=id;moAdsRender()});return}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-crpk]');if(b){e.preventDefault();const i=+b.dataset.crpk;crPickOpen(b,crGeo(moGeo||''),moAds.map(a=>a.creo).filter(Boolean),id=>{moAds[i].creo=id;moAdsRender()},(()=>{const f=_moFunnel||document.getElementById('mf')?.value||'';return f?funNorm(f):''})());return}
   const c=e.target.closest('[data-crclr]');if(c){e.preventDefault();moAds[+c.dataset.crclr].creo=null;moAdsRender();return}
   const z=e.target.closest('[data-crz]');if(z){e.preventDefault();const zid=+z.dataset.crz,zz=ZALIVS.find(x=>x.id===zid);if(!zz)return;const ee=zDomains(zz).find(d=>z.dataset.adset?d.adset_id===z.dataset.adset:d.ad===+z.dataset.ad)||{};crPickOpen(z,crGeo(zz.geo),zDomains(zz).map(d=>d.creo).filter(Boolean),id=>setAdsetCreo(zid,+z.dataset.ad,z.dataset.adset||null,z.dataset.adname||null,id),(zz.funnel&&funNorm(zz.funnel))||(typeof audFunOfKey==='function'?audFunOfKey(ee.domain):null));return}
   const zc=e.target.closest('[data-crzclr]');if(zc){e.preventDefault();setAdsetCreo(+zc.dataset.crzclr,+zc.dataset.ad,zc.dataset.adset||null,null,null)}})
