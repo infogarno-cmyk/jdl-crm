@@ -597,8 +597,19 @@ var DKEYS=['kalkulator',...Array.from({length:20},(_,i)=>'kalkulator'+(i+1))],DO
 // (буква баера спереди). Вкладки: isystem — калькулятор, konstruktor — 3D-конструктор, visyt — запись в шоурум.
 // Пиксель сайт выбирает сам по номеру: 1–10 → 482683177664193 (PL Calkulator), 11–20 → 1583027080197169 (Illia soc).
 // Ещё сайт принимает ?src=… (iGARNOLAND2PL, UAiGARNOLAND4, iGARNOLAND2CZ, iGARNOLAND4UACZ → пиксель 4826…), без метки — iladnGARNO.
-var SITE2={base:'https://garnofurniture.com/#',label:'garnofurniture.com · калькулятор / конструктор / визит',px:{A:'482683177664193',B:'1583027080197169'}}
+// БАГ v8: base был garnofurniture.com — это сайт Дани (SITES.PL), поэтому ссылки Ильи вели на его сайт,
+// а лиды падали в GarnoCRM с Даниным источником и не засчитывались Илье. Теперь домен Ильи свой и меняется кнопкой в «Домены».
+const SITE2_KEY='__site2_base',SITE2_DEFAULT='https://garno-custom-furniture.netlify.app/#'
+var SITE2={base:SITE2_DEFAULT,label:'Сайт Ильи · калькулятор / конструктор / визит',px:{A:'482683177664193',B:'1583027080197169'}}
 var SITE2_KINDS=[['isystem','Kalkulator'],['konstruktor','3D-конструктор'],['visyt','Визит в шоурум']]
+const site2Host=()=>SITE2.base.replace(/^https?:\/\//,'').replace(/\/?#$/,'')
+function site2NormBase(u){u=String(u||'').trim();if(!u)return'';if(!/^https?:\/\//.test(u))u='https://'+u;u=u.split('#')[0].split('?')[0].replace(/\/+$/,'');return u+'/#'}
+function site2Load(){const r=(DOMAIN_META||[]).find(m=>m.key===SITE2_KEY);SITE2.base=(r&&site2NormBase(r.url))||SITE2_DEFAULT}
+async function site2SetBase(){const v=prompt('Домен сайта Ильи (калькулятор/конструктор/визит).\nСейчас: '+site2Host()+'\nСайт Дани: '+SITES.PL.base.replace(/^https?:\/\//,'').replace(/\/?#$/,''),site2Host());if(v===null)return;const base=site2NormBase(v);if(!base){toast('Пустой домен','err');return}
+  if(base===SITES.PL.base||base===SITES.CZ.base){if(!confirm('Это домен Дани. Точно поставить его для Ильи?'))return}
+  SITE2.base=base;const url=base;const r=(DOMAIN_META||[]).find(m=>m.key===SITE2_KEY)
+  if(db){if(r){await db.from('domain_meta').update({url,updated_at:new Date().toISOString()}).eq('id',r.id);r.url=url}else{const{data,error}=await db.from('domain_meta').insert({region:'ALL',key:SITE2_KEY,custom:false,url,updated_at:new Date().toISOString()}).select().single();if(error){toast('Не сохранилось в базе: '+error.message,'err')}else if(data)DOMAIN_META.push(data)}}
+  toast('Домен Ильи: '+site2Host(),'ok');rdomRegistry();if(typeof moAdsRender==='function')moAdsRender();if(typeof rzalivs==='function')rzalivs()}
 var SITE2_LANGS={pl:['pl','uk'],cz:['cz','uk']}
 var DKEYS2=[];['pl','cz'].forEach(g=>SITE2_KINDS.forEach(([k])=>{for(let n=1;n<=20;n++)SITE2_LANGS[g].forEach(l=>DKEYS2.push(g+k+n+'-'+l))}))
 var SITE2_RE=/^(pl|cz)(isystem|konstruktor|visyt)(\d{1,2})-(pl|uk|cz)$/
@@ -2442,7 +2453,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-11-06 01:05'
+const BUILD='2026-11-06 18:20'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -2587,10 +2598,10 @@ function funnels(list){
   return saveFunnels(list).then(()=>{console.log('Сохранено: '+FUNNELS.join(', '));return FUNNELS})
 }
 
-async function loadDomainMeta(){if(!db)return;try{const{data}=await db.from('domain_meta').select('*').or(`region.eq.${CURRENT_REGION},region.eq.ALL`);DOMAIN_META=data||[];if(typeof AUD_RULES!=='undefined')AUD_RULES=null;loadFunnels()}catch(e){DOMAIN_META=[]}}
+async function loadDomainMeta(){if(!db)return;try{const{data}=await db.from('domain_meta').select('*').or(`region.eq.${CURRENT_REGION},region.eq.ALL`);DOMAIN_META=data||[];site2Load();if(typeof AUD_RULES!=='undefined')AUD_RULES=null;loadFunnels()}catch(e){DOMAIN_META=[]}}
 // ключи garnofurniture.com (и его ?src= метки) — сайт Ильи: баер по умолчанию Illia, пока не переназначен в реестре
 function dMeta(key){const m=DOMAIN_META.find(m=>m.key===key)||{};if(!m.buyer&&(site2Parse(key)||DKEYS2_SRC.includes(key)))return Object.assign({},m,{buyer:'Illia'});return m}
-function allDKeys(){return[...DKEYS,...DKEYS2,...DKEYS2_SRC,...DOMAIN_META.filter(m=>m.custom&&!DKEYS.includes(m.key)&&!DKEYS2.includes(m.key)&&!DKEYS2_SRC.includes(m.key)).map(m=>m.key)]}
+function allDKeys(){return[...DKEYS,...DKEYS2,...DKEYS2_SRC,...DOMAIN_META.filter(m=>m.key!==SITE2_KEY&&m.custom&&!DKEYS.includes(m.key)&&!DKEYS2.includes(m.key)&&!DKEYS2_SRC.includes(m.key)).map(m=>m.key)]}
 async function setDomainBuyer(key,buyer){const m=DOMAIN_META.find(x=>x.key===key);const row={region:CURRENT_REGION,key,buyer:buyer||null,updated_at:new Date().toISOString()}
   if(m){await db.from('domain_meta').update(row).eq('id',m.id);Object.assign(m,row)}else{const{data,error}=await db.from('domain_meta').insert(row).select().single();if(error){toast('Ошибка: '+error.message,'err');return}DOMAIN_META.push(data)}
   rdomRegistry();toast(buyer?key+' → '+buyer:key+': баер снят','ok')}
@@ -2623,9 +2634,9 @@ function domainOptions(site,curKey,selfZid,buyer,funnel){const lk=lockedDomains(
   const opt=k=>{const L=lk[k];const busy=L&&L.z.id!==selfZid;const m=dMeta(k);const own=m.buyer?(m.buyer===me?' · мой':' · '+m.buyer):'';const px=m.custom?'':({NEW:' · new px',OLD:' · old px',CALK:' · px Calk',SOC:' · px Soc'}[dPixel(k)]||'');return`<option value="${k}"${k===curKey?' selected':''}${busy?' disabled':''}>${k}${px}${own}${busy?' — занят: '+L.z.name.slice(0,24):''}</option>`}
   const byOwner=(a,b)=>{const ma=dMeta(a).buyer,mb=dMeta(b).buyer;const sa=ma===me?0:ma?2:1,sb=mb===me?0:mb?2:1;return sa-sb}
   const old=[...DKEYS,...DOMAIN_META.filter(m=>m.custom&&!DKEYS.includes(m.key)&&!DKEYS2.includes(m.key)&&!DKEYS2_SRC.includes(m.key)).map(m=>m.key)].sort(byOwner)
-  let html=`<optgroup label="${SITES[site].base.replace('https://','').replace('/#','')} · kalkulator">${old.map(opt).join('')}</optgroup>`
-  SITE2_KINDS.forEach(([kind,lab])=>SITE2_LANGS[g2].forEach(l=>{const ks=DKEYS2.filter(k=>{const p=site2Parse(k);return p.geo===g2&&p.kind===kind&&p.lang===l});if(ks.length)html+=`<optgroup label="garnofurniture.com · ${lab} · ${l.toUpperCase()}">${ks.map(opt).join('')}</optgroup>`}))
-  const src2=DKEYS2_SRC.filter(k=>g2==='cz'?/cz/.test(k):!/cz/.test(k));if(src2.length)html+=`<optgroup label="garnofurniture.com · ?src= метки">${src2.map(opt).join('')}</optgroup>`
+  let html=`<optgroup label="${SITES[site].base.replace('https://','').replace('/#','')} · kalkulator (сайт Дани)">${old.map(opt).join('')}</optgroup>`
+  SITE2_KINDS.forEach(([kind,lab])=>SITE2_LANGS[g2].forEach(l=>{const ks=DKEYS2.filter(k=>{const p=site2Parse(k);return p.geo===g2&&p.kind===kind&&p.lang===l});if(ks.length)html+=`<optgroup label="${site2Host()} · ${lab} · ${l.toUpperCase()}">${ks.map(opt).join('')}</optgroup>`}))
+  const src2=DKEYS2_SRC.filter(k=>g2==='cz'?/cz/.test(k):!/cz/.test(k));if(src2.length)html+=`<optgroup label="${site2Host()} · ?src= метки">${src2.map(opt).join('')}</optgroup>`
   if(curKey&&!allDKeys().includes(curKey))html+=`<option value="${curKey}" selected>${curKey}</option>`
   if(FN){// воронка задана: сверху только её ключи этого баера, остальное — свёрнутой группой
     const all=allDKeys().filter(k=>{const p=site2Parse(k);return!p||p.geo===g2});const mine=all.filter(k=>inF(k)&&(!me||keyOwner(k)===me)).sort(byOwner);const rest=all.filter(k=>!mine.includes(k))
@@ -2687,7 +2698,10 @@ function srcRowOwners(r,p){p=p||srcParse(r.source);const list=srcOwnIndex()[p.ke
   // лид раньше даты в имени РК (опечатка в дате, ранний старт) — отдаём самой ранней
   if(!ok.length)ok=[cand[0]]
   const top=ok[ok.length-1].st;return new Set(ok.filter(x=>x.st===top).map(x=>x.id))}
-function srcStats(zid,adsetId,from,to){const z=ZALIVS.find(x=>x.id===zid);if(!z)return null;const doms=zDomains(z).filter(d=>d.domain&&(adsetId?(d.adset_id===adsetId):true));const keys=new Set(doms.map(d=>normKey(d.domain)));if(!keys.size)return null
+// лиды/квалы по заливу или по одному адсету. Адсет ищем по сохранённому adset_id, а если его нет — через matchAdsets
+// (AD1 в CRM = адсет с «AD1» в имени Meta). Можно передать и сам ключ кальки строкой.
+function zEntryForAdset(z,adsetId){const arr=zDomains(z);let e=arr.find(d=>d.adset_id===adsetId);if(e)return e;const list=_zAdsCache[z.id];if(!list)return null;const m=matchAdsets(arr,list);for(const i in m)if(m[i]&&m[i].id===adsetId)return arr[+i];return null}
+function srcStats(zid,adsetId,from,to){const z=ZALIVS.find(x=>x.id===zid);if(!z)return null;let doms;if(!adsetId)doms=zDomains(z).filter(d=>d.domain);else if(typeof adsetId==='string'&&adsetId.startsWith('key:'))doms=[{domain:adsetId.slice(4)}];else{const e=zEntryForAdset(z,adsetId);doms=e&&e.domain?[e]:[]}const keys=new Set(doms.filter(d=>d.domain).map(d=>normKey(d.domain)));if(!keys.size)return null
   const bl=z.buyer==='Illia'?'I':z.buyer==='Danya'?'D':'';let leads=0,quals=0;SRC_DAILY.forEach(r=>{const p=srcParse(r.source);if(!keys.has(p.key))return;if(p.letter&&bl&&p.letter!==bl)return;if(!srcRowOwners(r,p).has(zid))return;if((!from||r.day>=from)&&(!to||r.day<=to)){leads+=r.leads||0;quals+=r.quals||0}});return{leads,quals,sources:[...keys]}}
 async function setAdsetDomain(zid,adIdx,adsetId,adsetName,domain){const z=ZALIVS.find(x=>x.id===zid);if(!z)return;const arr=zDomains(z).slice();let e=arr.find(d=>adsetId?d.adset_id===adsetId:d.ad===adIdx);if(!e){e={ad:adIdx};arr.push(e)}e.adset_id=adsetId||e.adset_id||null;e.adset_name=adsetName||e.adset_name||null;e.domain=domain||'';z.adset_domains=arr.filter(d=>d.domain||d.creo);await db.from('zalivs').update({adset_domains:z.adset_domains}).eq('id',zid);toast(domain?'Домен привязан: '+domain:'Домен снят','ok');selZaliv(zid);rzalivs()}
 function zSrcStats(z){const st=zStartISO(z);return srcStats(z.id,null,st==='0000-00-00'?null:st,null)}
@@ -2746,7 +2760,7 @@ async function manualSync(){
   try{
     const r=await fetch(SB_URL+'/functions/v1/sync',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:'{}'})
     const d=await r.json()
-    if(d.ok){await loadM();await loadSales();rdash();setSS('ok','Обновлено · '+d.days+' дней')}else setSS('','Ошибка')
+    if(d.ok){await Promise.all([loadM(),loadSales(),loadSrcDaily()]);try{localStorage.setItem('jdl_sync_at',String(Date.now()))}catch(e){}rdash();if(typeof rzalivs==='function'&&document.getElementById('page-zalivs')?.classList.contains('on'))rzalivs();setSS('ok','Обновлено · '+d.days+' дней')}else setSS('','Ошибка')
   }catch(e){setSS('','Ошибка соединения')}
 }
 function setupRT(){
@@ -2861,7 +2875,7 @@ function gp(id,el){
   if(id==='journal'){rtree();if(curDoc)loadDocById(curDoc)};if(id==='dash')rdash()
   if(id==='creo'){crPageOpen()}
   if(id==='bj'&&typeof bjOpen==='function')bjOpen()
-  if(id==='zalivs'){loadBulkMeta(false);refreshAdsetStatuses();if(typeof AUD!=='undefined'&&!AUD.loaded)audLoad().then(()=>rzalivs())}
+  if(id==='zalivs'){loadBulkMeta(false);refreshAdsetStatuses();if(typeof AUD!=='undefined'&&!AUD.loaded)audLoad().then(()=>rzalivs());if(typeof crLoad==='function'&&!(CR&&CR.ok))crLoad().then(()=>rzalivs())}
   if(id==='domains'){refreshAdsetStatuses()}
   if(id==='analysis'){initAnalysisPage()}
   if(id==='funnels'){funnelsBar();fbOpen()}
@@ -5286,7 +5300,7 @@ async function selZaliv(zid){
         ${(()=>{const s=zSrcStats(z);return s?`<div style="margin-top:10px;font-size:11px;color:var(--text3)">Из GarnoCRM по привязкам: <b style="color:var(--text)">${s.leads}</b> лидов · <b style="color:var(--green)">${s.quals}</b> квалов · ${s.sources.join(', ')}</div>`:'<div style="margin-top:10px;font-size:11px;color:#3E4457">Привяжи источники к адсетам — лиды и квалы будут считаться сами</div>'})()}</div>
       ${zManualBlk(z)}
       <div class="blk"><h4>Крео <span>${(z.creos||[]).length}</span></h4><div class="crs">${(z.creos||[]).slice(0,6).map((cn,j)=>{const lib=CREO_LIB.find(x=>x.name===cn);const g=['linear-gradient(160deg,#4a3a1a,#8a6a24)','linear-gradient(160deg,#1f3a5a,#3c6a9a)','linear-gradient(160deg,#3a2456,#6a44a0)','linear-gradient(160deg,#1e4a3a,#2f7a5a)'][j%4];return`<div class="cr" onclick="openCreoInfo('${cn.replace(/'/g,'')}')"><i style="background:${lib?.screenshot_url?'url('+lib.screenshot_url+') center/cover':g}"></i><div><b>${cn}</b><span>${lib?'CTR '+(lib.avg_ctr||0)+'% · CPL $'+(lib.avg_cpl||0):'—'}</span></div></div>`}).join('')||'<span style="font-size:11px;color:var(--text3)">нет</span>'}</div></div>
-      <div class="blk"><h4>Домен</h4>${z.domain?`<a class="dlnk" href="https://${z.domain}" target="_blank">${z.domain}</a>`:'<span style="font-size:11px;color:var(--text3)">—</span>'}${z.campaign_id?`<div style="font:10.5px var(--mono);color:var(--text3);margin-top:6px">campaign_id ${z.campaign_id}</div>`:''}</div>
+      <div class="blk"><h4>Домен</h4>${z.domain?`<a class="dlnk" href="${/^https?:/.test(z.domain)?z.domain:'https://'+z.domain}" target="_blank">${z.domain}</a>`:'<span style="font-size:11px;color:var(--text3)">—</span>'}${z.campaign_id?`<div style="font:10.5px var(--mono);color:var(--text3);margin-top:6px">campaign_id ${z.campaign_id}</div>`:''}</div>
       <div class="blk"><h4>Инсайты</h4><textarea class="note" id="zdp-ins" onchange="db.from('zalivs').update({insights:this.value}).eq('id',${zid});const zz=ZALIVS.find(x=>x.id===${zid});if(zz)zz.insights=this.value;toast('Сохранено','ok')" placeholder="Что видишь по этой РК…">${(z.insights||'').replace(/</g,'&lt;')}</textarea></div>
     </div>
     <div class="act"><button class="p" onclick="gp('analysis',document.getElementById('nb-analysis'));setTimeout(()=>showNewAnalysisPanelFor(${zid}),300)">Анализ</button><button onclick="addRkTask(${zid},'an')">+ таск</button><button onclick="togZ(${zid});document.getElementById('tc-'+${zid})?.scrollIntoView?.()">Развернуть</button></div>`
@@ -5352,22 +5366,26 @@ function zInbox(list){const box=document.getElementById('zinb-list');if(!box||_z
   const rows=list.filter(F[_zInbF]||F.all).sort(SRT[_zInbS]||SRT.num)
   const GC={PL:'#D4AF37',PLPL:'#D4AF37',PLUA:'#6E9BFF',CZ:'#F03A55',CZCZ:'#F03A55',CZUA:'#B48CFF'}
   const chips=z=>{const ads=_zAdsCache[z.id]||[],doms=zDomains(z);const rr=ads.length?ads.map((a,i)=>({a,i:i+1,e:doms.find(x=>x.adset_id===a.id)||doms[i]||{}})):doms.map(e=>({a:null,i:e.ad,e}))
-    return rr.map(r=>{const a=r.a,e=r.e,on=a?a.status==='ACTIVE':adsetLive(e.adset_status);const st=srcStats(z.id,a?a.id:null)||{leads:0,quals:0};const cr=e.creo&&typeof CR!=='undefined'&&CR.creos?CR.creos.find(c=>c.id===e.creo):null;const fr=cr&&cr.frames&&cr.frames[0]
+    return rr.map(r=>{const a=r.a,e=r.e,on=a?a.status==='ACTIVE':adsetLive(e.adset_status);const st=(e.domain?srcStats(z.id,'key:'+e.domain):null)||{leads:0,quals:0};const cr=e.creo&&typeof CR!=='undefined'&&CR.creos?CR.creos.find(c=>c.id===e.creo):null;const fr=cr&&cr.frames&&cr.frames[0]
       return`<span class="achip ${on?'':'off'}" title="${escHtml(a?a.name:'AD'+r.i)}">${a?`<span class="sw ${on?'on':''}" onclick="event.stopPropagation();toggleAdset(${z.id},'${a.id}',this)"></span>`:''}<span class="cth ${fr?'':'e'}" style="${fr?'background-image:url('+fr+')':''}" ${e.creo?`onmouseenter="crPrev(event,'${e.creo}')" onmouseleave="crPrevHide()"`:''}>${fr?'':'—'}</span><b>AD${r.i}</b>${e.domain?`<em>${escHtml(e.domain)}</em>`:'<em>без кальки</em>'}<em>${st.leads}л/${st.quals}кв</em></span>`}).join('')+(z.campaign_id&&!ads.length?`<span class="achip add" onclick="event.stopPropagation();loadZalivAdsets(${z.id})">⚡ адсеты из Meta</span>`:'')}
-  box.innerHTML=`<div class="fl">${[['all','Все'],['at','Внимание'],['profit','Profit'],['drop','Drop'],['new','Новые'],['off','Выкл']].map(([k,n])=>`<button class="fc ${_zInbF===k?'on':''} ${k==='at'?'at':''}" data-zinbf="${k}">${n}<b>${list.filter(F[k]).length}</b></button>`).join('')}<span class="srt">сорт.${[['num','№ РК ↓'],['spend','Спенд'],['quals','Квалы'],['old','Старые']].map(([k,n])=>`<button class="fc ${_zInbS===k?'on':''}" data-zinbs="${k}">${n}</button>`).join('')}</span></div>
+  box.innerHTML=`<div class="fl">${[['all','Все'],['at','Внимание'],['profit','Profit'],['drop','Drop'],['new','Новые'],['off','Выкл']].map(([k,n])=>`<button class="fc ${_zInbF===k?'on':''} ${k==='at'?'at':''}" data-zinbf="${k}">${n}<b>${list.filter(F[k]).length}</b></button>`).join('')}<span class="srt">сорт.${[['num','№ РК ↓'],['spend','Спенд'],['quals','Квалы'],['old','Старые']].map(([k,n])=>`<button class="fc ${_zInbS===k?'on':''}" data-zinbs="${k}">${n}</button>`).join('')}<button class="fc" onclick="manualSync()" title="Подтянуть свежие лиды и квалы из GarnoCRM (sync) и обновить" style="margin-left:8px;letter-spacing:0;text-transform:none">⟳ лиды ${srcFreshTxt()}</button></span></div>
    <div class="ls">${rows.map(z=>{const a=zAttn(z),s=zSrcStats(z),d=zDays(z),sp=zSpendTotal(z),spd=zSpendToday(z),cp=zNextCp(z),due=zNeedsAn(z);return`<div class="zcr ${_zSel===z.id?'sel':''}" data-zid="${z.id}" style="--gc:${GC[z.geo]||'#6E9BFF'}"><span class="gs"></span>
      <div class="nm"><b>${z.name}</b><small>${z.geo||'—'} · ${z.buyer||'?'} · день ${d} · старт ${z.date||parseDateFromCampName(z.name)||'—'}</small><div class="zcr-st"><span class="ind-dot" style="display:inline-grid;place-items:center;width:18px;height:18px;border-radius:5px;font:700 10px var(--mono);background:${z.ind==='profit'?'var(--green)':z.ind==='drop'?'var(--red)':'#2A2F3E'};color:${z.ind==='off'?'#9A9EAE':'#06100B'}">${z.ind==='profit'?'P':z.ind==='drop'?'D':'O'}</span><span class="zcr-cp ${due?'due':''}">${cp}${due?' · пора':''}</span>${a?`<span class="bd" title="${zAttnTxt(z)}">${a}</span>`:''}</div></div>
      <div class="achips">${chips(z)}</div>
      <div class="r"><div>CQL<b class="${s&&s.quals?'cql':''}" style="color:${s&&s.quals?(sp/s.quals<40?'var(--green)':sp/s.quals<60?'var(--gold2)':'var(--red)'):'var(--text3)'}">${s&&s.quals?'$'+Math.round(sp/s.quals):'—'}</b></div><div>лиды / кв<b>${s?s.leads:0}<span style="color:var(--text3)">/</span><span class="q">${s?s.quals:0}</span></b></div><div>сегодня<b>$${Math.round(spd)}</b></div><div>всего<b style="color:var(--gold2)">$${Math.round(sp)}</b></div></div></div>`}).join('')||'<div class="empty">Пусто по этому фильтру</div>'}</div>`
   if(!rows.some(z=>z.id===_zSel)&&rows.length)selZaliv(rows[0].id);else zCtx(_zSel)}
 let _zInbS=localStorage.getItem('z_inbs')||'num'
+// когда последний раз обновлялись лиды/квалы (source_daily.synced_at)
+function srcFreshTxt(){let t=0;(SRC_DAILY||[]).forEach(r=>{const v=r.synced_at?new Date(r.synced_at).getTime():0;if(v>t)t=v});if(!t)t=+localStorage.getItem('jdl_sync_at')||0;if(!t)return'';const m=Math.round((Date.now()-t)/60000);return m<60?`· ${m} мин назад`:m<1440?`· ${Math.round(m/60)} ч назад`:'· '+new Date(t).toLocaleDateString('ru')}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-zinbs]');if(b){_zInbS=b.dataset.zinbs;localStorage.setItem('z_inbs',_zInbS);rzalivs();return}const t=e.target.closest('.ztabs button');if(t){const host=t.closest('.zinbm');host.querySelectorAll('.ztabs button').forEach(x=>x.classList.toggle('on',x===t));host.querySelectorAll('.ztab-pane').forEach(p=>p.classList.toggle('on',p.dataset.tab===t.dataset.ztab));_zTab=t.dataset.ztab}})
 let _zTab='ads'
 // предпросмотр крео при наведении на миниатюру
 function crPrev(ev,id){const c=(typeof CR!=='undefined'&&CR.creos||[]).find(x=>x.id===id);if(!c)return;let el=document.getElementById('crprev');if(!el){el=document.createElement('div');el.id='crprev';document.body.appendChild(el)}
-  const fr=(c.frames||[]).slice(0,4);el.innerHTML=`<div class="fr">${fr.map(f=>`<i style="background-image:url(${f})"></i>`).join('')||'<i></i>'}</div><b>${escHtml(c.name||c.id)}</b>${c.hookLine||c.hook_line?`<small>${escHtml(c.hookLine||c.hook_line)}</small>`:''}<div class="tg">${c.geo?`<span>${c.geo}</span>`:''}${c.cat?`<span>${escHtml(c.cat)}</span>`:''}${c.fmt?`<span>${c.fmt}</span>`:''}${(c.tags||[]).slice(0,4).map(t=>`<span>${escHtml(t)}</span>`).join('')}</div>`
+  const fr=(c.frames||[]).slice(0,4);el.innerHTML=`<div class="fr">${fr.map(f=>`<i style="background-image:url(${f})"></i>`).join('')||'<i></i>'}</div><b>${escHtml(c.name||c.id)} <span style="font:600 10px var(--mono);color:var(--text3)">${escHtml(c.id)}</span>${c.file_url?` <a href="${c.file_url}" target="_blank" rel="noopener" style="float:right;font:600 10.5px var(--mono);color:var(--gold2)">открыть файл ↗</a>`:''}</b>${c.hookLine||c.hook_line?`<small>${escHtml(c.hookLine||c.hook_line)}</small>`:''}<div class="tg">${c.geo?`<span>${c.geo}</span>`:''}${c.cat?`<span>${escHtml(c.cat)}</span>`:''}${c.fmt?`<span>${c.fmt}</span>`:''}${(c.tags||[]).slice(0,4).map(t=>`<span>${escHtml(t)}</span>`).join('')}</div>`
   const r=ev.currentTarget.getBoundingClientRect();let x=r.right+10,y=r.top-10;if(x+310>innerWidth)x=r.left-310;if(y+360>innerHeight)y=Math.max(8,innerHeight-370);el.style.left=x+'px';el.style.top=y+'px';el.classList.add('on')}
-function crPrevHide(){const el=document.getElementById('crprev');if(el)el.classList.remove('on')}
+function crPrevHide(){const el=document.getElementById('crprev');if(el&&!el._pin)el.classList.remove('on')}
+function crPrevPin(ev,id){ev.stopPropagation();const el=document.getElementById('crprev')||(crPrev(ev,id),document.getElementById('crprev'));if(!el)return;el._pin=!el._pin;el.style.pointerEvents=el._pin?'auto':'none';if(el._pin){crPrev(ev,id);el.classList.add('on')}else el.classList.remove('on')}
+document.addEventListener('click',e=>{const el=document.getElementById('crprev');if(el&&el._pin&&!e.target.closest('#crprev')&&!e.target.closest('.cth,.zic .th')){el._pin=false;el.style.pointerEvents='none';el.classList.remove('on')}})
 
 
 // ── v9: Инбокс — ссылка на кальку, скачать крео, текст объявления от Геннадия на языке гео ──
@@ -5396,11 +5414,11 @@ function zInboxCenter(zid){const box=document.getElementById('zinb-main');if(!bo
   const CPL=v=>v?(v<12?'var(--green)':v<15?'var(--yellow)':'var(--red)'):'var(--text3)'
   // адсеты: из Meta (если загружены) + привязки из adset_domains
   const rows=ads.length?ads.map((a,i)=>({a,i:i+1,e:doms.find(x=>x.adset_id===a.id)||doms[i]||{}})):doms.map(e=>({a:null,i:e.ad,e}))
-  const cardAd=r=>{const a=r.a,e=r.e,stt=a?srcStats(zid,a.id):srcStats(zid,null);const l=stt?stt.leads:0,q=stt?stt.quals:0,sp=a&&a.spend!=null?+a.spend:null,budget=a&&a.daily_budget?'$'+(a.daily_budget/100).toFixed(0)+'/д':''
+  const cardAd=r=>{const a=r.a,e=r.e,stt=e&&e.domain?srcStats(zid,'key:'+e.domain):null;const l=stt?stt.leads:0,q=stt?stt.quals:0,sp=a&&a.spend!=null?+a.spend:null,budget=a&&a.daily_budget?'$'+(a.daily_budget/100).toFixed(0)+'/д':''
     const cr=e.creo?(typeof CR!=='undefined'&&CR.creos?CR.creos.find(c=>c.id===e.creo):null):null,frame=cr&&cr.frames&&cr.frames[0]
     const S=q>=2?['работает','var(--green)']:q===1?['слабо','var(--yellow)']:e.creo&&d>=2?['без квалов','var(--red)']:e.creo?['новый','var(--blue)']:['нет крео','var(--blue)']
     const act=S[0]==='без квалов'&&a?`<button class="ab red" onclick="toggleAdset(${zid},'${a.id}',this.closest('.zic').querySelector('.sw'))">Выключить адсет</button>`:S[0]==='нет крео'?`<button class="ab p" onclick="this.closest('.zic').querySelector('.crpk')?.click()">＋ выбрать крео</button>`:S[0]==='слабо'?`<button class="ab" onclick="this.closest('.zic').querySelector('.crpk')?.click()">Заменить крео</button>`:S[0]==='работает'?`<button class="ab" onclick="addRkTask(${zid},'prep')">+20% бюджета · таск</button>`:''
-    return`<div class="zic" style="--cc:${S[1]}"><span class="st">${S[0]}</span><div class="tp"><div class="th" style="${frame?'background-image:url('+frame+')':''}">${frame?'':'＋'}</div><div style="min-width:0"><b>AD${r.i}${a?' · '+escHtml(a.name):''}</b><small>${e.domain?(z.buyer==='Illia'?'I':'D')+e.domain:'калька не привязана'}${e.creo?' → '+e.creo:''}</small></div></div>
+    return`<div class="zic" style="--cc:${S[1]}"><span class="st">${S[0]}</span><div class="tp"><div class="th" style="${frame?'background-image:url('+frame+')':''}" ${e.creo?`onmouseenter="crPrev(event,'${e.creo}')" onmouseleave="crPrevHide()" onclick="crPrevPin(event,'${e.creo}')"`:''} title="${cr?escHtml(cr.name||cr.id):''}">${frame?'':(e.creo?'…':'＋')}</div><div style="min-width:0"><b>AD${r.i}${a?' · '+escHtml(a.name):''}</b><small>${e.domain?(z.buyer==='Illia'?'I':'D')+e.domain:'калька не привязана'}${e.creo?' → '+e.creo:''}</small>${cr?`<small style="display:block;color:var(--text2);font:600 11px var(--sans)">${escHtml(cr.name||'')}${cr.hook_line?` · <span style="color:var(--text3);font-weight:500">${escHtml(cr.hook_line).slice(0,60)}</span>`:''}</small>`:''}</div></div>
       <div class="nums"><div><small>спенд</small><b>${sp!=null?'$'+Math.round(sp):budget||'—'}</b></div><div><small>лиды</small><b>${l}</b></div><div><small>квалы</small><b style="color:var(--green)">${q}</b></div><div><small>CQL</small><b style="color:${q&&sp!=null?CPL(sp/q/3):'inherit'}">${q&&sp!=null?'$'+Math.round(sp/q):'—'}</b></div></div>
       ${e.domain?`<div class="lnk"><a href="${dUrl(siteForGeo(z.geo),e.domain)}" target="_blank" rel="noopener" title="Открыть калькулятор">🔗 ${escHtml(dUrl(siteForGeo(z.geo),e.domain).replace(/^https?:\/\//,''))}</a><button type="button" onclick="zCopy('${dUrl(siteForGeo(z.geo),e.domain)}')" title="Скопировать ссылку">⧉</button>${e.creo?`<button type="button" onclick="crDownload('${e.creo}')" title="Скачать крео">⬇ крео</button>`:''}<button type="button" onclick="zAdText(${zid},${r.i})" title="Геннадий напишет текст объявления на языке гео">✍ текст</button></div>`:''}
       <div class="ft">${a?`<div class="sw ${a.status==='ACTIVE'?'on':''}" onclick="toggleAdset(${zid},'${a.id}',this)" title="${a.status==='ACTIVE'?'Выключить':'Включить'}"></div>`:''}<select class="srcsel" onchange="setAdsetDomain(${zid},${r.i},'${a?a.id:''}','${a?escHtml(a.name).replace(/'/g,''):''}',this.value)"><option value="">— калька —</option>${domainOptions(siteForGeo(z.geo),e.domain,zid,z.buyer,z.funnel)}</select>${crZBtn(z,r.i,a?a.id:null,a?a.name:null)}</div>${act}</div>`}
@@ -5929,8 +5947,8 @@ function site2Html(tile,lk){const g2=CURRENT_REGION==='CZ'?'cz':'pl';const keys=
   const sec=SITE2_KINDS.map(([kind,lab])=>SITE2_LANGS[g2].map(l=>{const ks=keys.filter(k=>{const p=site2Parse(k);return p.kind===kind&&p.lang===l});const id=kind+l;const busy=ks.filter(k=>lk[k]).length;const open=_s2open[id]||busy>0
     return`<div class="dsec" style="display:flex;gap:10px;align-items:center;cursor:pointer" onclick="_s2open['${id}']=!${open};rdomRegistry()">${open?'▾':'▸'} ${lab.toUpperCase()} · ${l.toUpperCase()} <span style="color:var(--text3);font-weight:500">${g2}${kind}N-${l} · ${busy} занято</span></div>${open?`<div class="dgrid">${ks.map(tile).join('')}</div>`:''}`}).join('')).join('')
   const src2=DKEYS2_SRC.filter(k=>g2==='cz'?/cz/.test(k):!/cz/.test(k))
-  return`<div class="dsite" style="margin-top:12px"><div class="dsh"><b>${SITE2.label}</b><a href="${SITE2.base}${g2}isystem1-${g2==='cz'?'cz':'pl'}" target="_blank" class="dlnk mono" style="font-size:11px">garnofurniture.com/#${g2}isystem1-${g2==='cz'?'cz':'pl'}</a><span style="margin-left:auto;font:500 11px var(--mono);color:var(--text3)"><span style="color:var(--green)">${free}</span> свободно · ${keys.length-free} занято</span></div>
-    <div style="font-size:11px;color:var(--text3);padding:6px 0 2px">Ссылка = <span class="mono">#гео+вкладка+номер-язык</span>. В GarnoCRM источник приходит как <span class="mono">i${g2}isystem3-uk</span> (буква баера спереди). Пиксель выбирает сам сайт: <span class="px calk">CALK px</span> номера 1–10 (482683177664193) · <span class="px soc">SOC px</span> 11–20 (1583027080197169).</div>
+  return`<div class="dsite" style="margin-top:12px"><div class="dsh"><b>${SITE2.label}</b><a href="${SITE2.base}${g2}isystem1-${g2==='cz'?'cz':'pl'}" target="_blank" class="dlnk mono" style="font-size:11px">${site2Host()}/#${g2}isystem1-${g2==='cz'?'cz':'pl'}</a><span style="margin-left:auto;font:500 11px var(--mono);color:var(--text3)"><span style="color:var(--green)">${free}</span> свободно · ${keys.length-free} занято</span><button class="clnk" onclick="site2SetBase()" style="margin-left:10px">⚙ домен</button></div>
+    <div style="font-size:11px;color:var(--text3);padding:6px 0 2px">Ссылка = <span class="mono">#гео+вкладка+номер-язык</span> на домене ${site2Host()}. В GarnoCRM источник приходит как <span class="mono">i${g2}isystem3-uk</span> (буква баера спереди). Пиксель выбирает сам сайт: <span class="px calk">CALK px</span> номера 1–10 (482683177664193) · <span class="px soc">SOC px</span> 11–20 (1583027080197169).</div>
     ${sec}<div class="dsec">?SRC= МЕТКИ · пиксель 4826… (кроме ladngarno)</div><div class="dgrid">${src2.map(tile).join('')}</div></div>`}
 async function quickAddDomain(key){key=key.toLowerCase().trim();if(allDKeys().includes(key))return;const url=(prompt('Ссылка для '+key+' (можно пусто)','')||'').trim();const{data,error}=await db.from('domain_meta').insert({region:CURRENT_REGION,key,custom:true,url,updated_at:new Date().toISOString()}).select().single();if(error){toast('Ошибка: '+error.message,'err');return}DOMAIN_META.push(data);rdomRegistry();rzalivs();toast('Домен добавлен: '+key,'ok')}
 function dBuyerMenu(e,key){let m=document.getElementById('dbmenu');if(!m){m=document.createElement('div');m.id='dbmenu';m.className='indmenu';document.body.appendChild(m)}m.innerHTML=[['Danya','var(--blue)'],['Illia','var(--purple)'],['','#3E4457']].map(x=>`<div onclick="setDomainBuyer('${key}','${x[0]}')"><i style="background:${x[1]}"></i>${x[0]||'— снять'}</div>`).join('');m.classList.add('on');m.style.left=Math.min(e.clientX,innerWidth-160)+'px';m.style.top=(e.clientY+8)+'px';const off=()=>{m.classList.remove('on');document.removeEventListener('click',off)};setTimeout(()=>document.addEventListener('click',off),0)}
@@ -9008,8 +9026,10 @@ async function rdashBuyer(buyer){
   $('hero-rk').textContent=rks.filter(z=>z.ind!=='off').length;$('hero-rkall').textContent=rks.length
   // leads/quals by buyer LETTER in GarnoCRM source (dkalkulator8 → Danya); letterless sources via RK domains; analyses as last fallback
   const bl=buyer==='Illia'?'I':'D';const doms=new Set();rks.forEach(z=>zDomains(z).forEach(d=>d.domain&&doms.add(normKey(d.domain))))
-  let leads=0,quals=0,any=false
-  SRC_DAILY.forEach(r=>{if((from&&r.day<from)||(to&&r.day>to))return;const p=srcParse(r.source);if(p.letter===bl||(!p.letter&&doms.has(p.key)&&[...srcRowOwners(r,p)].some(id=>rks.some(z=>z.id===id)))){leads+=r.leads||0;quals+=r.quals||0;any=true}})
+  let leads=0,quals=0,any=false;const bySrc={}
+  SRC_DAILY.forEach(r=>{if((from&&r.day<from)||(to&&r.day>to))return;const p=srcParse(r.source);if(p.letter===bl||(!p.letter&&doms.has(p.key)&&[...srcRowOwners(r,p)].some(id=>rks.some(z=>z.id===id)))){leads+=r.leads||0;quals+=r.quals||0;any=true;const b=bySrc[r.source]||(bySrc[r.source]={l:0,q:0});b.l+=r.leads||0;b.q+=r.quals||0}})
+  // подсказка: из каких источников сложились лиды/квалы баера
+  const srcTtl=Object.entries(bySrc).sort((a,b)=>b[1].l-a[1].l).map(([k,v])=>`${k}: ${v.l} л / ${v.q} кв`).join('\n')||'источников с буквой '+bl+' за период нет';['hero-l','hero-q','d-daily','d-roi'].forEach(id=>{const e=$(id);if(e)e.title=srcTtl})
   if(!any){const seen=new Set();RK_ANALYSES.filter(a=>a.buyer===buyer&&normDate(a.period_from)>=from&&normDate(a.period_from)<=to).forEach(a=>{if(seen.has(a.zaliv_id))return;seen.add(a.zaliv_id);leads+=a.leads||0;quals+=a.quals||0})}
   heroCountUp($('hero-l'),leads,v=>Math.round(v));heroCountUp($('hero-q'),quals,v=>Math.round(v))
   setKpi('d-daily',leads,'#2ea043');setKpi('d-roi',quals,'#4080ff')
@@ -9028,13 +9048,11 @@ async function rdashBuyer(buyer){
   heroDelta(S.spend,P.spend);heroCountUp($('hero-daily'),S.spend/days,v=>'$'+Math.round(v))
   // CPL и CQL — по РК баера: спенд его РК из CRM, делённый на лиды и квалы, засчитанные этим же РК.
   // Кампании, не заведённые в CRM, и лиды, не дошедшие ни до одной РК, в расчёт не идут.
-  let rkL=0,rkQ=0;rks.forEach(z=>{const x=srcStats(z.id,null,from,to);if(x){rkL+=x.leads;rkQ+=x.quals}})
-  const rkS=S.rkSpend||0
-  // если калек баера нет в адсетах его РК (источники вида iplisystem1-pl), РК-расчёт пустой —
-  // тогда считаем по букве: весь спенд его кампаний / его лиды и квалы по букве в источнике
-  const byRk=rkL>0,sp=byRk?rkS:(S.spend||0),dl=byRk?rkL:leads,dq=byRk?rkQ:quals
+  // CPL/CQL считаем от тех же чисел, что и плитки: спенд всех кампаний баера за период / его лиды и квалы по букве в источнике.
+  // Раньше здесь был отдельный расчёт «по РК» (только РК с привязанными кальками) — он давал CQL, не сходящийся со спендом и квалами на экране.
+  const sp=S.spend||0,dl=leads,dq=quals
   const cpl=dl&&sp?Math.round(sp/dl*100)/100:0,cql=dq&&sp?Math.round(sp/dq*100)/100:0
-  const ttl=(byRk?'по РК: $':'по букве баера в источнике (кальки не привязаны к адсетам): $')+Math.round(sp)+' спенда · '+dl+' лид. · '+dq+' квал.'
+  const ttl='$'+Math.round(sp)+' спенда кампаний '+buyer+' ÷ '+dl+' лид. / '+dq+' квал. (по букве '+bl+' в источнике)'
   ;['d-cpl','d-cql'].forEach(id=>{const e=$(id);if(e)e.title=ttl})
   setKpi('d-spend','$'+S.spend,'var(--yellow)')
   setKpi('d-cpl',cpl?'$'+cpl:'—',cpl?(cpl<12?'var(--green)':cpl<=15?'var(--yellow)':'var(--red)'):'var(--text3)')
@@ -12896,6 +12914,7 @@ boot();
 .aud-feelchip{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:6px;border:1px solid rgba(212,175,55,.5);background:rgba(212,175,55,.1);color:var(--gold2);font:700 10.5px Manrope,system-ui,sans-serif;box-shadow:0 0 10px rgba(212,175,55,.2)}
 .aud-mut{font:600 10px var(--mono);color:var(--text4)}
 .aud-bdm{display:grid;gap:3px;font:600 10.5px var(--mono);color:var(--text2);min-width:200px}.aud-bdm .pb{height:3px;border-radius:2px;background:var(--bg5,#1B2030);overflow:hidden}.aud-bdm .pb i{display:block;height:100%;background:var(--gold)}.aud-bdm input{width:64px;height:20px;padding:0 5px;border-radius:5px;border:1px solid rgba(212,175,55,.4);background:var(--bg2);color:var(--gold2);font:600 11px var(--mono);text-align:right;-moz-appearance:textfield}.aud-bdm input::-webkit-inner-spin-button{display:none}.aud-bdm em{font-style:normal;color:var(--text3);font-size:10px}
+.aud-recon{margin:4px 18px 8px;padding:10px 14px;border-radius:12px;background:var(--bg3);border:1px solid var(--border);font:600 11.5px var(--mono);color:var(--text3);display:flex;gap:18px;flex-wrap:wrap;align-items:center}.aud-recon b{color:var(--text)}.aud-recon .w{color:var(--gold2)}.aud-recon .w b{color:var(--gold2)}.aud-recon .ok{color:var(--green)}.aud-recon .mut{margin-left:auto;font-weight:500}.aud-recon details{flex-basis:100%;font-weight:500}.aud-recon summary{cursor:pointer;color:var(--text2)}.aud-recon details div{padding:3px 0;color:var(--text2)}.aud-recon details small{color:var(--text3);margin-left:6px}
 .aud-gen{margin:4px 18px 12px;padding:12px 14px;border-radius:12px;background:rgba(110,155,255,.06);border:1px solid rgba(110,155,255,.25);font:500 12.5px Manrope,system-ui,sans-serif;color:var(--text);line-height:1.5}.aud-gen b{color:var(--blue2,#A9C1FF)}
 .aud-empty{padding:40px 18px;text-align:center;font:600 12px var(--mono);color:var(--text3);line-height:1.8}
 /* дашборд */
@@ -13016,12 +13035,18 @@ function audTable(geos){const F=AUD.fun;const rows=[]
       rows.push(`<tr class="frow"><td><span class="ind">└</span>${f}<span class="aud-mut" style="margin-left:6px">${Sf.zs.length} РК</span></td><td><span class="aud-ix sm" style="--cc:${cf}">${Sf.idx==null?'—':Sf.idx}</span></td><td>${audVdc(Vf)}</td><td>${audCell(Sf.A,true)}</td><td>${audCell(Sf.B,true)}</td><td>${audCell(Sf.C,true)}</td><td><div class="aud-myc sm"><input type="range" class="aud-range sm" min="0" max="100" value="${Sf.my??(Sf.idx??50)}" data-audmy="${geo}|${f}"><b>${Sf.my??'—'}</b></div></td><td>${audBudget(geo,f,Sf)}</td></tr>`)})})
   return`<table class="aud-tb"><thead><tr><th>Гео / воронка</th><th>Индекс</th><th>Вердикт</th><th>Новое крео</th><th>Квалы</th><th>Частота</th><th>Ощущение</th><th>Бюджет / мес</th></tr></thead><tbody>${rows.join('')}</tbody></table>`}
 function audDials(geos,small){return`<div class="aud-drow">${geos.map(geo=>{const S=AUD.fun?audCalc(geo,AUD.fun):audCalc(geo,null);const[,c]=AUD_ST(S.idx);return`<div class="aud-dcol ${AUD.sel===geo?'on':''}" data-audg="${geo}" style="--cc:${c}"><div class="aud-dl ${small?'sm':''}">${audSvg(geo+(AUD.fun||'')+(small?'s':''),S)}</div><div class="aud-feel"><span>Ощущение · ${geo}${AUD.fun?' · '+AUD.fun:''}</span><input type="range" class="aud-range" min="0" max="100" value="${S.my??(S.idx??50)}" data-audmy="${geo}${AUD.fun?'|'+AUD.fun:''}"><b>${S.my??'—'}</b></div></div>`}).join('')}</div>`}
+// сверка с Meta: весь спенд региона за месяц против того, что учтено в заливах
+function audRecon(){const today=audISO(0),m0=today.slice(0,8)+'01';const linked=new Set((ZALIVS||[]).filter(z=>z.campaign_id).map(z=>String(z.campaign_id)));const act=new Set(audZalivs().map(z=>String(z.campaign_id)))
+  let all=0,inZ=0;const un={};AUD.daily.forEach(r=>{if(r.campaign_id==='_day'||r.day<m0||r.day>today)return;const sp=+r.spend||0;all+=sp;const cid=String(r.campaign_id);if(act.has(cid))inZ+=sp;else{const u=un[cid]||(un[cid]={sp:0,name:r.name||cid,togo:linked.has(cid)});u.sp+=sp;if(r.name)u.name=r.name}})
+  const L=Object.entries(un).filter(([,u])=>u.sp>=1).sort((a,b)=>b[1].sp-a[1].sp);const diff=all-inZ
+  const fresh=(()=>{let t=0;AUD.daily.forEach(r=>{const v=r.updated_at?new Date(r.updated_at).getTime():0;if(v>t)t=v});return t?new Date(t).toLocaleString('ru',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'})()
+  return`<div class="aud-recon"><span>Meta · ${CURRENT_REGION} · месяц: <b>$${Math.round(all).toLocaleString('en')}</b></span><span>в заливах: <b>$${Math.round(inZ).toLocaleString('en')}</b></span>${diff>1?`<span class="w">не привязано к заливам: <b>$${Math.round(diff).toLocaleString('en')}</b> · ${L.length} РК</span>`:'<span class="ok">сходится</span>'}<span class="mut">данные Meta на ${fresh}</span>${L.length?`<details><summary>показать</summary>${L.map(([cid,u])=>`<div><b>$${Math.round(u.sp)}</b> ${escHtml(u.name)} <small>${cid}${u.togo?' · залив в TOGO/выкл':' · нет залива в CRM'}</small></div>`).join('')}</details>`:''}</div>`}
 function audGena(geos){const R=geos.map(g=>({g,S:audCalc(g,AUD.fun)})).filter(x=>x.S.idx!=null);if(!R.length)return'';R.sort((a,b)=>b.S.idx-a.S.idx);const hot=R[0],cold=R[R.length-1];const Vh=audVerdict(hot.S);let t=`${hot.g}${AUD.fun?' · '+AUD.fun:''} — ${Vh[0].toLowerCase()}, индекс ${hot.S.idx}. ${Vh[2]}`;if(R.length>1&&cold.S.idx<35&&hot.S.idx>=60)t+=` ${cold.g} в запасе (${cold.S.idx}) — часть бюджета туда.`;return`<div class="aud-gen"><b>Геннадий:</b> ${t}</div>`}
 function audRenderAn(){const el=document.getElementById('an-aud');if(!el||!el.classList.contains('on'))return;_audMemo={};const geos=AUD_GEOS[CURRENT_REGION]||AUD_GEOS.PL;if(!AUD.sel)AUD.sel=geos[0];const funs=audFunnels().filter(f=>audZalivs().some(z=>audFunOf(z)===f))
   el.innerHTML=`<div class="aud-top"><h2>Давление на аудиторию</h2><span class="sub">${CURRENT_REGION} · усталость гео от воронки · 0–100</span><div class="aud-seg" id="aud-funsel"><button class="${!AUD.fun?'on':''}" data-audf="">Все воронки</button>${funs.map(f=>`<button class="${AUD.fun===f?'on':''}" data-audf="${f}">${f}</button>`).join('')}</div><div class="aud-seg" id="aud-per">${AUD_PERIODS.map(([n,l])=>`<button class="${AUD.N===n?'on':''}" data-audn="${n}">${l}</button>`).join('')}</div><div class="aud-sync ${AUD.syncing?'on':''}"><i></i><span></span><button onclick="audSync(true)">⟳ обновить</button><button onclick="audMode('old')">Анализ РК →</button></div></div>
   <p class="aud-note">Три сигнала: <b>новые крео стартуют хуже нормы воронки</b> · <b>квалы дорожают</b> (мало квалов — CPL) · <b>частота набирается быстрее, чем в первые 2 недели РК</b>. Период сигналов — переключатель справа. Твоё ощущение (0–100) смешивается с данными пополам. Воронка берётся из карточки залива (поле «Воронка»), гео — из залива.</p>
   ${!AUD.loaded?'<div class="aud-empty">Загрузка…</div>':!AUD.daily.length&&!AUD.syncing?`<div class="aud-empty">Данных Meta ещё нет${AUD.loadErr?' · '+AUD.loadErr+' — выполни aud_v10.sql':''}.<br>Нажми «обновить» — соберу последние 60 дней (несколько минут).</div>`:''}
-  <div class="aud-wrap">${audDials(geos)}${audTable(geos)}${audGena(geos)}</div>`
+  <div class="aud-wrap">${audDials(geos)}${audTable(geos)}${audRecon()}${audGena(geos)}</div>`
   audStatus();audRev(el)}
 function audRenderDash(){const el=document.getElementById('d-aud');if(!el)return;_audMemo={};const geos=AUD_GEOS[CURRENT_REGION]||AUD_GEOS.PL;if(!AUD.loaded){el.innerHTML='<div class="empty">Загрузка…</div>';return}
   const f=AUD.fun;AUD.fun=null
