@@ -2453,7 +2453,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-11-06 22:30'
+const BUILD='2026-11-06 22:45'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -11289,7 +11289,7 @@ const hrC=v=>!v?'mut':v>=30?'good':v>=22?'mid':'bad';
 const dd=d=>d.slice(0,2)+'.'+d.slice(2,4)+'.'+d.slice(4,6);
 const bTitle=b=>'Пачка '+b.id;
 function filtered(){const q=S.q.toLowerCase();return CREOS.filter(c=>{const b=B(c.batch);
-  return (S.buyer==='all'||b.buyer===S.buyer)&&(S.cat==='Все'||b.cat===S.cat)&&(S.fun==='Все'||(c.funnel||b.funnel||'')===S.fun)&&(S.batch==='all'||c.batch===S.batch)&&(S.geo==='all'||c.g[S.geo]||c.geo===S.geo)&&(S.rate==='all'||rateOf(c)===+S.rate)&&(S.use==='all'||(S.use==='unused'?!c.used:S.use==='live'?c.live:S.use==='used'?c.used&&!c.live:true))&&
+  return (S.buyer==='all'||b.buyer===S.buyer)&&(S.cat==='Все'||b.cat===S.cat)&&(S.fun==='Все'||(S.fun==='—'?!(c.funnel||b.funnel):fnEq(c.funnel||b.funnel,S.fun)))&&(S.batch==='all'||c.batch===S.batch)&&(S.geo==='all'||c.g[S.geo]||c.geo===S.geo)&&(S.rate==='all'||rateOf(c)===+S.rate)&&(S.use==='all'||(S.use==='unused'?!c.used:S.use==='live'?c.live:S.use==='used'?c.used&&!c.live:true))&&
    (!q||(c.id+' '+c.name+' '+c.hookLine+' '+Object.values(c.tags).flat().join(' ')).toLowerCase().includes(q))})}
 function tot(L,geo){let sp=0,ld=0,q=0;L.forEach(c=>{const a=agg(c,geo);sp+=isFinite(a.sp)?a.sp:0;ld+=a.ld;q+=a.q});return{sp,ld,q,cpl:ld?sp/ld:NaN,cql:q?sp/q:NaN}}
 function toast(t){const d=$('#toast');d.textContent=t;d.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>d.hidden=true,2400)}
@@ -11304,9 +11304,11 @@ function tabs(){return `<div class="tabs" role="tablist">${[['home','Центр'
 function head(eb,title,extra){return `<div class="hd"><div><div class="eb">${eb}</div><h1>${title}</h1></div>${tabs()}${extra||''}</div>`}
 const seg=(key,items,cls,obj)=>{obj=obj||S;return `<div class="seg${cls?' '+cls:''}" role="group">${items.map(([v,l,dot])=>`<button data-${obj===S?'f':obj===S.up?'u':'z'}="${key}" data-val="${v}" class="${obj[key]===v?'on':''}">${dot?`<span class="dt" style="background:${dot}"></span>`:''}${l}</button>`).join('')}</div>`};
 const BUY=[['D','Даня','var(--bl)'],['I','Илля','var(--or)']];
+const fnEq=(a,b)=>String(a||'').trim().toLowerCase()===String(b||'').trim().toLowerCase();
 function fbar(full){return `<section class="fbar" aria-label="Фильтры">
   <div class="fg"><span class="lab">Баер</span>${seg('buyer',[['all','Все'],...BUY])}</div>
   <div class="fg"><span class="lab">Гео</span>${seg('geo',[['all','Все'],...GEOS.map(g=>[g,g])],'mono')}</div>
+  ${FUNS.length?`<div class="fg"><span class="lab">Воронка</span>${seg('fun',[['Все','Все'],...FUNS.map(f=>[f.name,f.name+' '+CREOS.filter(c=>fnEq(c.funnel||B(c.batch).funnel,f.name)).length,funC(f.name)]),...(CREOS.some(c=>!(c.funnel||B(c.batch).funnel))?[['—','без воронки','#5A6070']]:[])])}</div>`:''}
   ${full?`<div class="fg"><span class="lab">Статус</span>${seg('use',[['all','Все'],['unused','Не юзаны'],['live','В работе'],['used','Отработали']])}</div>
   <div class="fg"><span class="lab">Оценка</span>${seg('rate',[['all','Все'],['3','3 · MWP','var(--g)'],['2','2 · рабочие','var(--bl)'],['1','1 · однодневки','var(--r)'],['0','0 · мусор','#9C8F96'],['-1','новые','#DADDE7']])}</div>
   <label class="search" for="q"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search" placeholder="Индекс, название, хук, тег…" value="${esc(S.q)}"></label>`:''}
@@ -11418,9 +11420,7 @@ function vLib(){if(META.ok&&!CREOS.length)return head('Крео','Библиот
   return head('Крео · '+(S.geo==='all'?'все гео':S.geo)+' · 30 дней','Библиотека крео','<button class="btn" data-act="zalivs" title="Крео выбирается в форме залива: «＋ крео» в строке адсета">Выбрать крео в заливе →</button><button class="btn red" data-view="upload">＋ Загрузить пачку</button>')+notice()+fbar(true)+
   `<section class="kpis" aria-label="Сводка">${[['Крео',L.length,`в ${new Set(L.map(c=>c.batch)).size} пачках`,'var(--t)'],['Спенд','$'+Math.round(t.sp).toLocaleString('ru'),S.geo==='all'?'все гео':S.geo,'var(--t)'],['CPL',usd(t.cpl,1),t.ld+' лидов','var(--t)'],['CQL',usd(t.cql,1),t.q+' квалов',cqlC(t.cql)==='good'?'var(--gr2)':cqlC(t.cql)==='mid'?'var(--g2)':'var(--r2)'],['MWP · 3',rc[3],'5+ квалов, несколько циклов','var(--g2)'],['Рабочие · 2',rc[2],'~3 дня, ~3 квала','var(--bl2)'],['Однодневки · 1',rc[1],'офф на 2-й день','var(--r2)'],['Мусор · 0',rc[0],'без единого лида','#C9B8BF']].map(([l,v,s,c])=>`<div class="kpi"><div class="lab">${l}</div><b style="color:${c}">${v}</b><small>${s}</small></div>`).join('')}</section>
   <div class="row">
-   <aside class="side"><span class="lab">Пачки</span>${[{id:'all'},...BATCH].map(b=>`<button class="cat${S.batch===b.id?' on':''}" data-batch="${b.id}"><span>${b.id==='all'?'Все пачки':`<span class="mn">${b.id}</span><span class="sub">${BN[b.buyer]} · ${String(b.geo||'').split(',').join(' · ')} · ${b.cat}</span>`}</span><small>${b.id==='all'?CREOS.length:CREOS.filter(c=>c.batch===b.id).length}</small></button>`).join('')}
-    <span class="lab" style="padding-top:14px">Воронки</span>${['Все',...FUNS.map(f=>f.name)].map(n=>`<button class="cat${S.fun===n?' on':''}" data-fun="${n}" style="${n!=='Все'?'--fc:'+funC(n):''}"><span>${n!=='Все'?'<i class="fdot"></i>':''}${n}</span><small>${n==='Все'?CREOS.length:CREOS.filter(c=>(c.funnel||B(c.batch).funnel||'')===n).length}</small></button>`).join('')}
-    <span class="lab" style="padding-top:14px">Категории</span>${['Все',...CATS].map(n=>`<button class="cat${S.cat===n?' on':''}" data-cat="${n}"><span>${n}</span><small>${n==='Все'?CREOS.length:(cnt[n]||0)}</small></button>`).join('')}
+   <aside class="side"><span class="lab">Пачки</span>${[{id:'all'},...BATCH].map(b=>`<button class="cat${S.batch===b.id?' on':''}" data-batch="${b.id}"><span>${b.id==='all'?'Все пачки':`<span class="mn">${b.id}</span><span class="sub">${BN[b.buyer]} · ${String(b.geo||'').split(',').join(' · ')}${b.funnel?' · '+esc(b.funnel):''}</span>`}</span><small>${b.id==='all'?CREOS.length:CREOS.filter(c=>c.batch===b.id).length}</small></button>`).join('')}
     <span class="lab" style="padding-top:14px">Шкала оценки</span><div class="list" style="gap:6px;padding:0 6px 6px">${[3,2,1,0].map(i=>`<div style="font-size:11px;color:var(--t2);line-height:1.4"><b style="color:${RATE[i][2]};font-family:var(--m)">${i} · ${RATE[i][0]}</b><br>${RATE[i][1]}</div>`).join('')}</div></aside>
    <section style="flex:999 1 620px;min-width:0" aria-label="Крео">
     <div class="row" style="gap:10px;align-items:center;margin-bottom:12px">
