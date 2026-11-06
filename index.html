@@ -2453,7 +2453,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-11-06 22:45'
+const BUILD='2026-11-06 22:55'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -10084,7 +10084,10 @@ function crView(c){const g=CR.stats[c.id]||{},b=CR.batches.find(x=>x.id===c.batc
   return{id:c.id,batch:c.batch_id,date:crDD(c.date_iso),date_iso:c.date_iso,buyer:c.buyer,geo:c.geo,funnel,cat:b.cat||'',name:c.name||c.id,hookLine:c.hook_line||'',fmt:c.fmt||'',script:c.script||'',tags:Object.assign({hook:'',scen:'',style:'',extra:[]},c.tags||{}),ai:c.ai||{},rate:c.rate??null,frames:c.frames||[],file_url:c.file_url||'',file_name:c.file_name||'',
     used:crUsedIn(c.id).length,live:crLive(c.id),hr:im?Math.round(v3/im*1000)/10:0,ctr:im?Math.round(cl/im*1000)/10:0,g:Object.fromEntries(Object.entries(g).map(([k,v])=>[k,v.slice()]))}}
 function crUsedIn(id){return CR.zs.filter(z=>zDomains(z).some(e=>e.creo===id)).map(z=>z.name)}
-async function crUpdateBatch(id,patch){const{error}=await db.from('creo_batches').update(patch).eq('id',id);if(error){toast('Пачка не сохранилась: '+error.message,'err');return false}const b=CR.batches.find(x=>x.id===id);if(b)Object.assign(b,patch);return true}
+async function crUpdateBatch(id,patch){const{error}=await db.from('creo_batches').update(patch).eq('id',id);if(error){toast('Пачка не сохранилась: '+error.message,'err');return false}const b=CR.batches.find(x=>x.id===id);if(b)Object.assign(b,patch)
+  // воронка пачки = воронка всех её крео (иначе старая воронка крео перебивает пачку)
+  if('funnel' in patch){const{error:ce}=await db.from('creos').update({funnel:patch.funnel||null}).eq('batch_id',id);if(ce)toast('Крео пачки не перенеслись: '+ce.message,'err');CR.creos.forEach(c=>{if(c.batch_id===id)c.funnel=patch.funnel||null})}
+  CR.at=0;return true}
 async function crDeleteCreo(id){const used=crUsedIn(id);if(used.length)return{error:'Крео стоит в заливе: '+used.slice(0,3).join(', ')+' — сначала убери его из адсета'}
   const c=CR.creos.find(x=>x.id===id);if(c&&c.file_url){const m=String(c.file_url).split('/object/public/creos/')[1];if(m)try{await db.storage.from('creos').remove([decodeURIComponent(m.split('?')[0])])}catch(e){}}
   const{error}=await db.from('creos').delete().eq('id',id);if(error)return{error:error.message};CR.creos=CR.creos.filter(x=>x.id!==id);return{ok:true}}
@@ -11707,7 +11710,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button'),p
   if(S.view==='creo'&&dirty()&&(d.view||d.creo||d.editbatch||d.act==='zalivs')&&!S.leaveArm){S.leaveArm=true;setTimeout(()=>S.leaveArm=false,4000);toast('Есть несохранённые изменения — нажми «Сохранить» или ещё раз, чтобы уйти без сохранения');return}
   if(d.view||d.creo||d.editbatch)S.draft=null;
   if(d.view){if(d.view==='upload'&&t.closest('.tabs')&&S.up.batch){S.up.batch=null;S.up.rows=[];S.up.buyer=META.me||'D';S.up.date=META.today}if(d.view==='lib'&&S.up.batch&&!S.up.rows.length)S.up.batch=null;S.view=d.view;render();scrollTo(0,0);return}
-  if(d.editbatch){const b=B(d.editbatch);S.up=Object.assign(S.up,{batch:b.id,buyer:b.buyer,geo:String(b.geo||'PLPL').split(',')[0]||'PLPL',date:b.date_iso||META.today,cat:b.cat||'Кухни',rows:[]});S.view='upload';render();scrollTo(0,0);return}
+  if(d.editbatch){const b=B(d.editbatch);S.up=Object.assign(S.up,{batch:b.id,buyer:b.buyer,geo:String(b.geo||'PLPL').split(',')[0]||'PLPL',date:b.date_iso||META.today,cat:b.cat||'Кухни',funnel:b.funnel||'',rows:[]});S.view='upload';render();scrollTo(0,0);return}
   if(d.dl){dlOne(CREOS.find(c=>c.id===d.dl));return}
   if(d.dlbatch){dlBatch(d.dlbatch);return}
   if(d.delcreo){if(S.arm!=='c:'+d.delcreo){S.arm='c:'+d.delcreo;render();clearTimeout(S._armT);S._armT=setTimeout(()=>{S.arm=null;render()},4000);return}S.arm=null;const r=await API.deleteCreo(d.delcreo);if(r.error){toast(r.error);render();return}await boot(true);toast('Крео удалено');return}
@@ -11768,7 +11771,7 @@ document.addEventListener('change',async e=>{const t=e.target;
   if(t.id==='udate'&&t.value){S.up.date=t.value;render()}
   if(t.id==='usolo'){S.up.soloBatch=t.value;render();return}
   if(t.id==='dfun'&&S.draft){S.draft.funnel=t.value;render();return}
-  if(t.id==='ufun'){S.up.funnel=t.value;if(S.up.batch)API.updateBatch(S.up.batch,{funnel:t.value||null}).then(ok=>{if(ok){toast('Воронка пачки сохранена');boot(true)}});return}
+  if(t.id==='ufun'){S.up.funnel=t.value;if(S.up.batch)API.updateBatch(S.up.batch,{funnel:t.value||null}).then(ok=>{if(ok){toast(t.value?'Пачка и все её крео → '+t.value:'Воронка пачки снята');S.fun='Все';boot(true)}});return}
   if(t.id==='ucat'){S.up.cat=t.value;if(S.up.batch)API.updateBatch(S.up.batch,{cat:t.value}).then(ok=>{if(ok){toast('Категория пачки сохранена');boot(true)}})}
   if(t.dataset.ur==='script'){const r=S.up.rows[+t.dataset.i];if(!r.gv){detect(r,900);render()}}
   if(t.dataset.ur&&t.tagName==='SELECT'){S.up.rows[+t.dataset.i][t.dataset.ur]=t.value;render()}
