@@ -2453,7 +2453,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-11-06 18:20'
+const BUILD='2026-11-06 19:10'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -11134,7 +11134,7 @@ textarea{width:100%;resize:vertical;background:var(--b2);border:1px solid var(--
 @keyframes ldrbar{from{transform:translateX(-50%)}to{transform:translateX(250%)}}
 .ftag{position:absolute;left:8px;bottom:8px;height:18px;display:inline-flex;align-items:center;padding:0 7px;border-radius:5px;background:color-mix(in srgb,var(--fc) 22%,#0B0D13);border:1px solid color-mix(in srgb,var(--fc) 55%,transparent);font:700 9.5px var(--s);color:#fff}.cat .fdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--fc);margin-right:6px;vertical-align:middle}
 .umode{display:inline-flex;gap:3px;padding:3px;border-radius:10px;background:var(--b3);border:1px solid var(--l)}.umode button{height:30px;padding:0 14px;border-radius:7px;font:700 12px var(--s);color:var(--t3)}.umode button.on{color:#0B0C12;background:linear-gradient(135deg,#F0D98A,#D4AF37)}
-.catedit{display:flex;gap:6px;align-items:center}.catedit input{min-width:220px}
+.catedit{display:flex;gap:6px;align-items:center}.uscr{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border:1px solid var(--b3,#2a2f3a);border-radius:12px}.uscr textarea{width:100%;min-height:90px}.catedit input{min-width:220px}
 .bigidx{font:700 16px var(--m);letter-spacing:.03em;color:var(--g2)}
 .bigidx em{font-style:normal;color:var(--t3)}
 /* залив */
@@ -11466,36 +11466,37 @@ function batchEditList(U){const L=CREOS.filter(c=>c.batch===U.batch).sort((a,b)=
     <span style="min-width:0;flex:1 1 220px"><button class="idx" data-creo="${c.id}" style="color:var(--g2)">${c.id}</button><b style="display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.name)}</b><span class="mut" style="font-size:11px">${c.file_name?esc(c.file_name):'без файла'}${c.used?` · в заливах: ${c.used}`:''}</span></span>
     ${rLabel(c).replace('class="rb','style="position:static" class="rb')}
     <span style="display:flex;gap:6px">${c.file_url?`<button class="btn sm" data-dl="${c.id}">⬇ Скачать</button>`:`<button class="btn sm" data-creo="${c.id}" style="color:var(--r2)">нет видео · прикрепить</button>`}<button class="btn sm" data-creo="${c.id}">Открыть</button>${c.used?'':`<button class="btn sm" data-delcreo="${c.id}" style="color:var(--r2)">${S.arm==='c:'+c.id?'Точно удалить?':'Удалить'}</button>`}</span></div>`).join('')||'<div class="mut">Пачка пустая — дозалей крео ниже или удали её.</div>'}</div></section>`}
-function vUpload(){const U=S.up,bid=upBatchId(),solo=U.mode==='solo',ro=v=>`<span class="fld" style="display:inline-flex;align-items:center;opacity:.75">${v}</span>`;
+function vUpload(){const U=S.up;if(!U.batch)U.date=(typeof META!=='undefined'&&META&&META.today)||new Date().toISOString().slice(0,10);if(U.scr==null)U.scr='';const bid=upBatchId(),solo=U.mode==='solo',ro=v=>`<span class="fld" style="display:inline-flex;align-items:center;opacity:.75">${v}</span>`;
   const mine=BATCH.filter(b=>b.buyer===U.buyer).slice().sort((a,b)=>b.date_iso<a.date_iso?-1:1).slice(0,12);
   const modeSeg=U.batch?'':`<div class="umode" role="group"><button data-umode="batch" class="${!solo?'on':''}">Пачка</button><button data-umode="solo" class="${solo?'on':''}">Соло крео</button></div>`;
   return head(U.batch?'Крео · пачка':'Крео · загрузка',U.batch?'Пачка '+U.batch:(solo?'Загрузить одно крео':'Загрузить пачку'),(U.batch?'<button class="btn" data-view="lib">← Готово</button>':'')+modeSeg)+
   `<section class="fbar" aria-label="Параметры">
    <div class="fg"><span class="lab">Кто грузит</span>${U.batch?ro(BN[U.buyer]):seg('buyer',BUY,'',U)}</div>
-   <div class="fg"><span class="lab">Гео${solo?'':' для новых крео'}</span>${seg('geo',GEOS.map(g=>[g,g]),'mono',U)}</div>
-   <div class="fg"><label class="lab" for="udate">Дата залива</label>${U.batch?ro(dd(isoToD(U.date))):`<input class="fld" type="date" id="udate" value="${U.date}">`}</div>
+   <div class="fg"><label class="lab" for="udate">Дата залива</label>${ro(dd(isoToD(U.date))+(U.batch?'':' · сегодня'))}</div>
    <div class="fg"><label class="lab" for="ufun">Воронка</label><select class="fld" id="ufun"><option value="">— не задана —</option>${FUNS.map(f=>`<option value="${esc(f.name)}"${U.funnel===f.name?' selected':''}>${esc(f.name)}</option>`).join('')}</select></div>
-   <div class="fg"><label class="lab" for="ucat">Категория <button type="button" class="btn sm" data-act="catedit" style="margin-left:6px;height:20px;padding:0 7px">✎</button></label>${U.catEdit?`<div class="catedit"><input class="fld" id="catinp" value="${esc(CATS.join(', '))}" placeholder="через запятую"><button type="button" class="btn sm vi" data-act="catsave">OK</button><button type="button" class="btn sm" data-act="catedit">✕</button></div>`:`<select class="fld" id="ucat">${CATS.map(c=>`<option${U.cat===c?' selected':''}>${esc(c)}</option>`).join('')}</select>`}</div>
    ${solo&&!U.batch?`<div class="fg"><label class="lab" for="usolo">В какую пачку</label><select class="fld" id="usolo"><option value="">＋ новая · ${bid}</option>${mine.map(b=>`<option value="${b.id}"${U.soloBatch===b.id?' selected':''}>${b.id}${b.cat?' · '+esc(b.cat):''}</option>`).join('')}</select></div>`:`<div class="fg" style="margin-left:auto"><span class="lab">Пачка</span><span class="bigidx">${U.soloBatch||bid}</span></div>`}</section>
-  ${U.batch?`<div class="mut" style="font-size:11.5px;margin:-6px 0 12px">Баер и дата пачки зашиты в индексы крео, поэтому не меняются. Гео — у каждого крео своё. Категорию можно поменять — сохранится сразу.</div>`+batchEditList(U):''}
+  ${U.batch?`<div class="mut" style="font-size:11.5px;margin:-6px 0 12px">Баер и дата пачки зашиты в индексы крео, поэтому не меняются. Язык/гео — у каждого крео своё. Воронку можно поменять — сохранится сразу.</div>`+batchEditList(U):''}
   <div style="display:flex;flex-direction:column;gap:10px;${U.batch?'margin-top:14px':''}">
     ${solo&&U.rows.length?'':`<label class="drop" id="drop" for="files"><input type="file" id="files" ${solo?'':'multiple'} accept="video/*,image/*">
      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 16V4m0 0-5 5m5-5 5 5M4 20h16"/></svg>
      <b style="font-size:14px;color:var(--g2)">${U.batch?'Перетащи сюда крео, чтобы дозалить в эту пачку':solo?'Перетащи одно крео':'Перетащи сюда сразу все крео пачки'}</b><span style="font-size:12px">или нажми, чтобы выбрать ${solo?'файл':'файлы'} · из видео вырежутся кадры для слайдшоу, стиль, хук и сценарий Геннадий определит сам</span></label>`}
+    ${U.rows.length?`<div class="uscr"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><label class="lab" for="uscr">Сценарий · надписи на экране · один на ${U.rows.length>1?'все '+U.rows.length+' видео':'видео'}</label><button type="button" class="btn sm vi" data-act="scrgen" style="margin-left:auto"${U.gbusy?' disabled':''}>${U.gbusy?'Геннадий пишет…':(U.scr?'✦ Переписать':'✦ Геннадий напишет')}</button></div><textarea id="uscr" rows="${U.scr.split('\n').length>3?9:4}" placeholder="Текст, который будет на экране, по секундам. Первая строка — хук. Или нажми «Геннадий напишет»">${esc(U.scr)}</textarea></div>`:''}
     ${U.rows.map((r,i)=>`<div class="urow">${slides({frames:r.frames,hookLine:r.hook||r.file,tone:r.tone,fmt:''})}
       <div style="min-width:0;display:flex;flex-direction:column;gap:10px">
        <div class="row" style="gap:10px;align-items:center"><span class="bigidx">${esc(upIdx(i))}</span>${r.ai==='done'?`<button class="btn sm" data-copy="${esc(upIdx(i))}">Копировать</button>`:''}<span class="mut" style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px">${esc(r.file)}</span><button class="btn sm" data-rm="${i}" style="margin-left:auto">Убрать</button></div>
-       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="lab">Гео залива</span><div class="seg mono" role="group" aria-label="Гео крео">${GEOS.map(g=>`<button data-rgeo="${g}" data-i="${i}" class="${(r.geo||U.geo)===g?'on':''}">${g}</button>`).join('')}</div></div>
+       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="lab">${r.geoAuto?'Язык · из названия':'Язык · не нашёл в названии — выбери'}</span><div class="seg mono" role="group" aria-label="Язык крео">${GEOS.map(g=>`<button data-rgeo="${g}" data-i="${i}" class="${(r.geo||U.geo)===g?'on':''}">${g}</button>`).join('')}</div></div>
        <div class="ufl">
         <div style="display:flex;flex-direction:column;gap:5px"><span class="lab">${r.aiBy==='по названию'?'Геннадий недоступен — угадано по названию, поправь':'Определил Геннадий — можно поправить'}${r.conf&&r.conf<0.7?' · <span style="color:var(--r2)">не уверен — проверь</span>':''}</span>${r.why?`<span class="mut" style="font-size:11px">${esc(r.why)}</span>`:''}${r.ai==='done'?`<div class="chips">${[['style','st',DICT.style],['hookT','h',DICT.hook],['scen','s',DICT.scen]].map(([k,cl,arr])=>`<select class="fld aisel ${cl}" data-ur="${k}" data-i="${i}" aria-label="${k}">${arr.map(o=>`<option value="${esc(o)}"${r[k]===o?' selected':''}>${esc(o)}${k==='style'?' · '+codeOf(o):''}</option>`).join('')}</select>`).join('')}</div>`:`<span class="mut" style="font-size:12px;display:flex;align-items:center;gap:8px"><span class="ldr-ring sm" style="width:22px;height:22px"><i></i></span>Геннадий смотрит кадры…</span>`}</div>
         <label><span class="lab">Название крео</span><input class="fld" data-ur="name" data-i="${i}" value="${esc(r.name)}"></label>
        </div>
-       <div style="display:flex;flex-direction:column;gap:5px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><label class="lab" for="usc${i}">Сценарий · первая строка = хук</label><button type="button" class="btn sm vi" data-act="rowgen" data-i="${i}" style="margin-left:auto"${r.ai==='done'&&!r.gbusy?'':' disabled'}>${r.gbusy?'Геннадий пишет…':'✦ Сценарий от Геннадия'}</button></div><textarea id="usc${i}" rows="${r.script.split('\n').length>3?8:3}" data-ur="script" data-i="${i}" placeholder="0–3с: хук… или нажми «Сценарий от Геннадия»">${esc(r.script)}</textarea></div>
       </div></div>`).join('')}
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:4px"><button class="btn red" style="min-width:260px" data-act="saveup"${U.rows.length&&U.rows.every(r=>r.ai==='done')&&!U.saving?'':' disabled'}>${U.saving?(U.prog||'Сохраняю…'):U.rows.some(r=>r.ai!=='done')?'Геннадий разбирает крео…':(U.batch?'Дозалить в пачку':solo?'Сохранить крео':'Сохранить пачку')+(U.rows.length&&!solo?' · '+U.rows.length+' крео':'')}</button><span class="mut" style="font-size:11.5px">Адсеты назначаются в «Заливах» при планировании залива.</span></div>
   </div>`}
 const TONES=['#22324A','#3A2E1E','#2B2238','#1E3A33','#2C2C30','#30263C'];
-function addRows(files){if(S.up.mode==='solo'){files=files.slice(0,1);S.up.rows=[]}files.forEach(f=>{const r={geo:S.up.geo,fileObj:f instanceof File?f:null,fmt:'',file:f.name||f,name:(f.name||f).replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').slice(0,40),style:'',hookT:'',scen:'',ai:'wait',script:'',hook:'',tone:TONES[S.up.rows.length%TONES.length],frames:null};S.up.rows.push(r);
+function geoFromName(n){const t=String(n||'').toUpperCase().replace(/[^A-ZА-Я0-9]+/g,' ');let m=t.match(/(PLPL|PLUA|CZCZ|CZUA|UAPL|UACZ)/);if(m){const g=m[1];return g==='UAPL'?'PLUA':g==='UACZ'?'CZUA':g}
+  const w=' '+t+' ',pl=/ (PL|POL|POLSKA|POLAND) /.test(w),cz=/ (CZ|CS|CZE|CESKO|CZECH) /.test(w),ua=/ (UA|UK|UKR) /.test(w);
+  if(cz)return ua?'CZUA':'CZCZ';if(pl)return ua?'PLUA':'PLPL';return ''}
+function addRows(files){if(S.up.mode==='solo'){files=files.slice(0,1);S.up.rows=[]}files.forEach(f=>{const gn=geoFromName(f.name||f),r={geo:gn||S.up.geo,geoAuto:!!gn,fileObj:f instanceof File?f:null,fmt:'',file:f.name||f,name:(f.name||f).replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').slice(0,40),style:'',hookT:'',scen:'',ai:'wait',script:'',hook:'',tone:TONES[S.up.rows.length%TONES.length],frames:null};S.up.rows.push(r);
   r._fp=f instanceof File?grab(f).then(o=>{if(o){r.frames=o.frames;r.aiFrames=o.aiFrames||o.frames;r.fmt=o.fmt||''}if(S.view==='upload')render()}).catch(()=>{}):Promise.resolve();detect(r,300)});render()}
 /* Геннадий определяет стиль, хук и сценарий (в макете — по названию файла и сценарию) */
 function heur(r){const t=(r.file+' '+r.name+' '+r.script).toLowerCase();
@@ -11556,8 +11557,8 @@ function prog(o){let el=document.getElementById('upbox');if(!o){if(el)el.remove(
 function etaOf(st,l,t){const dt=(Date.now()-st)/1000;if(dt<1.5||!l)return'';const left=(t-l)/(l/dt);return left<60?Math.ceil(left)+' сек':Math.ceil(left/60)+' мин'}
 function ratio(w,h){const r=w/h;return r<0.62?'9:16':r<0.9?'4:5':r<1.15?'1:1':'16:9'}
 async function saveUpload(){const U=S.up;if(U.saving)return;U.saving=true;render()
-  const rows=U.rows.map(r=>({geo:r.geo||U.geo,file:r.fileObj,name:r.name||r.file,script:r.script||'',hookLine:r.hookLine||(r.script.split('\n')[0]||'').replace(/^[^«"]*[«"]?/,'').replace(/[»"].*$/,'').trim()||r.name,tags:{hook:r.hookT,scen:r.scen,style:r.style,extra:r.extra||[]},ai:Object.assign({},r.aiOrig||{style:r.style,hook:r.hookT,scen:r.scen},{by:r.aiBy||'',conf:r.conf||null}),frames:r.frames||[],fmt:r.fmt||''}))
-  let st0=Date.now(),cur=-1;const res=await API.saveBatch({batchId:U.batch||(U.mode==='solo'&&U.soloBatch)||null,buyer:U.buyer,geo:U.geo,dateISO:U.date,cat:U.cat,funnel:U.funnel||'',rows},(i,stage,l,t)=>{if(i!==cur){cur=i;st0=Date.now()}const nm=rows[i].file?rows[i].file.name:rows[i].name;U.prog=`Крео ${i+1} из ${rows.length}`;const b=document.querySelector('[data-act=saveup]');if(b)b.textContent=U.prog+'…';prog({title:`Крео ${i+1} из ${rows.length}: ${stage==='видео'?'загружаю видео':stage==='файл'?'готовлю':'записываю в базу'}`,sub:nm,loaded:stage==='видео'?l:0,total:stage==='видео'?t:0,eta:stage==='видео'?etaOf(st0,l,t):''})})
+  const SC=(U.scr||'').trim();const rows=U.rows.map(r=>({geo:r.geo||U.geo,file:r.fileObj,name:r.name||r.file,script:SC,hookLine:r.hookLine||(SC.split('\n')[0]||'').replace(/^[^«"]*[«"]?/,'').replace(/[»"].*$/,'').trim()||r.name,tags:{hook:r.hookT,scen:r.scen,style:r.style,extra:r.extra||[]},ai:Object.assign({},r.aiOrig||{style:r.style,hook:r.hookT,scen:r.scen},{by:r.aiBy||'',conf:r.conf||null}),frames:r.frames||[],fmt:r.fmt||''}))
+  let st0=Date.now(),cur=-1;const res=await API.saveBatch({batchId:U.batch||(U.mode==='solo'&&U.soloBatch)||null,buyer:U.buyer,geo:[...new Set(rows.map(r=>r.geo))].join(',')||U.geo,dateISO:U.date,cat:'',funnel:U.funnel||'',rows},(i,stage,l,t)=>{if(i!==cur){cur=i;st0=Date.now()}const nm=rows[i].file?rows[i].file.name:rows[i].name;U.prog=`Крео ${i+1} из ${rows.length}`;const b=document.querySelector('[data-act=saveup]');if(b)b.textContent=U.prog+'…';prog({title:`Крео ${i+1} из ${rows.length}: ${stage==='видео'?'загружаю видео':stage==='файл'?'готовлю':'записываю в базу'}`,sub:nm,loaded:stage==='видео'?l:0,total:stage==='видео'?t:0,eta:stage==='видео'?etaOf(st0,l,t):''})})
   prog(null)
   U.saving=false;U.prog='';if(res.error){toast('Не сохранилось: '+res.error);render();return}if(res.warn&&res.warn.length)setTimeout(()=>upErr(res.warn.join('\n')+'\n\nКрео сохранены без видео — потом открой крео и нажми «⬆ Прикрепить видео».'),300)
   const n=res.ids.length,wasEdit=!!U.batch;U.rows=[];await boot(true);if(wasEdit){render();toast(`Дозалито в ${res.batch}: ${n} крео`);return}S.view='lib';S.layout='batch';S.batch=res.batch;S.rate='all';S.geo='all';S.buyer='all';S.cat='Все';render();scrollTo(0,0);toast(`${res.batch} сохранена · ${n} крео получили индексы`)}
@@ -11694,7 +11695,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button'),p
   if(d.setv!==undefined&&POP){setTag(d.setv);return}
   if('unsetTag' in d&&POP){setTag('');return}
   if(d.copy){copyTxt(d.copy);return}
-  if(d.rgeo){S.up.rows[+d.i].geo=d.rgeo;S.up.geo=d.rgeo;render();return}
+  if(d.rgeo){const r=S.up.rows[+d.i];r.geo=d.rgeo;r.geoAuto=false;render();return}
   if(d.dgeo&&S.draft){S.draft.geo=d.dgeo;render();return}
   if(d.act==='dcancel'){S.draft=null;render();return}
   if(d.act==='dsave'){const D=S.draft,c=CREOS.find(x=>x.id===D.id);if(!c||S.dsaving)return;S.dsaving=true;render()
@@ -11747,6 +11748,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button'),p
   if(d.act==='legacy'){if(API)API.legacy();return}
   if(d.act==='zalivs'){if(API)API.openZalivs();toast('В форме залива нажми «＋ крео» в строке адсета');return}
   if(d.act==='gcopy'){copyTxt(S.gen.text);return}
+  if(d.act==='scrgen'){const U=S.up,r=U.rows[0];if(U.gbusy||!r)return;U.gv=(U.gv||0)+1;U.gbusy=true;render();const o={cat:U.funnel||'Мебель',geo:r.geo||U.geo,hook:r.hookT||'Цена',style:r.style||'Хьюман',len:30,wish:'Весь сценарий — только надписи на экране (текст в кадре по секундам), без закадрового голоса и реплик. Один сценарий на все видео пачки. Названия видео: '+U.rows.map(x=>x.name).join('; ')};const res=API?await API.ai('script',o,60000):null;U.gbusy=false;U.scr=res&&res.text?res.text:genScript(Object.assign({base:''},o),U.gv-1);render();toast(res&&res.text?'Геннадий написал сценарий — можно править':'Геннадий недоступен — сценарий по шаблону');return}
   if(d.act==='rowgen'){const r=S.up.rows[+d.i];if(r.gbusy)return;r.gv=(r.gv||0)+1;r.gbusy=true;render();const res=API?await API.ai('script',{cat:S.up.cat,geo:S.up.geo,hook:r.hookT||'Цена',style:r.style||'Хьюман',len:30,wish:''},60000):null;r.gbusy=false;r.script=res&&res.text?res.text:genScript({cat:S.up.cat,geo:S.up.geo,hook:r.hookT||'Цена',style:r.style||'Хьюман',len:30,base:''},r.gv-1);render();toast(res&&res.text?'Геннадий написал сценарий — можно править':'Геннадий недоступен — сценарий по шаблону');return}
   if(d.act==='launch'){toast('В Заливах крео привяжутся к адсетам и калькам этого залива');return}
   if(false&&d.act==='reuse'){S.view='zal';const n=Object.keys(S.zl.as).map(Number).find(k=>!S.zl.as[k]);if(n&&!Object.values(S.zl.as).includes(S.creo))S.zl.as[n]=S.creo;render();scrollTo(0,0);return}
@@ -11754,6 +11756,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button'),p
 document.addEventListener('input',e=>{const t=e.target;
   if(t.id==='q'){S.q=t.value;const pos=t.selectionStart;render();const i=$('#q');i.focus();try{i.setSelectionRange(pos,pos)}catch(_){}}
   if(t.id==='zq'){S.zl.q=t.value;const pos=t.selectionStart;render();const i=$('#zq');i.focus();try{i.setSelectionRange(pos,pos)}catch(_){}}
+  if(t.id==='uscr'){S.up.scr=t.value;return}
   if(t.dataset.ur&&t.tagName!=='SELECT'){S.up.rows[+t.dataset.i][t.dataset.ur]=t.value}
   if(t.dataset.kal){S.zl.kal[t.dataset.kal]=t.value}
   if((t.id==='scr'||t.id==='cname')&&S.draft){const was=dirty();if(t.id==='scr')S.draft.script=t.value;else S.draft.name=t.value;if(was!==dirty()){const bar=document.querySelector('[data-act=dsave]');if(bar){const pos=t.selectionStart;render();const el=document.getElementById(t.id);el.focus();try{el.setSelectionRange(pos,pos)}catch(_){}}}}
