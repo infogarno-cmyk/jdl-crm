@@ -751,6 +751,19 @@ html,body{height:100%;overflow:hidden;max-width:100vw;font-family:var(--sans);ba
 .sbdl{padding:5px 12px;border-radius:5px;border:1px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11px;cursor:pointer;font-family:var(--sans)}.sbdl:hover{background:var(--red);color:#fff}
 .rkm{font-family:var(--mono);font-size:11px;color:var(--text3);background:var(--bg5);padding:5px 8px;border-radius:4px;margin-top:8px}
 .skrow{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.mgr-w{margin-bottom:20px;overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--bg2)}
+.mgr-t{width:100%;border-collapse:collapse;font-size:12px;min-width:860px}
+.mgr-t th{font-size:10px;font-weight:700;letter-spacing:.6px;color:var(--text3);text-align:right;padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+.mgr-t th:first-child,.mgr-t td:first-child{text-align:left}.mgr-t th.on{color:#fff}
+.mgr-t td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:right;font-family:var(--mono);color:var(--text2);white-space:nowrap}
+.mgr-t tr:last-child td{border-bottom:0}.mgr-t tbody tr:hover td{background:var(--bg3)}
+.mgr-t td.mnm{font-family:inherit;color:#fff;font-weight:600}.mgr-t td.mnm i{display:inline-block;width:24px;height:24px;border-radius:50%;background:var(--bg4);color:var(--text2);font:700 10px/24px var(--mono);text-align:center;margin-right:8px;font-style:normal}
+.mgr-t td.mk{color:#fff;font:400 14px 'Russo One',var(--mono)}.mgr-t td.msp{color:var(--gold)}.mgr-t td.mcv{color:#C9B6FF}
+.mgr-t .g{color:var(--green)!important}.mgr-t .y{color:var(--yellow)!important}.mgr-t .r{color:var(--red)!important}
+.mgr-t tfoot td{border-top:1px solid var(--border2);color:#fff;font-weight:700}.mgr-t tfoot .mgr-bar{display:none}
+.mgr-bar{display:block;height:3px;border-radius:2px;background:var(--gold);opacity:.55;margin-top:4px;margin-left:auto}
+.mgr-note{padding:8px 12px 10px;font-size:10.5px;color:var(--text3);line-height:1.45;border-top:1px solid var(--border)}
+
 .skc{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px 28px;position:relative;overflow:hidden}
 .skc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--bord),var(--bord2))}
 .sklb{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700}.skvl{font-size:52px;font-weight:800;color:#fff;line-height:1;font-family:var(--mono)}.sksb{font-size:12px;color:var(--text3);margin-top:6px}
@@ -1272,7 +1285,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opac
 #page-dash .chleg.active{color:var(--text);background:var(--bg4);border-color:var(--border)}
 #page-dash .chleg::before{content:"";width:16px;height:3px;border-radius:2px;background:var(--cc)}#page-dash .chleg:not(.active)::before{opacity:.3}
 #page-dash .clnk{height:28px;display:inline-flex;align-items:center;padding:0 10px;border-radius:8px;border:1px solid var(--border);font-weight:600;font-size:12px;color:var(--text2);transition:all .2s}#page-dash .clnk:hover{border-color:rgba(212,175,55,.5);color:var(--gold2)}
-#page-dash .krow{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin:14px 0;background:none;border:0;box-shadow:none;border-radius:0}
+#page-dash .krow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;margin:14px 0;background:none;border:0;box-shadow:none;border-radius:0}
 #page-dash .kpi{position:relative;padding:14px 16px 12px;border-radius:14px;background:var(--bg2);border:1px solid var(--border);overflow:hidden;transition:transform .35s cubic-bezier(.2,.8,.2,1),border-color .25s,box-shadow .35s;cursor:pointer}
 #page-dash .kpi::before{content:"";display:block;position:absolute;left:0;right:0;top:0;height:2px;background:var(--cc,var(--text3));opacity:.9;box-shadow:0 0 12px var(--cc,transparent)}
 #page-dash .kpi:hover,#page-dash .kpi.foc{transform:translateY(-3px);border-color:var(--border2);box-shadow:0 20px 40px -24px rgba(0,0,0,.9);background:var(--bg2)}
@@ -1285,8 +1298,25 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opac
 #page-dash .ksp svg{width:100%;height:100%}
 @keyframes kspd{from{stroke-dashoffset:1}}
 #page-dash .kpi::after{right:12px;top:12px}
-@media(max-width:980px){#page-dash .krow{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:1180px){#page-dash .krow{grid-template-columns:repeat(4,minmax(0,1fr))}}@media(max-width:980px){#page-dash .krow{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:640px){#page-dash .krow{grid-template-columns:1fr 1fr}#page-dash .ksp{display:none}}
+.cpv-card{margin-bottom:12px}.cpv-sub{font-size:11px;color:var(--text3)}
+.cpv-w{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:18px;padding:0 16px 14px}
+@media(max-width:980px){.cpv-w{grid-template-columns:1fr}}
+.cpv-m{display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));gap:6px;align-items:stretch}
+.cpv-h{font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.6px;text-align:center;padding-bottom:2px}.cpv-h.on{color:#C9B6FF}
+.cpv-r{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2);padding-right:6px;white-space:nowrap}.cpv-r i{width:8px;height:8px;border-radius:50%;background:var(--cc)}.cpv-r.on{color:#fff;font-weight:700}
+.cpv-c{display:flex;flex-direction:column;gap:2px;align-items:flex-start;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:9px 10px;cursor:pointer;text-align:left;color:var(--text);transition:border-color .15s,background .15s}
+.cpv-c:hover{border-color:var(--border2)}.cpv-c b{font:400 19px 'Russo One',var(--mono);color:#fff}.cpv-c small{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.cpv-c.tot b{color:#C9B6FF}.cpv-c.on{border-color:#A07CF5;background:linear-gradient(180deg,rgba(160,124,245,.14),rgba(160,124,245,.04));box-shadow:0 0 0 1px rgba(160,124,245,.35),0 0 18px -6px rgba(160,124,245,.6)}
+.cpv-c:focus-visible{outline:2px solid #A07CF5;outline-offset:2px}
+.cpv-note{margin-top:8px;font-size:10.5px;color:var(--text3);line-height:1.45}
+.cpv-ch{position:relative;min-width:0}.cpv-chh{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--text2);margin-bottom:4px}
+.cpv-leg{display:flex;gap:10px}.cpv-leg span{display:flex;align-items:center;gap:5px;color:var(--text3)}.cpv-leg span.on{color:#fff}.cpv-leg i{width:12px;height:2px;border-radius:2px;background:var(--cc)}
+.cpv-gl{stroke:var(--border);stroke-width:1}.cpv-ax{fill:var(--text3);font-size:10px;font-family:var(--mono)}.cpv-xh{stroke:var(--text3);stroke-width:1;stroke-dasharray:3 3}
+.cpv-tt{display:none;position:absolute;top:26px;width:230px;pointer-events:none;background:var(--bg5);border:1px solid var(--border2);border-radius:10px;padding:8px 10px;font-size:11px;line-height:1.6;box-shadow:0 14px 40px rgba(0,0,0,.6);z-index:5}
+.cpv-tt span{display:flex;align-items:center;gap:6px}.cpv-tt i{width:8px;height:8px;border-radius:50%;background:var(--cc)}.cpv-tt em{font-style:normal;color:var(--text3);font-family:var(--mono);font-size:10px;margin-left:auto}
+
 .kpi:last-child{border-right:0}.kpi::before{display:none}
 .klab{font-size:11.5px;color:var(--text3);text-transform:none;letter-spacing:0;font-weight:500;margin-bottom:6px}
 .kval{font-size:30px;font-weight:500;letter-spacing:-.03em}
@@ -1786,7 +1816,7 @@ document.getElementById('root').innerHTML=`
         </div>
         <div class="side">
           <div><div class="k">Активных РК</div><div class="v"><span id="hero-rk">0</span><small>из <span id="hero-rkall">0</span></small></div></div>
-          <div><div class="k">Лиды · квалы</div><div class="v"><span id="hero-l">0</span><small>/</small><span id="hero-q" style="color:var(--green)">0</span></div></div>
+          <div><div class="k">Лиды · квалы · визиты</div><div class="v"><span id="hero-l">0</span><small>/</small><span id="hero-q" style="color:var(--green)">0</span><small>/</small><span id="hero-v" style="color:#C9B6FF" title="Визиты: оценка 5+ в CRM">0</span></div></div>
           <div><div class="k">В день</div><div class="v" style="color:var(--gold)"><span id="hero-daily">$0</span></div></div>
         </div>
       </div>
@@ -1808,7 +1838,9 @@ document.getElementById('root').innerHTML=`
         <div class="kpi" data-cmet="cql"><div class="klab">CQL</div><div class="kval" id="d-cql">—</div><div class="kpi-compare"><span class="kpi-prev" id="d-cql-prev"></span><span class="karr" id="d-cql-arr"></span></div></div>
         <div class="kpi"><div class="klab">ROI</div><div class="kval" id="d-roi">—</div><div class="kpi-compare"><span class="kpi-prev" id="d-roi-prev"></span><span class="karr" id="d-roi-arr"></span></div></div>
         <div class="kpi" data-cmet="ctr"><div class="klab">CTR AVG</div><div class="kval" id="d-ctr">—</div><div class="kpi-compare"><span class="kpi-prev" id="d-ctr-prev"></span><span class="karr" id="d-ctr-arr"></span></div></div>
+        <div class="kpi" title="Cost Per Visit: спенд ÷ визиты (оценка 5+ в CRM)" onclick="document.getElementById('d-cpvc')?.scrollIntoView({behavior:'smooth',block:'center'})" style="cursor:pointer"><div class="klab">CPV</div><div class="kval" id="d-cpv">—</div><div class="kpi-compare"><span class="kpi-prev" id="d-cpv-prev"></span><span class="karr" id="d-cpv-arr"></span></div></div>
       </div>
+      <div class="card cpv-card"><div class="chdr"><span class="ctit">CPV · цена визита</span><span class="cpv-sub">спенд ÷ визиты (оценка 5+ в CRM) · клик по ячейке — график</span></div><div id="d-cpvc"><div class="empty">Загрузка…</div></div></div>
       <div class="dgrid">
         <div class="card aud-card"><div class="chdr"><span class="ctit">Давление на аудиторию</span><span class="clnk" onclick="AUD.mode='aud';gp('analysis',document.getElementById('nb-analysis'))">Подробно →</span></div><div id="d-aud"><div class="empty">Загрузка…</div></div></div>
         <div class="card glw-card"><div class="chdr"><span class="glw-hd"><span class="ctit" id="d-goals-tit">Цели</span><span class="glw-day" id="d-goals-day"></span></span><span class="clnk" onclick="glOpen('a')">Все цели →</span></div><div id="d-goals"><div class="empty">Загрузка...</div></div></div>
@@ -1866,6 +1898,8 @@ document.getElementById('root').innerHTML=`
         <div class="pbtns" id="sp-btns"><button class="pb active" data-sdays="1">1 день</button><button class="pb" data-sdays="3">3 дня</button><button class="pb" data-sdays="7">Неделя</button><button class="pb" data-sdays="14">2 нед.</button><button class="pb" data-sdays="30">Месяц</button><button class="pb" data-sdays="0">Всё</button></div>
       </div>
       <div class="skrow" id="sales-kpi"></div>
+      <div class="fhdr" style="margin-bottom:12px"><span class="fhtit">По менеджерам</span><span class="fhcnt" style="margin-left:10px;font-size:11px;color:var(--text3)">спенд FB делится между менеджерами по доле лидов с рекламы за каждый день</span></div>
+      <div class="mgr-w" id="sales-mgr"></div>
       <div class="fhdr" style="margin-bottom:12px"><span class="fhtit">По источникам</span></div>
       <div class="ssrcs" id="sales-sources"></div>
       <div class="fhdr" style="margin-bottom:12px"><span class="fhtit">Список продаж</span><span class="fhcnt" id="sales-count">(0)</span></div>
@@ -2453,7 +2487,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-11-06 22:55'
+const BUILD='2026-11-07 21:10'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -2703,7 +2737,7 @@ function srcRowOwners(r,p){p=p||srcParse(r.source);const list=srcOwnIndex()[p.ke
 // (AD1 в CRM = адсет с «AD1» в имени Meta). Можно передать и сам ключ кальки строкой.
 function zEntryForAdset(z,adsetId){const arr=zDomains(z);let e=arr.find(d=>d.adset_id===adsetId);if(e)return e;const list=_zAdsCache[z.id];if(!list)return null;const m=matchAdsets(arr,list);for(const i in m)if(m[i]&&m[i].id===adsetId)return arr[+i];return null}
 function srcStats(zid,adsetId,from,to){const z=ZALIVS.find(x=>x.id===zid);if(!z)return null;let doms;if(!adsetId)doms=zDomains(z).filter(d=>d.domain);else if(typeof adsetId==='string'&&adsetId.startsWith('key:'))doms=[{domain:adsetId.slice(4)}];else{const e=zEntryForAdset(z,adsetId);doms=e&&e.domain?[e]:[]}const keys=new Set(doms.filter(d=>d.domain).map(d=>normKey(d.domain)));if(!keys.size)return null
-  const bl=z.buyer==='Illia'?'I':z.buyer==='Danya'?'D':'';let leads=0,quals=0;SRC_DAILY.forEach(r=>{const p=srcParse(r.source);if(!keys.has(p.key))return;if(p.letter&&bl&&p.letter!==bl)return;if(!srcRowOwners(r,p).has(zid))return;if((!from||r.day>=from)&&(!to||r.day<=to)){leads+=r.leads||0;quals+=r.quals||0}});return{leads,quals,sources:[...keys]}}
+  const bl=z.buyer==='Illia'?'I':z.buyer==='Danya'?'D':'';let leads=0,quals=0,visits=0;SRC_DAILY.forEach(r=>{const p=srcParse(r.source);if(!keys.has(p.key))return;if(p.letter&&bl&&p.letter!==bl)return;if(!srcRowOwners(r,p).has(zid))return;if((!from||r.day>=from)&&(!to||r.day<=to)){leads+=r.leads||0;quals+=r.quals||0;visits+=r.visits||0}});return{leads,quals,visits,sources:[...keys]}}
 async function setAdsetDomain(zid,adIdx,adsetId,adsetName,domain){const z=ZALIVS.find(x=>x.id===zid);if(!z)return;const arr=zDomains(z).slice();let e=arr.find(d=>adsetId?d.adset_id===adsetId:d.ad===adIdx);if(!e){e={ad:adIdx};arr.push(e)}e.adset_id=adsetId||e.adset_id||null;e.adset_name=adsetName||e.adset_name||null;e.domain=domain||'';z.adset_domains=arr.filter(d=>d.domain||d.creo);await db.from('zalivs').update({adset_domains:z.adset_domains}).eq('id',zid);toast(domain?'Домен привязан: '+domain:'Домен снят','ok');selZaliv(zid);rzalivs()}
 function zSrcStats(z){const st=zStartISO(z);return srcStats(z.id,null,st==='0000-00-00'?null:st,null)}
 async function setAdsetSource(zid,adsetId,adsetName,source){allSources();const ex=ADSET_SRC.find(m=>m.zaliv_id===zid&&m.adset_id===adsetId)
@@ -2823,11 +2857,13 @@ async function loadJ(){
   jFolders=Object.values(fm)
   if(!curDoc&&docs.length>0)curDoc=docs[0].id
 }
+var LEADS_DATA=[]
 async function loadSales(){
   try{
-    const g=garnoForRegion();if(!g.key||g.key.startsWith('PASTE_')){SALES_DATA=[];return}
+    const g=garnoForRegion();if(!g.key||g.key.startsWith('PASTE_')){SALES_DATA=[];LEADS_DATA=[];return}
     const r=await fetch(g.url+'/rest/v1/garnocrm?select=data&id=eq.1',{headers:{'apikey':g.key,'Authorization':'Bearer '+g.key}})
     if(!r.ok)return;const arr=await r.json()
+    {const D=arr&&arr[0]&&arr[0].data||{},del=new Set((D.deletedLeadIds||[]).map(String));LEADS_DATA=(D.leads||[]).filter(l=>!del.has(String(l.id)))}
     if(arr&&arr[0]&&arr[0].data&&arr[0].data.sales){
       SALES_DATA=arr[0].data.sales.filter(s=>{const src=(s.source||'').toLowerCase();return!src.includes('шоу')&&!src.includes('showroom')&&!src.includes('salon')&&!src.includes('show')})
     }
@@ -2999,18 +3035,100 @@ function heroRender(spend,leads,quals,daily,from,to){
   w.addEventListener('mouseleave',()=>{['--rx','--ry'].forEach(k=>w.style.setProperty(k,'0deg'));w.style.removeProperty('--hp');w.style.removeProperty('--ha')})
 })()
 function heroDelta(cur,prev){const el=document.getElementById('hero-dl');if(!el)return;if(!prev||!document.getElementById('cmp-tgl')?.classList.contains('on')){el.className='dl big n';el.innerHTML='';return}const d=(cur-prev)/prev*100;const cls=Math.abs(d)<.5?'n':d>0?'g':'r';el.className='dl big '+cls;el.innerHTML=`<span class="ar">${d>0?'↑':d<0?'↓':'→'}</span>${Math.abs(d).toFixed(0)}% к прошлому периоду`}
-
-
+// ── CPV · Cost Per Visit = спенд ÷ визиты (оценка 5+ или «салон/визит» в GarnoCRM) ──
+// Визиты берём из source_daily.visits (их считает sync из оценки менеджера), спенд — из Meta.
+// Общий CPV: весь спенд региона ÷ все визиты. По баеру: спенд кампаний с его буквой ÷ визиты с его источников
+// (буква в источнике, иначе РК, к которой привязан домен, иначе метка «Илья» в Доменах — без неё домен Дани).
+// По гео: спенд по гео из имени кампании ÷ визиты по гео источника (UA-ключи — как в sync).
+const CPV_UA={PL:['plua','ua.calculatorkuchni','fast-roda','roda-plkalc','uagarno','ua-'],CZ:['czua','uacz','ua.','ua-','uagarno','ukr']}
+const CPV_COL={all:'#E9ECF5',Danya:'#6E9BFF',Illia:'#D4AF37'},CPV_BN={all:'Всего',Danya:'Даня',Illia:'Илья'}
+let CPV_UI={geo:'all',row:'',days:30},_cpvCamp={},_cpvSeq=0
+function cpvHas(){return SRC_DAILY.some(r=>r.visits!=null)}
+function cpvSrcUa(s){s=String(s||'').toLowerCase();return(CPV_UA[CURRENT_REGION]||CPV_UA.PL).some(k=>s.includes(k))||/[-_](uk|ua)$/.test(s)}
+function cpvSrcBuyer(r){const p=srcParse(r.source);if(p.letter)return p.letter==='I'?'Illia':'Danya'
+  const own=[...srcRowOwners(r,p)].map(id=>{const z=ZALIVS.find(x=>x.id===id);return z?(z.buyer||parseBuyerFromName(z.name)):''}).filter(Boolean)
+  if(own.length&&own.every(b=>b===own[0]))return own[0]
+  if(srcKeySet().has(p.key))return keyOwner(p.key);return ''}
+const cpvCell=()=>({all:0,main:0,ua:0}),cpvMat=()=>({all:cpvCell(),Danya:cpvCell(),Illia:cpvCell(),none:cpvCell()})
+function cpvAdd(m,b,g,v){m.all.all+=v;m.all[g]+=v;const x=m[b]||m.none;x.all+=v;x[g]+=v}
+// визиты: матрица за период + по дням
+function cpvVisits(from,to){const tot=cpvMat(),byDay={},src={};SRC_DAILY.forEach(r=>{if(r.day<from||r.day>to)return;const v=+r.visits||0;if(!v)return
+  const b=cpvSrcBuyer(r);if(!b){tot.other=(tot.other||0)+v;return}const g=cpvSrcUa(r.source)?'ua':'main';cpvAdd(tot,b,g,v);cpvAdd(byDay[r.day]||(byDay[r.day]=cpvMat()),b,g,v)
+  const s=src[r.source]||(src[r.source]={v:0,b,g});s.v+=v});return{tot,byDay,src}}
+// спенд по кампаниям из Meta за период — тот же запрос, что у плиток SPEND
+async function cpvCampaigns(from,to){const k=CURRENT_REGION+'|'+from+'|'+to,c=_cpvCamp[k];if(c&&Date.now()-c.at<5*60e3)return c.list
+  try{const r=await metaPost(spendBody(from,to));const d=await r.json();if(!d.ok||!d.campaigns)return null;_cpvCamp[k]={at:Date.now(),list:d.campaigns};return d.campaigns}catch(e){return null}}
+function cpvSpendMat(camps){const m=cpvMat();(camps||[]).forEach(c=>{const sp=+c.spend||0;if(!sp)return;const nm=c.name||'';cpvAdd(m,parseBuyerFromName(nm)||'none',isUaGeo(parseGeoFromName(nm))?'ua':'main',sp)});return m}
+// спенд по дням: aud_daily (все кампании кабинета с именем); дни, которых там нет, — итог из metrics_daily
+function cpvSpendDays(from,to){const R=CURRENT_REGION,zn={},by={},have=new Set();ZALIVS.forEach(z=>{if(z.campaign_id)zn[String(z.campaign_id)]=z.name})
+  ;(typeof AUD!=='undefined'&&AUD.daily||[]).forEach(r=>{if(r.day<from||r.day>to)return;if(r.campaign_id==='_day'){have.add(r.day);return}if(r.region&&r.region!==R)return
+    const sp=+r.spend||0;if(!sp)return;have.add(r.day);const nm=r.name||zn[String(r.campaign_id)]||'';cpvAdd(by[r.day]||(by[r.day]=cpvMat()),parseBuyerFromName(nm)||'none',isUaGeo(parseGeoFromName(nm))?'ua':'main',sp)})
+  METRICS.forEach(m=>{if(m.day<from||m.day>to||have.has(m.day))return;const d=by[m.day]=cpvMat(),pl=+m.spend_pl||0,ua=+m.spend_plua||0;d.all.all=pl+ua;d.all.main=pl;d.all.ua=ua;d._noBuyer=1})
+  return by}
+const cpvVal=(sp,v)=>v>0&&sp>0?sp/v:null
+const cpvFmt=x=>x==null?'—':'$'+(x<100?x.toFixed(1):Math.round(x))
+function cpvGeoName(g){const c=regionCfg();return g==='main'?(c.main.length===2?c.main+c.main:c.main):g==='ua'?c.ua:'Все гео'}
+// плитка CPV в ряду KPI (вызывается из heroAllMeta / rdashBuyer с живым спендом)
+function cpvTile(spend,buyer,from,to,prevSpend,pFrom,pTo){const el=document.getElementById('d-cpv');if(!el)return null
+  if(!cpvHas()){kpiAnim(el,'—');el.title='В source_daily нет колонки visits — выполни funnels_setup.sql и дождись синхронизации';return null}
+  const V=cpvVisits(from,to).tot,v=(buyer?V[buyer]:V.all).all,c=cpvVal(spend,v)
+  kpiAnim(el,cpvFmt(c));el.style.color=c==null?'var(--text3)':'#C9B6FF';el.style.textShadow=c==null?'':'0 0 12px rgba(160,124,245,.55)'
+  el.title='$'+Math.round(spend)+' ÷ '+v+' визит. (оценка 5+ в CRM)'+(buyer?' · источники '+buyer:' · все источники')
+  const pe=document.getElementById('d-cpv-prev'),ae=document.getElementById('d-cpv-arr'),cmp=document.getElementById('cmp-tgl')?.classList.contains('on')
+  if(cmp&&prevSpend&&pFrom){const PV=cpvVisits(pFrom,pTo).tot,pv=(buyer?PV[buyer]:PV.all).all,pc=cpvVal(prevSpend,pv)
+    if(pc&&c){pe.textContent=cpvFmt(pc);const d=(c-pc)/pc*100;ae.className='karr '+(Math.abs(d)<1?'flat':d<0?'dn-good':'up-bad');ae.textContent=Math.abs(d)<1?'→':(d<0?'↓':'↑')+' '+Math.abs(d).toFixed(0)+'%'}else{pe.textContent='';ae.textContent=''}}
+  else{if(pe)pe.textContent='';if(ae)ae.textContent=''}
+  const hv=document.getElementById('hero-v');if(hv)heroCountUp(hv,v,x=>Math.round(x))
+  return{visits:v,cpv:c}}
+// карточка CPV: матрица баер × гео за период + график по дням (скользящие 7 дней)
+async function cpvRender(){const box=document.getElementById('d-cpvc');if(!box)return;const seq=++_cpvSeq
+  const from=document.getElementById('pd-from')?.value,to=document.getElementById('pd-to')?.value;if(!from||!to)return
+  if(!cpvHas()){box.innerHTML='<div class="empty">Нет визитов в source_daily. Выполни funnels_setup.sql (колонка visits) и нажми Sync — визиты считаются по оценке 5+ в GarnoCRM.</div>';return}
+  if(!CPV_UI.row)CPV_UI.row=CURRENT_BUYER||'all'
+  const V=cpvVisits(from,to);let camps=await cpvCampaigns(from,to);if(seq!==_cpvSeq)return
+  let SP,live=true;if(camps)SP=cpvSpendMat(camps);else{live=false;SP=cpvMat();Object.values(cpvSpendDays(from,to)).forEach(d=>['all','Danya','Illia','none'].forEach(b=>['all','main','ua'].forEach(g=>SP[b][g]+=d[b][g])))}
+  const G=['all','main','ua'],B=['all','Danya','Illia']
+  const cell=(b,g)=>{const sp=SP[b][g],v=V.tot[b][g],c=cpvVal(sp,v),on=CPV_UI.row===b&&CPV_UI.geo===g
+    return`<button class="cpv-c${on?' on':''}${b==='all'&&g==='all'?' tot':''}" data-cpvb="${b}" data-cpvg="${g}" title="$${Math.round(sp)} ÷ ${v} визит."><b>${cpvFmt(c)}</b><small>$${Math.round(sp).toLocaleString('ru')} · ${v} виз.</small></button>`}
+  const noB=V.tot.other||0,noS=SP.none.all
+  const mat=`<div class="cpv-m" role="grid"><span></span>${G.map(g=>`<span class="cpv-h${CPV_UI.geo===g?' on':''}">${cpvGeoName(g)}</span>`).join('')}
+    ${B.map(b=>`<span class="cpv-r${CPV_UI.row===b?' on':''}" style="--cc:${CPV_COL[b]}"><i></i>${CPV_BN[b]}</span>${G.map(g=>cell(b,g)).join('')}`).join('')}</div>
+    <div class="cpv-note">${noB?`${noB} визит. с источников не из доменов (instagram, звонки и т.п.) не считаются. `:''}${noS>1?`$${Math.round(noS)} спенда кампаний без буквы баера — только во «Всего». `:''}${live?'Спенд — Meta live.':'Спенд — из синхронизации (Meta не ответила).'}</div>`
+  box.innerHTML=`<div class="cpv-w"><div>${mat}</div><div class="cpv-ch"><div class="cpv-chh"><span>CPV по дням · скользящие 7 дн. · ${cpvGeoName(CPV_UI.geo)}</span><span class="cpv-leg">${B.map(b=>`<span style="--cc:${CPV_COL[b]}" class="${CPV_UI.row===b?'on':''}"><i></i>${CPV_BN[b]}</span>`).join('')}</span></div><div class="cpv-svg" id="cpv-svg"></div><div class="cpv-tt" id="cpv-tt"></div></div></div>`
+  cpvChart(to)}
+function cpvChart(to){const host=document.getElementById('cpv-svg');if(!host)return;const N=CPV_UI.days,W=7,g=CPV_UI.geo
+  const day=i=>{const t=new Date(new Date(to+'T00:00:00')-i*864e5);return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0')}
+  const first=day(N+W-2),SPD=cpvSpendDays(first,to),VD=cpvVisits(first,to).byDay,days=[];for(let i=N-1;i>=0;i--)days.push(day(i))
+  const B=['all','Danya','Illia'],ser={};B.forEach(b=>ser[b]=days.map(d=>{let sp=0,v=0,nb=false;for(let k=0;k<W;k++){const dd=new Date(new Date(d+'T00:00:00')-k*864e5),key=dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0');const s=SPD[key];if(s){if(s._noBuyer&&b!=='all')nb=true;sp+=s[b][g]};const x=VD[key];if(x)v+=x[b][g]}
+    return{d,sp,v,c:nb?null:cpvVal(sp,v)}}))
+  const vals=B.flatMap(b=>ser[b].map(p=>p.c)).filter(x=>x!=null);const w=host.clientWidth||560,h=170,P={l:40,r:10,t:10,b:22}
+  if(!vals.length){host.innerHTML='<div class="empty">За последние '+N+' дней нет визитов с оценкой 5+</div>';return}
+  const mx=Math.max(...vals)*1.1,x=i=>P.l+i*(w-P.l-P.r)/(N-1),y=v=>P.t+(h-P.t-P.b)*(1-v/mx)
+  const ticks=[0,mx/2,mx].map(v=>`<line x1="${P.l}" x2="${w-P.r}" y1="${y(v)}" y2="${y(v)}" class="cpv-gl"/><text x="${P.l-6}" y="${y(v)+3}" text-anchor="end" class="cpv-ax">$${Math.round(v)}</text>`).join('')
+  const xl=[0,Math.floor((N-1)/2),N-1].map(i=>`<text x="${x(i)}" y="${h-6}" text-anchor="${i===0?'start':i===N-1?'end':'middle'}" class="cpv-ax">${days[i].slice(8)}.${days[i].slice(5,7)}</text>`).join('')
+  const path=b=>{let s='',on=false;ser[b].forEach((p,i)=>{if(p.c==null){on=false;return}s+=(on?'L':'M')+x(i).toFixed(1)+','+y(p.c).toFixed(1);on=true});return s}
+  const sel=CPV_UI.row
+  host.innerHTML=`<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" role="img" aria-label="CPV по дням">${ticks}${xl}${B.map(b=>`<path d="${path(b)}" fill="none" stroke="${CPV_COL[b]}" stroke-width="${sel===b?2.5:1.5}" stroke-opacity="${sel===b?1:.45}" stroke-linejoin="round" stroke-linecap="round"/>`).join('')}<line id="cpv-x" y1="${P.t}" y2="${h-P.b}" class="cpv-xh" style="display:none"/>${B.map(b=>`<circle id="cpv-p-${b}" r="4" fill="${CPV_COL[b]}" stroke="var(--bg3)" stroke-width="2" style="display:none"/>`).join('')}<rect x="${P.l}" y="0" width="${w-P.l-P.r}" height="${h}" fill="transparent" id="cpv-hit"/></svg>`
+  const hit=document.getElementById('cpv-hit'),tt=document.getElementById('cpv-tt'),xh=document.getElementById('cpv-x')
+  hit.onmousemove=e=>{const r=hit.getBoundingClientRect(),i=Math.max(0,Math.min(N-1,Math.round((e.clientX-r.left)/r.width*(N-1))));xh.setAttribute('x1',x(i));xh.setAttribute('x2',x(i));xh.style.display=''
+    B.forEach(b=>{const c=document.getElementById('cpv-p-'+b),p=ser[b][i];if(p.c==null){c.style.display='none';return}c.setAttribute('cx',x(i));c.setAttribute('cy',y(p.c));c.style.display=''})
+    const d=days[i];tt.innerHTML=`<b>${d.slice(8)}.${d.slice(5,7)}</b> · 7 дн.<br>`+B.map(b=>{const p=ser[b][i];return`<span style="--cc:${CPV_COL[b]}"><i></i>${CPV_BN[b]} <b>${cpvFmt(p.c)}</b> <em>$${Math.round(p.sp)} / ${p.v} виз.</em></span>`}).join('');tt.style.display='block'
+    const px=x(i)/w*host.clientWidth;tt.style.left=Math.min(host.clientWidth-240,Math.max(0,px+12))+'px'}
+  hit.onmouseleave=()=>{tt.style.display='none';xh.style.display='none';B.forEach(b=>document.getElementById('cpv-p-'+b).style.display='none')}}
+document.addEventListener('click',e=>{const c=e.target.closest('[data-cpvb]');if(!c)return;CPV_UI.row=c.dataset.cpvb;CPV_UI.geo=c.dataset.cpvg;cpvRender()})
+window.addEventListener('resize',()=>{clearTimeout(window._cpvRT);window._cpvRT=setTimeout(()=>{const t=document.getElementById('pd-to')?.value;if(t&&document.getElementById('cpv-svg'))cpvChart(t)},150)})
+// консоль: откуда сложились визиты — cpvWhy()
+function cpvWhy(from,to){from=from||document.getElementById('pd-from')?.value;to=to||document.getElementById('pd-to')?.value;const s=cpvVisits(from,to).src;console.table(Object.entries(s).map(([k,v])=>({источник:k,визиты:v.v,баер:v.b,гео:v.g})).sort((a,b)=>b.визиты-a.визиты));return s}
 
 // ── v9: скользящая «таблетка» сегментов и спарклайны в KPI ──
 function segThumbs(){document.querySelectorAll('#region-tog,#byseg,#page-dash .pbtns').forEach(seg=>{let th=seg.querySelector('.seg-th');if(!th){th=document.createElement('span');th.className='seg-th';seg.prepend(th)}
   const on=seg.querySelector('.rt-btn.active,.pb.active');if(!on){th.style.width='0';return}th.style.left=on.offsetLeft+'px';th.style.width=on.offsetWidth+'px'})}
 function kpiSparks(from,to){const rows=METRICS.filter(r=>r.day>=from&&r.day<=to).sort((a,b)=>a.day<b.day?-1:1);if(rows.length<2){document.querySelectorAll('#page-dash .ksp').forEach(e=>e.remove());return}
   const byDay={};rows.forEach(r=>{const d=byDay[r.day]||(byDay[r.day]={sp:0,l:0,q:0,cl:0,im:0});d.sp+=(+r.spend_pl||0)+(+r.spend_plua||0);d.l+=(r.leads_pl||0)+(r.leads_plua||0);d.q+=r.quals||0;d.cl+=+r.clicks||0;d.im+=+r.impressions||+r.imp||0})
-  const D=Object.keys(byDay).sort().map(k=>byDay[k]);const S={'d-spend':D.map(d=>d.sp),'d-daily':D.map(d=>d.sp),'d-cpl':D.map(d=>d.l?d.sp/d.l:null),'d-cql':D.map(d=>d.q?d.sp/d.q:null),'d-roi':null,'d-ctr':D.map(d=>d.im?d.cl/d.im*100:null)}
+  SRC_DAILY.forEach(r=>{const d=byDay[r.day];if(d)d.vi=(d.vi||0)+(+r.visits||0)});const D=Object.keys(byDay).sort().map(k=>byDay[k]);const S={'d-cpv':D.map(d=>d.vi?d.sp/d.vi:null),'d-spend':D.map(d=>d.sp),'d-daily':D.map(d=>d.sp),'d-cpl':D.map(d=>d.l?d.sp/d.l:null),'d-cql':D.map(d=>d.q?d.sp/d.q:null),'d-roi':null,'d-ctr':D.map(d=>d.im?d.cl/d.im*100:null)}
   Object.entries(S).forEach(([id,arr])=>{const v=document.getElementById(id);if(!v)return;const k=v.closest('.kpi');if(!k)return;let box=k.querySelector('.ksp');if(!arr||arr.filter(x=>x!=null).length<2){if(box)box.remove();return}if(!box){box=document.createElement('div');box.className='ksp';k.appendChild(box)}
     const vals=arr.map(x=>x==null?null:x),fin=vals.filter(x=>x!=null),mx=Math.max(...fin),mn=Math.min(...fin),w=72,h=24,n=vals.length;let pts=[];vals.forEach((x,i)=>{if(x==null)return;pts.push((i/(n-1)*w).toFixed(1)+','+(h-2-(x-mn)/(mx-mn||1)*(h-4)).toFixed(1))})
-    const good=id==='d-cpl'||id==='d-cql'?fin[fin.length-1]<=fin[0]:fin[fin.length-1]>=fin[0];box.innerHTML=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="${pts.join(' ')}" fill="none" stroke="${good?'#7FE0B4':'#FF8A9B'}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" pathLength="1" style="stroke-dasharray:1;animation:kspd 1.1s ease-out both"/></svg>`})}
+    const good=id==='d-cpl'||id==='d-cql'||id==='d-cpv'?fin[fin.length-1]<=fin[0]:fin[fin.length-1]>=fin[0];box.innerHTML=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="${pts.join(' ')}" fill="none" stroke="${good?'#7FE0B4':'#FF8A9B'}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" pathLength="1" style="stroke-dasharray:1;animation:kspd 1.1s ease-out both"/></svg>`})}
 document.addEventListener('click',e=>{if(e.target.closest('#region-tog,#byseg,#page-dash .pbtns'))setTimeout(segThumbs,0)});window.addEventListener('resize',()=>setTimeout(segThumbs,50));window.addEventListener('load',()=>setTimeout(segThumbs,300))
 // ── v9: столбики спенда по дням и разбивка по гео под большой цифрой ──
 function heroDays(from,to){const box=document.getElementById('hero-days');if(!box)return
@@ -3105,7 +3223,7 @@ function rdash(){try{if(AUD.loaded)audRenderDash();else audOpen()}catch(e){conso
   setCompare('d-roi', roi, pRoi, true)
   countUp(document.getElementById('d-ctr'),avgCtr,'','%')
   setCompare('d-ctr', parseFloat(avgCtr), pCtr, true)
-  }else{['d-cpl','d-cql','d-roi','d-ctr','d-daily','d-spend'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.textShadow=''})}
+  }else{['d-cpl','d-cql','d-roi','d-ctr','d-daily','d-spend','d-cpv'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.textShadow=''})}
   document.getElementById('d-zalivs').innerHTML=ZALIVS.filter(z=>!z.togo&&z.ind!=='off'&&(!CURRENT_BUYER||z.buyer===CURRENT_BUYER)).slice(0,6).map(z=>{const lv=_zBulk[z.campaign_id];const s=zSrcStats(z);return`<div class="zrow" style="cursor:pointer" onclick="openRk(${z.id})" title="Открыть РК"><div class="zdot" style="background:${z.ind==='profit'?'var(--green)':z.ind==='drop'?'var(--yellow)':'var(--red)'};box-shadow:0 0 8px ${z.ind==='profit'?'var(--green)':z.ind==='drop'?'var(--yellow)':'transparent'}"></div><span class="zgeo ${geoClass(z.geo)}">${z.geo}</span><div class="zname">${z.name}<div style="font-size:10px;color:var(--text3);margin-top:2px">${z.funnel||''} · ${z.buyer||''} · ${zDays(z)} дн.</div></div><div class="zbud">${lv?'$'+Math.round(lv.spend):'$'+(z.rk_budget||0)+'/d'}</div><div class="m" style="font-family:var(--mono);font-size:11px;min-width:44px;text-align:right;color:${s?'var(--text)':'#3E4457'}">${s?s.leads+' <span style="color:#3E4457">/</span> <span style="color:var(--green)">'+s.quals+'</span>':'—'}</div><span style="color:#3E4457;margin-left:8px">→</span></div>`}).join('')||'<div class="empty">Нет активных заливов</div>'
   const mx=Math.max(tPL,tPLUA,1)
   renderFeed()
@@ -3118,6 +3236,8 @@ function rdash(){try{if(AUD.loaded)audRenderDash();else audOpen()}catch(e){conso
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#4080ff,#60a0ff)"></div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">AVG DEAL</div><div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--mono)">${savg.toLocaleString('ru')} ${cur()}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">средний чек</div></div>
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--bord),var(--bord2))"></div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700">КОЛ-ВО ПРОДАЖ</div><div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--mono)">${sf.length}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">за период</div></div>`
   drawChart(rows)
+  CPV_UI.row=buyer||'all';try{cpvRender()}catch(e){console.warn('cpv',e)}
+  {const e=document.getElementById('d-cpv');if(e&&!/^\$/.test(e.textContent))e.textContent='⏳'}
   if(buyer){Promise.resolve(rdashBuyer(buyer)).then(()=>{window._liveSeq=seq}).catch(()=>{window._liveSeq=seq})}
   else{heroAllMeta(from,to,seq);liveChart(from,to,seq)}
 }
@@ -4724,6 +4844,8 @@ function jvKpi(){
     quals:L?L.quals:jvNum('hero-q'),
     cpl:  L?L.cpl  :jvNum('d-cpl'),
     cql:  L?L.cql  :jvNum('d-cql'),
+    visits:L&&L.visits!=null?L.visits:jvNum('hero-v'),
+    cpv:  L&&L.cpv!=null?L.cpv:jvNum('d-cpv'),
     live: !!L
   }
 }
@@ -5429,7 +5551,7 @@ function zInboxCenter(zid){const box=document.getElementById('zinb-main');if(!bo
      <span class="ind-t" style="display:inline-flex"><button class="itb${z.ind==='profit'?' ap':''}" onclick="setInd(${zid},'profit')">P</button><button class="itb${z.ind==='drop'?' ad':''}" onclick="setInd(${zid},'drop')">D</button><button class="itb${z.ind==='off'?' ao':''}" onclick="setInd(${zid},'off')">O</button></span>
      ${gchip(z.geo)}<span class="gchip" style="color:var(--text2);border-color:var(--border)">${z.buyer||'—'}</span><span class="zcat ${z.cat||''}" onclick="cycleZcat(${zid}).then(()=>selZaliv(${zid}))">${({mwp:'MWP',test:'TEST',trash:'TRASH'})[z.cat]||'категория'}</span>
      ${z.togo?'':`<div class="sw ${z.ind!=='off'?'on':''}" onclick="setInd(${zid},'${z.ind==='off'?'profit':'off'}')"></div>`}
-     <div class="zmet">${(()=>{const tot=zSpendTotal(z),q=S?S.quals:0,l=S?S.leads:0,cq=q?tot/q:null;return`<div class="${cq!=null?(cq<40?'g':cq<60?'y':'r'):''}"><small>CQL</small><b>${cq!=null?'$'+Math.round(cq):'—'}</b></div><div><small>Лиды · кв</small><b>${l}<i>/</i><span class="g">${q}</span></b></div><div><small>Сегодня</small><b>$${Math.round(spend)}</b></div><div class="gold"><small>Всего</small><b>$${Math.round(tot)}</b></div><div class="${ctr>2?'g':ctr&&ctr<1.3?'r':''}"><small>CTR</small><b>${ctr?(+ctr).toFixed(2)+'%':'—'}</b></div>`})()}</div>
+     <div class="zmet">${(()=>{const tot=zSpendTotal(z),q=S?S.quals:0,l=S?S.leads:0,cq=q?tot/q:null;return`<div class="${cq!=null?(cq<40?'g':cq<60?'y':'r'):''}"><small>CQL</small><b>${cq!=null?'$'+Math.round(cq):'—'}</b></div><div><small>Лиды · кв</small><b>${l}<i>/</i><span class="g">${q}</span></b></div><div title="Визиты (оценка 5+ в CRM) и спенд РК ÷ визиты"><small>Визиты · CPV</small><b>${S?S.visits||0:0}<i>/</i><span style="color:#C9B6FF">${S&&S.visits?'$'+Math.round(tot/S.visits):'—'}</span></b></div><div><small>Сегодня</small><b>$${Math.round(spend)}</b></div><div class="gold"><small>Всего</small><b>$${Math.round(tot)}</b></div><div class="${ctr>2?'g':ctr&&ctr<1.3?'r':''}"><small>CTR</small><b>${ctr?(+ctr).toFixed(2)+'%':'—'}</b></div>`})()}</div>
      <span style="margin-left:auto;font:600 10.5px var(--mono);color:var(--text3)">старт ${st} · день ${d}${lv?' · Meta '+lv.at:''}</span>
      <div class="tlw">${zLifecycle(z)}</div></div>
     <div class="zbtns"><button class="p" onclick="gp('analysis',document.getElementById('nb-analysis'));setTimeout(()=>showNewAnalysisPanelFor(${zid}),300)">▤ Анализ${zNeedsAn(z)?' · '+zNextCp(z):''}</button><button onclick="addRkTask(${zid},'an')">＋ Таск</button><button class="gh" onclick="zSetMode('table');setTimeout(()=>{togZ(${zid});document.getElementById('tc-'+${zid})?.scrollIntoView?.()},50)" title="Развернуть в таблице">⊞</button></div>
@@ -5886,8 +6008,39 @@ async function uploadCreoFile(file){
 }
 // ── SALES ──
 function parseDt(ds){if(!ds)return null;if(ds.includes('-'))return new Date(ds);const p=ds.split('.');if(p.length===3)return new Date(p[2]+'-'+p[1]+'-'+p[0]);return null}
+// ── Продажи · по менеджерам: CQL, CPV и спенд FB на менеджера ──
+// Спенд FB за день (metrics_daily) делится между менеджерами по доле лидов с рекламы, которые им достались в этот день.
+// Лид «с рекламы» — источник с буквой баера или известный домен (как в CPV). Квал = оценка 4+, визит = 5+ (как в sync).
+let MGR_SORT='sp'
+const mgrF=['manager']  // поле лида в GarnoCRM: manager ("Ivan", "Taras"…), у продаж — то же
+function mgrOf(o){for(const k of mgrF){const v=o&&o[k];if(v&&typeof v==='string')return v.trim();if(v&&typeof v==='object'&&v.name)return String(v.name).trim()}return ''}
+function mgrDay(l){const d=parseDt(l.dateOverride||l.createdAt);if(!d||isNaN(d))return '';return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function mgrStats(from,to){const M={},dayPaid={},sc=l=>parseFloat(String(l.score??'').replace(',','.')),qf=l=>String(l.qualification||l.qual||l.status||'').toLowerCase()
+  const get=n=>M[n]||(M[n]={n,ld:0,pl:0,q:0,v:0,sp:0,sales:0,rev:0,byDay:{}})
+  LEADS_DATA.forEach(l=>{const day=mgrDay(l);if(!day||day<from||day>to)return;const src=String(l.source||l.adSource||'').trim().toLowerCase().slice(0,80)
+    const paid=!!src&&!!cpvSrcBuyer({source:src,day});const m=get(mgrOf(l)||'— без менеджера —'),s=sc(l),f=qf(l);m.ld++
+    if(!paid)return;m.pl++;m.byDay[day]=(m.byDay[day]||0)+1;dayPaid[day]=(dayPaid[day]||0)+1
+    if(s>=4||/^(qualified|salon|квалиф|визит)/.test(f))m.q++;if(s>=5||/^(salon|визит)/.test(f))m.v++})
+  let spAll=0,spNoLead=0;METRICS.forEach(r=>{if(r.day<from||r.day>to)return;const sp=(+r.spend_pl||0)+(+r.spend_plua||0);spAll+=sp;if(!dayPaid[r.day]){spNoLead+=sp;return}
+    Object.values(M).forEach(m=>{const k=m.byDay[r.day];if(k)m.sp+=sp*k/dayPaid[r.day]})})
+  SALES_DATA.forEach(x=>{const d=parseDt(x.createdAt);if(!d)return;const day=mgrDay({createdAt:x.createdAt});if(day<from||day>to)return;const m=get(mgrOf(x)||'— без менеджера —');m.sales++;m.rev+=x.saleAmount||0})
+  const L=Object.values(M).filter(m=>m.ld||m.sales);return{L,spAll,spNoLead,hasMgr:LEADS_DATA.some(l=>mgrOf(l))}}
+function rsalesMgr(from,to){const el=document.getElementById('sales-mgr');if(!el)return
+  if(!LEADS_DATA.length){el.innerHTML='<div class="empty" style="padding:18px">Лиды из GarnoCRM не загрузились — проверь ключ GarnoCRM в настройках</div>';return}
+  const R=mgrStats(from,to),cpl=m=>m.pl?m.sp/m.pl:null,cql=m=>m.q?m.sp/m.q:null,cpv=m=>m.v?m.sp/m.v:null
+  const key={sp:m=>m.sp,pl:m=>m.pl,q:m=>m.q,v:m=>m.v,cpl:m=>-(cpl(m)??1e9),cql:m=>-(cql(m)??1e9),cpv:m=>-(cpv(m)??1e9),sales:m=>m.sales,rev:m=>m.rev,ld:m=>m.ld}[MGR_SORT]||(m=>m.sp)
+  const L=R.L.sort((a,b)=>key(b)-key(a)),T=L.reduce((t,m)=>{['ld','pl','q','v','sp','sales','rev'].forEach(k=>t[k]+=m[k]);return t},{n:'Итого',ld:0,pl:0,q:0,v:0,sp:0,sales:0,rev:0})
+  const mx=Math.max(1,...L.map(m=>m.sp)),$=x=>x==null?'—':'$'+(x<100?x.toFixed(1):Math.round(x)),cc=(x,g,y)=>x==null?'':x<=g?'g':x<=y?'y':'r'
+  const th=(k,t)=>`<th data-msort="${k}" class="${MGR_SORT===k?'on':''}">${t}${MGR_SORT===k?' ↓':''}</th>`
+  const row=m=>`<td class="mnm"><i>${esc2(m.n).slice(0,2).toUpperCase()}</i>${esc2(m.n)}</td><td>${m.ld}</td><td>${m.pl}</td><td class="g">${m.q}</td><td class="mcv">${m.v}</td><td class="msp">$${Math.round(m.sp).toLocaleString('ru')}<span class="mgr-bar" style="width:${Math.round(m.sp/mx*60)}px"></span></td><td>${$(cpl(m))}</td><td class="mk ${cc(cql(m),25,35)}">${$(cql(m))}</td><td class="mk mcv">${$(cpv(m))}</td><td>${m.sales}</td><td>${Math.round(m.rev).toLocaleString('ru')} ${cur()}</td>`
+  el.innerHTML=`<table class="mgr-t"><thead><tr><th>Менеджер</th>${th('ld','Лиды всего')}${th('pl','Лиды FB')}${th('q','Квалы')}${th('v','Визиты')}${th('sp','Spend FB')}${th('cpl','CPL')}${th('cql','CQL')}${th('cpv','CPV')}${th('sales','Продажи')}${th('rev','Выручка')}</tr></thead>
+    <tbody>${L.map(m=>`<tr>${row(m)}</tr>`).join('')||'<tr><td colspan="11" style="text-align:center;padding:18px">Нет лидов за период</td></tr>'}</tbody>${L.length?`<tfoot><tr>${row(T).replace(/<i>.*?<\/i>/,'')}</tr></tfoot>`:''}</table>
+    <div class="mgr-note">Лиды FB — с источников рекламы (буква баера или домен из «Доменов»); квал — оценка 4+, визит — 5+, по текущей оценке. Спенд FB за день делится по доле лидов FB менеджера в этот день.${R.spNoLead>1?` $${Math.round(R.spNoLead)} спенда пришлось на дни без лидов FB — никому не начислено.`:''}${R.hasMgr?'':' <b style="color:var(--yellow)">В лидах GarnoCRM не найдено поле менеджера — все лиды попали в «без менеджера».</b>'}</div>`}
+const esc2=x=>String(x??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))
+document.addEventListener('click',e=>{const t=e.target.closest('[data-msort]');if(!t)return;MGR_SORT=t.dataset.msort;rsalesMgr(document.getElementById('sp-from').value,document.getElementById('sp-to').value)})
 function rsales(){
   const from=document.getElementById('sp-from').value,to=document.getElementById('sp-to').value
+  try{rsalesMgr(from,to)}catch(e){console.warn('mgr',e)}
   const f=SALES_DATA.filter(s=>{const d=parseDt(s.createdAt);if(!d)return false;const day=d.toISOString().split('T')[0];return day>=from&&day<=to})
   document.getElementById('sales-count').textContent='('+f.length+')'
   const total=f.reduce((s,r)=>s+(r.saleAmount||0),0),avg=f.length?Math.round(total/f.length):0
@@ -8988,6 +9141,7 @@ async function heroAllMeta(from,to,seq){const $=id=>document.getElementById(id);
     // и голос, читая DOM, поймал бы промежуточный кадр.
     window._liveKpi={spend:S.spend,leads:pd.leads,quals:pd.quals,cpl:cplN,cql:cqlN,
                      days:pd.days||1,prev:P.spend||0,region:CURRENT_REGION}
+    try{const cv=cpvTile(S.spend,'',from,to,P.spend||pd.prevSpend,pFrom,pTo);if(cv){window._liveKpi.visits=cv.visits;window._liveKpi.cpv=cv.cpv}}catch(e){console.warn('cpv',e)}
     const cmpOn=$('cmp-tgl')?.classList.contains('on'),pv=P.spend||pd.prevSpend
     const pe=$('d-spend-prev'),ae=$('d-spend-arr')
     if(cmpOn&&pv){if(pe)pe.textContent='$'+Math.round(pv)
@@ -9017,7 +9171,7 @@ async function rdashBuyer(buyer){
   const from=document.getElementById('pd-from')?.value,to=document.getElementById('pd-to')?.value
   const $=id=>document.getElementById(id)
   const setLabel=(idx,txt)=>{const labs=document.querySelectorAll('#page-dash .krow .klab');if(labs[idx])labs[idx].textContent=txt}
-  setLabel(0,'SPEND '+buyer.toUpperCase());setLabel(1,'ЛИДЫ');setLabel(2,'CPL');setLabel(3,'CQL');setLabel(4,'КВАЛЫ');setLabel(5,'CTR AVG')
+  setLabel(0,'SPEND '+buyer.toUpperCase());setLabel(6,'CPV '+buyer.toUpperCase());setLabel(1,'ЛИДЫ');setLabel(2,'CPL');setLabel(3,'CQL');setLabel(4,'КВАЛЫ');setLabel(5,'CTR AVG')
   const setKpi=(id,val,color)=>{const el=$(id);if(el){kpiAnim(el,val);if(color)el.style.color=color;el.style.textShadow=''}}
   ;['d-spend','d-daily','d-cpl','d-cql','d-roi','d-ctr'].forEach(id=>{const p=$(id+'-prev');if(p)p.textContent='';const a=$(id+'-arr');if(a)a.textContent=''})
   const ctit=$('chart-title');if(ctit)ctit.textContent='Динамика · '+buyer
@@ -9060,13 +9214,14 @@ async function rdashBuyer(buyer){
   setKpi('d-cql',cql?'$'+cql:'—',cql?(cql<40?'var(--green)':cql<=55?'var(--yellow)':'var(--red)'):'var(--text3)')
   setKpi('d-ctr',S.ctr+'%','#fff')
   window._liveKpi={spend:S.spend,leads,quals,cpl,cql,days,prev:P.spend||0,region:CURRENT_REGION,buyer}
+  try{const cv=cpvTile(S.spend,buyer,from,to,P.spend,pFrom,pTo);if(cv){window._liveKpi.visits=cv.visits;window._liveKpi.cpv=cv.cpv}}catch(e){console.warn('cpv',e)}
   const cmpOn=document.getElementById('cmp-tgl')?.classList.contains('on')
   if(cmpOn&&P.spend){const p=$('d-spend-prev'),a=$('d-spend-arr');if(p)p.textContent='$'+P.spend;if(a){const d=(S.spend-P.spend)/P.spend*100;a.className='karr '+(d>=0?'up-good':'dn-bad');a.textContent=(d>=0?'↑':'↓')+' '+Math.abs(d).toFixed(0)+'%';a.style.animation='none';void a.offsetWidth;a.style.animation=''}
     if(P.ctr){const p2=$('d-ctr-prev'),a2=$('d-ctr-arr');if(p2)p2.textContent=P.ctr+'%';if(a2){const d=(S.ctr-P.ctr)/P.ctr*100;a2.className='karr '+(d>=0?'up-good':'dn-bad');a2.textContent=(d>=0?'↑':'↓')+' '+Math.abs(d).toFixed(0)+'%'}}}
 }
 
 function resetDashLabels(){
-  const labels=['SPEND','SPEND DAILY','CPL','CQL','ROI','CTR AVG']
+  const labels=['SPEND','SPEND DAILY','CPL','CQL','ROI','CTR AVG','CPV']
   const labs=document.querySelectorAll('#page-dash .krow .klab')
   labs.forEach((el,i)=>{if(labels[i])el.textContent=labels[i]})
   const ctit=document.getElementById('chart-title')
