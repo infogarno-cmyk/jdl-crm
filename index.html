@@ -577,6 +577,8 @@ const GARNO_CZ_KEY='sb_publishable_TlOfq2xdIytwVDYLCGMcMA_30cMUc_c'
 // Region → GarnoCRM source + currency
 function garnoForRegion(){return CURRENT_REGION==='CZ'?{url:GARNO_CZ_URL,key:GARNO_CZ_KEY}:{url:GARNO_URL,key:GARNO_KEY}}
 function cur(){return CURRENT_REGION==='CZ'?'Kč':'zł'}
+// ROI: прибыль = выручка × 30% маржи × курс в $ (zł≈0.25$, Kč≈0.043$). Раньше для CZ тоже брали 0.25 — кроны считались как злотые.
+const ROI_MARGIN=0.3,ROI_FX={PL:0.25,CZ:0.043};function roiProfit(amt,reg){return(amt||0)*ROI_MARGIN*(ROI_FX[reg||CURRENT_REGION]||0.25)}
 const USERS={illia:{name:'Illia',role:'Junior Buyer',initials:'IB',color:'#b52240',bg:'rgba(181,34,64,.15)',border:'#8b1a2e',email:'chabanill12@gmail.com'},danya:{name:'Danya',role:'Head of Marketing',initials:'DM',color:'#6090ff',bg:'rgba(64,128,255,.1)',border:'#1a3060',email:'kuchura.danya154@gmail.com'}}
 // по какой почте вошли — тот профиль и подставляем
 function userByEmail(e){e=String(e||'').toLowerCase().trim()
@@ -752,7 +754,7 @@ html,body{height:100%;overflow:hidden;max-width:100vw;font-family:var(--sans);ba
 .rkm{font-family:var(--mono);font-size:11px;color:var(--text3);background:var(--bg5);padding:5px 8px;border-radius:4px;margin-top:8px}
 .skrow{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
 .mgr-w{margin-bottom:20px;overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--bg2)}
-.mgr-t{width:100%;border-collapse:collapse;font-size:12px;min-width:860px}
+.mgr-t{width:100%;border-collapse:collapse;font-size:12px;min-width:940px}
 .mgr-t th{font-size:10px;font-weight:700;letter-spacing:.6px;color:var(--text3);text-align:right;padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
 .mgr-t th:first-child,.mgr-t td:first-child{text-align:left}.mgr-t th.on{color:#fff}
 .mgr-t td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:right;font-family:var(--mono);color:var(--text2);white-space:nowrap}
@@ -760,7 +762,7 @@ html,body{height:100%;overflow:hidden;max-width:100vw;font-family:var(--sans);ba
 .mgr-t td.mnm{font-family:inherit;color:#fff;font-weight:600}.mgr-t td.mnm i{display:inline-block;width:24px;height:24px;border-radius:50%;background:var(--bg4);color:var(--text2);font:700 10px/24px var(--mono);text-align:center;margin-right:8px;font-style:normal}
 .mgr-t td.mk{color:#fff;font:400 14px 'Russo One',var(--mono)}.mgr-t td.msp{color:var(--gold)}.mgr-t td.mcv{color:#C9B6FF}
 .mgr-t .g{color:var(--green)!important}.mgr-t .y{color:var(--yellow)!important}.mgr-t .r{color:var(--red)!important}
-.mgr-t tfoot td{border-top:1px solid var(--border2);color:#fff;font-weight:700}.mgr-t tfoot .mgr-bar{display:none}
+.mgr-t tfoot td{border-top:1px solid var(--border2);color:#fff;font-weight:700}.mgr-t tfoot .mgr-bar{display:none}.mgr-t tr.mgr-sub td{background:var(--bg1,rgba(0,0,0,.25));padding-top:6px;padding-bottom:6px;font-size:11px}
 .mgr-bar{display:block;height:3px;border-radius:2px;background:var(--gold);opacity:.55;margin-top:4px;margin-left:auto}
 .mgr-note{padding:8px 12px 10px;font-size:10.5px;color:var(--text3);line-height:1.45;border-top:1px solid var(--border)}
 
@@ -2487,7 +2489,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-11-07 21:10'
+const BUILD='2026-11-07 21:40'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -3159,7 +3161,7 @@ function rdash(){try{if(AUD.loaded)audRenderDash();else audOpen()}catch(e){conso
   const days=rows.length||1,cpl=tL>0?(tS/tL).toFixed(1):0,cql=tQ>0?(tS/tQ).toFixed(1):0
   // stash period totals so heroAllMeta() can recompute the KPI strip off the SAME live Meta spend as the hero
   window._dashPeriod={leads:tL,quals:tQ,days,prevSpend:0}
-  const spD=(tS/days).toFixed(0),profit=tSzl*0.3*0.25,roi=tS>0?Math.round((profit-tS)/tS*100):0
+  const spD=(tS/days).toFixed(0),profit=roiProfit(tSzl),roi=tS>0?Math.round((profit-tS)/tS*100):0
   const avgCtr=rows.length>0?(rows.reduce((s,r)=>s+parseFloat(r.ctr||0),0)/rows.length).toFixed(2):0
   // ── HERO ──
   heroRender(tS,tL,tQ,+spD,from,to)
@@ -3178,7 +3180,7 @@ function rdash(){try{if(AUD.loaded)audRenderDash();else audOpen()}catch(e){conso
   const pCpl = pL>0 ? pS/pL : 0
   const pCql = pQ>0 ? pS/pQ : 0
   const pSpD = pS/pDays
-  const pProfit = pSzl*0.3*0.25
+  const pProfit = roiProfit(pSzl)
   const pRoi = pS>0 ? Math.round((pProfit-pS)/pS*100) : 0
   const pCtr = prevRows.length>0 ? prevRows.reduce((s,r)=>s+parseFloat(r.ctr||0),0)/prevRows.length : 0
   if(window._dashPeriod)window._dashPeriod.prevSpend=pS
@@ -6011,33 +6013,36 @@ function parseDt(ds){if(!ds)return null;if(ds.includes('-'))return new Date(ds);
 // ── Продажи · по менеджерам: CQL, CPV и спенд FB на менеджера ──
 // Спенд FB за день (metrics_daily) делится между менеджерами по доле лидов с рекламы, которые им достались в этот день.
 // Лид «с рекламы» — источник с буквой баера или известный домен (как в CPV). Квал = оценка 4+, визит = 5+ (как в sync).
-let MGR_SORT='sp'
+let MGR_SORT='sp',MGR_OPEN=new Set()
 const mgrF=['manager']  // поле лида в GarnoCRM: manager ("Ivan", "Taras"…), у продаж — то же
 function mgrOf(o){for(const k of mgrF){const v=o&&o[k];if(v&&typeof v==='string')return v.trim();if(v&&typeof v==='object'&&v.name)return String(v.name).trim()}return ''}
 function mgrDay(l){const d=parseDt(l.dateOverride||l.createdAt);if(!d||isNaN(d))return '';return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function mgrStats(from,to){const M={},dayPaid={},sc=l=>parseFloat(String(l.score??'').replace(',','.')),qf=l=>String(l.qualification||l.qual||l.status||'').toLowerCase()
-  const get=n=>M[n]||(M[n]={n,ld:0,pl:0,q:0,v:0,sp:0,sales:0,rev:0,byDay:{}})
+  const get=n=>M[n]||(M[n]={n,ld:0,pl:0,q:0,v:0,sp:0,sales:0,rev:0,revFb:0,byDay:{},src:{}})
   LEADS_DATA.forEach(l=>{const day=mgrDay(l);if(!day||day<from||day>to)return;const src=String(l.source||l.adSource||'').trim().toLowerCase().slice(0,80)
     const paid=!!src&&!!cpvSrcBuyer({source:src,day});const m=get(mgrOf(l)||'— без менеджера —'),s=sc(l),f=qf(l);m.ld++
+    const ss=m.src[src||'(пусто)']||(m.src[src||'(пусто)']={l:0,q:0,v:0,paid});ss.l++;if(s>=4||/^(qualified|salon|квалиф|визит)/.test(f))ss.q++;if(s>=5||/^(salon|визит)/.test(f))ss.v++
     if(!paid)return;m.pl++;m.byDay[day]=(m.byDay[day]||0)+1;dayPaid[day]=(dayPaid[day]||0)+1
     if(s>=4||/^(qualified|salon|квалиф|визит)/.test(f))m.q++;if(s>=5||/^(salon|визит)/.test(f))m.v++})
   let spAll=0,spNoLead=0;METRICS.forEach(r=>{if(r.day<from||r.day>to)return;const sp=(+r.spend_pl||0)+(+r.spend_plua||0);spAll+=sp;if(!dayPaid[r.day]){spNoLead+=sp;return}
     Object.values(M).forEach(m=>{const k=m.byDay[r.day];if(k)m.sp+=sp*k/dayPaid[r.day]})})
-  SALES_DATA.forEach(x=>{const d=parseDt(x.createdAt);if(!d)return;const day=mgrDay({createdAt:x.createdAt});if(day<from||day>to)return;const m=get(mgrOf(x)||'— без менеджера —');m.sales++;m.rev+=x.saleAmount||0})
+  SALES_DATA.forEach(x=>{const d=parseDt(x.createdAt);if(!d)return;const day=mgrDay({createdAt:x.createdAt});if(day<from||day>to)return;const m=get(mgrOf(x)||'— без менеджера —');m.sales++;m.rev+=x.saleAmount||0;const ss=String(x.source||x.adSource||'').trim().toLowerCase();if(ss&&cpvSrcBuyer({source:ss,day}))m.revFb+=x.saleAmount||0})
   const L=Object.values(M).filter(m=>m.ld||m.sales);return{L,spAll,spNoLead,hasMgr:LEADS_DATA.some(l=>mgrOf(l))}}
 function rsalesMgr(from,to){const el=document.getElementById('sales-mgr');if(!el)return
   if(!LEADS_DATA.length){el.innerHTML='<div class="empty" style="padding:18px">Лиды из GarnoCRM не загрузились — проверь ключ GarnoCRM в настройках</div>';return}
-  const R=mgrStats(from,to),cpl=m=>m.pl?m.sp/m.pl:null,cql=m=>m.q?m.sp/m.q:null,cpv=m=>m.v?m.sp/m.v:null
-  const key={sp:m=>m.sp,pl:m=>m.pl,q:m=>m.q,v:m=>m.v,cpl:m=>-(cpl(m)??1e9),cql:m=>-(cql(m)??1e9),cpv:m=>-(cpv(m)??1e9),sales:m=>m.sales,rev:m=>m.rev,ld:m=>m.ld}[MGR_SORT]||(m=>m.sp)
-  const L=R.L.sort((a,b)=>key(b)-key(a)),T=L.reduce((t,m)=>{['ld','pl','q','v','sp','sales','rev'].forEach(k=>t[k]+=m[k]);return t},{n:'Итого',ld:0,pl:0,q:0,v:0,sp:0,sales:0,rev:0})
+  const R=mgrStats(from,to),roi=m=>m.sp>0?(roiProfit(m.revFb)-m.sp)/m.sp*100:null,cpl=m=>m.pl?m.sp/m.pl:null,cql=m=>m.q?m.sp/m.q:null,cpv=m=>m.v?m.sp/m.v:null
+  const key={sp:m=>m.sp,pl:m=>m.pl,q:m=>m.q,v:m=>m.v,cpl:m=>-(cpl(m)??1e9),cql:m=>-(cql(m)??1e9),cpv:m=>-(cpv(m)??1e9),sales:m=>m.sales,rev:m=>m.rev,ld:m=>m.ld,roi:m=>roi(m)??-1e9}[MGR_SORT]||(m=>m.sp)
+  const L=R.L.sort((a,b)=>key(b)-key(a)),T=L.reduce((t,m)=>{['ld','pl','q','v','sp','sales','rev','revFb'].forEach(k=>t[k]+=m[k]);return t},{n:'Итого',ld:0,pl:0,q:0,v:0,sp:0,sales:0,rev:0,revFb:0})
   const mx=Math.max(1,...L.map(m=>m.sp)),$=x=>x==null?'—':'$'+(x<100?x.toFixed(1):Math.round(x)),cc=(x,g,y)=>x==null?'':x<=g?'g':x<=y?'y':'r'
   const th=(k,t)=>`<th data-msort="${k}" class="${MGR_SORT===k?'on':''}">${t}${MGR_SORT===k?' ↓':''}</th>`
-  const row=m=>`<td class="mnm"><i>${esc2(m.n).slice(0,2).toUpperCase()}</i>${esc2(m.n)}</td><td>${m.ld}</td><td>${m.pl}</td><td class="g">${m.q}</td><td class="mcv">${m.v}</td><td class="msp">$${Math.round(m.sp).toLocaleString('ru')}<span class="mgr-bar" style="width:${Math.round(m.sp/mx*60)}px"></span></td><td>${$(cpl(m))}</td><td class="mk ${cc(cql(m),25,35)}">${$(cql(m))}</td><td class="mk mcv">${$(cpv(m))}</td><td>${m.sales}</td><td>${Math.round(m.rev).toLocaleString('ru')} ${cur()}</td>`
-  el.innerHTML=`<table class="mgr-t"><thead><tr><th>Менеджер</th>${th('ld','Лиды всего')}${th('pl','Лиды FB')}${th('q','Квалы')}${th('v','Визиты')}${th('sp','Spend FB')}${th('cpl','CPL')}${th('cql','CQL')}${th('cpv','CPV')}${th('sales','Продажи')}${th('rev','Выручка')}</tr></thead>
-    <tbody>${L.map(m=>`<tr>${row(m)}</tr>`).join('')||'<tr><td colspan="11" style="text-align:center;padding:18px">Нет лидов за период</td></tr>'}</tbody>${L.length?`<tfoot><tr>${row(T).replace(/<i>.*?<\/i>/,'')}</tr></tfoot>`:''}</table>
-    <div class="mgr-note">Лиды FB — с источников рекламы (буква баера или домен из «Доменов»); квал — оценка 4+, визит — 5+, по текущей оценке. Спенд FB за день делится по доле лидов FB менеджера в этот день.${R.spNoLead>1?` $${Math.round(R.spNoLead)} спенда пришлось на дни без лидов FB — никому не начислено.`:''}${R.hasMgr?'':' <b style="color:var(--yellow)">В лидах GarnoCRM не найдено поле менеджера — все лиды попали в «без менеджера».</b>'}</div>`}
+  const row=m=>`<td class="mnm"><i>${esc2(m.n).slice(0,2).toUpperCase()}</i>${esc2(m.n)}</td><td>${m.ld}</td><td>${m.pl}</td><td class="g">${m.q}</td><td class="mcv">${m.v}</td><td class="msp">$${Math.round(m.sp).toLocaleString('ru')}<span class="mgr-bar" style="width:${Math.round(m.sp/mx*60)}px"></span></td><td>${$(cpl(m))}</td><td class="mk ${cc(cql(m),25,35)}">${$(cql(m))}</td><td class="mk mcv">${$(cpv(m))}</td><td>${m.sales}</td><td>${Math.round(m.rev).toLocaleString('ru')} ${cur()}</td><td class="mk ${roi(m)==null?'':roi(m)>=100?'g':roi(m)>=0?'y':'r'}" title="Продажи с рекламы: ${Math.round(m.revFb).toLocaleString('ru')} ${cur()} × 30% маржи → $${Math.round(roiProfit(m.revFb))} прибыли против $${Math.round(m.sp)} спенда">${roi(m)==null?'—':(roi(m)>0?'+':'')+Math.round(roi(m))+'%'}</td>`
+  el.innerHTML=`<table class="mgr-t"><thead><tr><th>Менеджер</th>${th('ld','Лиды всего')}${th('pl','Лиды FB')}${th('q','Квалы')}${th('v','Визиты')}${th('sp','Spend FB')}${th('cpl','CPL')}${th('cql','CQL')}${th('cpv','CPV')}${th('sales','Продажи')}${th('rev','Выручка')}${th('roi','ROI')}</tr></thead>
+    <tbody>${L.map(m=>`<tr data-mopen="${esc2(m.n)}" style="cursor:pointer" title="Клик — источники менеджера">${row(m)}</tr>`+(MGR_OPEN.has(m.n)?mgrSrcRows(m):'')).join('')||'<tr><td colspan="12" style="text-align:center;padding:18px">Нет лидов за период</td></tr>'}</tbody>${L.length?`<tfoot><tr>${row(T).replace(/<i>.*?<\/i>/,'')}</tr></tfoot>`:''}</table>
+    <div class="mgr-note">Лиды FB — с источников рекламы (буква баера или домен из «Доменов»); квал — оценка 4+, визит — 5+, по текущей оценке. Спенд FB за день делится по доле лидов FB менеджера в этот день. ROI — по продажам с рекламных источников: выручка × 30% маржи в $ против Spend FB.${R.spNoLead>1?` $${Math.round(R.spNoLead)} спенда пришлось на дни без лидов FB — никому не начислено.`:''}${R.hasMgr?'':' <b style="color:var(--yellow)">В лидах GarnoCRM не найдено поле менеджера — все лиды попали в «без менеджера».</b>'}</div>`}
+function mgrSrcRows(m){const E=Object.entries(m.src).sort((a,b)=>b[1].l-a[1].l)
+  return E.map(([k,v])=>`<tr class="mgr-sub"><td colspan="2" style="padding-left:44px;font-family:var(--mono);color:var(--text2)">${esc2(k)}</td><td>${v.paid?v.l:'<span style="color:var(--text3)">не FB</span>'}</td><td class="${v.paid?'g':''}" style="${v.paid?'':'color:var(--text3)'}">${v.q}</td><td class="${v.paid?'mcv':''}" style="${v.paid?'':'color:var(--text3)'}">${v.v}</td><td colspan="7" style="text-align:left;color:var(--text3);font-family:inherit;font-size:11px">${v.paid?'реклама — в Spend FB/CQL/CPV':'источник не реклама (нет буквы баера и нет в «Доменах») — в расчёт не идёт'}</td></tr>`).join('')||`<tr class="mgr-sub"><td colspan="12" style="padding-left:44px;color:var(--text3)">Лидов за период нет — только продажи</td></tr>`}
 const esc2=x=>String(x??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))
-document.addEventListener('click',e=>{const t=e.target.closest('[data-msort]');if(!t)return;MGR_SORT=t.dataset.msort;rsalesMgr(document.getElementById('sp-from').value,document.getElementById('sp-to').value)})
+document.addEventListener('click',e=>{const o=e.target.closest('[data-mopen]');if(o){const n=o.dataset.mopen;MGR_OPEN.has(n)?MGR_OPEN.delete(n):MGR_OPEN.add(n);rsalesMgr(document.getElementById('sp-from').value,document.getElementById('sp-to').value);return}const t=e.target.closest('[data-msort]');if(!t)return;MGR_SORT=t.dataset.msort;rsalesMgr(document.getElementById('sp-from').value,document.getElementById('sp-to').value)})
 function rsales(){
   const from=document.getElementById('sp-from').value,to=document.getElementById('sp-to').value
   try{rsalesMgr(from,to)}catch(e){console.warn('mgr',e)}
