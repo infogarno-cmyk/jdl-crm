@@ -2489,7 +2489,7 @@ function nameConflicts(){
 
 // Метка сборки. Чтобы не гадать, уехал ли деплой: ver() в консоли.
 // Если номер не совпадает с тем, что прислано — открыта старая версия.
-const BUILD='2026-11-07 21:40'
+const BUILD='2026-11-10 18:20'
 function ver(){
   const need=['whyRegion','syncNames','fixRegions','findRk','pullAdDomains','metaDiag','metaStats','funnels','bjOpen','brainTest','cqlReport','jvBriefReset','zWorkingAll','doAuthLogin','nameGeoConflict']
   const have=need.filter(f=>typeof window[f]==='function')
@@ -2797,7 +2797,12 @@ async function manualSync(){
   try{
     const r=await fetch(SB_URL+'/functions/v1/sync',{method:'POST',headers:{'Authorization':'Bearer '+SB_ANON,'Content-Type':'application/json'},body:'{}'})
     const d=await r.json()
-    if(d.ok){await Promise.all([loadM(),loadSales(),loadSrcDaily()]);try{localStorage.setItem('jdl_sync_at',String(Date.now()))}catch(e){}rdash();if(typeof rzalivs==='function'&&document.getElementById('page-zalivs')?.classList.contains('on'))rzalivs();setSS('ok','Обновлено · '+d.days+' дней')}else setSS('','Ошибка')
+    if(d.ok){await Promise.all([loadM(),loadSales(),loadSrcDaily()]);try{localStorage.setItem('jdl_sync_at',String(Date.now()))}catch(e){}
+      // после синка пересчитываем всё, что берёт лиды/квалы из source_daily: дашборд, список РК и открытую РК
+      _srcOwnSig='';_rkKeySig='';try{rdash()}catch(e){console.warn(e)}
+      try{if(typeof rzalivs==='function')rzalivs();if(_zSel&&typeof selZaliv==='function')selZaliv(_zSel)}catch(e){console.warn(e)}
+      try{if(document.getElementById('page-sales')?.classList.contains('active'))rsales()}catch(e){}
+      setSS('ok','Обновлено · '+d.days+' дней · источников '+SRC_DAILY.length)}else{setSS('','Ошибка');toast('Sync: '+(d.error||d.message||'функция вернула ошибку'),'err')}
   }catch(e){setSS('','Ошибка соединения')}
 }
 function setupRT(){
